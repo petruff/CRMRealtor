@@ -4,6 +4,7 @@ import {
   CONTACT_QUERY_MAX,
   normalizeContactQuery,
   parseContactScope,
+  parseLeadSource,
   parseLeadType,
   queryArchivedContacts,
   queryContacts,
@@ -52,6 +53,10 @@ describe('contact query', () => {
   it('filters lead type and preserves hot, warm, nurture order plus stable source order', () => {
     expect(queryContacts(contacts).map((item) => item.id)).toEqual(['h-1', 'h-2', 'w-1', 'n-1']);
     expect(queryContacts(contacts, { leadType: 'hot' }).map((item) => item.id)).toEqual(['h-1', 'h-2']);
+    const referral = contact('referral', 'Rae', 'warm', { source: 'referral' });
+    expect(queryContacts([...contacts, referral], { scope: 'all', source: 'referral' }).map((item) => item.id)).toEqual(['referral']);
+    expect(parseLeadSource('referral')).toBe('referral');
+    expect(() => parseLeadSource('paid-search')).toThrow('source');
   });
 
   it('returns no matches and rejects malformed bounds or lead types', () => {

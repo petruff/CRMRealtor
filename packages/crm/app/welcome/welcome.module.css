@@ -3,39 +3,26 @@
 @import '@fontsource/inter/500.css';
 
 .landing {
-  --we-primary: #cc785c;
-  --we-primary-active: #a9583e;
-  --we-canvas: #faf9f5;
-  --we-foreground: #181715;
-  --we-body: #3d3d3a;
-  --we-muted: #666666;
-  --we-border: #e6dfd8;
-  --we-surface: #efe9de;
-  --we-surface-soft: #f5f0e8;
-  --we-dark: #181715;
-  --we-dark-elevated: #252320;
-  --we-on-dark: #faf9f5;
-  --we-on-dark-muted: #aaa69e;
+  /* The public experience inherits the authenticated product palette. */
+  --we-primary: var(--sk-button-background);
+  --we-primary-active: var(--sk-button-background-hover);
+  --we-canvas: var(--sk-body-background-color);
+  --we-foreground: var(--sk-headline-text-color);
+  --we-body: var(--sk-body-text-color);
+  --we-muted: var(--sk-muted-text-color);
+  --we-border: var(--sk-border-color);
+  --we-surface: var(--sk-fill-color);
+  --we-surface-soft: var(--sk-fill-secondary-color);
+  --we-dark: #181d26;
+  --we-dark-elevated: #252933;
+  --we-dark-border: #3c414a;
+  --we-on-dark: #ffffff;
+  --we-on-dark-muted: #c4c9d1;
+  --we-on-dark-accent: #79aaff;
+  --we-positive: var(--omnix-nurture);
+  --we-critical: var(--omnix-hot);
   --we-font-display: 'Cormorant Garamond', 'EB Garamond', Garamond, 'Times New Roman', serif;
   --we-font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-
-  --sk-body-background-color: var(--we-canvas);
-  --sk-body-text-color: var(--we-foreground);
-  --sk-headline-text-color: var(--we-foreground);
-  --sk-body-link-color: var(--we-primary);
-  --sk-button-background: var(--we-primary);
-  --sk-button-background-hover: var(--we-primary-active);
-  --sk-button-background-active: var(--we-primary-active);
-  --sk-focus-color: var(--we-primary);
-  --sk-muted-text-color: var(--we-muted);
-  --sk-subtle-text-color: var(--we-muted);
-  --sk-border-color: var(--we-border);
-  --sk-fill-color: var(--we-surface-soft);
-  --sk-fill-secondary-color: var(--we-surface);
-  --sk-card-background: var(--we-canvas);
-  --sk-card-radius: 12px;
-  --sk-control-radius: 8px;
-  --sk-nav-background: color-mix(in srgb, var(--we-canvas) 88%, transparent);
 
   min-height: 100dvh;
   overflow: clip;
@@ -46,15 +33,26 @@
 }
 
 :global(.dark) .landing {
-  --we-canvas: #181715;
-  --we-foreground: #faf9f5;
-  --we-body: #d7d2ca;
-  --we-muted: #aaa69e;
-  --we-border: #3c3934;
-  --we-surface: #252320;
-  --we-surface-soft: #1f1e1b;
-  --we-dark: #0f0f0e;
-  --we-dark-elevated: #252320;
+  --we-canvas: var(--sk-body-background-color);
+  --we-foreground: var(--sk-headline-text-color);
+  --we-body: var(--sk-body-text-color);
+  --we-muted: var(--sk-muted-text-color);
+  --we-border: var(--sk-border-color);
+  --we-surface: var(--sk-fill-color);
+  --we-surface-soft: var(--sk-fill-secondary-color);
+  --we-dark: #181d26;
+  --we-dark-elevated: #252933;
+}
+
+:global(.dark) .landing .hero .eyebrow,
+:global(.dark) .landing .heroTitle span,
+:global(.dark) .landing .proofRow svg,
+:global(.dark) .landing .signInCard .cardLabel,
+:global(.dark) .landing .identityNote svg,
+:global(.dark) .landing .editorialNote > span,
+:global(.dark) .landing .capabilityGrid article:not(.capabilityAccent) .capabilityNumber,
+:global(.dark) .landing .capabilityGrid article:not(.capabilityAccent) .capabilityIcon {
+  color: var(--we-on-dark-accent);
 }
 
 .landing h1,
@@ -160,9 +158,11 @@
 .navLinks a,
 .navSignIn,
 .footerLinks a {
+  min-width: 44px;
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
 }
 
 .navLinks a:focus-visible,
@@ -170,6 +170,13 @@
 .navSignIn:focus-visible,
 .navSignIn:hover {
   color: var(--we-primary);
+}
+
+:global(.dark) .landing .navLinks a:focus-visible,
+:global(.dark) .landing .navLinks a:hover,
+:global(.dark) .landing .navSignIn:focus-visible,
+:global(.dark) .landing .navSignIn:hover {
+  color: var(--we-on-dark-accent);
 }
 
 .navActions {
@@ -188,7 +195,7 @@
 .imageHero {
   position: relative;
   width: 100%;
-  background: #241c16;
+  background: var(--we-dark);
 }
 
 .hero {
@@ -298,7 +305,7 @@
 
 .inlineStatus svg {
   width: 0.9rem;
-  color: #5db872;
+  color: var(--we-positive);
 }
 
 .unavailableGroup > p {
@@ -342,7 +349,7 @@
 
 .errorText {
   margin-top: 1rem;
-  color: #c64545;
+  color: var(--we-critical);
   font-size: 0.78rem;
   line-height: 1.5;
 }
@@ -358,7 +365,7 @@
   position: relative;
   overflow: hidden;
   aspect-ratio: 1376 / 768;
-  background: #241c16;
+  background: var(--we-dark);
   isolation: isolate;
 }
 
@@ -509,7 +516,7 @@
 }
 
 .darkIntro .eyebrow {
-  color: var(--we-primary);
+  color: var(--we-on-dark-accent);
 }
 
 .darkIntro > p {
@@ -520,7 +527,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-top: clamp(3rem, 6vw, 5.5rem);
-  border-block: 1px solid #3a3834;
+  border-block: 1px solid var(--we-dark-border);
   transform-origin: center top;
   transform-style: preserve-3d;
   will-change: transform;
@@ -528,7 +535,7 @@
 
 .productStory article {
   min-height: 430px;
-  border-right: 1px solid #3a3834;
+  border-right: 1px solid var(--we-dark-border);
   padding: clamp(2rem, 4vw, 3.4rem);
 }
 
@@ -540,7 +547,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--we-primary);
+  color: var(--we-on-dark-accent);
 }
 
 .productStoryTopline span {
@@ -555,7 +562,7 @@
 
 .productStoryLabel {
   margin-top: clamp(5rem, 10vw, 9rem);
-  color: var(--we-primary);
+  color: var(--we-on-dark-accent);
   font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -581,12 +588,12 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   margin-top: clamp(3rem, 6vw, 5.5rem);
-  border-top: 1px solid #3a3834;
+  border-top: 1px solid var(--we-dark-border);
 }
 
 .trustGrid article {
   min-height: 270px;
-  border-right: 1px solid #3a3834;
+  border-right: 1px solid var(--we-dark-border);
   padding: 2rem;
 }
 
@@ -598,7 +605,11 @@
   display: block;
   width: 1.5rem;
   margin-top: 3.5rem;
-  color: var(--we-primary);
+  color: var(--we-on-dark-accent);
+}
+
+.darkSection .trustGrid article > span {
+  color: var(--we-on-dark-accent);
 }
 
 .trustGrid h3 {
@@ -632,6 +643,10 @@
 .capabilityGrid .capabilityAccent {
   background: var(--we-primary);
   color: #fff;
+}
+
+.capabilityGrid .capabilityAccent > p:last-child {
+  opacity: 1;
 }
 
 .capabilityAccent h3,
@@ -708,7 +723,7 @@
 }
 
 .ctaBand .cardLabel {
-  color: rgb(255 255 255 / 0.75);
+  color: #fff;
 }
 
 .ctaAction :global(.sk-primary-button),
@@ -728,12 +743,13 @@
 
 .ctaAction :global(.sk-primary-button:hover),
 .ctaButton:hover {
-  background: #fff;
+  background: var(--we-on-dark);
+  color: var(--we-dark);
 }
 
 .ctaAction > p {
   margin-top: 0.8rem;
-  color: rgb(255 255 255 / 0.76);
+  color: #fff;
   font-size: 0.7rem;
   line-height: 1.5;
   text-align: center;
@@ -782,8 +798,9 @@
   font-size: 0.76rem;
 }
 
+.footerLinks a:focus-visible,
 .footerLinks a:hover {
-  color: var(--we-primary);
+  color: var(--we-on-dark-accent);
 }
 
 .footerBottom {
@@ -791,7 +808,7 @@
   justify-content: space-between;
   gap: 2rem;
   margin-top: 4rem;
-  border-top: 1px solid #3a3834;
+  border-top: 1px solid var(--we-dark-border);
   padding-top: 1.5rem;
   font-size: 0.66rem;
 }
@@ -833,7 +850,7 @@
   .productStory article {
     min-height: auto;
     border-right: 0;
-    border-bottom: 1px solid #3a3834;
+    border-bottom: 1px solid var(--we-dark-border);
   }
 
   .productStory article:last-child {
@@ -934,7 +951,7 @@
   .trustGrid article {
     min-height: auto;
     border-right: 0;
-    border-bottom: 1px solid #3a3834;
+    border-bottom: 1px solid var(--we-dark-border);
     padding: 2rem 0;
   }
 

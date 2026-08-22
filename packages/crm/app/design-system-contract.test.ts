@@ -6,6 +6,7 @@ const welcomeCss = readFileSync(new URL('./welcome/welcome.module.css', import.m
 const connectionsSource = readFileSync(new URL('./connections/page.tsx', import.meta.url), 'utf8');
 const brandLockupSource = readFileSync(new URL('../components/brand-lockup.tsx', import.meta.url), 'utf8');
 const assistantSource = readFileSync(new URL('../components/omnix-assistant-launcher.tsx', import.meta.url), 'utf8');
+const welcomeMotionSource = readFileSync(new URL('../components/welcome-motion.tsx', import.meta.url), 'utf8');
 
 function cssBlock(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -60,12 +61,20 @@ describe('authenticated editorial design contract', () => {
     expect(globalCss).toMatch(/\.sk-overflow-rail\s*{[^}]*overflow-x:\s*auto;/s);
   });
 
-  it('keeps the public welcome contract scoped and unchanged', () => {
+  it('keeps public typography scoped while sharing the authenticated palette', () => {
     expect(globalCss).toContain("@import '@fontsource/cormorant-garamond/500.css';");
-    expect(welcomeCss).toContain('--we-primary: #cc785c;');
-    expect(welcomeCss).toContain('--we-canvas: #faf9f5;');
+    expect(welcomeCss).toContain('--we-primary: var(--sk-button-background);');
+    expect(welcomeCss).toContain('--we-canvas: var(--sk-body-background-color);');
+    expect(welcomeCss).toContain('--we-foreground: var(--sk-headline-text-color);');
+    expect(welcomeCss).toContain('--we-surface: var(--sk-fill-color);');
+    expect(welcomeCss).toContain('--we-dark: #181d26;');
+    expect(welcomeCss).toContain('--we-on-dark-accent: #79aaff;');
+    expect(welcomeCss).not.toContain('--we-primary: #cc785c;');
+    expect(welcomeCss).not.toContain('--we-canvas: #faf9f5;');
     expect(welcomeCss).toContain("--we-font-display: 'Cormorant Garamond'");
     expect(welcomeCss).toMatch(/\.landing :global\(\.font-display\)\s*{[^}]*font-family:\s*var\(--we-font-display\);/s);
+    expect(welcomeMotionSource.match(/autoAlpha/g)).toHaveLength(5);
+    expect(welcomeMotionSource).toContain('autoAlpha: 0.92');
   });
 
   it('keeps Connections cards on the centralized 12px radius contract', () => {

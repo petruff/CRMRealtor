@@ -2,7 +2,10 @@
 
 import { pathToFileURL } from 'node:url';
 import { searchCrm, type CrmSearchContext } from '../lib/application/crm-search-service.ts';
-import { getPipelineAnalytics, type PipelineAnalyticsContext } from '../lib/application/pipeline-analytics-service.ts';
+import {
+  getOperatingInsights,
+  type OperatingInsightsContext,
+} from '../lib/application/operating-insights-service.ts';
 import { createAuthenticatedCliContext } from '../lib/data/authenticated-cli-context.ts';
 import { memoryRepository } from '../lib/data/memory-repository.ts';
 import { createMemoryActivityRepository } from '../lib/data/memory-activity-repository.ts';
@@ -18,12 +21,12 @@ import { supabaseMailerRepository } from '../lib/data/supabase-mailer-repository
 import { supabaseWorkspaceRepository } from '../lib/data/supabase-workspace-repository.ts';
 import { SAMPLE_WORKSPACE_SCOPE } from '../lib/domain/workspace.ts';
 
-type Context = CrmSearchContext & PipelineAnalyticsContext;
+type Context = CrmSearchContext & OperatingInsightsContext;
 
 function usage(): string {
   return [
     'Usage: npm run crm -- search --query <text> [--limit <1-50>] [--live]',
-    '       npm run crm -- insights [--from <ISO>] [--to <ISO>] [--live]',
+    '       npm run crm -- insights [--period <30|90|365>] [--live]',
     'Search covers contacts, tasks, incomplete records, Smart Lists, mailers, and members.',
     'Sample mode is process-local; --live requires end-user Supabase credentials.',
   ].join('\n');
@@ -75,7 +78,7 @@ export async function runCrmCli(argv: readonly string[]): Promise<number> {
     const context = live ? await liveContext() : sampleContext();
     const result = command === 'search'
       ? await searchCrm(context, option(argv, '--query'), Number(option(argv, '--limit') ?? 20))
-      : await getPipelineAnalytics(context, { from: option(argv, '--from'), to: option(argv, '--to') });
+      : await getOperatingInsights(context, { period: option(argv, '--period') });
     process.stdout.write(`${JSON.stringify({ ok: true, schemaVersion: 'crm-navigation-cli.v1', mode: live ? 'live-authenticated' : 'sample-process-only', durable: live, command, result }, null, 2)}\n`);
     return 0;
   } catch (error) {

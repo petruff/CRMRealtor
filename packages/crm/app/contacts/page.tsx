@@ -16,9 +16,11 @@ import {
   LEAD_TYPE_LABEL,
   PIPELINE_LABEL,
   RELATIONSHIP_LABEL,
+  SOURCE_LABEL,
   displayName,
   initials,
   type LeadType,
+  type LeadSource,
 } from "@/lib/domain/contact";
 import { getRepository } from "@/lib/data";
 import { Avatar, IconAction, SectionHeader } from "@/components/ui";
@@ -30,6 +32,7 @@ import {
   CONTACT_SCOPES,
   parseContactScope,
   parseLeadType,
+  parseLeadSource,
   queryArchivedContacts,
   queryContacts,
   type ContactScope,
@@ -94,6 +97,7 @@ export default async function ContactsPage({
   searchParams: Promise<{
     q?: string | string[];
     leadType?: string | string[];
+    source?: string | string[];
     smartList?: string | string[];
     view?: string | string[];
     qualification?: string | string[];
@@ -122,6 +126,13 @@ export default async function ContactsPage({
     leadType = parseLeadType(rawLeadType);
   } catch {
     leadType = undefined;
+  }
+  const rawSource = typeof params.source === "string" ? params.source : undefined;
+  let source: LeadSource | undefined;
+  try {
+    source = parseLeadSource(rawSource);
+  } catch {
+    source = undefined;
   }
   const rawSmartListId =
     typeof params.smartList === "string" ? params.smartList : undefined;
@@ -156,17 +167,18 @@ export default async function ContactsPage({
     }
   }
   const contacts = archivedView
-    ? queryArchivedContacts(scopedContacts, { query, leadType })
-    : queryContacts(scopedContacts, { query, leadType, scope });
+    ? queryArchivedContacts(scopedContacts, { query, leadType, source })
+    : queryContacts(scopedContacts, { query, leadType, source, scope });
   const viewState: ContactViewState = {
     scope,
     ...(query ? { query } : {}),
     ...(leadType ? { leadType } : {}),
+    ...(source ? { source } : {}),
     ...(rawSmartListId ? { smartList: rawSmartListId } : {}),
   };
   const scopeCounts = Object.fromEntries(CONTACT_SCOPES.map((candidate) => [
     candidate,
-    queryContacts(scopedContacts, { query, leadType, scope: candidate }).length,
+    queryContacts(scopedContacts, { query, leadType, source, scope: candidate }).length,
   ])) as Record<ContactScope, number>;
   const [tasks, activityEvents, assignments] = await Promise.all([
     activityRepository.listTasks(workspaceScope, { status: "all", limit: 500 }),
@@ -187,17 +199,20 @@ export default async function ContactsPage({
     activityCounts.set(event.contactId, (activityCounts.get(event.contactId) ?? 0) + 1);
   }
   const assigneeByContact = new Map(assignments.filter((item) => !item.unassignedAt).map((item) => [item.contactId, item.assigneeMembershipId]));
-  const searching = Boolean(query.trim() || leadType || (!archivedView && rawSmartListId));
+  const searching = Boolean(query.trim() || leadType || source || (!archivedView && rawSmartListId));
   const clearSmartListHref = contactViewHref(viewState, { smartList: undefined });
   const clearQueryHref = archivedView
-    ? `/contacts?${new URLSearchParams({ view: "archived", ...(leadType ? { leadType } : {}) })}`
+    ? `/contacts?${new URLSearchParams({ view: "archived", ...(leadType ? { leadType } : {}), ...(source ? { source } : {}) })}`
     : contactViewHref(viewState, { query: undefined });
   const clearLeadTypeHref = archivedView
-    ? `/contacts?${new URLSearchParams({ view: "archived", ...(query ? { q: query } : {}) })}`
+    ? `/contacts?${new URLSearchParams({ view: "archived", ...(query ? { q: query } : {}), ...(source ? { source } : {}) })}`
     : contactViewHref(viewState, { leadType: undefined });
+  const clearSourceHref = archivedView
+    ? `/contacts?${new URLSearchParams({ view: "archived", ...(query ? { q: query } : {}), ...(leadType ? { leadType } : {}) })}`
+    : contactViewHref(viewState, { source: undefined });
   const clearFiltersHref = archivedView
     ? "/contacts?view=archived"
-    : contactViewHref(viewState, { query: undefined, leadType: undefined });
+    : contactViewHref(viewState, { query: undefined, leadType: undefined, source: undefined });
   const scopeCopy = SCOPE_COPY[scope];
 
   return (
@@ -288,6 +303,7 @@ export default async function ContactsPage({
         {rawSmartListId && !archivedView ? (
           <input type="hidden" name="smartList" value={rawSmartListId} />
         ) : null}
+        {source ? <input type="hidden" name="source" value={source} /> : null}
         {!archivedView && scope !== "leads" ? <input type="hidden" name="scope" value={scope} /> : null}
         {archivedView ? <input type="hidden" name="view" value="archived" /> : null}
         <label className="bg-surface">
@@ -335,6 +351,11 @@ export default async function ContactsPage({
           {leadType ? (
             <Link href={clearLeadTypeHref} className="sk-secondary-button min-h-9 px-3 text-xs">
               {LEAD_TYPE_LABEL[leadType]} <X className="size-3.5" aria-hidden />
+            </Link>
+          ) : null}
+          {source ? (
+            <Link href={clearSourceHref} className="sk-secondary-button min-h-9 px-3 text-xs">
+              {SOURCE_LABEL[source]} <X className="size-3.5" aria-hidden />
             </Link>
           ) : null}
         </div>

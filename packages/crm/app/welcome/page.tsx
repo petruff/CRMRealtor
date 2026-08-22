@@ -119,7 +119,7 @@ export default async function WelcomePage({
 
       <header className={styles.topNav}>
         <div className={styles.navInner}>
-          <Link href="/welcome" aria-label="Omnix home" className={styles.brandLink}>
+          <Link href="/welcome" className={styles.brandLink}>
             <BrandLockup compact />
           </Link>
           <nav aria-label="Public" className={styles.navLinks}>
@@ -297,7 +297,7 @@ export default async function WelcomePage({
               ))}
             </div>
 
-            <div id="trust" className={styles.trustGrid} aria-label="Omnix trust principles">
+            <div id="trust" className={styles.trustGrid} role="group" aria-label="Omnix trust principles">
               {TRUST_POINTS.map(([title, detail], index) => (
                 <article key={title} data-reveal>
                   <span>0{index + 1}</span>

@@ -1,11 +1,19 @@
 status:
-  branch: null
-  modifiedFiles: []
-  recentCommits: []
-  currentEpic: null
-  currentStory: null
-  lastUpdate: '2026-08-22T04:22:10.515Z'
-  isGitRepo: false
-timestamp: 1787372530517
+  branch: main
+  modifiedFiles:
+    - packages/crm/app/contacts/page.tsx
+    - packages/crm/app/globals.css
+    - packages/crm/app/insights/page.tsx
+    - packages/crm/lib/application/contact-query.test.ts
+    - packages/crm/lib/application/contact-query.ts
+  modifiedFilesTotalCount: 28
+  recentCommits:
+    - 'docs: normalize pipeline story status'
+    - 'docs: record pipeline production evidence'
+  currentEpic: 3 — Operational CRM Parity
+  currentStory: 3.26.welcome-shared-crm-palette-alignment.story
+  lastUpdate: '2026-08-22T16:14:50.6261980-04:00'
+  isGitRepo: true
+timestamp: 1787429690632
 ttl: 60
-gitFingerprint: null
+gitFingerprint: 1787373974796.8796:1787418073048.17

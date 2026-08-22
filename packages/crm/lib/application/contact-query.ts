@@ -1,4 +1,4 @@
-import { displayName, type Contact, type LeadType } from '../domain/contact.ts';
+import { SOURCE_LABEL, displayName, type Contact, type LeadSource, type LeadType } from '../domain/contact.ts';
 
 export const CONTACT_QUERY_MAX = 200;
 export const CONTACT_LEAD_TYPES: readonly LeadType[] = ['hot', 'warm', 'nurture'];
@@ -15,6 +15,7 @@ export type ContactScope = (typeof CONTACT_SCOPES)[number];
 export interface ContactQueryOptions {
   query?: string;
   leadType?: LeadType;
+  source?: LeadSource;
   scope?: ContactScope;
 }
 
@@ -46,6 +47,12 @@ export function parseLeadType(value: string | undefined): LeadType | undefined {
   if (!value) return undefined;
   if (CONTACT_LEAD_TYPES.includes(value as LeadType)) return value as LeadType;
   throw new ContactQueryError('Lead type must be hot, warm, or nurture.');
+}
+
+export function parseLeadSource(value: string | undefined): LeadSource | undefined {
+  if (!value) return undefined;
+  if (value in SOURCE_LABEL) return value as LeadSource;
+  throw new ContactQueryError('Lead source is invalid.');
 }
 
 export function parseContactScope(value: string | undefined): ContactScope {
@@ -102,6 +109,7 @@ export function queryContacts(
       !contact.archivedAt
       && matchesScope(contact, scope)
       && (!options.leadType || contact.leadType === options.leadType)
+      && (!options.source || contact.source === options.source)
       && matchesQuery(contact, normalizedQuery))
     .sort((left, right) =>
       (rank.get(left.contact.leadType) ?? 99) - (rank.get(right.contact.leadType) ?? 99)
@@ -121,6 +129,7 @@ export function queryArchivedContacts(
     .filter(({ contact }) =>
       Boolean(contact.archivedAt)
       && (!options.leadType || contact.leadType === options.leadType)
+      && (!options.source || contact.source === options.source)
       && matchesQuery(contact, normalizedQuery))
     .sort((left, right) =>
       (rank.get(left.contact.leadType) ?? 99) - (rank.get(right.contact.leadType) ?? 99)

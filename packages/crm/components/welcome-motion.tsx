@@ -63,7 +63,7 @@ export function WelcomeMotion({
           gsap.fromTo(
             card,
             {
-              autoAlpha: 0.72,
+              autoAlpha: 0.92,
               y: 46,
               rotateX: index % 2 === 0 ? 5 : -4,
               rotateY: index % 2 === 0 ? -2.5 : 2.5,
