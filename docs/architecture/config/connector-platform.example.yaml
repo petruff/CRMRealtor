@@ -1,0 +1,213 @@
+schema_version: "1.0"
+
+runtime:
+  worker_route: "/api/internal/connectors/drain"
+  cron_secret_env: "CRON_SECRET"
+  batch_size: 10
+  lease_seconds: 90
+  max_runtime_seconds: 45
+  reconciliation_batch_size: 10
+  oldest_due_job_alert_seconds: 180
+  no_drain_alert_intervals: 2
+
+security:
+  oauth_transaction_ttl_seconds: 600
+  webhook_default_replay_tolerance_seconds: 300
+  encryption:
+    algorithm: "AES-256-GCM"
+    active_kek_version_env: "OMNIX_CONNECTOR_KEK_ACTIVE_VERSION"
+    kek_env_prefix: "OMNIX_CONNECTOR_KEK_"
+    aad_fields:
+      - "workspace_id"
+      - "connection_id"
+      - "provider"
+      - "secret_type"
+      - "record_version"
+  retention:
+    oauth_transaction_days: 1
+    webhook_metadata_days: 30
+    completed_job_days: 90
+    receipt_event_days: 730
+    raw_provider_content: "disabled"
+
+approvals:
+  external_write_default: "owner_required"
+  assistant_can_draft: true
+  assistant_can_approve: false
+  assistant_can_connect: false
+  assistant_can_disconnect: false
+  autonomous_external_writes: false
+  max_pending_age_hours: 72
+
+retry:
+  max_attempts: 5
+  base_delay_seconds: 15
+  max_delay_seconds: 3600
+  jitter: "full"
+  respect_retry_after: true
+  automatic_categories:
+    - "provider_unavailable"
+    - "rate_limited"
+    - "network_not_sent"
+  reconciliation_categories:
+    - "network_outcome_unknown"
+    - "provider_acceptance_unknown"
+  terminal_categories:
+    - "authorization_revoked"
+    - "permission_denied"
+    - "validation_failed"
+    - "consent_required"
+    - "compliance_blocked"
+
+providers:
+  google:
+    enabled: false
+    adapter: "google"
+    oauth:
+      client_id_env: "GOOGLE_CONNECTOR_CLIENT_ID"
+      client_secret_env: "GOOGLE_CONNECTOR_CLIENT_SECRET"
+      authorization_endpoint: "https://accounts.google.com/o/oauth2/v2/auth"
+      token_endpoint: "https://oauth2.googleapis.com/token"
+      revocation_endpoint: "https://oauth2.googleapis.com/revoke"
+      pkce: true
+      offline_access: true
+      incremental_authorization: true
+      scope_bundles:
+        identity:
+          - "openid"
+          - "email"
+          - "profile"
+        gmail_send:
+          - "https://www.googleapis.com/auth/gmail.send"
+        gmail_metadata:
+          - "https://www.googleapis.com/auth/gmail.metadata"
+        calendar_app_created:
+          - "https://www.googleapis.com/auth/calendar.app.created"
+    actions:
+      gmail.send:
+        approval: "owner_required"
+        idempotency: "reconcile_on_unknown"
+      gmail.sync-metadata:
+        approval: "system_read_only"
+        idempotency: "cursor"
+      calendar.create-omnix-calendar:
+        approval: "owner_required"
+        idempotency: "provider_resource_key"
+      calendar.upsert-omnix-event:
+        approval: "owner_required"
+        idempotency: "provider_resource_key"
+      calendar.complete-omnix-event:
+        approval: "owner_required"
+        idempotency: "provider_resource_key"
+      calendar.cancel-omnix-event:
+        approval: "owner_required"
+        idempotency: "provider_resource_key"
+      calendar.delete-omnix-event:
+        approval: "owner_required"
+        idempotency: "provider_resource_key"
+      calendar.sync:
+        approval: "system_read_only"
+        idempotency: "sync_token"
+    production_requirements:
+      - "oauth_consent_verified"
+      - "requested_scopes_approved"
+      - "restricted_scope_assessment_if_applicable"
+      - "real_account_uat"
+
+  mailchimp:
+    enabled: false
+    adapter: "mailchimp"
+    oauth:
+      client_id_env: "MAILCHIMP_CLIENT_ID"
+      client_secret_env: "MAILCHIMP_CLIENT_SECRET"
+      authorization_endpoint: "https://login.mailchimp.com/oauth2/authorize"
+      token_endpoint: "https://login.mailchimp.com/oauth2/token"
+      pkce: false
+    endpoint_policy:
+      metadata_endpoint: "https://login.mailchimp.com/oauth2/metadata"
+      data_center_pattern: "^[a-z0-9-]+$"
+      api_base_template: "https://{dc}.api.mailchimp.com/3.0"
+    webhook:
+      verifier: "mailchimp_hmac_sha256"
+      signing_secret_authority: "per_connection_encrypted_envelope"
+      replay_tolerance_seconds: 300
+    actions:
+      audience.sync:
+        approval: "owner_required"
+        idempotency: "subscriber_hash_and_operation"
+      audience.reconcile:
+        approval: "system_read_only"
+        idempotency: "cursor"
+    production_requirements:
+      - "registered_oauth_app"
+      - "audience_selected"
+      - "signed_webhook_verified"
+      - "real_account_uat"
+
+  twilio:
+    enabled: false
+    adapter: "twilio"
+    credentials:
+      account_sid_env: "TWILIO_ACCOUNT_SID"
+      api_key_sid_env: "TWILIO_API_KEY_SID"
+      api_key_secret_env: "TWILIO_API_KEY_SECRET"
+      messaging_service_sid_env: "TWILIO_MESSAGING_SERVICE_SID"
+      webhook_auth_token_env: "TWILIO_WEBHOOK_AUTH_TOKEN"
+    endpoint_policy:
+      api_base: "https://api.twilio.com"
+    webhook:
+      verifier: "twilio_sdk_signature"
+      require_exact_external_url: true
+    actions:
+      message.send:
+        approval: "owner_required"
+        idempotency: "reconcile_on_unknown"
+      message.reconcile:
+        approval: "system_read_only"
+        idempotency: "provider_message_sid"
+    production_requirements:
+      - "restricted_api_key"
+      - "messaging_service_or_number"
+      - "a2p_10dlc_if_us_10digit"
+      - "consent_stop_help_quiet_hours"
+      - "signed_callback_verified"
+      - "real_number_uat"
+
+  meta:
+    enabled: false
+    adapter: "meta"
+    oauth:
+      client_id_env: "META_APP_ID"
+      client_secret_env: "META_APP_SECRET"
+      authorization_endpoint: "https://www.facebook.com/{graph_version}/dialog/oauth"
+      token_endpoint: "https://graph.facebook.com/{graph_version}/oauth/access_token"
+      pkce: false
+      graph_version: "PIN_IN_PROVIDER_STORY"
+      required_permissions: []
+    webhook:
+      verifier: "meta_app_secret_signature"
+      verify_token_env: "META_WEBHOOK_VERIFY_TOKEN"
+    actions:
+      dm.ingest:
+        approval: "system_inbound"
+        idempotency: "provider_event_id"
+      dm.reply:
+        approval: "owner_required"
+        idempotency: "reconcile_on_unknown"
+    production_requirements:
+      - "business_login_configured"
+      - "business_verified"
+      - "app_review_approved"
+      - "eligible_page_and_instagram_professional_account"
+      - "graph_version_pinned"
+      - "permissions_pinned_and_approved"
+      - "webhook_verified"
+      - "real_account_uat"
+
+feature_guards:
+  reject_sample_mode: true
+  reject_unknown_provider: true
+  reject_user_supplied_endpoint: true
+  reject_enabled_provider_with_missing_requirements: true
+  reject_empty_meta_permissions_in_production: true
+  redact_provider_content_from_logs: true

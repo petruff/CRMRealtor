@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "kind": "full-sdc",
+  "storyId": "1.3",
+  "storyPath": "docs\\stories\\1.3.universal-contact-import-automatic-intake.story.md",
+  "mode": "interactive",
+  "status": "completed",
+  "currentPhase": null,
+  "phases": {
+    "validate": {
+      "status": "passed",
+      "at": "2026-08-11T00:22:33.582Z",
+      "notes": null
+    },
+    "develop": {
+      "status": "passed",
+      "at": "2026-08-11T01:10:41.773Z",
+      "notes": null
+    },
+    "review": {
+      "status": "passed",
+      "at": "2026-08-11T01:48:06.908Z",
+      "notes": null
+    },
+    "apply_qa_fixes": {
+      "status": "passed",
+      "at": "2026-08-11T01:39:57.319Z",
+      "notes": null
+    },
+    "close": {
+      "status": "passed",
+      "at": "2026-08-11T01:48:36.165Z",
+      "notes": null
+    }
+  },
+  "qgIterations": 1,
+  "maxQgIterations": 3,
+  "createdAt": "2026-08-11T00:21:16.802Z",
+  "updatedAt": "2026-08-11T01:48:36.168Z"
+}

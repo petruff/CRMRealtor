@@ -1,0 +1,2 @@
+import { executeOperationalApiRequest } from '@/lib/data/operational-api-server-context';
+export async function POST(request:Request,{params}:{params:Promise<{id:string}>}) { const {id}=await params; let payload:Record<string,unknown>; try{payload=await request.json();}catch{payload={};} const result=await executeOperationalApiRequest({action:'contacts.archive',payload:{...payload,contactId:id},idempotencyKey:request.headers.get('idempotency-key'),correlationId:request.headers.get('x-correlation-id')},request); return Response.json(result.body,{status:result.status}); }

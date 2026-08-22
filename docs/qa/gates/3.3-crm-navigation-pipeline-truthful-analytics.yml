@@ -1,0 +1,53 @@
+schema: 1
+story: '3.3'
+story_title: 'CRM Navigation, Pipeline & Truthful Analytics'
+gate: PASS
+status_reason: >-
+  Bounded workspace search, allowlisted actions, atomic stage movement, real counters and
+  event-backed analytics satisfy AC1-AC8. Database replay/rollback, CLI parity, mandatory gates
+  and desktop/390px runtime checks pass without unsupported metrics or cross-workspace authority.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:28ac665b7b7a2fca1b1b544994671cfaaade98386f287f664cf5fe9b5b8442e4'
+updated: '2026-08-12T15:38:00-04:00'
+top_issues: []
+waiver: { active: false }
+quality_score: 100
+evidence:
+  tests_reviewed:
+    result: 'PASS — 122 files / 569 tests; focused pgTAP 8/8'
+  mandatory_gates:
+    lint: PASS
+    typecheck: PASS
+    build: PASS
+  database:
+    clean_replay: PASS
+    rollback_rehearsal: PASS
+    tenant_and_optimistic_version_negatives: PASS
+  cli:
+    search_and_insights_parity: PASS
+  browser:
+    result: PASS
+    routes: ['/contacts', '/pipeline', '/insights']
+    viewports: ['1292x910', '390x844']
+    light_dark: PASS
+    horizontal_overflow: false
+    console_errors_or_warnings: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_gaps: []
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Workspace authority, allowlisted commands and stale/cross-workspace failures are fail closed.'
+  performance:
+    status: PASS
+    notes: 'Queries are bounded for the documented 200-500 contact scale and indexed in SQL.'
+  reliability:
+    status: PASS
+    notes: 'Optimistic rollback, idempotent receipts and insufficient-evidence states are tested.'
+  maintainability:
+    status: PASS
+    notes: 'CLI and UI reuse typed application/domain services instead of parallel metrics logic.'
+recommendations:
+  immediate: []
+  future: []

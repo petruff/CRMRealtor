@@ -1,0 +1,61 @@
+schema: 1
+story: '3.8'
+story_title: 'Warm Editorial Internal CRM & Persistent Alert Center'
+gate: CONCERNS
+status_reason: 'The prior AC6 and AC11 code/test blockers are remediated and all automated gates pass. The independent responsive/accessibility browser matrix remains NOT_RUN, so visual and interactive conformance is not certified.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:7f7a3ca9281f9486c1b5d785caf76b567a1d7921da02a2ff02a799afdc7a3f3d'
+updated: '2026-08-12T23:29:58-04:00'
+
+top_issues:
+  - id: 'TEST-3.8-BROWSER'
+    severity: medium
+    finding: 'The authenticated and /welcome responsive/accessibility browser matrix remains unexecuted; no runtime evidence exists for light/dark rendering, keyboard/focus, reduced motion, zoom/reflow, overflow or console behavior.'
+    suggested_action: 'Complete the documented browser matrix before treating this local gate as visual, accessibility or production certification.'
+    suggested_owner: dev
+    refs:
+      - 'docs/ux/internal-crm-warm-editorial-p0-spec.md'
+
+waiver:
+  active: false
+
+quality_score: 90
+expires: '2026-08-26T23:29:58-04:00'
+
+evidence:
+  tests_reviewed: 608
+  risks_identified: 1
+  automated_gates:
+    focused: 'PASS — 7 files, 40 tests'
+    lint: PASS
+    typecheck: PASS
+    test: 'PASS — 137 files, 608 tests'
+    build: PASS
+    cli_smoke: 'PASS — omnix:copilot alerts --today 2026-08-11 returned 7 ordered sample alerts'
+    coderabbit: 'NOT_RUN — checkout has no Git metadata'
+    browser_matrix: 'NOT_RUN — no browser evidence produced'
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11]
+    ac_gaps: [9]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Pipeline task/activity evidence is loaded through WorkspaceScope-bound application commands, filtered to the authorized contact set and fails closed without record detail.'
+  performance:
+    status: PASS
+    notes: 'Task/activity reads are bounded to 500 records and add no polling, cross-user cache, store or write path.'
+  reliability:
+    status: PASS
+    notes: 'Task-first, contact-next-touch fallback and unavailable behavior are deterministic and covered alongside existing pipeline rollback/stale command tests.'
+  maintainability:
+    status: PASS
+    notes: 'Today composition, pipeline evidence projection and PipelineBoard states now have focused presentation/application tests.'
+
+recommendations:
+  immediate:
+    - action: 'Run the independent authenticated and /welcome browser/accessibility matrix before release certification.'
+      refs: ['docs/ux/internal-crm-warm-editorial-p0-spec.md']
+  future:
+    - action: 'Consider making latest-activity evidence link to its existing safe destination when that improves card navigation without adding nested interactions.'
+      refs: ['packages/crm/components/pipeline-board.tsx']

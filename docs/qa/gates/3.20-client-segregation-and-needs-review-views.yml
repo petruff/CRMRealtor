@@ -1,0 +1,53 @@
+schema: 1
+story: '3.20'
+story_title: 'Client Segregation & Needs Review Views'
+gate: PASS
+status_reason: 'All twelve acceptance criteria are implemented with deterministic CLI/application parity, preserved CRM invariants, and passing focused plus mandatory quality gates.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'worktree-sha256:b6b5eae293eac896d862eb4172f3b34d9cb468c3caf7311071683bc392971554'
+updated: '2026-08-18T16:59:17Z'
+
+top_issues: []
+waiver: { active: false }
+quality_score: 100
+expires: '2026-09-01T16:59:17Z'
+
+evidence:
+  tests_reviewed: 698
+  focused_tests: '8 files / 67 tests passed'
+  full_tests: '155 files / 698 tests passed'
+  mandatory_gates:
+    lint: PASS
+    typecheck: PASS
+    test: PASS
+    build: PASS
+  cli_smoke:
+    valid_scopes: PASS
+    filter_intersection: PASS
+    invalid_scope_nonzero_json: PASS
+  coderabbit: 'NOT_RUN — configured WSL environment has no bash; manual source review and all automated gates completed.'
+  browser_visual: 'NOT_RUN — authenticated visual browser evidence remains a pre-deployment responsibility and is not a source defect.'
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'No new persistence or authorization boundary; scope parsing is allowlisted and archived records remain isolated.'
+  performance:
+    status: PASS
+    notes: 'Queries remain deterministic and bounded; navigation adds no new data source or schema.'
+  reliability:
+    status: PASS
+    notes: 'Legacy qualification URLs, invalid CLI scopes, archived isolation, and cross-filter intersections are covered.'
+  maintainability:
+    status: PASS
+    notes: 'One shared scope contract and one canonical URL builder are reused by CLI, application, and UI seams.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Run authenticated mobile and desktop Contacts smoke before production deployment.'
+      refs: ['packages/crm/app/contacts/page.tsx', 'packages/crm/components/contact-scope-navigation.tsx']

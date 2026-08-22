@@ -1,0 +1,27 @@
+- generic [ref=f8e2]:
+  - complementary [ref=f8e3]:
+    - generic [ref=f8e4]:
+      - generic [ref=f8e5]: R
+      - generic [ref=f8e6]:
+        - paragraph [ref=f8e7]: Realtor CRM
+        - paragraph [ref=f8e8]: Your day, in order
+    - navigation "Primary" [ref=f8e9]:
+      - link "Today" [ref=f8e10] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f8e14] [cursor=pointer]:
+        - /url: /contacts
+      - link "Mailers" [ref=f8e20] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f8e24] [cursor=pointer]:
+        - /url: /connections
+    - generic [ref=f8e27]:
+      - generic [ref=f8e28]: Phase 1
+      - button "Switch to dark theme" [ref=f8e29]
+  - main [ref=f8e33]:
+    - generic [ref=f8e34]:
+      - paragraph [ref=f8e38]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - generic [ref=f8e39]:
+        - generic [ref=f8e40]: R
+        - paragraph [ref=f8e41]: Sign in
+        - heading "Not connected yet" [level=1] [ref=f8e42]
+        - paragraph [ref=f8e43]: The database is not set up, so there is nothing to sign into. The app is running on sample contacts in the meantime — everything you see is demonstration data.

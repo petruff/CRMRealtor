@@ -1,0 +1,230 @@
+- generic [ref=f5e2]:
+  - link "Skip to main content" [ref=f5e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=f5e4]:
+    - generic [ref=f5e6]:
+      - img "Omnix" [ref=f5e7]
+      - generic [ref=f5e8]:
+        - paragraph [ref=f5e9]: Omnix
+        - paragraph [ref=f5e10]: Your real estate business, in order.
+    - navigation "Primary" [ref=f5e11]:
+      - button "Open global search and commands" [ref=f5e12]:
+        - generic [ref=f5e16]: Search Omnix
+        - generic [ref=f5e17]: ⌘K
+      - generic [ref=f5e18]:
+        - paragraph [ref=f5e19]: Core
+        - generic [ref=f5e20]:
+          - link "Today" [ref=f5e21] [cursor=pointer]:
+            - /url: /
+          - link "Contacts" [ref=f5e25] [cursor=pointer]:
+            - /url: /contacts
+          - link "Activities" [ref=f5e31] [cursor=pointer]:
+            - /url: /activities
+      - generic [ref=f5e35]:
+        - paragraph [ref=f5e36]: Business
+        - generic [ref=f5e37]:
+          - link "Alerts" [ref=f5e38] [cursor=pointer]:
+            - /url: /alerts
+          - link "Pipeline" [ref=f5e44] [cursor=pointer]:
+            - /url: /pipeline
+          - link "Insights" [ref=f5e47] [cursor=pointer]:
+            - /url: /insights
+          - link "Omnix AI" [ref=f5e50] [cursor=pointer]:
+            - /url: /omnix
+      - generic [ref=f5e54]:
+        - paragraph [ref=f5e55]: Operations
+        - generic [ref=f5e56]:
+          - link "Mailers" [ref=f5e57] [cursor=pointer]:
+            - /url: /mailers
+          - link "Connections" [ref=f5e61] [cursor=pointer]:
+            - /url: /connections
+          - link "Data & API" [ref=f5e64] [cursor=pointer]:
+            - /url: /data
+          - link "Settings" [ref=f5e69] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f5e73]:
+      - paragraph [ref=f5e74]: Powered by Cyryx Labs
+      - generic [ref=f5e75]:
+        - button "Sign out" [ref=f5e77]
+        - button "Switch to dark theme" [ref=f5e81]
+  - main [ref=f5e85]:
+    - generic [ref=f5e86]:
+      - paragraph [ref=f5e90]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - generic [ref=f5e91]:
+        - generic [ref=f5e92]:
+          - paragraph [ref=f5e93]: Daily relationship work
+          - heading "What needs attention, with the evidence attached." [level=1] [ref=f5e94]
+          - paragraph [ref=f5e95]: This read-only center uses the same stored-fact rules and deterministic order as Omnix Copilot. It does not dismiss, snooze, send or schedule anything.
+        - region [ref=f5e96]:
+          - generic [ref=f5e97]:
+            - paragraph [ref=f5e98]: Current priorities
+            - heading "Alert Center" [level=2] [ref=f5e102]
+            - paragraph [ref=f5e103]: Search and reveal stored CRM evidence without changing it. Resolving the underlying record updates this read-only view on its next authorized read.
+            - generic "Alert evidence summary" [ref=f5e104]:
+              - generic [ref=f5e105]: 23 alerts
+              - generic [ref=f5e106]: ·
+              - generic [ref=f5e107]: Updated Aug 20, 5:10 PM
+              - generic [ref=f5e108]: ·
+              - generic [ref=f5e109]: Sample data
+              - generic [ref=f5e110]: ·
+              - generic [ref=f5e111]: Authorized data available · Read only
+            - generic "Alert group filters" [ref=f5e112]:
+              - button "Act now 8" [ref=f5e113]:
+                - generic [ref=f5e114]: Act now
+                - generic [ref=f5e115]: "8"
+              - button "Coming up 2" [ref=f5e116]:
+                - generic [ref=f5e117]: Coming up
+                - generic [ref=f5e118]: "2"
+              - button "Relationship moments 2" [ref=f5e119]:
+                - generic [ref=f5e120]: Relationship moments
+                - generic [ref=f5e121]: "2"
+              - button "Data readiness 11" [ref=f5e122]:
+                - generic [ref=f5e123]: Data readiness
+                - generic [ref=f5e124]: "11"
+          - generic [ref=f5e125]:
+            - generic [ref=f5e126]:
+              - generic [ref=f5e127]: Search alerts
+              - searchbox "Search alerts" [ref=f5e129]
+              - group "Category filters" [ref=f5e130]:
+                - paragraph [ref=f5e131]: Category
+                - generic [ref=f5e132]:
+                  - button "Follow-up" [ref=f5e133]
+                  - button "Celebration" [ref=f5e134]
+                  - button "Pipeline" [ref=f5e135]
+                  - button "Mailer" [ref=f5e136]
+                  - button "Task" [ref=f5e137]
+              - group "Priority filters" [ref=f5e138]:
+                - paragraph [ref=f5e139]: Priority
+                - generic [ref=f5e140]:
+                  - button "Urgent" [ref=f5e141]
+                  - button "High" [ref=f5e142]
+                  - button "Normal" [ref=f5e143]
+                  - button "Low" [ref=f5e144]
+            - generic [ref=f5e145]:
+              - button "Expand all" [ref=f5e146]
+              - button "Collapse all" [ref=f5e147]
+            - status [ref=f5e148]: 23 matching alerts. 8 shown across 1 open group. No filters active.
+            - generic [ref=f5e149]:
+              - generic [ref=f5e150]:
+                - button "Act now Urgent and high-priority work that should be reviewed first. 8 items" [expanded] [ref=f5e151]:
+                  - generic [ref=f5e152]:
+                    - generic [ref=f5e153]: Act now
+                    - generic [ref=f5e154]: Urgent and high-priority work that should be reviewed first.
+                  - generic [ref=f5e155]: 8 items
+                - region "Act now Urgent and high-priority work that should be reviewed first. 8 items" [ref=f5e158]:
+                  - generic [ref=f5e160]:
+                    - list [ref=f5e161]:
+                      - listitem [ref=f5e162]:
+                        - article [ref=f5e163]:
+                          - generic [ref=f5e170]:
+                            - generic [ref=f5e171]:
+                              - generic [ref=f5e172]: Urgent
+                              - generic [ref=f5e173]: Follow-up
+                            - paragraph [ref=f5e174]: Waiting 6 days · social media
+                          - generic [ref=f5e175]:
+                            - link "Review contact" [ref=f5e176] [cursor=pointer]:
+                              - /url: /contacts/c-okafor
+                            - group [ref=f5e179]:
+                              - generic "Why this alert?" [ref=f5e180] [cursor=pointer]
+                      - listitem [ref=f5e181]:
+                        - article [ref=f5e182]:
+                          - generic [ref=f5e189]:
+                            - generic [ref=f5e190]:
+                              - generic [ref=f5e191]: Urgent
+                              - generic [ref=f5e192]: Follow-up
+                            - paragraph [ref=f5e193]: Waiting 3 days · open house
+                          - generic [ref=f5e194]:
+                            - link "Review contact" [ref=f5e195] [cursor=pointer]:
+                              - /url: /contacts/c-monroe
+                            - group [ref=f5e198]:
+                              - generic "Why this alert?" [ref=f5e199] [cursor=pointer]
+                      - listitem [ref=f5e200]:
+                        - article [ref=f5e201]:
+                          - generic [ref=f5e208]:
+                            - generic [ref=f5e209]:
+                              - generic [ref=f5e210]: Urgent
+                              - generic [ref=f5e211]: Follow-up
+                            - paragraph [ref=f5e212]: Waiting 1 day · cold call
+                          - generic [ref=f5e213]:
+                            - link "Review contact" [ref=f5e214] [cursor=pointer]:
+                              - /url: /contacts/c-reyes
+                            - group [ref=f5e217]:
+                              - generic "Why this alert?" [ref=f5e218] [cursor=pointer]
+                      - listitem [ref=f5e219]:
+                        - article [ref=f5e220]:
+                          - generic [ref=f5e227]:
+                            - generic [ref=f5e228]:
+                              - generic [ref=f5e229]: Urgent
+                              - generic [ref=f5e230]: Follow-up
+                            - paragraph [ref=f5e231]: 20 days overdue
+                          - generic [ref=f5e232]:
+                            - link "Review contact" [ref=f5e233] [cursor=pointer]:
+                              - /url: /contacts/c-hollings
+                            - group [ref=f5e236]:
+                              - generic "Why this alert?" [ref=f5e237] [cursor=pointer]
+                      - listitem [ref=f5e238]:
+                        - article [ref=f5e239]:
+                          - generic [ref=f5e246]:
+                            - generic [ref=f5e247]:
+                              - generic [ref=f5e248]: Urgent
+                              - generic [ref=f5e249]: Follow-up
+                            - paragraph [ref=f5e250]: 12 days overdue
+                          - generic [ref=f5e251]:
+                            - link "Review contact" [ref=f5e252] [cursor=pointer]:
+                              - /url: /contacts/c-whitfield
+                            - group [ref=f5e255]:
+                              - generic "Why this alert?" [ref=f5e256] [cursor=pointer]
+                      - listitem [ref=f5e257]:
+                        - article [ref=f5e258]:
+                          - generic [ref=f5e265]:
+                            - generic [ref=f5e266]:
+                              - generic [ref=f5e267]: Urgent
+                              - generic [ref=f5e268]: Follow-up
+                            - paragraph [ref=f5e269]: 4 days overdue
+                          - generic [ref=f5e270]:
+                            - link "Review contact" [ref=f5e271] [cursor=pointer]:
+                              - /url: /contacts/c-baptiste
+                            - group [ref=f5e274]:
+                              - generic "Why this alert?" [ref=f5e275] [cursor=pointer]
+                      - listitem [ref=f5e276]:
+                        - article [ref=f5e277]:
+                          - generic [ref=f5e284]:
+                            - generic [ref=f5e285]:
+                              - generic [ref=f5e286]: High
+                              - generic [ref=f5e287]: Follow-up
+                            - paragraph [ref=f5e288]: Due today
+                          - generic [ref=f5e289]:
+                            - link "Review contact" [ref=f5e290] [cursor=pointer]:
+                              - /url: /contacts/c-ferraro
+                            - group [ref=f5e293]:
+                              - generic "Why this alert?" [ref=f5e294] [cursor=pointer]
+                      - listitem [ref=f5e295]:
+                        - article [ref=f5e296]:
+                          - generic [ref=f5e303]:
+                            - generic [ref=f5e304]:
+                              - generic [ref=f5e305]: High
+                              - generic [ref=f5e306]: Follow-up
+                            - paragraph [ref=f5e307]: Due today
+                          - generic [ref=f5e308]:
+                            - link "Review contact" [ref=f5e309] [cursor=pointer]:
+                              - /url: /contacts/c-abernathy
+                            - group [ref=f5e312]:
+                              - generic "Why this alert?" [ref=f5e313] [cursor=pointer]
+                    - paragraph [ref=f5e315]: All 8 shown
+              - button "Coming up Follow-ups and tasks that need a planned next move. 2 items" [ref=f5e317]:
+                - generic [ref=f5e318]:
+                  - generic [ref=f5e319]: Coming up
+                  - generic [ref=f5e320]: Follow-ups and tasks that need a planned next move.
+                - generic [ref=f5e321]: 2 items
+              - button "Relationship moments Personal dates worth acknowledging with care. 2 items" [ref=f5e326]:
+                - generic [ref=f5e327]:
+                  - generic [ref=f5e328]: Relationship moments
+                  - generic [ref=f5e329]: Personal dates worth acknowledging with care.
+                - generic [ref=f5e330]: 2 items
+              - button "Data readiness Stored contact details that need attention before the next workflow. 11 items" [ref=f5e335]:
+                - generic [ref=f5e336]:
+                  - generic [ref=f5e337]: Data readiness
+                  - generic [ref=f5e338]: Stored contact details that need attention before the next workflow.
+                - generic [ref=f5e339]: 11 items
+  - button "Open Omnix assistant" [ref=f5e343]:
+    - generic [ref=f5e345]: Ask Omnix

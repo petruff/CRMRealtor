@@ -1,0 +1,85 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - link "Skip to main content" [ref=f1e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - generic [ref=f1e4]:
+      - banner [ref=f1e5]:
+        - generic [ref=f1e6]:
+          - img "Omnix" [ref=f1e7]
+          - generic [ref=f1e8]:
+            - paragraph [ref=f1e9]: Omnix
+            - paragraph [ref=f1e10]: Data & API
+        - generic [ref=f1e11]:
+          - button "Open global search and commands" [ref=f1e12]
+          - link "Open Omnix workspaces" [ref=f1e16] [cursor=pointer]:
+            - /url: /workspace
+          - button "Switch to dark theme" [ref=f1e19]
+      - main [ref=f1e22]:
+        - generic [ref=f1e23]:
+          - paragraph [ref=f1e27]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+          - generic [ref=f1e28]:
+            - generic [ref=f1e29]:
+              - paragraph [ref=f1e30]: Operations
+              - heading "Data & API" [level=1] [ref=f1e31]
+              - paragraph [ref=f1e32]: Move data safely, inspect immutable receipts, and govern external access without revealing stored credentials.
+            - status [ref=f1e33]: Operational keys, webhooks and immutable history require a signed-in Supabase workspace. Templates and local preview remain available.
+            - generic [ref=f1e34]:
+              - link [ref=f1e35] [cursor=pointer]:
+                - /url: /contacts/import
+                - heading "Import contacts" [level=2] [ref=f1e39]
+                - paragraph [ref=f1e40]: CSV, vCard, XLS and XLSX preview with editable mappings.
+              - link [ref=f1e41] [cursor=pointer]:
+                - /url: /api/data/templates/contacts?format=csv
+                - heading "CSV template" [level=2] [ref=f1e47]
+                - paragraph [ref=f1e48]: Download the current versioned contact schema.
+              - link [ref=f1e49] [cursor=pointer]:
+                - /url: /api/data/templates/contacts?format=xlsx
+                - heading "XLSX template" [level=2] [ref=f1e55]
+                - paragraph [ref=f1e56]: A formula-free workbook for governed imports.
+            - generic [ref=f1e57]:
+              - heading "Governed contact export" [level=2] [ref=f1e58]
+              - paragraph [ref=f1e59]: Explicit allowlisted fields, a 5,000-row bound, spreadsheet-formula protection and an immutable receipt before download.
+              - generic [ref=f1e60]:
+                - link "Download CSV" [ref=f1e61] [cursor=pointer]:
+                  - /url: /api/data/exports/contacts?format=csv
+                - link "Download XLSX" [ref=f1e62] [cursor=pointer]:
+                  - /url: /api/data/exports/contacts?format=xlsx
+                - link "CSV including archived" [ref=f1e63] [cursor=pointer]:
+                  - /url: /api/data/exports/contacts?format=csv&includeArchived=true
+            - generic [ref=f1e64]:
+              - article [ref=f1e65]:
+                - heading "API keys" [level=2] [ref=f1e70]
+                - paragraph [ref=f1e71]:
+                  - text: Create, rotate and revoke with
+                  - code [ref=f1e72]: npm run data -- keys …
+                  - text: . Plaintext appears once in the CLI.
+                - paragraph [ref=f1e74]: No keys are visible in this workspace.
+              - article [ref=f1e75]:
+                - heading "Generic webhooks" [level=2] [ref=f1e81]
+                - paragraph [ref=f1e82]:
+                  - text: Create or rotate with
+                  - code [ref=f1e83]: npm run data -- webhooks …
+                  - text: . Bodies and plaintext secrets are never retained.
+                - paragraph [ref=f1e85]: No generic endpoints are configured.
+            - generic [ref=f1e86]:
+              - article [ref=f1e87]:
+                - heading "Recent imports" [level=2] [ref=f1e88]
+                - paragraph [ref=f1e90]: No immutable receipts yet.
+              - article [ref=f1e91]:
+                - heading "Recent exports" [level=2] [ref=f1e92]
+                - paragraph [ref=f1e94]: No immutable receipts yet.
+          - paragraph [ref=f1e96]: Powered by Cyryx Labs
+      - navigation "Primary" [ref=f1e97]:
+        - link "Today" [ref=f1e98] [cursor=pointer]:
+          - /url: /
+        - link "Contacts" [ref=f1e102] [cursor=pointer]:
+          - /url: /contacts
+        - link "Activities" [ref=f1e108] [cursor=pointer]:
+          - /url: /activities
+        - link "Mailers" [ref=f1e112] [cursor=pointer]:
+          - /url: /mailers
+        - link "Connections" [ref=f1e116] [cursor=pointer]:
+          - /url: /connections
+        - link "Data & API" [ref=f1e119] [cursor=pointer]:
+          - /url: /data
+  - alert [ref=f1e124]

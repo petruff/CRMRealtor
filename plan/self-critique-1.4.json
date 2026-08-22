@@ -1,0 +1,30 @@
+{
+  "story": "1.4",
+  "reviewer": "Vulcan (@dev)",
+  "date": "2026-08-10",
+  "verdict": "ready-for-independent-review",
+  "axes": {
+    "requirements": "All ten acceptance criteria trace to code and evidence; the feature remains physical-mail tracking and does not expand into email marketing.",
+    "architecture": "Domain summary, application commands, repository interface, memory/Supabase implementations, CLI, server actions, and React presentation are separated and reuse existing project seams.",
+    "security": "Server validation, opaque bounded IDs, fixed owner filters, same-owner composite foreign keys, RLS replacement, safe error messages, and fail-closed live CLI configuration are present.",
+    "data_integrity": "One row per campaign/contact, first-date preservation on repeated mark, idempotent unmark, explicit missing-resource errors, migration backfill, and no destructive history rewrite.",
+    "ux_accessibility": "Apple-inspired tokens, system type, grouped surfaces, 44px controls, named role=checkbox controls, pending/error states, search, 390px containment, light/dark, reduced motion, and honest demo state.",
+    "testing": "85 tests expected after the final suite, plus lint, typecheck, four CLI commands, production build, create-mark-reload-unmark runtime flow, mobile light/dark screenshots, and zero browser console entries."
+  },
+  "findings_fixed": [
+    "The preview-only mailer matrix had decorative squares with no persistence.",
+    "mailer_sends RLS checked only the campaign owner and lacked a same-owner contact constraint.",
+    "The first runtime render duplicated the global sample-data banner.",
+    "UTC date stamping could record tomorrow near the Realtor's local midnight; CRM_TIME_ZONE now controls the calendar date with local-process fallback.",
+    "Malformed toggle state could be interpreted as unmark; it is now rejected before repository access."
+  ],
+  "remaining_external_evidence": [
+    "Apply migration 0003 to a provisioned Supabase project after migrations 0001 and 0002.",
+    "Configure the Realtor's CRM_TIME_ZONE and exercise one live authenticated campaign/send write.",
+    "CodeRabbit automated review remains unavailable because the configured Ubuntu WSL distribution is not installed; manual independent review is required."
+  ],
+  "future_non_blocking": [
+    "Add campaign archival or deletion only if the client requests it; it is intentionally out of scope.",
+    "Add a persisted user timezone profile if the product becomes multi-user across time zones."
+  ]
+}

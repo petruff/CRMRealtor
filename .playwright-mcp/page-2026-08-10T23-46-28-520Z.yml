@@ -1,0 +1,65 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - generic [ref=e4]:
+      - banner [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]: R
+          - generic [ref=e8]:
+            - paragraph [ref=e9]: Realtor CRM
+            - paragraph [ref=e10]: Contacts
+        - button "Switch to dark theme" [ref=e11]
+      - main [ref=e14]:
+        - generic [ref=e15]:
+          - paragraph [ref=e19]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+          - generic [ref=e164]:
+            - link "Back to today" [ref=e165] [cursor=pointer]:
+              - /url: /
+            - status [ref=e168]: Note saved to the activity history.
+            - generic [ref=e169]:
+              - generic [ref=e170]: TP
+              - generic [ref=e171]:
+                - generic [ref=e172]:
+                  - heading "Taylor Production" [level=1] [ref=e173]
+                  - generic [ref=e174]: Warm
+                - paragraph [ref=e176]: Lead · Not sure yet
+            - link "Edit" [ref=e178] [cursor=pointer]:
+              - /url: /contacts/c-eswminoq/edit
+            - generic [ref=e183]:
+              - heading "Follow-up" [level=2] [ref=e184]
+              - generic [ref=e185]:
+                - generic [ref=e186]:
+                  - term [ref=e187]: Last spoke
+                  - definition [ref=e188]: Never
+                - generic [ref=e189]:
+                  - term [ref=e190]: Next touch
+                  - definition [ref=e191]: Aug 17, 2026 · in 7 days
+                - generic [ref=e192]:
+                  - term [ref=e193]: Rhythm
+                  - definition [ref=e194]: Every 7 days · first 8 weeks
+              - paragraph [ref=e195]: New contact — on the accelerated 8×8 rhythm for their first eight weeks, then settles to every 7 days.
+              - button "Mark as contacted" [ref=e197]
+            - generic [ref=e200]:
+              - heading "Notes" [level=2] [ref=e201]
+              - generic [ref=e202]:
+                - generic [ref=e203]:
+                  - generic [ref=e204]: Add a note
+                  - textbox "Add a note Saved notes are timestamped and cannot be edited." [ref=e208]:
+                    - /placeholder: What matters for the next conversation?
+                  - generic [ref=e209]: Saved notes are timestamped and cannot be edited.
+                - button "Save note" [ref=e211]
+              - list [ref=e216]:
+                - listitem [ref=e217]:
+                  - paragraph [ref=e218]: Production runtime note.
+                  - paragraph [ref=e219]: Aug 10, 2026
+      - navigation "Primary" [ref=e93]:
+        - link "Today" [ref=e94] [cursor=pointer]:
+          - /url: /
+        - link "Contacts" [ref=e98] [cursor=pointer]:
+          - /url: /contacts
+        - link "Mailers" [ref=e104] [cursor=pointer]:
+          - /url: /mailers
+        - link "Connections" [ref=e108] [cursor=pointer]:
+          - /url: /connections
+  - alert [ref=e111]

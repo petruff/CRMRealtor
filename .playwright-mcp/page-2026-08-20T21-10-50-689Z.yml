@@ -1,0 +1,348 @@
+- generic [ref=f15e2]:
+  - link "Skip to main content" [ref=f15e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f15e4]:
+    - banner [ref=f15e5]:
+      - generic [ref=f15e6]:
+        - img "Omnix" [ref=f15e7]
+        - generic [ref=f15e8]:
+          - paragraph [ref=f15e9]: Omnix
+          - paragraph [ref=f15e10]: Pipeline
+      - generic [ref=f15e11]:
+        - button "Open global search and commands" [ref=f15e12]
+        - link "Open alerts" [ref=f15e16] [cursor=pointer]:
+          - /url: /alerts
+        - link "Open settings" [ref=f15e22] [cursor=pointer]:
+          - /url: /settings
+        - link "Open Omnix workspaces" [ref=f15e26] [cursor=pointer]:
+          - /url: /workspace
+        - button "Sign out" [ref=f15e30]
+        - button "Switch to dark theme" [ref=f15e34]
+    - main [ref=f15e37]:
+      - generic [ref=f15e38]:
+        - paragraph [ref=f15e42]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f15e43]:
+          - generic [ref=f15e44]:
+            - paragraph [ref=f15e45]: Business pipeline
+            - heading "Every relationship, in the right stage." [level=1] [ref=f15e46]: Every relationship,in the right stage.
+            - paragraph [ref=f15e47]: A truthful view of the stages already on each contact. Edit the source record to move someone — no hidden duplicate board state.
+          - generic [ref=f15e48]:
+            - generic [ref=f15e49]:
+              - paragraph [ref=f15e50]: "11"
+              - paragraph [ref=f15e51]: All contacts
+            - generic [ref=f15e52]:
+              - paragraph [ref=f15e53]: "3"
+              - paragraph [ref=f15e54]: Actively progressing
+            - generic [ref=f15e55]:
+              - paragraph [ref=f15e56]: "1"
+              - paragraph [ref=f15e57]: Under contract
+            - generic [ref=f15e58]:
+              - paragraph [ref=f15e59]: "1"
+              - paragraph [ref=f15e60]: Closed relationships
+          - paragraph [ref=f15e61]: Move cards by drag and drop or the stage selector.
+          - generic [ref=f15e62]:
+            - region [ref=f15e63]:
+              - generic [ref=f15e64]:
+                - heading "New" [level=2] [ref=f15e72]
+                - generic [ref=f15e73]: "3"
+              - list [ref=f15e74]:
+                - listitem [ref=f15e75]:
+                  - generic [ref=f15e76]:
+                    - generic [ref=f15e77]:
+                      - paragraph [ref=f15e78]: Alicia Monroe
+                      - paragraph [ref=f15e79]: buyer
+                    - generic [ref=f15e80]: Hot
+                  - generic [ref=f15e82]:
+                    - generic [ref=f15e83]:
+                      - paragraph [ref=f15e84]: Next step missing
+                      - link "Add next touch" [ref=f15e85] [cursor=pointer]:
+                        - /url: /contacts/c-monroe/edit
+                    - paragraph [ref=f15e86]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e87]: "Stage evidence: stored stage “New”."
+                  - generic [ref=f15e88]: Move stage
+                  - combobox "Move stage" [ref=f15e89]:
+                    - option "New" [selected]
+                    - option "Contacted"
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+                - listitem [ref=f15e90]:
+                  - generic [ref=f15e91]:
+                    - generic [ref=f15e92]:
+                      - paragraph [ref=f15e93]: Daniel Okafor
+                      - paragraph [ref=f15e94]: seller
+                    - generic [ref=f15e95]: Hot
+                  - generic [ref=f15e97]:
+                    - generic [ref=f15e98]:
+                      - paragraph [ref=f15e99]: Next step missing
+                      - link "Add next touch" [ref=f15e100] [cursor=pointer]:
+                        - /url: /contacts/c-okafor/edit
+                    - paragraph [ref=f15e101]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e102]: "Stage evidence: stored stage “New”."
+                  - generic [ref=f15e103]: Move stage
+                  - combobox "Move stage" [ref=f15e104]:
+                    - option "New" [selected]
+                    - option "Contacted"
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+                - listitem [ref=f15e105]:
+                  - generic [ref=f15e106]:
+                    - generic [ref=f15e107]:
+                      - paragraph [ref=f15e108]: Marisol Reyes
+                      - paragraph [ref=f15e109]: buyer
+                    - generic [ref=f15e110]: Warm
+                  - generic [ref=f15e112]:
+                    - generic [ref=f15e113]:
+                      - paragraph [ref=f15e114]: Next step missing
+                      - link "Add next touch" [ref=f15e115] [cursor=pointer]:
+                        - /url: /contacts/c-reyes/edit
+                    - paragraph [ref=f15e116]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e117]: "Stage evidence: stored stage “New”."
+                  - generic [ref=f15e118]: Move stage
+                  - combobox "Move stage" [ref=f15e119]:
+                    - option "New" [selected]
+                    - option "Contacted"
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+            - region [ref=f15e120]:
+              - generic [ref=f15e121]:
+                - heading "Contacted" [level=2] [ref=f15e129]
+                - generic [ref=f15e130]: "4"
+              - list [ref=f15e131]:
+                - listitem [ref=f15e132]:
+                  - generic [ref=f15e133]:
+                    - generic [ref=f15e134]:
+                      - paragraph [ref=f15e135]: Nadine Baptiste
+                      - paragraph [ref=f15e136]: both
+                    - generic [ref=f15e137]: Warm
+                  - generic [ref=f15e139]:
+                    - paragraph [ref=f15e140]:
+                      - text: "Next step: Follow up ·"
+                      - time [ref=f15e141]: Aug 16, 2026
+                    - paragraph [ref=f15e142]: "Source: Contact next-touch date"
+                    - link "Review contact" [ref=f15e143] [cursor=pointer]:
+                      - /url: /contacts/c-baptiste
+                    - paragraph [ref=f15e144]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e145]: "Stage evidence: stored stage “Contacted”."
+                  - generic [ref=f15e146]: Move stage
+                  - combobox "Move stage" [ref=f15e147]:
+                    - option "New"
+                    - option "Contacted" [selected]
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+                - listitem [ref=f15e148]:
+                  - generic [ref=f15e149]:
+                    - generic [ref=f15e150]:
+                      - paragraph [ref=f15e151]: Ruth Hollings
+                      - paragraph [ref=f15e152]: Intent not set
+                    - generic [ref=f15e153]: Nurture
+                  - generic [ref=f15e155]:
+                    - paragraph [ref=f15e156]:
+                      - text: "Next step: Follow up ·"
+                      - time [ref=f15e157]: Jul 31, 2026
+                    - paragraph [ref=f15e158]: "Source: Contact next-touch date"
+                    - link "Review contact" [ref=f15e159] [cursor=pointer]:
+                      - /url: /contacts/c-hollings
+                    - paragraph [ref=f15e160]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e161]: "Stage evidence: stored stage “Contacted”."
+                  - generic [ref=f15e162]: Move stage
+                  - combobox "Move stage" [ref=f15e163]:
+                    - option "New"
+                    - option "Contacted" [selected]
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+                - listitem [ref=f15e164]:
+                  - generic [ref=f15e165]:
+                    - generic [ref=f15e166]:
+                      - paragraph [ref=f15e167]: Joyce Abernathy
+                      - paragraph [ref=f15e168]: Intent not set
+                    - generic [ref=f15e169]: Nurture
+                  - generic [ref=f15e171]:
+                    - paragraph [ref=f15e172]:
+                      - text: "Next step: Follow up ·"
+                      - time [ref=f15e173]: Aug 20, 2026
+                    - paragraph [ref=f15e174]: "Source: Contact next-touch date"
+                    - link "Review contact" [ref=f15e175] [cursor=pointer]:
+                      - /url: /contacts/c-abernathy
+                    - paragraph [ref=f15e176]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e177]: "Stage evidence: stored stage “Contacted”."
+                  - generic [ref=f15e178]: Move stage
+                  - combobox "Move stage" [ref=f15e179]:
+                    - option "New"
+                    - option "Contacted" [selected]
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+                - listitem [ref=f15e180]:
+                  - generic [ref=f15e181]:
+                    - generic [ref=f15e182]:
+                      - paragraph [ref=f15e183]: Simone Delacroix
+                      - paragraph [ref=f15e184]: seller
+                    - generic [ref=f15e185]: Hot
+                  - generic [ref=f15e187]:
+                    - paragraph [ref=f15e188]:
+                      - text: "Next step: Follow up ·"
+                      - time [ref=f15e189]: Aug 26, 2026
+                    - paragraph [ref=f15e190]: "Source: Contact next-touch date"
+                    - link "Review contact" [ref=f15e191] [cursor=pointer]:
+                      - /url: /contacts/c-delacroix
+                    - paragraph [ref=f15e192]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e193]: "Stage evidence: stored stage “Contacted”."
+                  - generic [ref=f15e194]: Move stage
+                  - combobox "Move stage" [ref=f15e195]:
+                    - option "New"
+                    - option "Contacted" [selected]
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+            - region [ref=f15e196]:
+              - generic [ref=f15e197]:
+                - heading "Appointment set" [level=2] [ref=f15e205]
+                - generic [ref=f15e206]: "1"
+              - list [ref=f15e207]:
+                - listitem [ref=f15e208]:
+                  - generic [ref=f15e209]:
+                    - generic [ref=f15e210]:
+                      - paragraph [ref=f15e211]: Kenji Nakamura
+                      - paragraph [ref=f15e212]: investor
+                    - generic [ref=f15e213]: Warm
+                  - generic [ref=f15e215]:
+                    - paragraph [ref=f15e216]:
+                      - text: "Next step: Follow up ·"
+                      - time [ref=f15e217]: Aug 23, 2026
+                    - paragraph [ref=f15e218]: "Source: Contact next-touch date"
+                    - link "Review contact" [ref=f15e219] [cursor=pointer]:
+                      - /url: /contacts/c-nakamura
+                    - paragraph [ref=f15e220]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e221]: "Stage evidence: stored stage “Appointment set”."
+                  - generic [ref=f15e222]: Move stage
+                  - combobox "Move stage" [ref=f15e223]:
+                    - option "New"
+                    - option "Contacted"
+                    - option "Appointment set" [selected]
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+            - region [ref=f15e224]:
+              - generic [ref=f15e225]:
+                - heading "Actively working" [level=2] [ref=f15e233]
+                - generic [ref=f15e234]: "1"
+              - list [ref=f15e235]:
+                - listitem [ref=f15e236]:
+                  - generic [ref=f15e237]:
+                    - generic [ref=f15e238]:
+                      - paragraph [ref=f15e239]: Greg Whitfield
+                      - paragraph [ref=f15e240]: buyer
+                    - generic [ref=f15e241]: Hot
+                  - generic [ref=f15e243]:
+                    - paragraph [ref=f15e244]:
+                      - text: "Next step: Follow up ·"
+                      - time [ref=f15e245]: Aug 8, 2026
+                    - paragraph [ref=f15e246]: "Source: Contact next-touch date"
+                    - link "Review contact" [ref=f15e247] [cursor=pointer]:
+                      - /url: /contacts/c-whitfield
+                    - paragraph [ref=f15e248]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e249]: "Stage evidence: stored stage “Actively working”."
+                  - generic [ref=f15e250]: Move stage
+                  - combobox "Move stage" [ref=f15e251]:
+                    - option "New"
+                    - option "Contacted"
+                    - option "Appointment set"
+                    - option "Actively working" [selected]
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+            - region [ref=f15e252]:
+              - generic [ref=f15e253]:
+                - heading "Under contract" [level=2] [ref=f15e261]
+                - generic [ref=f15e262]: "1"
+              - list [ref=f15e263]:
+                - listitem [ref=f15e264]:
+                  - generic [ref=f15e265]:
+                    - generic [ref=f15e266]:
+                      - paragraph [ref=f15e267]: Luca Ferraro
+                      - paragraph [ref=f15e268]: buyer
+                    - generic [ref=f15e269]: Hot
+                  - generic [ref=f15e271]:
+                    - paragraph [ref=f15e272]:
+                      - text: "Next step: Follow up ·"
+                      - time [ref=f15e273]: Aug 20, 2026
+                    - paragraph [ref=f15e274]: "Source: Contact next-touch date"
+                    - link "Review contact" [ref=f15e275] [cursor=pointer]:
+                      - /url: /contacts/c-ferraro
+                    - paragraph [ref=f15e276]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e277]: "Stage evidence: stored stage “Under contract”."
+                  - generic [ref=f15e278]: Move stage
+                  - combobox "Move stage" [ref=f15e279]:
+                    - option "New"
+                    - option "Contacted"
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract" [selected]
+                    - option "Closed"
+                    - option "Lost"
+            - region [ref=f15e280]:
+              - generic [ref=f15e281]:
+                - heading "Closed" [level=2] [ref=f15e289]
+                - generic [ref=f15e290]: "1"
+              - list [ref=f15e291]:
+                - listitem [ref=f15e292]:
+                  - generic [ref=f15e293]:
+                    - generic [ref=f15e294]:
+                      - paragraph [ref=f15e295]: Marcus Pryor
+                      - paragraph [ref=f15e296]: Intent not set
+                    - generic [ref=f15e297]: Nurture
+                  - generic [ref=f15e299]:
+                    - generic [ref=f15e300]:
+                      - paragraph [ref=f15e301]: Next step missing
+                      - link "Add next touch" [ref=f15e302] [cursor=pointer]:
+                        - /url: /contacts/c-pryor/edit
+                    - paragraph [ref=f15e303]: "Activity evidence: No stored activity for this contact."
+                    - paragraph [ref=f15e304]: "Stage evidence: stored stage “Closed”."
+                  - generic [ref=f15e305]: Move stage
+                  - combobox "Move stage" [ref=f15e306]:
+                    - option "New"
+                    - option "Contacted"
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed" [selected]
+                    - option "Lost"
+            - region [ref=f15e307]:
+              - generic [ref=f15e308]:
+                - heading "Lost" [level=2] [ref=f15e316]
+                - generic [ref=f15e317]: "0"
+              - paragraph [ref=f15e318]: No contacts in this stage.
+        - paragraph [ref=f15e323]: Powered by Cyryx Labs
+    - navigation "Primary" [ref=f15e324]:
+      - link "Today" [ref=f15e325] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f15e329] [cursor=pointer]:
+        - /url: /contacts
+      - link "Activities" [ref=f15e335] [cursor=pointer]:
+        - /url: /activities
+      - link "Mailers" [ref=f15e339] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f15e343] [cursor=pointer]:
+        - /url: /connections
+  - button "Open Omnix assistant" [ref=f15e346]:
+    - generic [ref=f15e348]: Ask Omnix

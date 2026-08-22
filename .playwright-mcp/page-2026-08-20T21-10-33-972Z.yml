@@ -1,0 +1,140 @@
+- generic [ref=f9e2]:
+  - link "Skip to main content" [ref=f9e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=f9e4]:
+    - generic [ref=f9e6]:
+      - img "Omnix" [ref=f9e7]
+      - generic [ref=f9e8]:
+        - paragraph [ref=f9e9]: Omnix
+        - paragraph [ref=f9e10]: Your real estate business, in order.
+    - navigation "Primary" [ref=f9e11]:
+      - button "Open global search and commands" [ref=f9e12]:
+        - generic [ref=f9e16]: Search Omnix
+        - generic [ref=f9e17]: ⌘K
+      - generic [ref=f9e18]:
+        - paragraph [ref=f9e19]: Core
+        - generic [ref=f9e20]:
+          - link "Today" [ref=f9e21] [cursor=pointer]:
+            - /url: /
+          - link "Contacts" [ref=f9e25] [cursor=pointer]:
+            - /url: /contacts
+          - link "Activities" [ref=f9e31] [cursor=pointer]:
+            - /url: /activities
+      - generic [ref=f9e35]:
+        - paragraph [ref=f9e36]: Business
+        - generic [ref=f9e37]:
+          - link "Alerts" [ref=f9e38] [cursor=pointer]:
+            - /url: /alerts
+          - link "Pipeline" [ref=f9e44] [cursor=pointer]:
+            - /url: /pipeline
+          - link "Insights" [ref=f9e47] [cursor=pointer]:
+            - /url: /insights
+          - link "Omnix AI" [ref=f9e50] [cursor=pointer]:
+            - /url: /omnix
+      - generic [ref=f9e54]:
+        - paragraph [ref=f9e55]: Operations
+        - generic [ref=f9e56]:
+          - link "Mailers" [ref=f9e57] [cursor=pointer]:
+            - /url: /mailers
+          - link "Connections" [ref=f9e61] [cursor=pointer]:
+            - /url: /connections
+          - link "Data & API" [ref=f9e64] [cursor=pointer]:
+            - /url: /data
+          - link "Settings" [ref=f9e69] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f9e73]:
+      - paragraph [ref=f9e74]: Powered by Cyryx Labs
+      - generic [ref=f9e75]:
+        - button "Sign out" [ref=f9e77]
+        - button "Switch to dark theme" [ref=f9e81]
+  - main [ref=f9e85]:
+    - generic [ref=f9e86]:
+      - paragraph [ref=f9e90]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - generic [ref=f9e91]:
+        - generic [ref=f9e92]:
+          - generic [ref=f9e93]:
+            - paragraph [ref=f9e94]: Omnix Intelligence
+            - generic [ref=f9e95]: Explainable preview
+          - heading "Your business, already organized." [level=1] [ref=f9e96]: Your business,already organized.
+          - paragraph [ref=f9e97]: Omnix turns stored CRM facts into a prioritized brief. No generative model is connected, and nothing is sent, changed or scheduled autonomously.
+        - region [ref=f9e98]:
+          - generic [ref=f9e104]:
+            - heading "Today’s brief" [level=2] [ref=f9e105]
+            - paragraph [ref=f9e106]: Every recommendation includes the rule that produced it.
+          - generic [ref=f9e107]:
+            - article [ref=f9e108]:
+              - generic [ref=f9e113]:
+                - generic [ref=f9e114]:
+                  - heading "Reach new leads first" [level=3] [ref=f9e115]
+                  - generic [ref=f9e116]: "3"
+                - paragraph [ref=f9e117]: They have no recorded conversation yet, so response time matters most.
+              - paragraph [ref=f9e118]: "Evidence: No last-contact timestamp on an active contact."
+              - link "Review records" [ref=f9e119] [cursor=pointer]:
+                - /url: /
+            - article [ref=f9e123]:
+              - generic [ref=f9e129]:
+                - generic [ref=f9e130]:
+                  - heading "Recover overdue follow-ups" [level=3] [ref=f9e131]
+                  - generic [ref=f9e132]: "3"
+                - paragraph [ref=f9e133]: Work the oldest missed promises before planning new outreach.
+              - paragraph [ref=f9e134]: "Evidence: Next-touch date is earlier than today."
+              - link "Review records" [ref=f9e135] [cursor=pointer]:
+                - /url: /
+            - article [ref=f9e139]:
+              - generic [ref=f9e146]:
+                - generic [ref=f9e147]:
+                  - heading "Repair mailing records" [level=3] [ref=f9e148]
+                  - generic [ref=f9e149]: "11"
+                - paragraph [ref=f9e150]: Complete these addresses before the next postcard campaign.
+              - paragraph [ref=f9e151]: "Evidence: Street, city, state, or ZIP is blank."
+              - link "Review records" [ref=f9e152] [cursor=pointer]:
+                - /url: /mailers
+            - article [ref=f9e156]:
+              - generic [ref=f9e162]:
+                - generic [ref=f9e163]:
+                  - heading "Use relationship moments" [level=3] [ref=f9e164]
+                  - generic [ref=f9e165]: "2"
+                - paragraph [ref=f9e166]: Birthdays and home anniversaries are timely reasons to reconnect.
+              - paragraph [ref=f9e167]: "Evidence: An important date falls inside the configured reminder window."
+              - link "Review records" [ref=f9e168] [cursor=pointer]:
+                - /url: /
+        - region [ref=f9e172]:
+          - generic [ref=f9e173]:
+            - generic [ref=f9e178]:
+              - heading "Ask Omnix" [level=2] [ref=f9e179]
+              - paragraph [ref=f9e180]: I check the authorized CRM records behind each answer and show you the source.
+            - button "Clear this page session" [disabled] [ref=f9e182]
+          - generic [ref=f9e186]:
+            - generic "Omnix conversation" [ref=f9e187]:
+              - generic [ref=f9e188]:
+                - heading "What should we focus on?" [level=3] [ref=f9e192]
+                - paragraph [ref=f9e193]: Ask about today, people who need attention, tasks, dates or pipeline. I cite the records and never act without you.
+                - generic "Supported prompt examples" [ref=f9e194]:
+                  - button "What should I do today?" [ref=f9e195]
+                  - button "Who needs attention?" [ref=f9e196]
+                  - button "Show today's tasks" [ref=f9e197]
+                  - button "Show upcoming dates" [ref=f9e198]
+                  - button "Show pipeline" [ref=f9e199]
+            - generic [ref=f9e201]:
+              - generic [ref=f9e202]: Ask Omnix a supported question
+              - generic [ref=f9e203]:
+                - textbox "Ask Omnix a supported question" [ref=f9e204]:
+                  - /placeholder: Ask about today's priorities…
+                - button "Ask Omnix" [disabled] [ref=f9e205]
+              - generic [ref=f9e209]:
+                - paragraph [ref=f9e210]: Page-session only · No autonomous actions
+                - paragraph [ref=f9e214]: 0/200
+        - region [ref=f9e215]:
+          - generic [ref=f9e229]:
+            - heading "The AI operating contract" [level=2] [ref=f9e230]
+            - paragraph [ref=f9e231]: Future summaries and drafts must cite CRM facts. Client-facing messages, calendar changes and stage updates require review before execution. Provider receipts and failures remain visible afterward.
+          - list [ref=f9e232]:
+            - listitem [ref=f9e233]:
+              - paragraph [ref=f9e234]: Read first
+              - paragraph [ref=f9e235]: Use only authorized workspace data.
+            - listitem [ref=f9e236]:
+              - paragraph [ref=f9e237]: Ask before acting
+              - paragraph [ref=f9e238]: Draft and preview consequential changes.
+            - listitem [ref=f9e239]:
+              - paragraph [ref=f9e240]: Show the receipt
+              - paragraph [ref=f9e241]: Record provider result and reconciliation.

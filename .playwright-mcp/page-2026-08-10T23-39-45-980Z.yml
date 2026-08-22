@@ -1,0 +1,25 @@
+- generic [active] [ref=f24e1]:
+  - generic [ref=f24e2]:
+    - link "Skip to main content" [ref=f24e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - generic [ref=f24e4]:
+      - banner [ref=f24e5]:
+        - generic [ref=f24e6]:
+          - generic [ref=f24e7]: R
+          - generic [ref=f24e8]:
+            - paragraph [ref=f24e9]: Realtor CRM
+            - paragraph [ref=f24e10]: Contacts
+        - button "Switch to dark theme" [ref=f24e11]
+      - main [ref=f24e14]:
+        - paragraph [ref=f24e19]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - navigation "Primary" [ref=f24e93]:
+        - link "Today" [ref=f24e94] [cursor=pointer]:
+          - /url: /
+        - link "Contacts" [ref=f24e98] [cursor=pointer]:
+          - /url: /contacts
+        - link "Mailers" [ref=f24e104] [cursor=pointer]:
+          - /url: /mailers
+        - link "Connections" [ref=f24e108] [cursor=pointer]:
+          - /url: /connections
+  - button "Open Next.js Dev Tools" [ref=f24e117] [cursor=pointer]
+  - alert [ref=f24e121]

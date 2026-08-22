@@ -1,0 +1,78 @@
+schema: 1
+story: '2.2'
+story_title: 'Premium Public Landing & Reference Parity'
+gate: PASS
+status_reason: >-
+  All nine acceptance criteria are supported by implementation, deterministic
+  tests, production-build evidence and the recorded browser/design QA matrix.
+  The deliverable accurately discloses that production OAuth and the separately
+  inventoried CRM parity gaps are not yet operational.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'sha256:e66ae57adecebec4397d497c4407924084ce3db5797ef3c16a0eb32946bcd8d2'
+updated: '2026-08-11T11:57:39-04:00'
+
+top_issues: []
+waiver:
+  active: false
+
+quality_score: 100
+expires: '2026-08-25T11:57:39-04:00'
+
+evidence:
+  tests_reviewed: 108
+  test_files_reviewed: 17
+  risks_identified: 4
+  quality_gates:
+    lint: PASS
+    typecheck: PASS
+    test: PASS
+    build: PASS
+    browser_qa: PASS_FROM_RECORDED_EVIDENCE
+    coderabbit: SKIPPED_UNAVAILABLE
+  notes:
+    - 'Independent rerun: lint, typecheck, 17 test files / 108 tests, and optimized Next.js build all passed.'
+    - 'The route-policy suite includes 13 allowlist/open-redirect cases, including absolute, protocol-relative, backslash, encoded separator, control-character and unapproved paths.'
+    - 'Recorded browser evidence covers public/internal shell isolation, safe callback failure, eight preserved internal routes, desktop/390 px, light/dark, focus, semantics, overflow, assets and console.'
+    - 'CodeRabbit could not run because the configured WSL environment has no bash executable; project graceful-degradation policy permits manual review.'
+    - 'The clean-room matrix contains 128 unique capability IDs with no duplicate classification: 23 Real, 34 Partial and 71 Absent in Omnix.'
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: >-
+      Google OAuth requests only openid/email/profile; credentials remain with
+      Google/Supabase; redirect destinations are centralized, segment-bounded,
+      allowlisted and covered by malicious-input tests; provider errors are generic.
+  performance:
+    status: PASS
+    notes: >-
+      The current-product proof is an optimized 55 KB WebP with explicit
+      dimensions and responsive sizes; the optimized Next.js build completed.
+  reliability:
+    status: PASS
+    notes: >-
+      Unconfigured OAuth falls back to an explicitly labeled sample workspace,
+      configured auth uses validated server sessions, and callback failures
+      return to a safe public state.
+  maintainability:
+    status: PASS
+    notes: >-
+      Route/public-shell policy is centralized, unit tested and documented;
+      public chrome is isolated without duplicating or replacing internal routes.
+
+recommendations:
+  immediate:
+    - action: 'Before any production-readiness claim, provision Supabase and Google OAuth, register exact redirect URLs, and complete real-account UAT.'
+      refs:
+        - 'packages/crm/docs/google-sign-in.md'
+        - '.ai/dod-2.2.md'
+  future:
+    - action: 'Plan separately approved stories for the operational CRM gaps if full useful-reference parity remains the product objective.'
+      refs:
+        - 'docs/prd/omnix-reference-parity-matrix.md'
+    - action: 'Add a real connector test matrix when Gmail, Calendar, Mailchimp, texting or Meta enters scope.'
+      refs:
+        - 'docs/prd/omnix-reference-parity-matrix.md'

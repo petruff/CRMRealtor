@@ -1,0 +1,34 @@
+
+
+# Environment & Secrets (CYRYX)
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Dependencies (CYRYX)
+node_modules/
+node_modules
+
+# Build & Logs (CYRYX)
+dist/
+build/
+.next*/
+.vercel/
+*.tsbuildinfo
+**/supabase/.temp/
+**/supabase/.branches/
+*.log
+logs/
+
+# IDE & OS (CYRYX)
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# CYRYX Local (CYRYX)
+.aexos-core/local/
+.claude/settings.local.json
+.aexos/install-log.txt

@@ -1,0 +1,139 @@
+- generic [ref=f21e2]:
+  - link "Skip to main content" [ref=f21e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f21e4]:
+    - banner [ref=f21e5]:
+      - generic [ref=f21e6]:
+        - generic [ref=f21e7]: R
+        - generic [ref=f21e8]:
+          - paragraph [ref=f21e9]: Realtor CRM
+          - paragraph [ref=f21e10]: Contacts
+      - button "Switch to dark theme" [ref=f21e11]
+    - main [ref=f21e14]:
+      - generic [ref=f21e15]:
+        - paragraph [ref=f21e19]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f21e20]:
+          - link "Back to contacts" [ref=f21e21] [cursor=pointer]:
+            - /url: /contacts
+          - generic [ref=f21e24]:
+            - paragraph [ref=f21e25]: New contact
+            - heading "Add someone worth remembering." [level=1] [ref=f21e26]
+            - paragraph [ref=f21e27]: Start with the essentials. The CRM will schedule the first follow-up automatically.
+          - generic [ref=f21e28]:
+            - region [ref=f21e29]:
+              - generic [ref=f21e30]:
+                - heading "Essentials" [level=2] [ref=f21e31]
+                - paragraph [ref=f21e32]: Fast enough for an open house. Add more detail when it helps.
+              - generic [ref=f21e33]:
+                - generic [ref=f21e34]:
+                  - generic [ref=f21e35]: First name
+                  - textbox "First name" [ref=f21e36]
+                - generic [ref=f21e37]:
+                  - generic [ref=f21e38]: Last name
+                  - textbox "Last name" [ref=f21e39]
+                - generic [ref=f21e40]:
+                  - generic [ref=f21e41]: Phone
+                  - textbox "Phone" [ref=f21e42]
+                - generic [ref=f21e43]:
+                  - generic [ref=f21e44]: Email
+                  - textbox "Email" [ref=f21e45]
+                - generic [ref=f21e46]:
+                  - generic [ref=f21e47]: Lead type
+                  - combobox "Lead type" [ref=f21e48]:
+                    - option "Hot"
+                    - option "Warm" [selected]
+                    - option "Nurture"
+            - group [ref=f21e49]:
+              - generic "CRM details −" [ref=f21e50] [cursor=pointer]
+              - generic [ref=f21e51]:
+                - generic [ref=f21e52]:
+                  - generic [ref=f21e53]: Preferred name
+                  - textbox "Preferred name" [ref=f21e54]
+                - generic [ref=f21e55]:
+                  - generic [ref=f21e56]: Secondary phone
+                  - textbox "Secondary phone" [ref=f21e57]
+                - generic [ref=f21e58]:
+                  - generic [ref=f21e59]: Relationship
+                  - combobox "Relationship" [ref=f21e60]:
+                    - option "Lead" [selected]
+                    - option "Active client"
+                    - option "Past client"
+                    - option "Sphere"
+                - generic [ref=f21e61]:
+                  - generic [ref=f21e62]: Intent
+                  - combobox "Intent" [ref=f21e63]:
+                    - option "Buyer"
+                    - option "Seller"
+                    - option "Buyer & seller"
+                    - option "Investor"
+                    - option "Renter"
+                    - option "Not sure yet" [selected]
+                - generic [ref=f21e64]:
+                  - generic [ref=f21e65]: Source
+                  - combobox "Source" [ref=f21e66]:
+                    - option "Cold call"
+                    - option "Open house"
+                    - option "Referral"
+                    - option "Social media"
+                    - option "Website"
+                    - option "Mailer"
+                    - option "Other" [selected]
+                - generic [ref=f21e67]:
+                  - generic [ref=f21e68]: Pipeline stage
+                  - combobox "Pipeline stage" [ref=f21e69]:
+                    - option "New" [selected]
+                    - option "Contacted"
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+                - generic [ref=f21e70]:
+                  - generic [ref=f21e71]: Referred by
+                  - combobox "Referred by" [ref=f21e72]:
+                    - option "No referrer recorded" [selected]
+                    - option "Alicia Monroe"
+                    - option "Daniel Okafor"
+                    - option "Marisol Reyes"
+                    - option "Greg Whitfield"
+                    - option "Nadine Baptiste"
+                    - option "Ruth Hollings"
+                    - option "Luca Ferraro"
+                    - option "Joyce Abernathy"
+                    - option "Kenji Nakamura"
+                    - option "Simone Delacroix"
+                    - option "Marcus Pryor"
+                - generic [ref=f21e73]:
+                  - generic [ref=f21e74]: Tags
+                  - textbox "Tags Separate tags with commas." [ref=f21e75]:
+                    - /placeholder: VIP, first-time buyer
+                  - generic [ref=f21e76]: Separate tags with commas.
+                - generic [ref=f21e77]:
+                  - checkbox "Subscribed to email Keep this off for anyone who has opted out." [checked] [ref=f21e78]
+                  - generic [ref=f21e79]:
+                    - generic [ref=f21e80]: Subscribed to email
+                    - generic [ref=f21e81]: Keep this off for anyone who has opted out.
+            - group [ref=f21e82]:
+              - generic "Follow-up and important dates +" [ref=f21e83] [cursor=pointer]
+            - group [ref=f21e84]:
+              - generic "Address +" [ref=f21e85] [cursor=pointer]
+            - group [ref=f21e86]:
+              - generic "Buyer criteria +" [ref=f21e87] [cursor=pointer]
+              - option "Not recorded" [selected]
+              - option "Yes"
+              - option "Not yet"
+            - group [ref=f21e88]:
+              - generic "Seller criteria +" [ref=f21e89] [cursor=pointer]
+            - generic [ref=f21e90]:
+              - link "Cancel" [ref=f21e91] [cursor=pointer]:
+                - /url: /contacts
+              - button "Create contact" [ref=f21e92]
+    - navigation "Primary" [ref=f21e93]:
+      - link "Today" [ref=f21e94] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f21e98] [cursor=pointer]:
+        - /url: /contacts
+      - link "Mailers" [ref=f21e104] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f21e108] [cursor=pointer]:
+        - /url: /connections

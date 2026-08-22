@@ -1,0 +1,64 @@
+schema: 1
+story: '3.11'
+story_title: 'Today Queue Explorer'
+gate: PASS
+status_reason: 'The prior mounted-interaction finding is resolved: jsdom Testing Library tests now drive the real client component through populated batching, filters, invalid search, recovery, focus, tab relationships and live updates. Moments and stable-tabpanel fixes remain correct, test tooling is dev-only, and all focused and repository gates pass.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:1eb196ec19caa384b9689620e61a09c59f31064d62b5bd39dbb1c615753e3c12'
+updated: '2026-08-13T18:20:09Z'
+
+top_issues: []
+
+waiver:
+  active: false
+
+quality_score: 100
+expires: '2026-08-27T18:20:09Z'
+
+evidence:
+  tests_reviewed: 637
+  risks_identified: 0
+  automated_gates:
+    focused: 'PASS - 3 files, 24 tests, including 5 jsdom-mounted user-event tests'
+    lint: PASS
+    typecheck: PASS
+    test: 'PASS - 140 files, 637 tests'
+    build: 'PASS - 18 static pages generated'
+    coderabbit: 'NOT_RUN - checkout has no Git metadata; no committed/base comparison is available'
+  dependency_scope:
+    result: PASS
+    notes: '@testing-library/jest-dom, @testing-library/react, @testing-library/user-event and jsdom are devDependencies; their lockfile roots are marked dev and production dependencies are unchanged.'
+  browser:
+    result: NOT_RUN
+    reason: 'No authenticated populated local runtime was available for a new browser pass. The populated jsdom fixtures are automated component evidence and are not represented as browser evidence.'
+  trace:
+    story_ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    story_ac_gaps: []
+    prior_findings_fixed: ['REQ-3.11-MOMENTS-001', 'REQ-3.11-A11Y-001', 'TEST-3.11-INTERACTION-002']
+    prior_findings_open: []
+    mounted_interaction_evidence:
+      - '37 entries render 12, 24, 36 and 37 through real Show next clicks; terminal status receives focus and the live status reports 37 of 37.'
+      - '109 entries are all reached through stable 12-entry increments; real lead, scope and Moments-context controls are activated and the shared lead filter persists across scope change.'
+      - 'An invalid 201-character submit preserves the last valid rendered cards while exposing aria-invalid and a role=alert error.'
+      - 'A populated no-results state is recovered through the rendered Clear search button and the polite status updates from 0 to 25 results.'
+      - 'Keyboard activation changes scope while all three aria-controls values resolve to the one mounted stable tabpanel.'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'The queue remains read-only presentation state; no schema, provider, persistence or completion mutation was introduced.'
+  performance:
+    status: PASS
+    notes: 'One stable active panel is mounted, initial rendering is bounded to 12 cards, and the 109-entry mounted fixture reaches all entries without a terminal cap.'
+  reliability:
+    status: PASS
+    notes: 'Mounted client tests now cover the prior high-risk batching, invalid-query, no-results recovery, terminal focus/status, filter persistence and live-region paths.'
+  maintainability:
+    status: PASS
+    notes: 'Moments membership uses structured facts and score windows; queryContacts supplies membership only; dedicated jsdom coverage is isolated through a per-file environment directive and test-only dependencies.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Repeat the populated 390 px card/action matrix and light/dark contrast checks when an authenticated seeded browser runtime is available.'
+      refs: ['docs/ux/today-scalable-relationship-queue-spec.md']

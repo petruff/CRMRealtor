@@ -1,0 +1,66 @@
+schema: 1
+story: '1.5'
+story_title: 'Contact Retrieval & Mailing Readiness'
+gate: PASS
+status_reason: 'All AC1-AC9 pass after QA fixed stored-data length coupling and malformed CLI option parsing. Search, mailing integrity, responsive runtime and regressions are covered.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'sha256:f20b382b60249304e2b2843275db48a00f58e57ba22282044d3781c846b0eb34'
+updated: '2026-08-11T13:15:00Z'
+quality_score: 97
+
+top_issues: []
+
+waiver:
+  active: false
+
+evidence:
+  tests_reviewed: 92
+  tests_passed: 92
+  quality_gates:
+    lint: PASS
+    typecheck: PASS
+    test: PASS
+    build: PASS
+    contacts_cli_success: PASS
+    contacts_cli_malformed_refusal: PASS
+    contacts_cli_live_fail_closed: PASS
+    mailer_cli_smoke: PASS
+    responsive_runtime: PASS
+    accessibility_runtime: PASS
+  runtime_flow: 'search -> reload -> no match; complete address -> mark sent -> reload'
+  viewport:
+    mobile_width: 390
+    mobile_scroll_width: 375
+    default_width: 911
+    default_scroll_width: 896
+  themes: [light, dark]
+  console_errors: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: []
+
+risk_summary:
+  highest_score: 4
+  highest_risk: 'Live database, OAuth, deployment and real-data UAT remain external launch evidence.'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Bounded queries, strict CLI parsing, fail-closed live mode and command-time contact re-read prevent malformed requests and stale-UI false success.'
+  reliability:
+    status: PASS
+    notes: 'Shared address eligibility, historical-send preservation, idempotent repository behavior and reload evidence cover the main integrity risks.'
+  accessibility:
+    status: PASS
+    notes: 'Semantic GET search, programmatic labels, contact-specific 44px actions, native checkbox semantics, focus rules and mobile containment pass.'
+  maintainability:
+    status: PASS
+    notes: 'Query and mailing policy remain outside React behind typed, tested domain/application modules.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Automate the browser search and mailing-readiness journeys in CI with axe coverage.'
+      refs: ['packages/crm/app/contacts/page.tsx', 'packages/crm/components/mailer-workspace.tsx']
+    - action: 'Repeat repository, RLS and runtime checks against the provisioned Supabase project before production release.'
+      refs: ['docs/prd/realtor-requirements-coverage.md']

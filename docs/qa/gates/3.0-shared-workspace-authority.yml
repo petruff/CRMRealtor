@@ -1,0 +1,148 @@
+schema: 1
+story: '3.0'
+story_title: 'Shared Workspace Authority'
+gate: CONCERNS
+status_reason: >-
+  Canonical workspace authority, migration/RLS isolation, intake binding, CLI/API
+  health, regression tests and the production build pass with no high-severity
+  defect. Hosted separate-account browser UAT is unavailable and remains a
+  non-blocking evidence limitation because real-account UAT and production claims
+  are explicitly outside this story's completion boundary.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:748a8fe6b92e2aec52809d2fa7aad3c305f57d5576c1843779b54b96cb032b7c'
+updated: '2026-08-11T13:00:43-04:00'
+quality_score: 90
+
+top_issues:
+  - id: 'TEST-3.0-001'
+    severity: medium
+    finding: >-
+      Hosted Google/Supabase browser UAT with separate owner, assistant, revoked
+      assistant and second-tenant sessions is not available; therefore hosted
+      identity configuration and browser-level cross-workspace isolation are not
+      certified by this gate.
+    suggested_action: >-
+      Run and retain separate-account browser UAT against a migrated hosted
+      Supabase project before any real-account UAT or production-readiness claim.
+    suggested_owner: devops
+
+waiver:
+  active: false
+
+review_scope:
+  source_manifest_files: 44
+  source_manifest_rule: >-
+    SHA-256 over the sorted Story 3.0 File List file hashes, excluding the mutable
+    story file and QA gate artifacts.
+  code_reviewed:
+    - 'packages/crm/supabase/migrations/0004_shared_workspace_authority.sql'
+    - 'packages/crm/supabase/tests/0004_shared_workspace_authority_test.sql'
+    - 'packages/crm/lib/domain/workspace.ts'
+    - 'packages/crm/lib/data/index.ts'
+    - 'packages/crm/lib/data/supabase-workspace-scope.ts'
+    - 'packages/crm/lib/data/supabase-workspace-repository.ts'
+    - 'packages/crm/lib/data/automation-context.ts'
+    - 'packages/crm/lib/data/supabase-repository.ts'
+    - 'packages/crm/lib/data/supabase-mailer-repository.ts'
+    - 'packages/crm/lib/data/supabase-import-gateway.ts'
+    - 'packages/crm/app/api/intake/contacts/route.ts'
+    - 'packages/crm/app/api/workspace/health/route.ts'
+    - 'packages/crm/scripts/manage-workspace.ts'
+
+evidence:
+  qa_reexecuted:
+    sql_tap:
+      status: PASS
+      command: 'supabase test db supabase/tests/0004_shared_workspace_authority_test.sql --local'
+      tests: '11/11'
+      persistence: 'ROLLBACK'
+    lint:
+      status: PASS
+      command: 'npm run lint'
+    typecheck:
+      status: PASS
+      command: 'npm run typecheck'
+    application_tests:
+      status: PASS
+      command: 'npm test'
+      test_files: 27
+      tests: 157
+    optimized_build:
+      status: PASS
+      command: 'npm run build'
+    focused_contracts_in_full_suite:
+      authenticated_live_cli: 'PASS (10/10)'
+      workspace_health_api: 'PASS (3/3, including sample/signed-out 401)'
+      remediated_health_probes: 'PASS (all six tables; mailer_sends uses mailer_id)'
+  recorded_handoff_evidence:
+    isolated_local_supabase_reset: 'PASS (migrations 0001 through 0004; not rerun by QA)'
+    architecture_gate: 'GO'
+    architecture_gate_path: 'docs/qa/gates/3.0-shared-workspace-authority-architecture.yml'
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8]
+    ac_partial: [9]
+    ac_gaps: [9]
+    details:
+      '1': 'Migration/domain tests enforce owner/assistant roles, active-state and exactly-one-owner invariants.'
+      '2': 'Forward-only migration backfills all six tenant tables with count, null and relationship assertions.'
+      '3': 'RepositoryContext requires WorkspaceScope; live/sample adapters validate mode and canonical scope.'
+      '4': 'Membership-derived RLS and composite workspace foreign keys enforce database isolation.'
+      '5': 'SQL TAP 11/11 plus repository negatives cover two tenants, assistants, revocation, spoofing and cross-links.'
+      '6': 'Server-only intake binding and alias mismatch/ambiguity/no-write cases are covered by automated tests.'
+      '7': 'CLI bootstrap/show/list/add/revoke/health contracts, exit codes, live token rules and redaction pass.'
+      '8': 'Owner-only health API, append-only audit facts and safe signed-out/assistant failures pass.'
+      '9': >-
+        Compatibility tests, lint, typecheck, full tests and build pass. Hosted
+        separate-account browser UAT is not available and is not claimed.
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: >-
+      Reviewed local scope has membership-derived RLS, composite tenant keys,
+      fail-closed scope resolution, owner-only authority RPCs, server-only intake
+      binding and rejection of privileged CLI keys. Hosted identity/browser
+      configuration remains uncertified.
+  performance:
+    status: PASS
+    notes: >-
+      Workspace-scoped indexes cover reviewed access paths and the optimized build
+      completes successfully; no unbounded tenant query was found.
+  reliability:
+    status: PASS
+    notes: >-
+      Backfill assertions, revoked/ambiguous membership failures, ROLLBACK SQL
+      fixtures and health degradation behavior are verified.
+  maintainability:
+    status: PASS
+    notes: >-
+      Required WorkspaceScope closes over tenant authority consistently across
+      domain, repositories, intake, CLI and API boundaries with focused tests.
+
+evidence_limitations:
+  - id: 'HOSTED-SEPARATE-ACCOUNT-UAT'
+    status: NOT_AVAILABLE
+    gate_effect: 'CONCERNS; does not block Story 3.1 persistence work.'
+    does_not_prove:
+      - 'hosted Google OAuth and Supabase session configuration'
+      - 'browser-level owner/assistant/revocation behavior with separate accounts'
+      - 'hosted cross-workspace isolation'
+      - 'production deployment or readiness'
+  - id: 'CODERABBIT-CLI'
+    status: NOT_AVAILABLE
+    gate_effect: 'Graceful degradation per core config; manual deep review and executable gates used.'
+    notes: 'The workspace has no Git metadata and the configured WSL bash runtime is unavailable.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Complete hosted separate-account browser UAT before production or real-account UAT claims.'
+      refs:
+        - 'docs/stories/3.0.shared-workspace-authority.story.md#acceptance-criteria'
+
+lifecycle:
+  transition: 'InReview -> Done'
+  story_3_1_dependency_unblocked: true
+  qualification: >-
+    Unblocked for implementation against the canonical local persistence
+    boundary; this is not a hosted-UAT, deployment or production-readiness claim.

@@ -1,0 +1,122 @@
+- generic [ref=f13e2]:
+  - link "Skip to main content" [ref=f13e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f13e4]:
+    - banner [ref=f13e5]:
+      - generic [ref=f13e6]:
+        - img "Omnix" [ref=f13e7]
+        - generic [ref=f13e8]:
+          - paragraph [ref=f13e9]: Omnix
+          - paragraph [ref=f13e10]: Activities
+      - generic [ref=f13e11]:
+        - button "Open global search and commands" [ref=f13e12]
+        - link "Open alerts" [ref=f13e16] [cursor=pointer]:
+          - /url: /alerts
+        - link "Open settings" [ref=f13e22] [cursor=pointer]:
+          - /url: /settings
+        - link "Open Omnix workspaces" [ref=f13e26] [cursor=pointer]:
+          - /url: /workspace
+        - button "Sign out" [ref=f13e30]
+        - button "Switch to dark theme" [ref=f13e34]
+    - main [ref=f13e37]:
+      - generic [ref=f13e38]:
+        - paragraph [ref=f13e42]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f13e43]:
+          - generic [ref=f13e44]:
+            - paragraph [ref=f13e45]: Work queue
+            - heading "Make the next step obvious." [level=1] [ref=f13e46]
+            - paragraph [ref=f13e47]: Open tasks sort overdue first. Activity is evidence, not a provider communication log.
+          - search [ref=f13e48]:
+            - generic [ref=f13e49]:
+              - generic [ref=f13e50]: Search tasks
+              - textbox "Search tasks" [ref=f13e51]:
+                - /placeholder: Search task text
+            - combobox [ref=f13e52]:
+              - option "Open" [selected]
+              - option "Completed"
+              - option "Archived"
+              - option "All tasks"
+            - generic [ref=f13e53]:
+              - generic [ref=f13e54]: Filter by contact
+              - combobox "Filter by contact" [ref=f13e55]:
+                - option "All contacts" [selected]
+                - option "Alicia Monroe"
+                - option "Daniel Okafor"
+                - option "Marisol Reyes"
+                - option "Gregory Whitfield"
+                - option "Nadine Baptiste"
+                - option "Ruth Hollings"
+                - option "Luca Ferraro"
+                - option "Joyce Abernathy"
+                - option "Kenji Nakamura"
+                - option "Simone Delacroix"
+                - option "Marcus Pryor"
+            - generic [ref=f13e56]:
+              - generic [ref=f13e57]: Due on or after
+              - textbox "Due on or after" [ref=f13e58]
+            - generic [ref=f13e59]:
+              - generic [ref=f13e60]: Due on or before
+              - textbox "Due on or before" [ref=f13e61]
+            - button "Refresh queue" [ref=f13e62]
+          - generic [ref=f13e65]:
+            - generic [ref=f13e66]:
+              - heading "Tasks" [level=2] [ref=f13e68]
+              - generic [ref=f13e69]:
+                - table [ref=f13e71]:
+                  - caption [ref=f13e72]: Tasks in the selected work queue
+                  - rowgroup [ref=f13e73]:
+                    - row [ref=f13e74]:
+                      - columnheader [ref=f13e75]:
+                        - checkbox "Select all visible tasks" [ref=f13e76]
+                      - columnheader "Task" [ref=f13e77]
+                      - columnheader "Due" [ref=f13e78]
+                      - columnheader "State" [ref=f13e79]
+                      - columnheader "Actions" [ref=f13e80]
+                  - rowgroup
+                - paragraph [ref=f13e85]: No tasks match this queue. Add a follow-up when the next step is clear.
+                - generic [ref=f13e86]:
+                  - button "Complete selected" [disabled] [ref=f13e87]
+                  - button "Archive selected" [disabled] [ref=f13e90]
+            - complementary [ref=f13e94]:
+              - heading "Add follow-up" [level=2] [ref=f13e95]
+              - generic [ref=f13e96]:
+                - generic [ref=f13e97]:
+                  - generic [ref=f13e98]: Task
+                  - textbox "Task" [ref=f13e99]:
+                    - /placeholder: Send listing options
+                - generic [ref=f13e100]:
+                  - generic [ref=f13e101]: Due
+                  - textbox "Due" [ref=f13e102]
+                - generic [ref=f13e103]:
+                  - generic [ref=f13e104]: Contact (optional)
+                  - combobox "Contact (optional)" [ref=f13e105]:
+                    - option "Not linked to a contact" [selected]
+                    - option "Alicia Monroe"
+                    - option "Daniel Okafor"
+                    - option "Marisol Reyes"
+                    - option "Gregory Whitfield"
+                    - option "Nadine Baptiste"
+                    - option "Ruth Hollings"
+                    - option "Luca Ferraro"
+                    - option "Joyce Abernathy"
+                    - option "Kenji Nakamura"
+                    - option "Simone Delacroix"
+                    - option "Marcus Pryor"
+                - generic [ref=f13e106]:
+                  - generic [ref=f13e107]: Context (optional)
+                  - textbox "Context (optional)" [ref=f13e108]
+                - button "Add task" [ref=f13e109]
+        - paragraph [ref=f13e112]: Powered by Cyryx Labs
+    - navigation "Primary" [ref=f13e113]:
+      - link "Today" [ref=f13e114] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f13e118] [cursor=pointer]:
+        - /url: /contacts
+      - link "Activities" [ref=f13e124] [cursor=pointer]:
+        - /url: /activities
+      - link "Mailers" [ref=f13e128] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f13e132] [cursor=pointer]:
+        - /url: /connections
+  - button "Open Omnix assistant" [ref=f13e135]:
+    - generic [ref=f13e137]: Ask Omnix

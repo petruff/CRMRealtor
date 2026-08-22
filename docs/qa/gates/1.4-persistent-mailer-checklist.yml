@@ -1,0 +1,121 @@
+schema: 1
+story: '1.4'
+story_title: 'Persistent Mailer Checklist'
+gate: PASS
+status_reason: 'All AC1-AC10 are met at the reviewed revision. Application, CLI, responsive runtime, and an ephemeral PostgreSQL migration/security exercise all passed without a blocking finding.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'sha256:a2d3e72ceb3064398f6f9e5a5716cc29558cc3f2e2695d11ab8b3f831fe0e950'
+updated: '2026-08-11T02:44:00Z'
+quality_score: 96
+
+top_issues: []
+
+waiver:
+  active: false
+
+evidence:
+  tests_reviewed: 85
+  tests_passed: 85
+  quality_gates:
+    lint: PASS
+    typecheck: PASS
+    test: PASS
+    build: PASS
+    cli_demo_smoke: PASS
+    cli_malformed_refusal: PASS
+    cli_live_fail_closed: PASS
+    postgres_migration_apply: PASS
+    postgres_cross_owner_rejection: PASS
+    responsive_runtime: PASS
+  cli_commands_reviewed:
+    - list
+    - create
+    - mark
+    - unmark
+  runtime_flow: 'create campaign -> mark sent -> reload -> verify date -> unmark'
+  viewport:
+    width: 390
+    inner_width: 390
+    document_scroll_width: 390
+  theme_toggle: PASS
+  console_errors: 0
+  migration_validation:
+    engine: 'PostgreSQL 17 ephemeral container'
+    sequence: '0001 -> 0002 -> seeded historical send -> 0003'
+    historical_sent_on_preserved: '2026-08-09'
+    owner_backfill_preserved: true
+    composite_foreign_keys_present: true
+    primary_key_preserved: true
+    owner_policy_present: true
+    cross_owner_insert_rejected: true
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ac_gaps: []
+
+requirements_trace:
+  - ac: 1
+    given_when_then: 'Given valid server input, when the Realtor creates a named physical-mail campaign, then the repository persists its trimmed name and optional notes and the UI stays explicitly postcard/letter-oriented.'
+    evidence: ['mailer command validation tests', 'create action', '390px production runtime']
+  - ac: 2
+    given_when_then: 'Given a selected campaign, when a contact toggle is submitted, then its contact-specific checkbox exposes pending state and reports success or error without optimistic false success.'
+    evidence: ['MailerSendToggle source review', 'production runtime mark/unmark flow']
+  - ac: 3
+    given_when_then: 'Given repeated mark or unmark requests, when commands execute, then marking preserves the first calendar date and clearing remains idempotent.'
+    evidence: ['mailer-commands.test.ts', 'memory and Supabase repository review']
+  - ac: 4
+    given_when_then: 'Given multiple campaigns and contacts, when navigation or reload occurs, then sends and summary counts are reconstructed from repository state without losing another campaign history.'
+    evidence: ['summarizeMailer test', 'memory HMR persistence test', 'production runtime reload']
+  - ac: 5
+    given_when_then: 'Given malformed or cross-owner input, when a command reaches the data boundary, then validation, owner-scoped target checks, and composite FKs reject it without reporting success.'
+    evidence: ['command rejection tests', 'Supabase owner-filter test', 'PostgreSQL cross-owner rejection']
+  - ac: 6
+    given_when_then: 'Given demo or authenticated live mode, when mailer operations run, then the same repository contract supplies observable list/create/mark/unmark behavior and every live operation binds the fixed owner.'
+    evidence: ['repository implementations', 'HMR test', 'owner-scope harness']
+  - ac: 7
+    given_when_then: 'Given the 0001/0002 schema and an existing valid send, when migration 0003 applies, then owner scope and same-owner FKs are added while the original send date and uniqueness remain intact.'
+    evidence: ['PostgreSQL 17 migration exercise', 'migration source review']
+  - ac: 8
+    given_when_then: 'Given no browser runtime, when explicit CLI commands execute, then shared application/repository code returns JSON and malformed or unconfigured live operations exit non-zero.'
+    evidence: ['independent CLI list/create/mark/unmark smoke', 'malformed and live fail-closed smoke']
+  - ac: 9
+    given_when_then: 'Given a 390px viewport and light/dark themes, when the campaign workflow runs, then system typography, tokenized surfaces, 44px controls, focus/reduced-motion rules, and horizontal containment remain usable.'
+    evidence: ['source review', '390px Playwright flow', 'dark-theme toggle', 'zero console errors']
+  - ac: 10
+    given_when_then: 'Given the complete CRM package, when regression gates execute, then lint, typecheck, 85 tests, CLI smoke, production build, migration checks, and responsive runtime all pass.'
+    evidence: ['independent QA execution on 2026-08-10']
+
+risk_summary:
+  highest_score: 4
+  highest_risk: 'Live Supabase and migration regressions are not yet automated in CI'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Server-side validation, explicit owner filters/payloads, same-owner target checks, composite database FKs, owner-bound RLS, and sanitized browser failures prevent cross-owner linkage and false success.'
+  performance:
+    status: PASS
+    notes: 'The bounded 200-500 contact workflow uses no new dependency or background service; the optimized /mailers route is 111 kB first-load with 103 kB shared.'
+  reliability:
+    status: PASS
+    notes: 'First-date-preserving idempotency, explicit failure propagation, demo HMR persistence, successful reload behavior, and a real PostgreSQL migration exercise cover the principal persistence risks.'
+  accessibility:
+    status: PASS
+    notes: 'Contact-specific checkbox names, 44px targets, keyboard-native buttons, visible global focus, reduced-motion rules, live status/error semantics, responsive containment, and both themes are present.'
+  maintainability:
+    status: PASS
+    notes: 'Domain, application, repository, server-action, CLI, migration, and presentation responsibilities remain separated behind typed boundaries and documented operator behavior.'
+  privacy:
+    status: PASS
+    notes: 'Actions log operation/error type only; browser errors do not expose provider detail, campaign notes, form payloads, contact PII, or credentials.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Automate 0001 -> 0002 -> 0003 migration and cross-owner constraint checks in CI, including a deliberate legacy-inconsistency preflight case.'
+      refs: ['packages/crm/supabase/migrations/0003_mailer_owner_scope.sql']
+    - action: 'Add automated Playwright plus axe coverage for create, mark, reload, unmark, error recovery, 390px, desktop, and both themes.'
+      refs: ['packages/crm/components/mailer-workspace.tsx', 'packages/crm/app/mailer-actions.ts']
+    - action: 'Run the repository contract against an authenticated Supabase project before production release; remote migration/deployment is not part of this local gate.'
+      refs: ['packages/crm/lib/data/supabase-mailer-repository.ts']
+    - action: 'Restore CodeRabbit by installing or correcting the configured Ubuntu WSL distribution.'
+      refs: ['.aexos-core/core-config.yaml']

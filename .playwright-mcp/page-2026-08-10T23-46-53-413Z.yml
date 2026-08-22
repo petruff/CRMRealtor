@@ -1,0 +1,142 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - complementary [ref=e276]:
+      - generic [ref=e277]:
+        - generic [ref=e278]: R
+        - generic [ref=e279]:
+          - paragraph [ref=e280]: Realtor CRM
+          - paragraph [ref=e281]: Your day, in order
+      - navigation "Primary" [ref=e282]:
+        - link "Today" [ref=e283] [cursor=pointer]:
+          - /url: /
+        - link "Contacts" [ref=e287] [cursor=pointer]:
+          - /url: /contacts
+        - link "Mailers" [ref=e293] [cursor=pointer]:
+          - /url: /mailers
+        - link "Connections" [ref=e297] [cursor=pointer]:
+          - /url: /connections
+      - generic [ref=e300]:
+        - generic [ref=e301]: Phase 1
+        - button "Switch to light theme" [active] [ref=e378]
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - paragraph [ref=e19]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=e305]:
+          - link "Back to Taylor Production" [ref=e306] [cursor=pointer]:
+            - /url: /contacts/c-eswminoq
+          - generic [ref=e309]:
+            - paragraph [ref=e310]: Edit contact
+            - heading "Keep the record useful." [level=1] [ref=e311]
+            - paragraph [ref=e312]: Update what changed. Identity and activity history stay intact.
+          - generic [ref=e313]:
+            - region [ref=e314]:
+              - generic [ref=e315]:
+                - heading "Essentials" [level=2] [ref=e316]
+                - paragraph [ref=e317]: Fast enough for an open house. Add more detail when it helps.
+              - generic [ref=e318]:
+                - generic [ref=e319]:
+                  - generic [ref=e320]: First name
+                  - textbox "First name" [ref=e321]: Taylor
+                - generic [ref=e322]:
+                  - generic [ref=e323]: Last name
+                  - textbox "Last name" [ref=e324]: Production
+                - generic [ref=e325]:
+                  - generic [ref=e326]: Phone
+                  - textbox "Phone" [ref=e327]
+                - generic [ref=e328]:
+                  - generic [ref=e329]: Email
+                  - textbox "Email" [ref=e330]
+                - generic [ref=e331]:
+                  - generic [ref=e332]: Lead type
+                  - combobox "Lead type" [ref=e333]:
+                    - option "Hot"
+                    - option "Warm" [selected]
+                    - option "Nurture"
+            - group [ref=e334]:
+              - generic "CRM details −" [ref=e335] [cursor=pointer]
+              - generic [ref=e336]:
+                - generic [ref=e337]:
+                  - generic [ref=e338]: Preferred name
+                  - textbox "Preferred name" [ref=e339]
+                - generic [ref=e340]:
+                  - generic [ref=e341]: Secondary phone
+                  - textbox "Secondary phone" [ref=e342]
+                - generic [ref=e343]:
+                  - generic [ref=e344]: Relationship
+                  - combobox "Relationship" [ref=e345]:
+                    - option "Lead" [selected]
+                    - option "Active client"
+                    - option "Past client"
+                    - option "Sphere"
+                - generic [ref=e346]:
+                  - generic [ref=e347]: Intent
+                  - combobox "Intent" [ref=e348]:
+                    - option "Buyer"
+                    - option "Seller"
+                    - option "Buyer & seller"
+                    - option "Investor"
+                    - option "Renter"
+                    - option "Not sure yet" [selected]
+                - generic [ref=e349]:
+                  - generic [ref=e350]: Source
+                  - combobox "Source" [ref=e351]:
+                    - option "Cold call"
+                    - option "Open house"
+                    - option "Referral"
+                    - option "Social media"
+                    - option "Website"
+                    - option "Mailer"
+                    - option "Other" [selected]
+                - generic [ref=e352]:
+                  - generic [ref=e353]: Pipeline stage
+                  - combobox "Pipeline stage" [ref=e354]:
+                    - option "New"
+                    - option "Contacted" [selected]
+                    - option "Appointment set"
+                    - option "Actively working"
+                    - option "Under contract"
+                    - option "Closed"
+                    - option "Lost"
+                - generic [ref=e355]:
+                  - generic [ref=e356]: Referred by
+                  - combobox "Referred by" [ref=e357]:
+                    - option "No referrer recorded" [selected]
+                    - option "Alicia Monroe"
+                    - option "Daniel Okafor"
+                    - option "Marisol Reyes"
+                    - option "Greg Whitfield"
+                    - option "Nadine Baptiste"
+                    - option "Ruth Hollings"
+                    - option "Luca Ferraro"
+                    - option "Joyce Abernathy"
+                    - option "Kenji Nakamura"
+                    - option "Simone Delacroix"
+                    - option "Marcus Pryor"
+                - generic [ref=e358]:
+                  - generic [ref=e359]: Tags
+                  - textbox "Tags Separate tags with commas." [ref=e360]:
+                    - /placeholder: VIP, first-time buyer
+                  - generic [ref=e361]: Separate tags with commas.
+                - generic [ref=e362]:
+                  - checkbox "Subscribed to email Keep this off for anyone who has opted out." [checked] [ref=e363]
+                  - generic [ref=e364]:
+                    - generic [ref=e365]: Subscribed to email
+                    - generic [ref=e366]: Keep this off for anyone who has opted out.
+            - group [ref=e367]:
+              - generic "Follow-up and important dates +" [ref=e368] [cursor=pointer]
+            - group [ref=e369]:
+              - generic "Address +" [ref=e370] [cursor=pointer]
+            - group [ref=e371]:
+              - generic "Buyer criteria +" [ref=e372] [cursor=pointer]
+              - option "Not recorded" [selected]
+              - option "Yes"
+              - option "Not yet"
+            - group [ref=e373]:
+              - generic "Seller criteria +" [ref=e374] [cursor=pointer]
+            - generic [ref=e375]:
+              - link "Cancel" [ref=e376] [cursor=pointer]:
+                - /url: /contacts/c-eswminoq
+              - button "Save changes" [ref=e377]
+  - alert [ref=e111]

@@ -1,0 +1,75 @@
+schema: 1
+story: '1.3'
+story_title: 'Universal Contact Import & Automatic Intake'
+gate: PASS
+status_reason: 'All AC1-AC10 are met at the reviewed revision. The prior identity, merge, compensation, partial-result, HTTP-test, transport-limit, CLI, and product-copy findings are resolved with passing quality gates.'
+reviewer: 'Vega (Architect)'
+reviewed_revision: 'working-tree-sha256:566fe648a8dec8652d8e6dd22841cb9f097bdc92656cebdf3a4cdcfaf3ebe6a5'
+updated: '2026-08-11T01:46:44Z'
+quality_score: 96
+top_issues: []
+waiver:
+  active: false
+
+evidence:
+  tests_reviewed: 77
+  tests_passed: 77
+  quality_gates:
+    lint: PASS
+    typecheck: PASS
+    test: PASS
+    build: PASS
+    cli_preview: PASS
+    cli_invalid_file_refusal: PASS
+    cli_missing_credentials_refusal: PASS
+    cli_http_207_exit: PASS
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ac_gaps: []
+
+resolved_findings:
+  - id: 'SEC-001'
+    evidence: 'Automatic intake rejects missing externalId and parser rejects IDs above 255 characters before preview/reservation; route-level 422 tests pass.'
+  - id: 'REL-001'
+    evidence: 'Plans are aggregated by existing contact and a focused test proves deterministic first-value preservation plus later empty-field enrichment.'
+  - id: 'REL-002'
+    evidence: 'A failed create-to-link sequence removes the newly created contact; cleanup failure is explicit and cannot be reported as clean success.'
+  - id: 'REQ-001'
+    evidence: 'Rejected rows enter result.errors and the UI renders warning semantics, partial wording, counts, and row-level reasons.'
+  - id: 'TEST-001'
+    evidence: 'Seven route tests cover 503, 401, 413, external-ID validation, success, exact/conflicting/in-progress replay, provider failure, malformed JSON, and batch bounds.'
+  - id: 'REQ-002'
+    evidence: 'Next Server Actions use a 3 MB transport limit while the parser retains the authoritative 2 MB file limit; production build accepts the configuration.'
+  - id: 'CLI-001'
+    evidence: 'CLI refuses rejected files, supplies deterministic file-row external IDs, and exits non-zero for HTTP 207 or ok:false.'
+  - id: 'DOC-001'
+    evidence: 'Connections and operator docs describe Mailchimp CSV import as current and direct synchronization as future work.'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Constant-time bearer validation, fail-closed configuration, fixed owner binding, streaming bounds, mandatory external identity, RLS, composite ownership FKs, and explicit privileged owner filters are present.'
+  reliability:
+    status: PASS
+    notes: 'Deterministic same-target collapse, receipt claiming/replay, note idempotency, partial receipts, and verified create-link compensation protect retry behavior.'
+  performance:
+    status: PASS
+    notes: 'Bounded synchronous processing is proportionate to the approved 200-500 contact dataset and 1,000-row maximum.'
+  privacy:
+    status: PASS
+    notes: 'Raw contact payloads are not logged or persisted in receipts, and browser PII remains transient rather than entering URLs or storage.'
+  accessibility:
+    status: PASS
+    notes: 'Keyboard controls, visible focus, 44px actions, responsive table containment, live result messaging, reduced motion, and light/dark themes are retained.'
+  maintainability:
+    status: PASS
+    notes: 'Parser, planner/executor, repository gateway, route, CLI, and React presentation remain separated behind typed boundaries.'
+
+recommendations:
+  future:
+    - action: 'Detect and require operator review when multiple existing contacts share the same normalized email or phone.'
+      refs: ['packages/crm/lib/application/contact-import-service.ts']
+    - action: 'Add operational retention for old intake receipts after production volume is known.'
+      refs: ['packages/crm/supabase/migrations/0002_contact_import_intake.sql']
+    - action: 'Narrow the session-public middleware match if additional routes are ever added under /api/intake.'
+      refs: ['packages/crm/middleware.ts']

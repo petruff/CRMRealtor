@@ -1,0 +1,113 @@
+schema: 1
+story: "3.5"
+title: "Connector Security, Durable Jobs, Receipts, and Approvals"
+review_type: "architecture-readiness-decision"
+review_date: "2026-08-11"
+reviewer: "Vega (AEXOS Architect)"
+
+architecture_decision: "GO_AFTER_STORY_DEPENDENCY_CORRECTION"
+qa_verdict: "NOT_ASSIGNED"
+story_transition:
+  current: "Draft"
+  permitted_target: "Ready"
+  permitted_when:
+    - "Replace the Story 3.2 dependency with Stories 3.0 and 3.1."
+    - "Link the architecture, ADR, configuration contract, and this readiness record from Story 3.5."
+    - "Retain owner-only connection administration and owner approval by default for external writes."
+    - "Keep every provider disabled until its provider-specific acceptance evidence exists."
+
+decision:
+  selected_option: "A"
+  summary: "Supabase Postgres durable queue with Vercel Cron as a wake-up mechanism and bounded Next.js worker routes."
+  alternatives:
+    option_b: "Supabase pg_cron/pg_net plus Edge Functions; rejected because it adds a second application runtime and secret path."
+    option_c: "External workflow/queue; deferred until measured scale or orchestration needs justify a new vendor and outbox."
+
+dependency_analysis:
+  required:
+    - story: "3.0"
+      reason: "Canonical WorkspaceScope, membership, owner/assistant roles, RLS, and workspace authority."
+    - story: "3.1"
+      reason: "Idempotency, immutable evidence, task, atomic operation, and CLI-first patterns."
+  not_required:
+    - story: "3.2"
+      reason: "Rich contact lifecycle is orthogonal to connector security and provider job execution."
+  product_owner_evidence: ".ai/product-owner-connector-validation-2026-08-11.md"
+
+artifacts:
+  architecture: "docs/architecture/connector-security-jobs-approvals.md"
+  adr: ".ai/decision-log-3.5-connector-platform.md"
+  configuration_contract: "docs/architecture/config/connector-platform.example.yaml"
+  technical_stack: "docs/architecture/tech-stack.md"
+
+mandatory_invariants:
+  - "Supabase identity sign-in and connector OAuth are separate authorization flows."
+  - "Connector secrets are server-only AES-256-GCM envelopes with per-secret DEKs and versioned KEKs."
+  - "Private secret tables have no browser/client read path."
+  - "Workers claim jobs with SKIP LOCKED, bounded leases, and monotonically increasing fencing tokens."
+  - "Approval binds an immutable intent version and canonical payload hash; approval and enqueue are atomic."
+  - "Ambiguous non-idempotent provider outcomes enter reconciliation and are not blindly retried."
+  - "Webhook signatures are verified over raw input before parsing and replay-deduplicated before business mutation."
+  - "Provider endpoints and action types come only from validated deployment configuration."
+  - "Receipts and operational logs exclude tokens, recipients, subjects, bodies, and raw provider content."
+  - "All workspace-visible data is RLS-scoped; service-role use is isolated to server workers."
+
+security_stop_conditions:
+  - "Any token, refresh token, signing secret, KEK, or service key is exposed to browser code, logs, analytics, or response DTOs."
+  - "A worker accepts workspace identity or provider endpoint from caller input."
+  - "An assistant can connect, disconnect, change policies, read secrets, or self-approve an external write."
+  - "A stale worker can commit without matching lease owner and fencing token."
+  - "A webhook can mutate business state before signature and replay validation."
+  - "An uncertain Gmail, Twilio, Mailchimp, or Meta write is automatically retried without documented idempotency."
+  - "Existing workspace RLS or truthful provider-disabled UI states are weakened."
+
+verification_required:
+  unit:
+    - "Envelope crypto, AAD tamper, wrong key/version, rotation and redaction."
+    - "OAuth state/PKCE/session/account binding and replay."
+    - "Approval version/hash state machine, retry classification, webhook validators, lease/fencing transitions."
+  database:
+    - "Two-workspace RLS isolation and owner/assistant authorization matrix."
+    - "Private grants, SKIP LOCKED concurrency, lease expiry, stale fencing, unique idempotency."
+    - "Atomic approve/enqueue, append-only approval/receipt events, webhook replay dedupe."
+  chaos:
+    - "Crash before send, crash after provider acceptance, duplicate cron, duplicate/out-of-order webhook, 429/5xx, expired cursor, mid-job key rotation."
+  gates:
+    - "npm run lint"
+    - "npm run typecheck"
+    - "npm test"
+    - "production build"
+    - "Supabase database tests"
+    - "CLI-first smoke tests"
+    - "Provider-specific real-account UAT before any live claim"
+
+external_blockers:
+  shared:
+    - "Live Supabase project, reviewed RLS/grants, backup/restore, server-only service role."
+    - "Vercel HTTPS domain, CRON_SECRET, production KEKs, sufficient cron plan/frequency and function duration."
+    - "Privacy, retention/deletion, incident response, key rotation ownership, and assistant access policy."
+  google:
+    - "OAuth client, APIs, consent verification, required scope verification/assessment, real-account UAT."
+  mailchimp:
+    - "Registered OAuth app, callback, audience selection, webhook signing secret, real-audience UAT."
+  twilio:
+    - "Restricted API key, Messaging Service/number, A2P 10DLC where applicable, consent/STOP/HELP/quiet-hours controls, real-number UAT."
+  meta:
+    - "Developer app, Business Login, Business Verification/App Review, eligible assets, pinned Graph API version and permissions, webhook and real-account UAT."
+
+rollout:
+  - "Provider-disabled schema, RLS, crypto, repositories, and CLI diagnostics."
+  - "Deterministic fake adapters plus job, approval, receipt, lease and reconciliation mechanics."
+  - "One provider-specific owner/workspace allowlisted pilot."
+  - "Provider-by-provider verification and real-account UAT."
+  - "Assistant automation policies only after escalation, limit, receipt, and kill-switch proof."
+
+rollback:
+  - "Disable provider flags and new enqueue first."
+  - "Preserve evidence; reconcile uncertain jobs and cancel only pre-side-effect work."
+  - "Use forward-only database fixes and retain old KEKs through verified rewrap."
+  - "Verify Vercel cron explicitly after application rollback."
+
+notes:
+  - "This record is an architecture readiness decision, not a QA gate verdict."
+  - "External provider blockers do not prevent implementation of the disabled common foundation; they prevent live and production-ready claims."

@@ -1,0 +1,67 @@
+schema: 1
+story: "3.5"
+story_title: "Connector Security, Durable Jobs & Approvals"
+gate: PASS
+status_reason: "The provider-disabled foundation now satisfies AC1-AC9 locally. Migration 0009 repairs the authenticated disconnect envelope and supplies service-only leased/fenced revocation with confirmation-gated cryptoshred, honest unconfirmed recovery, cron composition and executable operator verification."
+reviewer: "Argus (Test Architect)"
+reviewed_revision: "working-tree-sha256:2d3fbfe1e33f63bc4c414ecfa6d0906830713fd6493278601a29c1dd5a38db54"
+updated: "2026-08-12T02:24:11Z"
+
+top_issues: []
+
+waiver:
+  active: false
+
+quality_score: 100
+expires: "2026-08-26T02:24:11Z"
+
+evidence:
+  tests_reviewed: 377
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: []
+  prior_findings:
+    runtime_deadline: "RESOLVED — shared deadline prevents additional revocation, normal-job and reconciliation claims/starts after expiry."
+    privileged_cli: "RESOLVED — drain/reconcile/rewrap use live-server-only service-role composition and truthful redacted envelopes."
+    kek_rotation: "RESOLVED — 0008 service-only AAD-bound leased/fenced CAS rewrap preserves ciphertext and has a fail-closed rollback boundary."
+    operational_ui: "RESOLVED_BY_SOURCE — job and receipt evidence exposes correlation, attempts, retry/schedule, error category and provider/reconciliation events; browser remains NOT_RUN."
+    disconnect_contract: "RESOLVED — authenticated owner request returns persisted connection, provider-bound receipt, durable revocationJob and noOp replay state."
+    revocation_lifecycle: "RESOLVED — 0009 service-only claim/start/read/transition RPCs bind lease/fence; confirmed provider evidence alone cryptoshreds, while terminal or exhausted uncertainty preserves encrypted recovery material as disconnected_unconfirmed."
+  automated_gates:
+    focused_connector_tests: "PASS — 8 files / 37 tests"
+    lint: PASS
+    typecheck: PASS
+    tests: "PASS — 69 files / 377 tests"
+    build: PASS
+    database_tests: "PASS — migrations 0004-0009, 94 assertions, executed as six separate commands"
+    database_lint: "CONCERNS — warnings only in pre-existing 0005-0007 functions; no 0008/0009 warning"
+    cli_sample_disconnect: "PASS — explicit sample-process-only/non-durable envelope returns revoking plus revocation.requested receipt"
+    cli_live_server_smoke: "PASS — missing service configuration fails closed with live-server-only/durable redacted envelope"
+    coderabbit: "NOT_AVAILABLE — workspace is not a Git repository; graceful-degradation evidence retained"
+    browser: NOT_RUN
+    playwright: NOT_RUN
+    manual_390px_theme_accessibility: NOT_RUN
+    hosted_supabase: NOT_RUN
+    production_deployment: NOT_RUN
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: "Owner/membership checks, RLS/private grants, service-only RPCs, provider-confirmation gate, redacted evidence, cryptoshred and recovery preservation pass source and pgTAP review."
+  performance:
+    status: PASS
+    notes: "Revocation and ordinary work share the configured batch/runtime ceiling; due claims are bounded and SKIP LOCKED."
+  reliability:
+    status: PASS
+    notes: "Lease/fencing, replay, stale-worker rejection, bounded retry, confirmation-only terminal success and honest unconfirmed outcomes are durable and tested."
+  maintainability:
+    status: PASS
+    notes: "Provider-neutral adapter/repository seams, protected cron composition, separate migrations/rollbacks and individually executable runbooks are coherent."
+
+recommendations:
+  future:
+    - action: "Keep every real provider disabled until its Story 4.x credentials, external approval, provider-specific secret/revoke adapter, real-account UAT and post-revocation proof pass."
+      refs: ["docs/connectors-operations.md", "packages/crm/supabase/docs/CONNECTOR_LIVE_DISCONNECT_RUNBOOK.md"]
+    - action: "Run authorized browser/Playwright validation for /connections at 390px, both themes and keyboard/screen-reader states before release."
+      refs: ["packages/crm/app/connections/page.tsx"]

@@ -1,0 +1,37 @@
+{
+  "subtaskId": "3.5-connector-foundation",
+  "critiquedAt": "2026-08-11T22:22:00-04:00",
+  "step5_5": {
+    "predictedBugs": [
+      "Next.js App Router rejects arbitrary exports from route modules; the testable drain handler was moved into handler.ts and the production build now accepts the route.",
+      "A claimed regular job with no configured adapter could try to transition directly from leased to failed; the worker now records attempt.started first and safely skips a lease lost before execution.",
+      "A normal provider success could persist only provider.accepted; the database transition now atomically adds the deterministic provider.final receipt and pgTAP asserts the exact sequence."
+      ,"A browser disconnect could previously imply completion without provider evidence; the durable revocation queue now records revocation.requested, requires a fenced provider-confirmed transition, and cryptoshreds only after confirmation."
+    ],
+    "edgeCases": [
+      "Duplicate cron delivery is bounded by database leases, fencing tokens and workspace-scoped idempotency.",
+      "An ambiguous provider outcome enters reconciliation and is never blindly re-executed.",
+      "Missing service-role, cron secret, KEK, provider adapter, connector approval or live end-user credentials fails closed without sample fallback."
+      ,"Unknown or terminal provider revocation never destroys recovery material and remains explicitly disconnected-unconfirmed."
+    ],
+    "errorHandling": true,
+    "securityCheck": true,
+    "passed": true
+  },
+  "step6_5": {
+    "followsPatterns": true,
+    "noHardcodedSecrets": true,
+    "testsAdded": true,
+    "docsUpdated": true,
+    "providerClaimsRemainDisabled": true,
+    "passed": true
+  },
+  "limitations": [
+    "CodeRabbit is unavailable because the configured WSL environment has no bash; no automated review PASS is claimed.",
+    "Google, Mailchimp, Twilio and Meta business operations remain provider-disabled until their Stories 4.1-4.4 and external credentials, approvals and real-account UAT are complete.",
+    "No hosted Supabase, Vercel cron, production KEK, provider sandbox or real-account UAT was executed in this story."
+  ],
+  "overallVerdict": "PASSED_WITH_EXPLICIT_EXTERNAL_GATES",
+  "skipped": false,
+  "skipWarning": null
+}

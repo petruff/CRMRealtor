@@ -1,0 +1,99 @@
+schema: 1
+story: '3.13'
+story_title: 'Today Premium Restoration & Route Integrity'
+gate: FAIL
+status_reason: 'The final source, automated gates, populated sample viewport matrix, 44 px targets, and exact 1491x1055 comparison pass. AC12 still lacks authenticated true-zero and native 200% browser evidence, while the UX EOF verdict remains CONCERNS; AC13 therefore blocks deployment.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'sha256:1b35af9346935f02d07052538d7bd9f6774ab647d91ebf5aacb237725a3d50a3'
+updated: '2026-08-14T02:24:16Z'
+
+top_issues:
+  - id: 'TEST-3.13-005'
+    severity: high
+    finding: 'AC12 remains incomplete because the current build has no authenticated authorized-workspace true-zero browser run and no native 200% zoom/reflow receipt. Component tests and viewport resizing do not substitute for those explicitly required runtime conditions.'
+    suggested_action: 'Capture authenticated true-zero at 390/768/1440 in both themes and native 200% keyboard/reflow evidence with no clipping, collision, unreachable action, console error, or hydration error; then obtain UX PASS and resubmit unchanged revision.'
+    suggested_owner: dev
+waiver:
+  active: false
+
+quality_score: 80
+expires: '2026-08-28T02:24:16Z'
+
+evidence:
+  preconditions:
+    result: PASS
+    notes: 'Story was restored to InReview by @dev via 0.4.3 before this gate; File List and review records are present and source is frozen.'
+  final_focused_tests:
+    command: 'npx vitest run components/today-command-center.test.tsx components/today-focus-timeline.test.tsx components/today-focus-timeline.interaction.test.tsx components/today-queue-disclosure.test.tsx'
+    result: 'PASS — 4 files, 8 tests'
+  prior_independent_focused_tests:
+    result: 'PASS — 8 files, 38 tests, including Queue Explorer, routes, and identity'
+  full_suite:
+    result: 'PASS — 145 files, 663 tests on the frozen final source'
+  lint:
+    command: 'npm run lint'
+    result: PASS
+  typecheck:
+    command: 'npm run typecheck'
+    result: PASS
+  isolated_build:
+    result: 'PASS — final sample build; prior independent optimized build also passed'
+  browser_populated_sample:
+    result: PASS
+    viewports: ['1440x900', '768x1024', '390x844']
+    themes: [light, dark]
+    notes: 'Horizontal overflow false at every size; open stage and central-only elevation confirmed; all inspected main targets at least 44 px at 390; keyboard sequence, queue open/close, reduced-motion stability after 11 seconds with zero Pause control, and zero console warnings/errors passed.'
+    receipts:
+      - story-3.13-today-1440-dark-final.png
+      - story-3.13-today-768-dark-final.png
+      - story-3.13-today-390-light-final.png
+      - story-3.13-today-390-dark-final.png
+      - story-3.13-today-390-reduced-motion-final.png
+      - story-3.13-today-1491x1055-target-comparison.png
+  browser_missing:
+    result: NOT_AVAILABLE
+    items:
+      - 'Authenticated authorized-workspace true-zero matrix'
+      - 'Native 200% zoom/reflow receipt'
+    note: 'No unavailable condition was inferred from sample, source, mounted tests, or viewport resizing.'
+  ux_gate:
+    result: CONCERNS
+    notes: 'EOF Independent UX Browser Re-gate accepts populated sample browser fidelity and the 44 px correction; remaining authenticated true-zero/native-zoom evidence is release-blocking.'
+  provenance:
+    kind: deterministic-working-tree-digest
+    note: 'Digest covers frozen Story 3.13 product and adjacent test sources. Workspace has no Git metadata; no commit, deployment, or production claim is made.'
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+    ac_gaps: [12, 13]
+
+requirements_trace:
+  - ac: [1, 2, 5, 9]
+    evidence: 'Unified open stage, central elevation, semantic focus-first order, truthful populated/zero composition, action affordance/contrast, and final 44 px relationship-moment targets pass source, automation, and populated sample browser review.'
+  - ac: [3, 4, 6]
+    evidence: 'Collapsed queue mounts a resolvable hidden ARIA shell and no cards; opening preserves all Story 3.11 filters/actions, bounded 12-record batches, deterministic reset, and complete 109-entry reachability.'
+  - ac: [7, 8, 10, 11]
+    evidence: 'Four-origin replacement, identity precedence/sanitization, responsive CSS contracts, keyboard order, light/dark rendering, zero overflow, reduced-motion stability, queue disclosure, clean sample console, and exact target-size visual comparison are covered.'
+  - ac: [12, 13]
+    evidence: 'FAIL — authenticated true-zero and native 200% receipts remain unavailable and UX is CONCERNS; production deployment is explicitly prohibited.'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Authorized server data, fail-closed unavailable handling, bounded identity, truthful sample labeling, and provider/data claims remain intact.'
+  performance:
+    status: PASS
+    notes: 'Queue DOM remains collapsed/unmounted then bounded to 12 per explicit batch; builds and responsive sample matrix pass.'
+  reliability:
+    status: PASS
+    notes: 'Focused/full tests and populated sample interactions pass with zero reported warnings/errors.'
+  accessibility:
+    status: CONCERNS
+    notes: '44 px, semantic order, keyboard, ARIA, contrast and reduced motion pass; native 200% zoom/reflow remains unverified.'
+
+capability_preservation:
+  status: PASS
+  notes: 'No Today, Queue Explorer, contact/alert action, route, data authority, or truthful state capability loss was found.'
+
+deployment:
+  eligible: false
+  reason: 'AC13 requires complete AC12 evidence plus independent UX and QA PASS before deployment.'

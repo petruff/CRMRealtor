@@ -1,0 +1,123 @@
+- generic [ref=f17e2]:
+  - link "Skip to main content" [ref=f17e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f17e4]:
+    - banner [ref=f17e5]:
+      - generic [ref=f17e6]:
+        - img "Omnix" [ref=f17e7]
+        - generic [ref=f17e8]:
+          - paragraph [ref=f17e9]: Omnix
+          - paragraph [ref=f17e10]: Omnix AI
+      - generic [ref=f17e11]:
+        - button "Open global search and commands" [ref=f17e12]
+        - link "Open alerts" [ref=f17e16] [cursor=pointer]:
+          - /url: /alerts
+        - link "Open settings" [ref=f17e22] [cursor=pointer]:
+          - /url: /settings
+        - link "Open Omnix workspaces" [ref=f17e26] [cursor=pointer]:
+          - /url: /workspace
+        - button "Sign out" [ref=f17e30]
+        - button "Switch to dark theme" [ref=f17e34]
+    - main [ref=f17e37]:
+      - generic [ref=f17e38]:
+        - paragraph [ref=f17e42]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f17e43]:
+          - generic [ref=f17e44]:
+            - generic [ref=f17e45]:
+              - paragraph [ref=f17e46]: Omnix Intelligence
+              - generic [ref=f17e47]: Explainable preview
+            - heading "Your business, already organized." [level=1] [ref=f17e48]: Your business,already organized.
+            - paragraph [ref=f17e49]: Omnix turns stored CRM facts into a prioritized brief. No generative model is connected, and nothing is sent, changed or scheduled autonomously.
+          - region [ref=f17e50]:
+            - generic [ref=f17e56]:
+              - heading "Today’s brief" [level=2] [ref=f17e57]
+              - paragraph [ref=f17e58]: Every recommendation includes the rule that produced it.
+            - generic [ref=f17e59]:
+              - article [ref=f17e60]:
+                - generic [ref=f17e65]:
+                  - generic [ref=f17e66]:
+                    - heading "Reach new leads first" [level=3] [ref=f17e67]
+                    - generic [ref=f17e68]: "3"
+                  - paragraph [ref=f17e69]: They have no recorded conversation yet, so response time matters most.
+                - paragraph [ref=f17e70]: "Evidence: No last-contact timestamp on an active contact."
+                - link "Review records" [ref=f17e71] [cursor=pointer]:
+                  - /url: /
+              - article [ref=f17e75]:
+                - generic [ref=f17e81]:
+                  - generic [ref=f17e82]:
+                    - heading "Recover overdue follow-ups" [level=3] [ref=f17e83]
+                    - generic [ref=f17e84]: "3"
+                  - paragraph [ref=f17e85]: Work the oldest missed promises before planning new outreach.
+                - paragraph [ref=f17e86]: "Evidence: Next-touch date is earlier than today."
+                - link "Review records" [ref=f17e87] [cursor=pointer]:
+                  - /url: /
+              - article [ref=f17e91]:
+                - generic [ref=f17e98]:
+                  - generic [ref=f17e99]:
+                    - heading "Repair mailing records" [level=3] [ref=f17e100]
+                    - generic [ref=f17e101]: "11"
+                  - paragraph [ref=f17e102]: Complete these addresses before the next postcard campaign.
+                - paragraph [ref=f17e103]: "Evidence: Street, city, state, or ZIP is blank."
+                - link "Review records" [ref=f17e104] [cursor=pointer]:
+                  - /url: /mailers
+              - article [ref=f17e108]:
+                - generic [ref=f17e114]:
+                  - generic [ref=f17e115]:
+                    - heading "Use relationship moments" [level=3] [ref=f17e116]
+                    - generic [ref=f17e117]: "2"
+                  - paragraph [ref=f17e118]: Birthdays and home anniversaries are timely reasons to reconnect.
+                - paragraph [ref=f17e119]: "Evidence: An important date falls inside the configured reminder window."
+                - link "Review records" [ref=f17e120] [cursor=pointer]:
+                  - /url: /
+          - region [ref=f17e124]:
+            - generic [ref=f17e125]:
+              - generic [ref=f17e130]:
+                - heading "Ask Omnix" [level=2] [ref=f17e131]
+                - paragraph [ref=f17e132]: I check the authorized CRM records behind each answer and show you the source.
+              - button "Clear this page session" [disabled] [ref=f17e134]
+            - generic [ref=f17e138]:
+              - generic "Omnix conversation" [ref=f17e139]:
+                - generic [ref=f17e140]:
+                  - heading "What should we focus on?" [level=3] [ref=f17e144]
+                  - paragraph [ref=f17e145]: Ask about today, people who need attention, tasks, dates or pipeline. I cite the records and never act without you.
+                  - generic "Supported prompt examples" [ref=f17e146]:
+                    - button "What should I do today?" [ref=f17e147]
+                    - button "Who needs attention?" [ref=f17e148]
+                    - button "Show today's tasks" [ref=f17e149]
+                    - button "Show upcoming dates" [ref=f17e150]
+                    - button "Show pipeline" [ref=f17e151]
+              - generic [ref=f17e153]:
+                - generic [ref=f17e154]: Ask Omnix a supported question
+                - generic [ref=f17e155]:
+                  - textbox "Ask Omnix a supported question" [ref=f17e156]:
+                    - /placeholder: Ask about today's priorities…
+                  - button "Ask Omnix" [disabled] [ref=f17e157]
+                - generic [ref=f17e161]:
+                  - paragraph [ref=f17e162]: Page-session only · No autonomous actions
+                  - paragraph [ref=f17e166]: 0/200
+          - region [ref=f17e167]:
+            - generic [ref=f17e181]:
+              - heading "The AI operating contract" [level=2] [ref=f17e182]
+              - paragraph [ref=f17e183]: Future summaries and drafts must cite CRM facts. Client-facing messages, calendar changes and stage updates require review before execution. Provider receipts and failures remain visible afterward.
+            - list [ref=f17e184]:
+              - listitem [ref=f17e185]:
+                - paragraph [ref=f17e186]: Read first
+                - paragraph [ref=f17e187]: Use only authorized workspace data.
+              - listitem [ref=f17e188]:
+                - paragraph [ref=f17e189]: Ask before acting
+                - paragraph [ref=f17e190]: Draft and preview consequential changes.
+              - listitem [ref=f17e191]:
+                - paragraph [ref=f17e192]: Show the receipt
+                - paragraph [ref=f17e193]: Record provider result and reconciliation.
+        - paragraph [ref=f17e195]: Powered by Cyryx Labs
+    - navigation "Primary" [ref=f17e196]:
+      - link "Today" [ref=f17e197] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f17e201] [cursor=pointer]:
+        - /url: /contacts
+      - link "Activities" [ref=f17e207] [cursor=pointer]:
+        - /url: /activities
+      - link "Mailers" [ref=f17e211] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f17e215] [cursor=pointer]:
+        - /url: /connections

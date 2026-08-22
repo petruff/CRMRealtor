@@ -1,0 +1,78 @@
+- generic [ref=f12e2]:
+  - link "Skip to main content" [ref=f12e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f12e4]:
+    - banner [ref=f12e5]:
+      - generic [ref=f12e6]:
+        - img "Omnix" [ref=f12e7]
+        - generic [ref=f12e8]:
+          - paragraph [ref=f12e9]: Omnix
+          - paragraph [ref=f12e10]: Contacts
+      - generic [ref=f12e11]:
+        - button "Open global search and commands" [ref=f12e12]
+        - link "Open alerts" [ref=f12e16] [cursor=pointer]:
+          - /url: /alerts
+        - link "Open settings" [ref=f12e22] [cursor=pointer]:
+          - /url: /settings
+        - link "Open Omnix workspaces" [ref=f12e26] [cursor=pointer]:
+          - /url: /workspace
+        - button "Sign out" [ref=f12e30]
+        - button "Switch to dark theme" [ref=f12e34]
+    - main [ref=f12e37]:
+      - generic [ref=f12e38]:
+        - paragraph [ref=f12e42]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f12e43]:
+          - link "Contacts" [ref=f12e44] [cursor=pointer]:
+            - /url: /contacts
+          - generic [ref=f12e47]:
+            - paragraph [ref=f12e48]: Contact import
+            - heading "Bring your relationships with you." [level=1] [ref=f12e49]
+            - paragraph [ref=f12e50]: Move people from another CRM, Mailchimp, Google, Apple, or a spreadsheet. Preview first; save only after every match makes sense.
+          - generic [ref=f12e51]:
+            - generic [ref=f12e53]:
+              - generic [ref=f12e54]:
+                - generic [ref=f12e55]: Where is this file from?
+                - combobox "Where is this file from? Auto-detect works for most exports. Choosing a source makes matching more explicit." [ref=f12e56]:
+                  - option "Detect automatically" [selected]
+                  - option "Spreadsheet / CSV"
+                  - option "Mailchimp export"
+                  - option "Google Contacts"
+                  - option "Apple Contacts (vCard)"
+                  - option "BoldTrail / kvCORE export"
+                - generic [ref=f12e57]: Auto-detect works for most exports. Choosing a source makes matching more explicit.
+              - button "Drop or choose CSV, vCard, XLS, or XLSX CSV/vCard up to 2 MB; workbooks up to 10 MB. Row count is not capped; safe cell, column, and processing limits still apply. Nothing is saved before review." [ref=f12e58]:
+                - generic [ref=f12e63]: Drop or choose CSV, vCard, XLS, or XLSX
+                - generic [ref=f12e64]: CSV/vCard up to 2 MB; workbooks up to 10 MB. Row count is not capped; safe cell, column, and processing limits still apply. Nothing is saved before review.
+              - button "Choose File" [ref=f12e65]
+            - generic [ref=f12e66]:
+              - link "Download CSV template" [ref=f12e67] [cursor=pointer]:
+                - /url: /api/data/templates/contacts?format=csv
+              - link "Download XLSX template" [ref=f12e68] [cursor=pointer]:
+                - /url: /api/data/templates/contacts?format=xlsx
+            - generic [ref=f12e69]:
+              - generic [ref=f12e70]:
+                - text: "1"
+                - heading "Choose" [level=2] [ref=f12e71]
+                - paragraph [ref=f12e72]: Export contacts from your current platform.
+              - generic [ref=f12e73]:
+                - text: "2"
+                - heading "Review" [level=2] [ref=f12e74]
+                - paragraph [ref=f12e75]: See new, matched, duplicate, and rejected rows.
+              - generic [ref=f12e76]:
+                - text: "3"
+                - heading "Confirm" [level=2] [ref=f12e77]
+                - paragraph [ref=f12e78]: Save safely and start the right follow-up cadence.
+        - paragraph [ref=f12e80]: Powered by Cyryx Labs
+    - navigation "Primary" [ref=f12e81]:
+      - link "Today" [ref=f12e82] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f12e86] [cursor=pointer]:
+        - /url: /contacts
+      - link "Activities" [ref=f12e92] [cursor=pointer]:
+        - /url: /activities
+      - link "Mailers" [ref=f12e96] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f12e100] [cursor=pointer]:
+        - /url: /connections
+  - button "Open Omnix assistant" [ref=f12e103]:
+    - generic [ref=f12e105]: Ask Omnix

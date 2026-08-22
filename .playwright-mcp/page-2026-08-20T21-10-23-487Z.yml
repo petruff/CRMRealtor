@@ -1,0 +1,139 @@
+- generic [ref=f3e2]:
+  - link "Skip to main content" [ref=f3e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=f3e4]:
+    - generic [ref=f3e6]:
+      - img "Omnix" [ref=f3e7]
+      - generic [ref=f3e8]:
+        - paragraph [ref=f3e9]: Omnix
+        - paragraph [ref=f3e10]: Your real estate business, in order.
+    - navigation "Primary" [ref=f3e11]:
+      - button "Open global search and commands" [ref=f3e12]:
+        - generic [ref=f3e16]: Search Omnix
+        - generic [ref=f3e17]: ⌘K
+      - generic [ref=f3e18]:
+        - paragraph [ref=f3e19]: Core
+        - generic [ref=f3e20]:
+          - link "Today" [ref=f3e21] [cursor=pointer]:
+            - /url: /
+          - link "Contacts" [ref=f3e25] [cursor=pointer]:
+            - /url: /contacts
+          - link "Activities" [ref=f3e31] [cursor=pointer]:
+            - /url: /activities
+      - generic [ref=f3e35]:
+        - paragraph [ref=f3e36]: Business
+        - generic [ref=f3e37]:
+          - link "Alerts" [ref=f3e38] [cursor=pointer]:
+            - /url: /alerts
+          - link "Pipeline" [ref=f3e44] [cursor=pointer]:
+            - /url: /pipeline
+          - link "Insights" [ref=f3e47] [cursor=pointer]:
+            - /url: /insights
+          - link "Omnix AI" [ref=f3e50] [cursor=pointer]:
+            - /url: /omnix
+      - generic [ref=f3e54]:
+        - paragraph [ref=f3e55]: Operations
+        - generic [ref=f3e56]:
+          - link "Mailers" [ref=f3e57] [cursor=pointer]:
+            - /url: /mailers
+          - link "Connections" [ref=f3e61] [cursor=pointer]:
+            - /url: /connections
+          - link "Data & API" [ref=f3e64] [cursor=pointer]:
+            - /url: /data
+          - link "Settings" [ref=f3e69] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f3e73]:
+      - paragraph [ref=f3e74]: Powered by Cyryx Labs
+      - generic [ref=f3e75]:
+        - button "Sign out" [ref=f3e77]
+        - button "Switch to dark theme" [ref=f3e81]
+  - main [ref=f3e85]:
+    - generic [ref=f3e86]:
+      - paragraph [ref=f3e90]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - generic [ref=f3e91]:
+        - generic [ref=f3e92]:
+          - paragraph [ref=f3e93]: Work queue
+          - heading "Make the next step obvious." [level=1] [ref=f3e94]
+          - paragraph [ref=f3e95]: Open tasks sort overdue first. Activity is evidence, not a provider communication log.
+        - search [ref=f3e96]:
+          - generic [ref=f3e97]:
+            - generic [ref=f3e98]: Search tasks
+            - textbox "Search tasks" [ref=f3e99]:
+              - /placeholder: Search task text
+          - combobox [ref=f3e100]:
+            - option "Open" [selected]
+            - option "Completed"
+            - option "Archived"
+            - option "All tasks"
+          - generic [ref=f3e101]:
+            - generic [ref=f3e102]: Filter by contact
+            - combobox "Filter by contact" [ref=f3e103]:
+              - option "All contacts" [selected]
+              - option "Alicia Monroe"
+              - option "Daniel Okafor"
+              - option "Marisol Reyes"
+              - option "Gregory Whitfield"
+              - option "Nadine Baptiste"
+              - option "Ruth Hollings"
+              - option "Luca Ferraro"
+              - option "Joyce Abernathy"
+              - option "Kenji Nakamura"
+              - option "Simone Delacroix"
+              - option "Marcus Pryor"
+          - generic [ref=f3e104]:
+            - generic [ref=f3e105]: Due on or after
+            - textbox "Due on or after" [ref=f3e106]
+          - generic [ref=f3e107]:
+            - generic [ref=f3e108]: Due on or before
+            - textbox "Due on or before" [ref=f3e109]
+          - button "Refresh queue" [ref=f3e110]
+        - generic [ref=f3e113]:
+          - generic [ref=f3e114]:
+            - heading "Tasks" [level=2] [ref=f3e116]
+            - generic [ref=f3e117]:
+              - table [ref=f3e119]:
+                - caption [ref=f3e120]: Tasks in the selected work queue
+                - rowgroup [ref=f3e121]:
+                  - row [ref=f3e122]:
+                    - columnheader [ref=f3e123]:
+                      - checkbox "Select all visible tasks" [ref=f3e124]
+                    - columnheader "Task" [ref=f3e125]
+                    - columnheader "Due" [ref=f3e126]
+                    - columnheader "State" [ref=f3e127]
+                    - columnheader "Actions" [ref=f3e128]
+                - rowgroup
+              - paragraph [ref=f3e133]: No tasks match this queue. Add a follow-up when the next step is clear.
+              - generic [ref=f3e134]:
+                - button "Complete selected" [disabled] [ref=f3e135]
+                - button "Archive selected" [disabled] [ref=f3e138]
+          - complementary [ref=f3e142]:
+            - heading "Add follow-up" [level=2] [ref=f3e143]
+            - generic [ref=f3e144]:
+              - generic [ref=f3e145]:
+                - generic [ref=f3e146]: Task
+                - textbox "Task" [ref=f3e147]:
+                  - /placeholder: Send listing options
+              - generic [ref=f3e148]:
+                - generic [ref=f3e149]: Due
+                - textbox "Due" [ref=f3e150]
+              - generic [ref=f3e151]:
+                - generic [ref=f3e152]: Contact (optional)
+                - combobox "Contact (optional)" [ref=f3e153]:
+                  - option "Not linked to a contact" [selected]
+                  - option "Alicia Monroe"
+                  - option "Daniel Okafor"
+                  - option "Marisol Reyes"
+                  - option "Gregory Whitfield"
+                  - option "Nadine Baptiste"
+                  - option "Ruth Hollings"
+                  - option "Luca Ferraro"
+                  - option "Joyce Abernathy"
+                  - option "Kenji Nakamura"
+                  - option "Simone Delacroix"
+                  - option "Marcus Pryor"
+              - generic [ref=f3e154]:
+                - generic [ref=f3e155]: Context (optional)
+                - textbox "Context (optional)" [ref=f3e156]
+              - button "Add task" [ref=f3e157]
+  - button "Open Omnix assistant" [ref=f3e159]:
+    - generic [ref=f3e161]: Ask Omnix

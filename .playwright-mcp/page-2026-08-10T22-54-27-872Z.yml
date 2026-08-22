@@ -1,0 +1,179 @@
+- generic [ref=f13e2]:
+  - link "Skip to main content" [ref=f13e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=f13e4]:
+    - generic [ref=f13e5]:
+      - text: R
+      - generic [ref=f13e6]:
+        - paragraph [ref=f13e7]: Realtor CRM
+        - paragraph [ref=f13e8]: Your day, in order
+    - navigation "Primary" [ref=f13e9]:
+      - link "Today" [ref=f13e10] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f13e14] [cursor=pointer]:
+        - /url: /contacts
+      - link "Mailers" [ref=f13e20] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f13e24] [cursor=pointer]:
+        - /url: /connections
+    - generic [ref=f13e27]:
+      - text: Phase 1
+      - button "Switch to dark theme" [ref=f13e28]
+  - generic [ref=f13e31]:
+    - banner [ref=f13e32]:
+      - generic [ref=f13e33]:
+        - text: R
+        - generic [ref=f13e34]:
+          - paragraph [ref=f13e35]: Realtor CRM
+          - paragraph [ref=f13e36]: Contacts
+      - button "Switch to dark theme" [ref=f13e37]
+    - main [ref=f13e40]:
+      - generic [ref=f13e41]:
+        - paragraph [ref=f13e45]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f13e46]:
+          - generic [ref=f13e47]:
+            - paragraph [ref=f13e48]: Contacts
+            - heading "11 people, hottest first." [level=1] [ref=f13e49]
+          - generic [ref=f13e50]:
+            - generic [ref=f13e51]:
+              - generic [ref=f13e52]:
+                - generic [ref=f13e53]:
+                  - heading "Hot" [level=2] [ref=f13e54]
+                  - text: "5"
+                - paragraph [ref=f13e55]: Immediate attention. Weekly rhythm.
+              - list [ref=f13e56]:
+                - listitem [ref=f13e57]:
+                  - text: AM
+                  - generic [ref=f13e58]:
+                    - link "Alicia Monroe" [ref=f13e59] [cursor=pointer]:
+                      - /url: /contacts/c-monroe
+                    - paragraph [ref=f13e60]: Lead · Buyer · New
+                  - generic [ref=f13e61]:
+                    - link "Call Alicia Monroe" [ref=f13e62] [cursor=pointer]:
+                      - /url: tel:(512) 555-0142
+                    - link "Email Alicia Monroe" [ref=f13e65] [cursor=pointer]:
+                      - /url: mailto:alicia.monroe@example.com
+                - listitem [ref=f13e69]:
+                  - text: DO
+                  - generic [ref=f13e70]:
+                    - link "Daniel Okafor" [ref=f13e71] [cursor=pointer]:
+                      - /url: /contacts/c-okafor
+                    - paragraph [ref=f13e72]: Lead · Seller · New
+                  - generic [ref=f13e73]:
+                    - link "Call Daniel Okafor" [ref=f13e74] [cursor=pointer]:
+                      - /url: tel:(512) 555-0198
+                    - link "Email Daniel Okafor" [ref=f13e77] [cursor=pointer]:
+                      - /url: mailto:d.okafor@example.com
+                - listitem [ref=f13e81]:
+                  - text: GW
+                  - generic [ref=f13e82]:
+                    - link "Greg Whitfield" [ref=f13e83] [cursor=pointer]:
+                      - /url: /contacts/c-whitfield
+                    - paragraph [ref=f13e84]: Active client · Buyer · Actively working
+                  - generic [ref=f13e85]:
+                    - link "Call Greg Whitfield" [ref=f13e86] [cursor=pointer]:
+                      - /url: tel:(512) 555-0311
+                    - link "Email Greg Whitfield" [ref=f13e89] [cursor=pointer]:
+                      - /url: mailto:greg.whitfield@example.com
+                - listitem [ref=f13e93]:
+                  - text: LF
+                  - generic [ref=f13e94]:
+                    - link "Luca Ferraro" [ref=f13e95] [cursor=pointer]:
+                      - /url: /contacts/c-ferraro
+                    - paragraph [ref=f13e96]: Active client · Buyer · Under contract
+                  - generic [ref=f13e97]:
+                    - link "Call Luca Ferraro" [ref=f13e98] [cursor=pointer]:
+                      - /url: tel:(512) 555-0455
+                    - link "Email Luca Ferraro" [ref=f13e101] [cursor=pointer]:
+                      - /url: mailto:luca.ferraro@example.com
+                - listitem [ref=f13e105]:
+                  - text: SD
+                  - generic [ref=f13e106]:
+                    - link "Simone Delacroix" [ref=f13e107] [cursor=pointer]:
+                      - /url: /contacts/c-delacroix
+                    - paragraph [ref=f13e108]: Lead · Seller · Contacted
+                  - generic [ref=f13e109]:
+                    - link "Call Simone Delacroix" [ref=f13e110] [cursor=pointer]:
+                      - /url: tel:(512) 555-0604
+                    - link "Email Simone Delacroix" [ref=f13e113] [cursor=pointer]:
+                      - /url: mailto:simone.d@example.com
+            - generic [ref=f13e117]:
+              - generic [ref=f13e118]:
+                - generic [ref=f13e119]:
+                  - heading "Warm" [level=2] [ref=f13e120]
+                  - text: "3"
+                - paragraph [ref=f13e121]: Real interest, longer horizon. Weekly rhythm.
+              - list [ref=f13e122]:
+                - listitem [ref=f13e123]:
+                  - text: MR
+                  - generic [ref=f13e124]:
+                    - link "Marisol Reyes" [ref=f13e125] [cursor=pointer]:
+                      - /url: /contacts/c-reyes
+                    - paragraph [ref=f13e126]: Lead · Buyer · New
+                  - link "Call Marisol Reyes" [ref=f13e128] [cursor=pointer]:
+                    - /url: tel:(512) 555-0233
+                - listitem [ref=f13e131]:
+                  - text: NB
+                  - generic [ref=f13e132]:
+                    - link "Nadine Baptiste" [ref=f13e133] [cursor=pointer]:
+                      - /url: /contacts/c-baptiste
+                    - paragraph [ref=f13e134]: Lead · Buyer & seller · Contacted
+                  - generic [ref=f13e135]:
+                    - link "Call Nadine Baptiste" [ref=f13e136] [cursor=pointer]:
+                      - /url: tel:(512) 555-0377
+                    - link "Email Nadine Baptiste" [ref=f13e139] [cursor=pointer]:
+                      - /url: mailto:nadine.b@example.com
+                - listitem [ref=f13e143]:
+                  - text: KN
+                  - generic [ref=f13e144]:
+                    - link "Kenji Nakamura" [ref=f13e145] [cursor=pointer]:
+                      - /url: /contacts/c-nakamura
+                    - paragraph [ref=f13e146]: Lead · Investor · Appointment set
+                  - generic [ref=f13e147]:
+                    - link "Call Kenji Nakamura" [ref=f13e148] [cursor=pointer]:
+                      - /url: tel:(512) 555-0588
+                    - link "Email Kenji Nakamura" [ref=f13e151] [cursor=pointer]:
+                      - /url: mailto:k.nakamura@example.com
+            - generic [ref=f13e155]:
+              - generic [ref=f13e156]:
+                - generic [ref=f13e157]:
+                  - heading "Nurture" [level=2] [ref=f13e158]
+                  - text: "3"
+                - paragraph [ref=f13e159]: Sphere and past clients. Monthly rhythm.
+              - list [ref=f13e160]:
+                - listitem [ref=f13e161]:
+                  - text: RH
+                  - generic [ref=f13e162]:
+                    - link "Ruth Hollings" [ref=f13e163] [cursor=pointer]:
+                      - /url: /contacts/c-hollings
+                    - paragraph [ref=f13e164]: Sphere · Not sure yet · Contacted
+                  - generic [ref=f13e165]:
+                    - link "Call Ruth Hollings" [ref=f13e166] [cursor=pointer]:
+                      - /url: tel:(512) 555-0420
+                    - link "Email Ruth Hollings" [ref=f13e169] [cursor=pointer]:
+                      - /url: mailto:ruthholl@example.com
+                - listitem [ref=f13e173]:
+                  - text: JA
+                  - generic [ref=f13e174]:
+                    - link "Joyce Abernathy" [ref=f13e175] [cursor=pointer]:
+                      - /url: /contacts/c-abernathy
+                    - paragraph [ref=f13e176]: Past client · Not sure yet · Contacted
+                  - link "Call Joyce Abernathy" [ref=f13e178] [cursor=pointer]:
+                    - /url: tel:(512) 555-0512
+                - listitem [ref=f13e181]:
+                  - text: MP
+                  - generic [ref=f13e182]:
+                    - link "Marcus Pryor" [ref=f13e183] [cursor=pointer]:
+                      - /url: /contacts/c-pryor
+                    - paragraph [ref=f13e184]: Past client · Not sure yet · Closed
+                  - link "Call Marcus Pryor" [ref=f13e186] [cursor=pointer]:
+                    - /url: tel:(512) 555-0671
+    - navigation "Primary" [ref=f13e189]:
+      - link "Today" [ref=f13e190] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f13e194] [cursor=pointer]:
+        - /url: /contacts
+      - link "Mailers" [ref=f13e200] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f13e204] [cursor=pointer]:
+        - /url: /connections

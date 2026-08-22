@@ -1,0 +1,156 @@
+- generic [ref=f16e2]:
+  - link "Skip to main content" [ref=f16e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f16e4]:
+    - banner [ref=f16e5]:
+      - generic [ref=f16e6]:
+        - img "Omnix" [ref=f16e7]
+        - generic [ref=f16e8]:
+          - paragraph [ref=f16e9]: Omnix
+          - paragraph [ref=f16e10]: Connections
+      - generic [ref=f16e11]:
+        - button "Open global search and commands" [ref=f16e12]
+        - link "Open alerts" [ref=f16e16] [cursor=pointer]:
+          - /url: /alerts
+        - link "Open settings" [ref=f16e22] [cursor=pointer]:
+          - /url: /settings
+        - link "Open Omnix workspaces" [ref=f16e26] [cursor=pointer]:
+          - /url: /workspace
+        - button "Sign out" [ref=f16e30]
+        - button "Switch to dark theme" [ref=f16e34]
+    - main [ref=f16e37]:
+      - generic [ref=f16e38]:
+        - paragraph [ref=f16e42]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f16e43]:
+          - generic [ref=f16e44]:
+            - paragraph [ref=f16e45]: Connections
+            - heading "Everything in one place." [level=1] [ref=f16e46]
+            - paragraph [ref=f16e47]: You said you were tired of going back and forth between systems. This is the list of what plugs in — and, honestly, what is still waiting on someone else.
+            - paragraph [ref=f16e52]: Omnix never asks for a platform password. Connections use provider authorization, server-side tokens, scoped access, receipts, and revocation.
+          - region [ref=f16e53]:
+            - generic [ref=f16e54]:
+              - generic [ref=f16e55]:
+                - paragraph [ref=f16e56]: Secure connector control plane
+                - heading "The safety foundation is installed." [level=2] [ref=f16e57]
+                - paragraph [ref=f16e58]: OAuth transactions, encrypted secret envelopes, owner approvals, durable jobs, leases, reconciliation, signed-webhook replay protection and redacted receipts now share one workspace-scoped authority.
+              - generic [ref=f16e59]: Sample · non-durable
+            - generic [ref=f16e60]:
+              - generic [ref=f16e61]:
+                - term [ref=f16e62]: Provider definitions
+                - definition [ref=f16e63]: "5"
+              - generic [ref=f16e64]:
+                - term [ref=f16e65]: Enabled real providers
+                - definition [ref=f16e66]: "0"
+              - generic [ref=f16e67]:
+                - term [ref=f16e68]: Real connections
+                - definition [ref=f16e69]: "0"
+              - generic [ref=f16e70]:
+                - term [ref=f16e71]: Receipts recorded
+                - definition [ref=f16e72]: "0"
+            - generic [ref=f16e73]:
+              - generic [ref=f16e74]:
+                - heading "Current execution evidence" [level=3] [ref=f16e75]
+                - paragraph [ref=f16e76]: No provider job has been queued in this workspace.
+              - generic [ref=f16e77]:
+                - heading "Activation boundary" [level=3] [ref=f16e78]
+                - paragraph [ref=f16e79]: Real Connect buttons stay unavailable until that provider has credentials, required review or registration, webhook proof and real-account UAT.
+          - generic [ref=f16e80]:
+            - article [ref=f16e81]:
+              - generic [ref=f16e87]:
+                - generic [ref=f16e88]:
+                  - heading "Contact imports" [level=2] [ref=f16e89]
+                  - generic [ref=f16e90]: Ready to connect
+                - paragraph [ref=f16e93]: Bring contacts from another CRM, Mailchimp, Google, Apple, BoldTrail, or a spreadsheet.
+              - paragraph [ref=f16e94]: Preview every match first. Existing information is preserved, duplicates are merged conservatively, and rejected rows stay visible.
+              - paragraph [ref=f16e95]: File upload · no platform password
+              - link "Open importer" [ref=f16e96] [cursor=pointer]:
+                - /url: /contacts/import
+            - article [ref=f16e97]:
+              - generic [ref=f16e103]:
+                - generic [ref=f16e104]:
+                  - heading "Gmail" [level=2] [ref=f16e105]
+                  - generic [ref=f16e106]: Implemented · UAT pending
+                - paragraph [ref=f16e110]: Send from inside the CRM, and log emails onto the contact automatically.
+              - paragraph [ref=f16e111]: Incremental OAuth, governed send, minimized metadata matching, verified push wake-ups, cursor recovery and no-blind-resend reconciliation are implemented. Production credentials, Google verification and real-account UAT are still required.
+              - paragraph [ref=f16e112]: Google OAuth · incremental Gmail scopes
+            - article [ref=f16e113]:
+              - generic [ref=f16e118]:
+                - generic [ref=f16e119]:
+                  - heading "Google Calendar" [level=2] [ref=f16e120]
+                  - generic [ref=f16e121]: Implemented · UAT pending
+                - paragraph [ref=f16e125]: Your follow-ups appear in the calendar you already look at.
+              - paragraph [ref=f16e126]: The Omnix-created secondary calendar supports governed task create, update, completion, cancellation, deletion and bounded reconciliation. Production credentials, Google verification and real-account UAT remain required.
+              - paragraph [ref=f16e127]: Google OAuth · separate Calendar scopes
+            - article [ref=f16e128]:
+              - generic [ref=f16e134]:
+                - generic [ref=f16e135]:
+                  - heading "Mailchimp" [level=2] [ref=f16e136]
+                  - generic [ref=f16e137]: Implemented · UAT pending
+                - paragraph [ref=f16e141]: Connect one selected audience for governed tag sync and inbound subscription updates.
+              - paragraph [ref=f16e142]: OAuth, audience selection, encrypted per-connection webhook secrets, durable jobs, baseline matching and unsubscribe authority are implemented. Production remains gated by registered credentials and real-account UAT.
+              - paragraph [ref=f16e143]: Mailchimp OAuth · selected audience + signed webhooks
+            - article [ref=f16e144]:
+              - generic [ref=f16e149]:
+                - generic [ref=f16e150]:
+                  - heading "Texting" [level=2] [ref=f16e151]
+                  - generic [ref=f16e152]: Waiting on approval
+                - paragraph [ref=f16e156]: Text contacts from the CRM, with the conversation saved to their record.
+              - paragraph [ref=f16e157]: The governed Twilio workflow, consent and quiet-hours authority, signed callbacks, STOP suppression and reconciliation are implemented. Provider messaging remains blocked until 10DLC approval and controlled real-number UAT pass.
+              - paragraph [ref=f16e158]: Twilio service connection · consent and carrier registration
+            - article [ref=f16e159]:
+              - generic [ref=f16e165]:
+                - generic [ref=f16e166]:
+                  - heading "Instagram & Facebook" [level=2] [ref=f16e167]
+                  - generic [ref=f16e168]: External setup required
+                - paragraph [ref=f16e172]: Turn verified Facebook Page or Instagram Professional messages into reviewable CRM enquiries.
+              - paragraph [ref=f16e173]: The inbound-only Meta boundary is implemented fail-closed. Business Login stays unavailable until the Graph version, exact permissions and eligible assets are verified.
+              - paragraph [ref=f16e174]: Meta Business Login · inbound business messages only
+            - article [ref=f16e175]:
+              - generic [ref=f16e181]:
+                - generic [ref=f16e182]:
+                  - heading "Website forms" [level=2] [ref=f16e183]
+                  - generic [ref=f16e184]: Ready to connect
+                - paragraph [ref=f16e187]: Authenticated website submissions can land here as new contacts, ready to screen.
+              - paragraph [ref=f16e188]: The authenticated CRM intake endpoint is ready. Connect the website when it exists by adding the live owner, service-role, token, and an idempotency key per submission.
+              - paragraph [ref=f16e189]: Server token · owner-bound idempotent intake
+          - region [ref=f16e190]:
+            - heading "Deployment truth" [level=2] [ref=f16e191]
+            - generic [ref=f16e192]:
+              - article [ref=f16e193]:
+                - generic [ref=f16e194]:
+                  - heading "Gmail & Google Calendar" [level=3] [ref=f16e195]
+                  - generic [ref=f16e196]: External setup required
+                - paragraph [ref=f16e197]: gmail.send · gmail.sync-metadata · calendar.create-omnix-calendar · calendar.upsert-omnix-event · calendar.complete-omnix-event · calendar.cancel-omnix-event · calendar.delete-omnix-event · calendar.sync
+                - paragraph [ref=f16e198]: "Next gate: OAuth consent verification"
+              - article [ref=f16e199]:
+                - generic [ref=f16e200]:
+                  - heading "Mailchimp" [level=3] [ref=f16e201]
+                  - generic [ref=f16e202]: External setup required
+                - paragraph [ref=f16e203]: audience.sync · audience.reconcile
+                - paragraph [ref=f16e204]: "Next gate: registered OAuth app"
+              - article [ref=f16e205]:
+                - generic [ref=f16e206]:
+                  - heading "Texting" [level=3] [ref=f16e207]
+                  - generic [ref=f16e208]: External setup required
+                - paragraph [ref=f16e209]: message.send · message.reconcile
+                - paragraph [ref=f16e210]: "Next gate: restricted API key"
+              - article [ref=f16e211]:
+                - generic [ref=f16e212]:
+                  - heading "Instagram & Facebook" [level=3] [ref=f16e213]
+                  - generic [ref=f16e214]: External setup required
+                - paragraph [ref=f16e215]: dm.ingest · dm.review
+                - paragraph [ref=f16e216]: "Next gate: business verification"
+        - paragraph [ref=f16e218]: Powered by Cyryx Labs
+    - navigation "Primary" [ref=f16e219]:
+      - link "Today" [ref=f16e220] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f16e224] [cursor=pointer]:
+        - /url: /contacts
+      - link "Activities" [ref=f16e230] [cursor=pointer]:
+        - /url: /activities
+      - link "Mailers" [ref=f16e234] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f16e238] [cursor=pointer]:
+        - /url: /connections
+  - button "Open Omnix assistant" [ref=f16e241]:
+    - generic [ref=f16e243]: Ask Omnix

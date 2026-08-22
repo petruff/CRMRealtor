@@ -1,0 +1,88 @@
+{
+  "scan_metadata": {
+    "date": "2026-08-10",
+    "scan_path": "packages/crm",
+    "scope": "All application pages, shared UI components, layout, and global styles",
+    "total_files": 13,
+    "frameworks_detected": {
+      "nextjs": true,
+      "react": true,
+      "tailwind_css_v4": true
+    }
+  },
+  "patterns": {
+    "buttons": {
+      "total_instances": 2,
+      "unique_patterns": 2
+    },
+    "links": {
+      "total_instances": 11
+    },
+    "colors": {
+      "unique_hex": 41,
+      "css_custom_properties": 49
+    },
+    "typography": {
+      "font_size_tokens": 11,
+      "display_family": "Fraunces",
+      "body_family": "Inter"
+    },
+    "surfaces": {
+      "card_like_patterns": 12,
+      "radius_tokens": [
+        "rounded",
+        "rounded-full",
+        "rounded-lg",
+        "rounded-xl"
+      ]
+    },
+    "forms": {
+      "control_instances": 0
+    }
+  },
+  "findings": [
+    {
+      "severity": "high",
+      "finding": "The current warm-editorial language conflicts with the supplied Apple design contract.",
+      "evidence": "Fraunces headlines, bronze accent, paper-toned background, and outlined secondary actions are foundational choices in globals.css and shared components."
+    },
+    {
+      "severity": "high",
+      "finding": "The dashboard relies on repeated bordered cards instead of typography, whitespace, and grouped surfaces for hierarchy.",
+      "evidence": "Twelve card-like patterns appear across thirteen scanned UI files."
+    },
+    {
+      "severity": "medium",
+      "finding": "Semantic lead temperatures require red, amber, and green and cannot be collapsed into Apple's single-blue marketing palette.",
+      "evidence": "Hot, Warm, and Nurture are functional CRM signals required by Story 1.1, not decorative brand accents."
+    },
+    {
+      "severity": "medium",
+      "finding": "The current mobile action targets are 36px, below the intended 44px touch target for primary one-handed workflows.",
+      "evidence": "Theme and quick-action controls use size-9."
+    },
+    {
+      "severity": "low",
+      "finding": "The browser requests a missing favicon.",
+      "evidence": "Runtime console reports a single 404 for /favicon.ico."
+    }
+  ],
+  "design_decision": {
+    "direction": "Apple-inspired product clarity adapted to an operational CRM",
+    "preserve": [
+      "All Story 1.1 information architecture and routes",
+      "Hot, Warm, and Nurture semantic signaling",
+      "Light and dark themes",
+      "Mobile bottom navigation and desktop navigation",
+      "Honest sample-data and integration-status messaging"
+    ],
+    "change": [
+      "Adopt the supplied --sk-* token namespace",
+      "Use the SF/system font stack and Apple-like optical tracking",
+      "Make blue the interaction accent and reserve semantic colors for CRM state",
+      "Reduce card density by grouping related content into larger surfaces",
+      "Use pill primary actions and link-style secondary actions",
+      "Increase touch targets and focus visibility"
+    ]
+  }
+}

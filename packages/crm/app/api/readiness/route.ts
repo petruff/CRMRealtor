@@ -1,0 +1,3 @@
+import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+export async function GET(){let database=false;const configured=isSupabaseConfigured();if(configured){try{const client=await createSupabaseServerClient();const {error}=await client.from('workspaces').select('id',{head:true,count:'exact'}).limit(1);database=!error;}catch{database=false;}}return Response.json({ok:database,product:'Omnix',schemaVersion:'readiness.v1',dependencies:[{id:'database',configured,status:database?'available':'unavailable'}]},{status:database?200:503,headers:{'cache-control':'no-store'}});}

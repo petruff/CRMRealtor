@@ -1,0 +1,21 @@
+schema: 1
+story: "3.4"
+date: "2026-08-12"
+reviewer: "@architect"
+verdict: GO
+decision:
+  parser: "SheetJS CE 0.20.3 official vendored tarball"
+  license: "Apache-2.0 with required attribution"
+  service_boundary: "existing Next.js application and Supabase authority"
+controls:
+  - "isolated bounded parsing with memory and timeout ceilings"
+  - "reject encrypted, macro-enabled and formula-bearing workbooks"
+  - "no raw workbook persistence or logging"
+  - "WorkspaceScope and membership-derived RLS"
+  - "HMAC verified one-time API keys and command-backed external API"
+  - "separate redacted health and readiness"
+references:
+  architecture: "docs/architecture/data-portability-operational-api.md"
+  config: "docs/architecture/config/data-portability-api.example.yaml"
+status: APPROVED_FOR_IMPLEMENTATION
+

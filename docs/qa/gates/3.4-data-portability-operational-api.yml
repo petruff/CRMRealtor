@@ -1,0 +1,38 @@
+schema: 1
+story: '3.4'
+story_title: 'Data Portability & Operational API'
+gate: CONCERNS
+status_reason: >-
+  The complete local contract, security, parser, API and production-build gates pass. The
+  public process health and dependency readiness probes now bypass session redirects and
+  return redacted JSON as AC8 requires. Production Supabase CLI linkage, migration 0024 and
+  provider UAT are tracked by later stories and are not evidence against Story 3.4.
+reviewer: 'Argus (Test Architect)'
+updated: '2026-08-15T14:45:00-04:00'
+top_issues:
+  - id: 'OPS-3.4-001'
+    severity: medium
+    finding: >-
+      The production project still lacks a CLI-linked, reproducible schema inventory and
+      monitored health consumer; endpoint correctness is proven locally, not yet by a hosted
+      post-deploy receipt.
+    suggested_action: 'After deployment, retain hosted health/readiness receipts and link the Supabase project for migration drift checks.'
+    suggested_owner: '@devops + @data-engineer'
+waiver: { active: false }
+quality_score: 92
+evidence:
+  focused_tests: '24/24 PASS across route policy and Alert Center regressions'
+  full_tests: '151 files / 684 tests PASS'
+  lint: PASS
+  typecheck: PASS
+  build: PASS
+  local_http:
+    health: '200 application/json health.v1'
+    readiness: '200 application/json readiness.v1 with configured database'
+nfr_validation:
+  security: { status: PASS, notes: 'Public probes expose no secret, tenant count or stack detail; protected routes remain session gated.' }
+  reliability: { status: CONCERNS, notes: 'Hosted post-deploy monitoring receipt remains pending.' }
+  maintainability: { status: PASS, notes: 'The centralized segment-bounded route policy owns the exception.' }
+deployment:
+  eligible: true
+  condition: 'DevOps must verify hosted JSON responses and preserve the existing rollback deployment.'

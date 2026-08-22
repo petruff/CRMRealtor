@@ -1,0 +1,50 @@
+schema: 1
+story: '2.3'
+story_title: 'Warm Editorial Realtor Landing & Motion Redesign'
+gate: PASS
+status_reason: >-
+  The route-scoped warm editorial landing, supplied hero composition, Google identity entry,
+  original realtor imagery and reduced-motion boundary satisfy AC1-AC10. Mandatory gates and
+  the desktop/tablet/390px browser matrix pass without overflow, broken assets or console errors.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:c35a0bb2c2901caea2f3aeddeea573bc51d09c500258b0449c8bd805431a0707'
+updated: '2026-08-12T15:38:00-04:00'
+top_issues: []
+waiver: { active: false }
+quality_score: 100
+evidence:
+  tests_reviewed:
+    result: 'PASS — 118 files / 561 tests'
+  mandatory_gates:
+    lint: PASS
+    typecheck: PASS
+    build: PASS
+  browser:
+    result: PASS
+    viewports: ['1292x910', '768x900', '390x844']
+    reduced_motion: PASS
+    keyboard_focus: PASS
+    horizontal_overflow: false
+    broken_images: 0
+    console_errors_or_warnings: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ac_gaps: []
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Identity-only Google OAuth and safe redirect boundaries were preserved.'
+  performance:
+    status: PASS
+    notes: 'Optimized intrinsic image assets and route-local motion avoid authenticated-app cost.'
+  reliability:
+    status: PASS
+    notes: 'Missing provider configuration and reduced-motion paths remain complete and truthful.'
+  maintainability:
+    status: PASS
+    notes: 'Landing tokens and GSAP cleanup are isolated from the authenticated CRM.'
+recommendations:
+  immediate: []
+  future:
+    - action: 'Repeat the same matrix after an authorized hosted OAuth deployment.'
+      refs: ['packages/crm/app/welcome/page.tsx', 'packages/crm/app/login/page.tsx']

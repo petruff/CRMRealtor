@@ -1,0 +1,112 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - link "Skip to main content" [ref=f3e3] [cursor=pointer]:
+      - /url: "#welcome-main"
+    - banner [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - link "Omnix home" [ref=f3e6] [cursor=pointer]:
+          - /url: /welcome
+          - generic [ref=f3e7]:
+            - img "Omnix" [ref=f3e8]
+            - generic [ref=f3e9]:
+              - paragraph [ref=f3e10]: Omnix
+              - paragraph [ref=f3e11]: Your real estate business, in order.
+        - generic [ref=f3e12]:
+          - button "Switch to dark theme" [ref=f3e13]
+          - link "Sign in" [ref=f3e16] [cursor=pointer]:
+            - /url: /login?next=%2F
+    - main [ref=f3e19]:
+      - region "Judith Serna Realtor" [ref=f3e20]:
+        - figure "Realtor brand image supplied for this experience." [ref=f3e21]:
+          - img "Judith Serna, Realtor, standing in a warm contemporary kitchen beside her house-and-heart brand mark." [ref=f3e23]
+      - region "The details stay together. You stay ahead." [ref=f3e25]:
+        - generic [ref=f3e26]:
+          - paragraph [ref=f3e28]: A relationship-first CRM for realtors
+          - complementary [ref=f3e29]:
+            - paragraph [ref=f3e30]: Preview environment
+            - heading "Start with the account you already know." [level=2] [ref=f3e31]
+            - paragraph [ref=f3e32]: Use the Google account you already use for Gmail. Omnix asks only for your identity at sign-in.
+            - generic [ref=f3e34]:
+              - button "Continue with Google" [disabled] [ref=f3e35]
+              - paragraph [ref=f3e36]: Google sign-in becomes active when the secure cloud project is connected. It is not simulated in this local preview.
+              - link "Explore the sample workspace" [ref=f3e37] [cursor=pointer]:
+                - /url: /
+            - generic [ref=f3e41]: No Google password is collected. Gmail and Calendar permissions are separate.
+      - region "Real estate moves through rooms, conversations and promises." [ref=f3e46]:
+        - generic [ref=f3e48]:
+          - figure "Illustrative scene · client walkthrough" [ref=f3e49]:
+            - img "Illustrative scene of a realtor guiding two clients through a warm contemporary home." [ref=f3e51]
+          - figure "Illustrative scene · open-house preparation" [ref=f3e54]:
+            - img "Illustrative scene of a realtor organizing property materials and keys before an open house." [ref=f3e56]
+      - region "A clear view of what deserves attention now." [ref=f3e58]:
+        - generic [ref=f3e59]:
+          - generic "How Omnix supports a realtor's day" [ref=f3e60]:
+            - article [ref=f3e61]:
+              - generic [ref=f3e62]: "01"
+              - paragraph [ref=f3e69]: Start informed
+              - heading "See what deserves attention before the day starts." [level=3] [ref=f3e70]
+              - paragraph [ref=f3e71]: Overdue follow-ups, first conversations, open tasks and important dates arrive in one prioritized view grounded in stored CRM facts.
+            - article [ref=f3e72]:
+              - generic [ref=f3e73]: "02"
+              - paragraph [ref=f3e79]: Work in context
+              - heading "Carry the relationship into every conversation." [level=3] [ref=f3e80]
+              - paragraph [ref=f3e81]: Contact details, households, notes, intent, relationship history and the next promised touch stay connected instead of scattered across tools.
+            - article [ref=f3e82]:
+              - generic [ref=f3e83]: "03"
+              - paragraph [ref=f3e88]: Close the loop
+              - heading "Turn decisions into visible next steps." [level=3] [ref=f3e89]
+              - paragraph [ref=f3e90]: Tasks, activities, imports and incomplete records remain reviewable, so the next action is organized without hiding the evidence behind it.
+          - generic "Omnix trust principles" [ref=f3e91]
+      - region "Organized enough to feel lighter. Specific enough to be useful." [ref=f3e92]:
+        - generic [ref=f3e94]:
+          - article [ref=f3e95]:
+            - paragraph [ref=f3e103]: "01"
+            - heading "Know what needs attention" [level=3] [ref=f3e104]
+            - paragraph [ref=f3e105]: A daily view of overdue follow-ups, first conversations, tasks and relationship moments grounded in stored CRM facts.
+          - article [ref=f3e106]:
+            - paragraph [ref=f3e112]: "02"
+            - heading "Keep the full relationship" [level=3] [ref=f3e113]
+            - paragraph [ref=f3e114]: Contacts, notes, next touches, real-estate intent, dates and activity stay connected to one coherent record.
+          - article [ref=f3e115]:
+            - paragraph [ref=f3e131]: "03"
+            - heading "Ask Omnix what comes next" [level=3] [ref=f3e132]
+            - paragraph [ref=f3e133]: The assistant can summarize the workspace, surface deadlines and point back to the records behind every answer.
+          - article [ref=f3e134]:
+            - paragraph [ref=f3e140]: "04"
+            - heading "Bring existing contacts with you" [level=3] [ref=f3e141]
+            - paragraph [ref=f3e142]: Preview CSV and vCard imports, merge conservatively and keep incomplete rows available for review.
+          - article [ref=f3e143]:
+            - paragraph [ref=f3e149]: "05"
+            - heading "Remember the physical details" [level=3] [ref=f3e150]
+            - paragraph [ref=f3e151]: Mailing readiness and physical-mail history stay visible without pretending an unconfigured provider is connected.
+          - article [ref=f3e152]:
+            - paragraph [ref=f3e157]: "06"
+            - heading "Work from dates, not memory" [level=3] [ref=f3e158]
+            - paragraph [ref=f3e159]: Tasks, due dates and next-touch commitments become an organized queue instead of another mental checklist.
+      - region [ref=f3e160]:
+        - generic [ref=f3e161]:
+          - generic [ref=f3e162]:
+            - paragraph [ref=f3e168]: Ready when the relationship is
+            - heading "Less CRM administration. More continuity." [level=2] [ref=f3e169]
+          - generic [ref=f3e170]:
+            - link "See Omnix intelligence" [ref=f3e171] [cursor=pointer]:
+              - /url: /omnix
+            - paragraph [ref=f3e175]: Sample mode is active in this local preview.
+    - contentinfo [ref=f3e176]:
+      - generic [ref=f3e177]:
+        - generic [ref=f3e178]:
+          - img "Omnix" [ref=f3e179]
+          - generic [ref=f3e180]:
+            - paragraph [ref=f3e181]: Omnix
+            - paragraph [ref=f3e182]: Relationship intelligence
+        - generic [ref=f3e183]:
+          - link "Connection status" [ref=f3e184] [cursor=pointer]:
+            - /url: /connections
+          - link "Sign in" [ref=f3e185] [cursor=pointer]:
+            - /url: /login
+      - generic [ref=f3e186]:
+        - generic [ref=f3e187]:
+          - generic [ref=f3e188]: Powered by
+          - img "Cyryx Labs" [ref=f3e189]
+        - paragraph [ref=f3e190]: Current local experience · provider availability is shown honestly
+  - alert [ref=f3e191]

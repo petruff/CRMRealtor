@@ -1,0 +1,32 @@
+{
+  "subtaskId": "4.2-google",
+  "critiquedAt": "2026-08-12T11:10:00.000Z",
+  "step5_5": {
+    "predictedBugs": [
+      "A Pub/Sub notification could be treated as mailbox truth; ingress now stores hash-only wake-up evidence and the worker always reconciles through bounded Gmail history.",
+      "A Gmail watch could expire silently; the cron worker schedules lease/fence renewal jobs and rotates watch plus immutable ingress routing with CAS.",
+      "An ambiguous Gmail send could be resent or rely on an unauthorized q query; it now fails closed and performs only a bounded no-q metadata scan when that separate scope is active.",
+      "A completed or archived task could leave an active provider event; explicit complete, cancel and delete operations are bound to the current task version and Omnix-owned event.",
+      "A CLI probe could claim health without a provider request; it now verifies OIDC identity and optional Gmail profile, refreshing the access token with owner-bound CAS when required."
+    ],
+    "edgeCases": [
+      "Expired history cursors enter full_resync_required and recover with one bounded 100-message scan before resuming history.list.",
+      "Duplicate and out-of-order push deliveries coalesce by generation and cannot duplicate contact activity.",
+      "Scope or account drift rejects worker/probe authority before an external write or successful receipt."
+    ],
+    "errorHandling": true,
+    "securityCheck": true,
+    "passed": true
+  },
+  "step6_5": {
+    "followsPatterns": true,
+    "noHardcodedSecrets": true,
+    "testsAdded": true,
+    "docsUpdated": true,
+    "noConsoleLogs": true,
+    "passed": true
+  },
+  "overallVerdict": "PASSED_WITH_EXTERNAL_UAT_BLOCKER",
+  "skipped": false,
+  "skipWarning": "Google production credentials, OAuth verification/assessment, Pub/Sub IAM, real-account UAT and browser accessibility evidence are not available in this workspace."
+}

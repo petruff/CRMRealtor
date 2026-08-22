@@ -1,0 +1,113 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/lib/data', () => ({ getRepository: vi.fn() }));
+vi.mock('@/lib/supabase/env', () => ({ isSupabaseConfigured: vi.fn() }));
+vi.mock('@/lib/application/contact-import', () => ({ parseContactImport: vi.fn() }));
+vi.mock('@/lib/application/workbook-portability', () => ({ parsePortableContactImport: vi.fn() }));
+vi.mock('@/lib/application/contact-import-service', () => ({
+  previewContactImport: vi.fn(), executeContactImport: vi.fn(),
+}));
+vi.mock('@/lib/application/imported-contact-organization', () => ({
+  organizeExistingImportedContacts: vi.fn(),
+}));
+
+import { getRepository } from '@/lib/data';
+import { isSupabaseConfigured } from '@/lib/supabase/env';
+import { parsePortableContactImport } from '@/lib/application/workbook-portability';
+import { previewContactImport } from '@/lib/application/contact-import-service';
+import { organizeExistingImportedContacts } from '@/lib/application/imported-contact-organization';
+import {
+  applyExistingImportOrganizationAction,
+  previewExistingImportOrganizationAction,
+  previewImportAction,
+  rollbackExistingImportOrganizationAction,
+} from './import-actions';
+
+describe('contact import actions', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('refuses a configured signed-out preview before workbook parsing starts', async () => {
+    vi.mocked(isSupabaseConfigured).mockReturnValue(true);
+    vi.mocked(getRepository).mockResolvedValue({ isLive: false } as Awaited<ReturnType<typeof getRepository>>);
+
+    const result = await previewImportAction({
+      filename: 'untrusted.xlsx', source: 'auto', contentBase64: 'not-a-workbook',
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      message: 'Sign in to an authorized Omnix workspace before previewing contact files.',
+    });
+    expect(parsePortableContactImport).not.toHaveBeenCalled();
+  });
+
+  it('bounds concurrent workbook parsing per authenticated workspace', async () => {
+    vi.mocked(isSupabaseConfigured).mockReturnValue(true);
+    vi.mocked(getRepository).mockResolvedValue({
+      isLive: true,
+      workspaceScope: { workspaceId: 'workspace-security-test' },
+      repository: {}, importGateway: {},
+    } as unknown as Awaited<ReturnType<typeof getRepository>>);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    vi.mocked(parsePortableContactImport).mockImplementation(async () => {
+      await gate;
+      return { filename: 'synthetic.xlsx' } as Awaited<ReturnType<typeof parsePortableContactImport>>;
+    });
+    vi.mocked(previewContactImport).mockResolvedValue({} as Awaited<ReturnType<typeof previewContactImport>>);
+    const input = { filename: 'synthetic.xlsx', source: 'auto' as const, contentBase64: 'UEs=' };
+
+    const first = previewImportAction(input);
+    const second = previewImportAction(input);
+    await vi.waitFor(() => expect(parsePortableContactImport).toHaveBeenCalledTimes(2));
+    await expect(previewImportAction(input)).resolves.toMatchObject({
+      ok: false, message: expect.stringContaining('already being processed'),
+    });
+    release();
+    await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+  });
+
+  it('previews existing import organization without applying changes', async () => {
+    vi.mocked(getRepository).mockResolvedValue({
+      isLive: true,
+      repository: {}, richContactRepository: {}, activityRepository: {}, importGateway: {},
+      workspaceScope: { workspaceId: 'workspace-owner', membershipId: 'owner-1', role: 'owner' },
+    } as unknown as Awaited<ReturnType<typeof getRepository>>);
+    vi.mocked(organizeExistingImportedContacts).mockResolvedValue({
+      dryRun: true, policyVersion: 'omnix.import-classification.v1', scanned: 140,
+      withImportProfile: 140, eligible: 138, wouldUpdate: 138, updated: 0,
+      alreadyOrganized: 0, skippedProtected: 2, needsReview: 12, failed: 0,
+      rollbackAvailable: false,
+      leadTypes: { hot: 20, warm: 80, nurture: 38 },
+      pipelineStages: { new: 38, contacted: 10, 'appointment-set': 5, active: 60, 'under-contract': 10, closed: 15, lost: 0 },
+    });
+
+    const response = await previewExistingImportOrganizationAction();
+
+    expect(response).toMatchObject({ ok: true, result: { dryRun: true, wouldUpdate: 138 } });
+    expect(organizeExistingImportedContacts).toHaveBeenCalledWith(
+      expect.any(Object), { dryRun: true },
+    );
+  });
+
+  it('keeps existing-import mutation owner-only', async () => {
+    vi.mocked(getRepository).mockResolvedValue({
+      isLive: true,
+      richContactRepository: {},
+      workspaceScope: { workspaceId: 'workspace-admin', membershipId: 'admin-1', role: 'admin' },
+    } as unknown as Awaited<ReturnType<typeof getRepository>>);
+
+    await expect(applyExistingImportOrganizationAction()).resolves.toEqual({
+      ok: false,
+      message: 'Only the workspace owner can organize existing imports.',
+    });
+    expect(organizeExistingImportedContacts).not.toHaveBeenCalled();
+  });
+
+  it('keeps rollback owner-only and validates its receipt before repository access', async () => {
+    await expect(rollbackExistingImportOrganizationAction('not-a-run')).resolves.toEqual({
+      ok: false, message: 'The rollback receipt is invalid.',
+    });
+    expect(getRepository).not.toHaveBeenCalled();
+  });
+});

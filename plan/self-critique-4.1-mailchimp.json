@@ -1,0 +1,32 @@
+{
+  "subtaskId": "4.1-mailchimp",
+  "critiquedAt": "2026-08-12T05:20:00.000Z",
+  "step5_5": {
+    "predictedBugs": [
+      "A caller-supplied contact list could diverge from canonical data; the bulk preview is now computed in Postgres and exposes counts only.",
+      "A periodic reconciliation could perform provider writes without owner review; the scheduler creates only a preview and approval remains owner-bound.",
+      "A provider timeout could be reported as success or retried blindly; durable jobs retain unknown outcomes for reconciliation and append receipts."
+      ,"A remote one-time webhook could be orphaned when local binding fails; setup now deletes it immediately and returns explicit manual-recovery guidance if compensation also fails."
+      ,"The absence of a provider revocation endpoint could be mislabeled as confirmed; Mailchimp now remains disconnected_unconfirmed with recovery material preserved."
+    ],
+    "edgeCases": [
+      "Audience replacement cancels previewed or approved work tied to the stale binding without deleting CRM history.",
+      "Unsubscribed and unlinked contacts are excluded from outbound backfill and reported only as aggregate counts.",
+      "Runtime deadlines and stale worker fencing defer work without duplicate payload, intent, approval or job rows."
+    ],
+    "errorHandling": true,
+    "securityCheck": true,
+    "passed": true
+  },
+  "step6_5": {
+    "followsPatterns": true,
+    "noHardcodedSecrets": true,
+    "testsAdded": true,
+    "docsUpdated": true,
+    "noConsoleLogs": true,
+    "passed": true
+  },
+  "overallVerdict": "PASSED_WITH_EXTERNAL_UAT_BLOCKER",
+  "skipped": false,
+  "skipWarning": "Real Mailchimp account credentials, signed webhook UAT and browser accessibility evidence are not available in this workspace."
+}

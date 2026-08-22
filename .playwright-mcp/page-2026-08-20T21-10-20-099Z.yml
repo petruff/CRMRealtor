@@ -1,0 +1,191 @@
+- generic [ref=e2]:
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - img "Omnix" [ref=e7]
+      - generic [ref=e8]:
+        - paragraph [ref=e9]: Omnix
+        - paragraph [ref=e10]: Your real estate business, in order.
+    - navigation "Primary" [ref=e11]:
+      - button "Open global search and commands" [ref=e12]:
+        - generic [ref=e16]: Search Omnix
+        - generic [ref=e17]: ⌘K
+      - generic [ref=e18]:
+        - paragraph [ref=e19]: Core
+        - generic [ref=e20]:
+          - link "Today" [ref=e21] [cursor=pointer]:
+            - /url: /
+          - link "Contacts" [ref=e25] [cursor=pointer]:
+            - /url: /contacts
+          - link "Activities" [ref=e31] [cursor=pointer]:
+            - /url: /activities
+      - generic [ref=e35]:
+        - paragraph [ref=e36]: Business
+        - generic [ref=e37]:
+          - link "Alerts" [ref=e38] [cursor=pointer]:
+            - /url: /alerts
+          - link "Pipeline" [ref=e44] [cursor=pointer]:
+            - /url: /pipeline
+          - link "Insights" [ref=e47] [cursor=pointer]:
+            - /url: /insights
+          - link "Omnix AI" [ref=e50] [cursor=pointer]:
+            - /url: /omnix
+      - generic [ref=e54]:
+        - paragraph [ref=e55]: Operations
+        - generic [ref=e56]:
+          - link "Mailers" [ref=e57] [cursor=pointer]:
+            - /url: /mailers
+          - link "Connections" [ref=e61] [cursor=pointer]:
+            - /url: /connections
+          - link "Data & API" [ref=e64] [cursor=pointer]:
+            - /url: /data
+          - link "Settings" [ref=e69] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=e73]:
+      - paragraph [ref=e74]: Powered by Cyryx Labs
+      - generic [ref=e75]:
+        - button "Sign out" [ref=e77]
+        - button "Switch to dark theme" [ref=e81]
+  - main [ref=e85]:
+    - generic [ref=e86]:
+      - paragraph [ref=e90]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - generic [ref=e91]:
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - paragraph [ref=e94]: Thursday, August 20
+            - heading "Good evening." [level=1] [ref=e95]
+            - paragraph [ref=e96]: Here's your day, in order.
+            - paragraph [ref=e97]: 8 people need you today.
+          - generic [ref=e98]:
+            - generic [ref=e102]: Stored CRM facts
+            - generic [ref=e103]: Evidence ready
+        - region [ref=e104]:
+          - generic [ref=e105]:
+            - generic [ref=e106]:
+              - paragraph [ref=e107]: Your day, in order
+              - heading "Calm focus timeline" [level=2] [ref=e108]
+              - paragraph [ref=e109]: Three priorities at most. One clear next move.
+            - button "Pause focus" [ref=e110]
+          - list "Priorities for today" [ref=e114]:
+            - listitem [ref=e115]:
+              - button "Act now First contact is still open Waiting 6 days · social media" [ref=e116]:
+                - generic [ref=e117]: "1"
+                - generic [ref=e118]:
+                  - generic [ref=e119]: Act now
+                  - generic [ref=e120]: First contact is still open
+                  - generic [ref=e121]: Waiting 6 days · social media
+            - listitem [ref=e122]:
+              - button "Act now First contact is still open Waiting 3 days · open house" [ref=e123]:
+                - generic [ref=e124]: "2"
+                - generic [ref=e125]:
+                  - generic [ref=e126]: Act now
+                  - generic [ref=e127]: First contact is still open
+                  - generic [ref=e128]: Waiting 3 days · open house
+            - listitem [ref=e129]:
+              - button "Act now First contact is still open Waiting 1 day · cold call" [ref=e130]:
+                - generic [ref=e131]: "3"
+                - generic [ref=e132]:
+                  - generic [ref=e133]: Act now
+                  - generic [ref=e134]: First contact is still open
+                  - generic [ref=e135]: Waiting 1 day · cold call
+          - generic [ref=e136]:
+            - article [ref=e137]:
+              - generic [ref=e138]:
+                - generic [ref=e139]:
+                  - generic [ref=e140]: Act now
+                  - generic [ref=e141]: First contact is still open
+                - heading "Waiting 6 days · social media" [level=3] [ref=e142]
+                - paragraph [ref=e143]: "Source: pipelineStage · lastContactedAt · createdAt · leadType · source · As of Aug 20, 5:10 PM"
+                - generic [ref=e144]:
+                  - link "Review contact" [ref=e145] [cursor=pointer]:
+                    - /url: /contacts/c-okafor
+                  - link "Review all 23 alerts" [ref=e149] [cursor=pointer]:
+                    - /url: /alerts
+              - generic "Priority 1 of 3" [ref=e150]:
+                - strong [ref=e151]: "01"
+                - generic [ref=e152]: / 03
+            - complementary [ref=e153]:
+              - region [ref=e154]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]:
+                    - paragraph [ref=e157]: Attention balance
+                    - heading "What needs you most" [level=2] [ref=e158]
+                  - generic "8 total items need attention" [ref=e159]: "8"
+                - list [ref=e160]:
+                  - listitem [ref=e161]:
+                    - generic [ref=e166]: First contact
+                    - strong [ref=e167]: "3"
+                  - listitem [ref=e168]:
+                    - generic [ref=e173]: Overdue
+                    - strong [ref=e174]: "3"
+                  - listitem [ref=e175]:
+                    - generic [ref=e179]: Due today
+                    - strong [ref=e180]: "2"
+                  - listitem [ref=e181]:
+                    - generic [ref=e187]: Relationship moments
+                    - strong [ref=e188]: "2"
+                - link "Open current alerts" [ref=e189] [cursor=pointer]:
+                  - /url: /alerts
+            - complementary [ref=e190]:
+              - region [ref=e191]:
+                - generic [ref=e192]:
+                  - paragraph [ref=e193]: Relationship moments
+                  - heading "Reasons to reach out" [level=2] [ref=e194]
+                - generic [ref=e195]:
+                  - article [ref=e196]:
+                    - generic [ref=e197]: RH
+                    - generic:
+                      - generic:
+                        - link "Ruth Hollings":
+                          - /url: /contacts/c-hollings
+                        - generic [ref=e198]: Nurture
+                      - paragraph: 🎂 Birthday in 3 days
+                      - paragraph: Not sure yet · Contacted
+                    - generic [ref=e200]:
+                      - link "Call Ruth Hollings" [ref=e201] [cursor=pointer]:
+                        - /url: tel:(512) 555-0420
+                      - link "Text Ruth Hollings" [ref=e204] [cursor=pointer]:
+                        - /url: sms:(512) 555-0420
+                      - link "Email Ruth Hollings" [ref=e207] [cursor=pointer]:
+                        - /url: mailto:ruthholl@example.com
+                  - article [ref=e211]:
+                    - generic [ref=e212]: JA
+                    - generic [ref=e213]:
+                      - generic [ref=e214]:
+                        - link "Joyce Abernathy" [ref=e215] [cursor=pointer]:
+                          - /url: /contacts/c-abernathy
+                        - generic [ref=e216]: Nurture
+                      - paragraph [ref=e218]: 🏡 Homeaversary in 11 days
+                      - paragraph [ref=e219]: Not sure yet · Contacted
+                    - generic [ref=e220]:
+                      - link "Call Joyce Abernathy" [ref=e221] [cursor=pointer]:
+                        - /url: tel:(512) 555-0512
+                      - link "Text Joyce Abernathy" [ref=e224] [cursor=pointer]:
+                        - /url: sms:(512) 555-0512
+                - link "Review relationships" [ref=e227] [cursor=pointer]:
+                  - /url: /contacts
+          - generic [ref=e228]:
+            - generic [ref=e229]: Sample data
+            - generic [ref=e230]: Read-only focus
+            - generic [ref=e231]: Updated Aug 20, 5:10 PM
+        - region [ref=e232]:
+          - generic [ref=e236]:
+            - heading "Today is based on authorized CRM evidence" [level=2] [ref=e237]
+            - paragraph [ref=e238]: 23 current alerts · Sample workspace · No prediction or inferred deadline
+          - navigation "Today quick actions" [ref=e239]:
+            - link "Tasks" [ref=e240] [cursor=pointer]:
+              - /url: /activities
+            - link "Import" [ref=e241] [cursor=pointer]:
+              - /url: /contacts/import
+            - link "Add contact" [ref=e242] [cursor=pointer]:
+              - /url: /contacts/new
+        - region [ref=e243]:
+          - button "Relationship queue Explore the complete work queue 12 entries across Now, relationship moments, and the next seven days · 11 stored contacts. Open queue" [ref=e244]:
+            - generic [ref=e247]:
+              - text: Relationship queue
+              - generic [ref=e248]: Explore the complete work queue
+              - generic [ref=e249]: 12 entries across Now, relationship moments, and the next seven days · 11 stored contacts.
+            - generic [ref=e250]: Open queue
+  - button "Open Omnix assistant" [ref=e254]:
+    - generic [ref=e256]: Ask Omnix

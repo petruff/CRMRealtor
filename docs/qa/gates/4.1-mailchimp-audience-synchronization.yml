@@ -1,0 +1,44 @@
+schema: 1
+story: '4.1'
+story_title: 'Mailchimp Audience Synchronization'
+gate: FAIL
+status_reason: >-
+  The local implementation and automated/browser gates pass, including the remediated disconnect
+  and webhook-compensation paths. AC10 remains unmet because no authorized real Mailchimp account,
+  audience, signed webhook cycle or connect-to-disconnect UAT evidence is available.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:e315f5c56bc1ba4bb4235e25f435309d230ac988a5f6871471792c6e976b7590'
+updated: '2026-08-12T15:44:00-04:00'
+top_issues:
+  - id: 'REQ-4.1-UAT-001'
+    severity: high
+    finding: >-
+      AC10 requires real-audience proof for OAuth, audience selection, one tag update, a verified
+      unsubscribe, reconciliation and disconnect; registered credentials and that evidence are absent.
+    suggested_action: 'Provision the approved Mailchimp OAuth app and controlled audience, then execute and retain the AC10 evidence matrix before enabling the provider.'
+    suggested_owner: '@devops + @qa + product owner'
+waiver: { active: false }
+quality_score: 80
+evidence:
+  local_implementation: PASS
+  focused_and_full_tests: PASS
+  browser:
+    result: PASS
+    viewports: ['1292x910', '768x900', '390x844']
+    keyboard_focus: PASS
+    light_dark: PASS
+    horizontal_overflow: false
+    console_errors_or_warnings: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: [10]
+nfr_validation:
+  security: { status: PASS, notes: 'OAuth, secrets, signed ingress, replay and revocation boundaries pass local review.' }
+  performance: { status: PASS, notes: 'Queues, pages and reconciliation are bounded.' }
+  reliability: { status: FAIL, notes: 'Real provider lifecycle evidence required by AC10 is absent.' }
+  maintainability: { status: PASS, notes: 'Provider adapter and durable platform seams are separated.' }
+recommendations:
+  immediate:
+    - action: 'Complete real-account AC10 UAT; keep provider disabled until it passes.'
+      refs: ['docs/stories/4.1.mailchimp-audience-synchronization.story.md']
+  future: []

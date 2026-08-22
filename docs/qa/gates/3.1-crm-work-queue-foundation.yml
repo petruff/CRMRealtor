@@ -1,0 +1,140 @@
+schema: 1
+story: '3.1'
+story_title: 'CRM Work Queue Foundation'
+gate: CONCERNS
+status_reason: >-
+  All reported blockers, including exact candidate/plan binding inside the conversion RPC, are
+  resolved and the local gates pass. CONCERNS remains because the required AC10 browser,
+  accessibility, responsive, asset, and console matrix is NOT_RUN.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:2d937c544e69b6167aacbc76f3826dae391ce882774d6551dfc9dc8f588eb397'
+updated: '2026-08-11T15:05:42-04:00'
+
+waiver:
+  active: false
+
+risk_summary:
+  highest_score: 6
+  highest_risk: 'Required browser/accessibility/console evidence is unavailable'
+
+top_issues:
+  - id: 'TEST-3.1-001'
+    severity: medium
+    finding: >-
+      The desktop/390px, light/dark, keyboard/focus, responsive-overflow, confirmation, explicit-error,
+      asset, and console matrix remains NOT_RUN because browser automation was not authorized. This is
+      an evidence limitation, not a pass or a production claim.
+    refs:
+      - 'docs/stories/3.1.crm-work-queue-foundation.story.md'
+    suggested_owner: '@qa'
+
+findings_recheck:
+  - id: 'REQ-3.1-001'
+    status: RESOLVED
+    evidence: 'Application-shaped conversion plans include changes and pass exact SQL validation/pgTAP.'
+    refs:
+      - 'packages/crm/supabase/migrations/0005_crm_work_queue.sql:1276'
+      - 'packages/crm/supabase/tests/0005_crm_work_queue_test.sql:917'
+  - id: 'REQ-3.1-002'
+    status: RESOLVED
+    evidence: 'Invalid quarantined values fail before conversion; corrected CLI conversion succeeds.'
+    refs:
+      - 'packages/crm/lib/application/incomplete-record-commands.ts:110'
+      - 'packages/crm/lib/application/crm-work-queue-cli.test.ts:54'
+  - id: 'SEC-3.1-003'
+    status: RESOLVED
+    evidence: 'Sample repositories fail closed to the authenticated active membership; revoked-member returns exit 3.'
+    refs:
+      - 'packages/crm/lib/data/memory-activity-repository.ts:72'
+      - 'packages/crm/lib/application/crm-work-queue-cli.test.ts:89'
+  - id: 'SEC-3.1-004'
+    status: RESOLVED
+    evidence: 'Persisted Smart List and incomplete-candidate validators reject semantic and bounded invalid values.'
+    refs:
+      - 'packages/crm/supabase/migrations/0005_crm_work_queue.sql:98'
+      - 'packages/crm/supabase/migrations/0005_crm_work_queue.sql:238'
+      - 'packages/crm/supabase/tests/0005_crm_work_queue_test.sql:230'
+  - id: 'REQ-3.1-005'
+    status: RESOLVED
+    evidence: 'The realtor form edits the complete bounded definition/sort and server action persists it.'
+    refs:
+      - 'packages/crm/components/smart-list-controls.tsx:185'
+      - 'packages/crm/app/contacts/actions.ts:41'
+      - 'packages/crm/app/contacts/actions.test.ts:20'
+  - id: 'SEC-3.1-006'
+    status: RESOLVED
+    evidence: >-
+      Contact payloads now enforce semantic/length bounds and convert_incomplete_record derives and
+      compares the exact create/update payload to the corrected candidate. Updated pgTAP and an
+      authenticated local probe reject divergent invalid plans with zero invalid contacts.
+    refs:
+      - 'packages/crm/supabase/migrations/0005_crm_work_queue.sql:1021'
+      - 'packages/crm/supabase/migrations/0005_crm_work_queue.sql:1196'
+      - 'packages/crm/supabase/migrations/0005_crm_work_queue.sql:1230'
+      - 'packages/crm/supabase/migrations/0005_crm_work_queue.sql:2049'
+      - 'packages/crm/supabase/tests/0005_crm_work_queue_test.sql:870'
+      - 'packages/crm/supabase/tests/0005_crm_work_queue_test.sql:1038'
+
+review_scope:
+  manifest_rule: 'Story File List paths, excluding the mutable story and docs/qa/gates/**; ordinal sort; SHA-256 per file; path<TAB>hash rows joined with LF; SHA-256 of UTF-8 manifest'
+  file_list_entries: 83
+  manifest_files: 82
+  missing_files: 0
+
+evidence:
+  qa_reexecuted:
+    - command: 'npm run build'
+      cwd: 'packages/crm'
+      result: PASS
+    - command: 'npm run typecheck'
+      cwd: 'packages/crm'
+      result: PASS
+    - command: 'npm run lint'
+      cwd: 'packages/crm'
+      result: PASS
+    - command: 'npm test'
+      cwd: 'packages/crm'
+      result: 'PASS (43 files, 215 tests)'
+    - command: 'supabase test db supabase/tests/0005_crm_work_queue_test.sql --local'
+      cwd: 'packages/crm'
+      result: 'PASS (16/16; includes invalid/divergent conversion probes; fixture transaction rolled back)'
+    - command: 'Positive/negative Smart List, incomplete-record, and activity CLI matrix'
+      cwd: 'packages/crm'
+      result: >-
+        PASS: create/list/show/apply/update/archive/restore; invalid Smart List; redaction/detail;
+        invalid/corrected conversion; task/event operations; revoked assignee; empty/101-ID bulk bounds;
+        and live fail-closed behavior produced expected results/exit codes.
+    - command: 'Authenticated local convert_incomplete_record divergence probe after remediation'
+      result: 'PASS: divergent invalid plan rejected; invalid_contacts=0; transaction rolled back.'
+
+requirements_trace:
+  covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+  partial: [10]
+  gaps: []
+
+nfr_validation:
+  security: PASS
+  performance: CONCERNS
+  reliability: PASS
+  maintainability: PASS
+  accessibility: CONCERNS
+
+evidence_limitations:
+  - 'No Playwright, browser MCP/CLI, or browser automation was used; the AC10 visual/accessibility/console matrix is NOT_RUN.'
+  - 'No hosted or production Google/Supabase UAT was performed or inferred from local evidence.'
+  - 'CodeRabbit was unavailable because this workspace is not a Git repository and the configured Ubuntu WSL distribution is absent.'
+  - 'Git provenance is unavailable; reviewed_revision is a deterministic local implementation manifest, not a commit.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Run the AC10 browser matrix in the user-authorized browser/tooling before any production claim.'
+      refs:
+        - 'docs/stories/3.1.crm-work-queue-foundation.story.md'
+    - action: 'Profile incomplete-record preview at the documented 200-500-contact scale.'
+      refs:
+        - 'packages/crm/lib/data/supabase-incomplete-record-repository.ts:269'
+
+lifecycle:
+  previous_status: InReview
+  new_status: Done

@@ -1,0 +1,6 @@
+Story: docs/stories/1.4.persistent-mailer-checklist.story.md
+Status de entrada esperado: InReview.
+Escopo implementado: domínio, comandos, repositórios memory/Supabase, migração owner-scoped, CLI JSON, server actions, workspace Apple-inspired, documentação e testes.
+Evidência do desenvolvedor: lint PASS; typecheck PASS; 14 arquivos de teste e 85 testes PASS; build Next.js PASS; smoke runtime create/mark/reload/unmark PASS; viewport móvel 390x844 sem overflow; console sem erros.
+Limites externos: nenhuma migração foi aplicada a Supabase remoto, nenhum deploy foi realizado e nenhuma integração direta Mailchimp/HubSpot foi reivindicada. CodeRabbit CLI indisponível porque não existe uma distro WSL Linux suportada neste host; revisão manual profunda obrigatória.
+Revisão deve usar um digest determinístico dos arquivos de implementação como reviewed_revision e validar sua correspondência antes de persistir o gate.

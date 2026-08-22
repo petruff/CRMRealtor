@@ -1,0 +1,73 @@
+- generic [active] [ref=f24e1]:
+  - generic [ref=f24e2]:
+    - link "Skip to main content" [ref=f24e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - generic [ref=f24e4]:
+      - banner [ref=f24e5]:
+        - generic [ref=f24e6]:
+          - generic [ref=f24e7]: R
+          - generic [ref=f24e8]:
+            - paragraph [ref=f24e9]: Realtor CRM
+            - paragraph [ref=f24e10]: Contacts
+        - button "Switch to dark theme" [ref=f24e11]
+      - main [ref=f24e14]:
+        - generic [ref=f24e15]:
+          - paragraph [ref=f24e19]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+          - generic [ref=f24e401]:
+            - link "Back to today" [ref=f24e402] [cursor=pointer]:
+              - /url: /
+            - status [ref=f24e405]: Contact updated.
+            - generic [ref=f24e406]:
+              - generic [ref=f24e407]: JH
+              - generic [ref=f24e408]:
+                - generic [ref=f24e409]:
+                  - heading "Jordy Harbor" [level=1] [ref=f24e410]
+                  - generic [ref=f24e411]: Hot
+                - paragraph [ref=f24e413]: Lead · Not sure yet
+            - generic [ref=f24e414]:
+              - link "Call" [ref=f24e415] [cursor=pointer]:
+                - /url: tel:555-0188
+              - link "Text" [ref=f24e418] [cursor=pointer]:
+                - /url: sms:555-0188
+              - link "Email" [ref=f24e421] [cursor=pointer]:
+                - /url: mailto:jordan@example.com
+              - link "Edit" [ref=f24e425] [cursor=pointer]:
+                - /url: /contacts/c-n874flkh/edit
+            - generic [ref=f24e430]:
+              - heading "Follow-up" [level=2] [ref=f24e431]
+              - generic [ref=f24e432]:
+                - generic [ref=f24e433]:
+                  - term [ref=f24e434]: Last spoke
+                  - definition [ref=f24e435]: today
+                - generic [ref=f24e436]:
+                  - term [ref=f24e437]: Next touch
+                  - definition [ref=f24e438]: Aug 25, 2026 · in 15 days
+                - generic [ref=f24e439]:
+                  - term [ref=f24e440]: Rhythm
+                  - definition [ref=f24e441]: Every 7 days · first 8 weeks
+              - paragraph [ref=f24e442]: New contact — on the accelerated 8×8 rhythm for their first eight weeks, then settles to every 7 days.
+              - button "Mark as contacted" [ref=f24e444]
+            - generic [ref=f24e447]:
+              - heading "Notes" [level=2] [ref=f24e448]
+              - generic [ref=f24e449]:
+                - generic [ref=f24e450]:
+                  - generic [ref=f24e451]: Add a note
+                  - textbox "Add a note Saved notes are timestamped and cannot be edited." [ref=f24e455]:
+                    - /placeholder: What matters for the next conversation?
+                  - generic [ref=f24e456]: Saved notes are timestamped and cannot be edited.
+                - button "Save note" [ref=f24e458]
+              - list [ref=f24e463]:
+                - listitem [ref=f24e464]:
+                  - paragraph [ref=f24e465]: Met at the Sunday open house. Wants a lender introduction.
+                  - paragraph [ref=f24e466]: Aug 10, 2026
+      - navigation "Primary" [ref=f24e93]:
+        - link "Today" [ref=f24e94] [cursor=pointer]:
+          - /url: /
+        - link "Contacts" [ref=f24e98] [cursor=pointer]:
+          - /url: /contacts
+        - link "Mailers" [ref=f24e104] [cursor=pointer]:
+          - /url: /mailers
+        - link "Connections" [ref=f24e108] [cursor=pointer]:
+          - /url: /connections
+  - button "Open Next.js Dev Tools" [ref=f24e117] [cursor=pointer]
+  - alert [ref=f24e121]

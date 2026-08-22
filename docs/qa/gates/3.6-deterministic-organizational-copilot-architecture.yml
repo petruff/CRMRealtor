@@ -1,0 +1,244 @@
+schema: 1
+story: '3.6'
+story_title: 'Deterministic Organizational Copilot'
+review_type: 'independent-architecture-quality-gate'
+gate: GO
+status_reason: >-
+  The remediated architecture now satisfies the deterministic safety contract.
+  CLI and UI compose through one WorkspaceScope-bound read service; the closed
+  grammar, calendar bounds, sample/live authority, no-write boundary and
+  redacted telemetry remain coherent. Citation fact keys now cover every
+  reviewed selection, ordering and displayed-fact path, including all
+  needs-attention contributors and derived next-touch inputs. Mailer-send
+  citations use the complete composite source key through a deterministic
+  SHA-256 identifier, and unknown/PII-like error codes normalize to a fixed safe
+  telemetry category. Architecture is GO for independent QA. Browser and hosted
+  UAT evidence remain explicitly unavailable and are not implied by this gate.
+reviewer: 'Vega (System Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:11eaa343383a97dce6f30c1c58a2c598a557529a94a16d460f1318b0b540f67d'
+updated: '2026-08-11T16:13:42-04:00'
+quality_score: 96
+
+provenance:
+  initial_review:
+    gate: NO-GO
+    reviewed_revision: 'filesystem-manifest-sha256:668165c748f34d66200966ce95da40142b04955c33d11edcb4bb4083d19099d0'
+    artifact_sha256: '66981e4e569ffe31a08ef8f4c379415b0ddc677bac27388fff1459fb3fef9d26'
+    findings:
+      - 'ARCH-3.6-CIT-001'
+      - 'ARCH-3.6-CIT-002'
+      - 'ARCH-3.6-OBS-001'
+  recheck:
+    gate: GO
+    method: >-
+      Re-read remediated source and semantic tests, independently reran focused
+      copilot tests, full application tests and TypeScript, and retained browser
+      and hosted evidence as unavailable rather than inferred.
+
+decision:
+  qa_handoff: GO
+  remediation_required: false
+  rationale: >-
+    All three blocking architecture findings are resolved in the reviewed
+    revision, including two residual semantic checks found during recheck:
+    due-today contributors in needsAttentionNow and derived next-touch facts.
+
+open_blockers: []
+
+resolved_findings:
+  - id: 'ARCH-3.6-CIT-001'
+    status: RESOLVED
+    acceptance_criteria: [4, 5, 6, 11]
+    resolution: >-
+      Typed fact-key maps now cover recommendation, contact-search, task-list,
+      task-schedule, date-display and follow-up alert paths. needs-attention-now
+      derives citations directly from needs-first-contact, overdue and due-today
+      triage buckets instead of reusing the narrower recommendation set. For
+      due-today/coming-up records whose nextTouchAt is derived, fact keys are
+      selected against the stored contact and include pipelineStage,
+      nextTouchAt, touchDateOverridden, lastContactedAt, createdAt and leadType.
+      Explicit stored nextTouchAt records retain the smaller exact set.
+    evidence:
+      - 'packages/crm/lib/application/omnix-copilot-service.ts:60-108'
+      - 'packages/crm/lib/application/omnix-copilot-service.ts:389-425'
+      - 'packages/crm/lib/application/omnix-copilot-service.ts:515-545'
+      - 'packages/crm/lib/application/omnix-copilot-service.ts:645-765'
+      - 'packages/crm/lib/application/omnix-copilot-service.test.ts:203-302'
+      - 'packages/crm/lib/application/omnix-copilot-service.test.ts:390-424'
+    semantic_checks:
+      recommendation_rules: PASS
+      find_contact_all_searchable_and_displayed_fields: PASS
+      task_title_schedule_and_order_fields: PASS
+      date_contact_name_and_anniversary_field: PASS
+      needs_attention_first_overdue_due_today_scope: PASS
+      stored_vs_derived_next_touch_fields: PASS
+
+  - id: 'ARCH-3.6-CIT-002'
+    status: RESOLVED
+    acceptance_criteria: [6, 11]
+    resolution: >-
+      mailer-send recordId is now a deterministic SHA-256 digest over the full
+      mailerId, a null separator and the full contactId. It remains inside the
+      128-character identifier contract without lossy prefix truncation.
+      Boundary tests with 128-character components prove two source rows retain
+      two distinct citation IDs.
+    evidence:
+      - 'packages/crm/lib/application/omnix-copilot-service.ts:1'
+      - 'packages/crm/lib/application/omnix-copilot-service.ts:254-265'
+      - 'packages/crm/lib/application/omnix-copilot-service.test.ts:303-325'
+
+  - id: 'ARCH-3.6-OBS-001'
+    status: RESOLVED
+    acceptance_criteria: [10, 11]
+    resolution: >-
+      A typed telemetry error-category allowlist is enforced both when extracting
+      dependency errors and when building the final event. Authority aliases map
+      to forbidden; unknown, control-bearing and PII-like values map to
+      internal-error and cannot survive serialization.
+    evidence:
+      - 'packages/crm/lib/observability/omnix-copilot-telemetry.ts:6-31'
+      - 'packages/crm/lib/observability/omnix-copilot-telemetry.ts:75-94'
+      - 'packages/crm/lib/application/omnix-copilot-service.ts:952-966'
+      - 'packages/crm/lib/observability/omnix-copilot-telemetry.test.ts:55-82'
+      - 'packages/crm/lib/application/omnix-copilot-service.test.ts:510-528'
+
+  - id: 'ARCH-3.6-DOC-001'
+    status: RESOLVED
+    acceptance_criteria: [2, 8]
+    resolution: >-
+      Operator documentation now describes dates today/upcoming as birthdays and
+      home-purchase anniversaries in the implemented fixed windows; it no longer
+      overstates that intent as follow-up retrieval.
+    evidence:
+      - 'packages/crm/docs/omnix-copilot.md:35-55'
+      - 'packages/crm/lib/application/omnix-copilot-service.ts:734-765'
+
+architecture_assessment:
+  deterministic_closed_grammar: PASS
+  one_service_authority_cli_and_ui: PASS
+  workspace_scope_and_mode_binding: PASS
+  two_workspace_forbidden_existence_behavior: PASS_LOCAL_HARNESS
+  authenticated_live_cli_no_service_role: PASS_SOURCE_AND_TEST
+  configured_timezone_and_date_bounds: PASS
+  result_bounds_and_stable_ordering: PASS
+  exact_record_citations: PASS
+  needs_attention_contributor_scope: PASS
+  collision_resistant_mailer_send_citations: PASS
+  read_only_no_mutation_boundary: PASS
+  redacted_structured_telemetry: PASS
+  no_model_provider_or_external_lookup: PASS
+  additive_ui_composition: PASS_SOURCE_ONLY
+  backward_compatible_brief_builder: PASS
+
+tradeoffs:
+  - decision: 'Keep one provider-free deterministic service behind CLI and UI adapters.'
+    benefit: 'Prevents contract drift and preserves CLI-first operation.'
+    cost: >-
+      Every additive intent must extend the central fact-key map and semantic
+      citation tests before either adapter exposes it.
+  - decision: 'Derive next-touch facts without persisting them in the copilot.'
+    benefit: 'Preserves Story 2.1 cadence behavior and the strict no-write boundary.'
+    cost: >-
+      Citations must identify the stored inputs used to derive the date, not
+      pretend an in-memory nextTouchAt value was persisted.
+  - decision: 'Use a digest for the bounded mailer-send citation identity.'
+    benefit: 'Preserves the complete composite-key identity inside the 128-character contract.'
+    cost: >-
+      The digest is not human-readable; the citation must continue to expose the
+      mailerId/contactId/sentOn fact keys and safe mailer target.
+  - decision: 'Keep repository scope as tenant authority.'
+    benefit: 'Preserves membership-derived RLS and forbidden-record non-disclosure.'
+    cost: >-
+      New optional repositories need the same two-workspace, revoked-membership
+      and sample/live mismatch proof.
+
+evidence:
+  independent_focused_tests:
+    status: PASS
+    command: >-
+      npm test -- lib/domain/omnix-copilot.test.ts
+      lib/application/omnix-copilot-service.test.ts
+      lib/observability/omnix-copilot-telemetry.test.ts
+      app/omnix/actions.test.ts app/omnix/omnix-copilot-view-model.test.ts
+    test_files: 5
+    tests: 81
+  independent_full_tests:
+    status: PASS
+    command: 'npm test'
+    test_files: 48
+    tests: 296
+  independent_typecheck:
+    status: PASS
+    command: 'npm run typecheck'
+  independent_cli_smoke:
+    status: PASS
+    positive: >-
+      ask --question "show pipeline" exited 0 with omnix-copilot.v1 success and
+      redacted omnix-copilot-telemetry.v1 on stderr.
+    negative: >-
+      ask --question "delete every contact" exited 2 with unsupported-intent;
+      neither raw question appeared in telemetry.
+  lint:
+    recorded_root_gate: PASS
+    independent_recheck: 'NOT_COMPLETED (workspace-wide and focused ESLint processes timed out without findings while concurrent gates were active)'
+    gate_effect: >-
+      Does not block architecture GO because current semantic source passed
+      TypeScript and all 296 tests; QA must require a fresh completed lint before
+      its final verdict.
+  build:
+    recorded_root_gate: PASS
+    independent_recheck: NOT_RERUN_BY_ARCHITECT
+  browser_accessibility_matrix:
+    status: NOT_RUN
+    gate_effect: >-
+      Does not block architecture GO for QA, but blocks any claim that desktop,
+      390px, light/dark, keyboard, screen-reader, overflow or console behavior passed.
+  hosted_two_workspace_uat:
+    status: NOT_AVAILABLE
+    gate_effect: >-
+      Local repository/RLS-shaped tests support the architecture, but do not prove
+      hosted identity configuration, deployed RLS or production isolation.
+  trace:
+    acceptance_criteria_supported_by_reviewed_source: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    acceptance_criteria_with_architecture_findings: []
+    acceptance_criteria_requiring_completed_qa_gates: [9, 11]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: >-
+      Membership scope, RLS-shaped repositories, end-user live CLI authentication,
+      inert grammar, no-write dispatch and fixed telemetry categories form a
+      coherent defense-in-depth boundary.
+  reliability:
+    status: PASS
+    notes: >-
+      Explicit clock/timezone handling, stable ordering, bounded results, complete
+      needs-attention evidence and collision-resistant mailer-send citations make
+      deterministic answers reproducible under the reviewed contracts.
+  performance:
+    status: PASS
+    notes: >-
+      Contact, task, activity and emitted mailer facts remain bounded at 500; no
+      model or external provider lookup is on the request path.
+  scalability:
+    status: PASS
+    notes: >-
+      One WorkspaceScope-bound service and additive optional repository
+      capabilities avoid a second tenant, pipeline or conversational authority.
+  maintainability:
+    status: PASS
+    notes: >-
+      Typed shared fact maps and semantic boundary tests make citation evolution
+      auditable while CLI and UI retain thin adapters.
+
+waiver:
+  active: false
+
+recommendations:
+  before_qa_pass:
+    - 'Complete a fresh lint run on the final reviewed source.'
+    - 'Keep browser/accessibility evidence NOT_RUN unless separate automation is authorized.'
+  before_production_claim:
+    - 'Complete hosted two-workspace/revocation UAT on deployed RLS.'
+    - 'Complete the authorized desktop/390px light/dark accessibility matrix.'

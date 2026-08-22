@@ -1,0 +1,60 @@
+- generic [ref=f8e2]:
+  - link "Skip to main content" [ref=f8e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - complementary [ref=f8e4]:
+    - generic [ref=f8e6]:
+      - img "Omnix" [ref=f8e7]
+      - generic [ref=f8e8]:
+        - paragraph [ref=f8e9]: Omnix
+        - paragraph [ref=f8e10]: Your real estate business, in order.
+    - navigation "Primary" [ref=f8e11]:
+      - button "Open global search and commands" [ref=f8e12]:
+        - generic [ref=f8e16]: Search Omnix
+        - generic [ref=f8e17]: ⌘K
+      - generic [ref=f8e18]:
+        - paragraph [ref=f8e19]: Core
+        - generic [ref=f8e20]:
+          - link "Today" [ref=f8e21] [cursor=pointer]:
+            - /url: /
+          - link "Contacts" [ref=f8e25] [cursor=pointer]:
+            - /url: /contacts
+          - link "Activities" [ref=f8e31] [cursor=pointer]:
+            - /url: /activities
+      - generic [ref=f8e35]:
+        - paragraph [ref=f8e36]: Business
+        - generic [ref=f8e37]:
+          - link "Alerts" [ref=f8e38] [cursor=pointer]:
+            - /url: /alerts
+          - link "Pipeline" [ref=f8e44] [cursor=pointer]:
+            - /url: /pipeline
+          - link "Insights" [ref=f8e47] [cursor=pointer]:
+            - /url: /insights
+          - link "Omnix AI" [ref=f8e50] [cursor=pointer]:
+            - /url: /omnix
+      - generic [ref=f8e54]:
+        - paragraph [ref=f8e55]: Operations
+        - generic [ref=f8e56]:
+          - link "Mailers" [ref=f8e57] [cursor=pointer]:
+            - /url: /mailers
+          - link "Connections" [ref=f8e61] [cursor=pointer]:
+            - /url: /connections
+          - link "Data & API" [ref=f8e64] [cursor=pointer]:
+            - /url: /data
+          - link "Settings" [ref=f8e69] [cursor=pointer]:
+            - /url: /settings
+    - generic [ref=f8e73]:
+      - paragraph [ref=f8e74]: Powered by Cyryx Labs
+      - generic [ref=f8e75]:
+        - button "Sign out" [ref=f8e77]
+        - button "Switch to dark theme" [ref=f8e81]
+  - main [ref=f8e85]:
+    - generic [ref=f8e86]:
+      - paragraph [ref=f8e90]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - generic [ref=f8e91]:
+        - generic [ref=f8e92]:
+          - paragraph [ref=f8e93]: Workspace control
+          - heading "Settings" [level=1] [ref=f8e94]
+          - paragraph [ref=f8e95]: Configure Omnix intelligence without exposing provider credentials or weakening workspace authority.
+        - status [ref=f8e96]: AI settings require a signed-in live Supabase workspace.
+  - button "Open Omnix assistant" [ref=f8e97]:
+    - generic [ref=f8e99]: Ask Omnix

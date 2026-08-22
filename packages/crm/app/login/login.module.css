@@ -1,0 +1,295 @@
+@import '@fontsource/cormorant-garamond/500.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+
+.page {
+  --auth-primary: #cc785c;
+  --auth-primary-active: #a9583e;
+  --auth-canvas: #faf9f5;
+  --auth-foreground: #181715;
+  --auth-body: #3d3d3a;
+  --auth-muted: #666666;
+  --auth-border: #e6dfd8;
+  --auth-dark: #181715;
+  --auth-display: 'Cormorant Garamond', 'EB Garamond', Garamond, serif;
+  --auth-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --sk-body-text-color: var(--auth-foreground);
+  --sk-headline-text-color: var(--auth-foreground);
+  --sk-button-background: var(--auth-primary);
+  --sk-button-background-hover: var(--auth-primary-active);
+  --sk-button-background-active: var(--auth-primary-active);
+  --sk-focus-color: var(--auth-primary);
+  --sk-border-color: var(--auth-border);
+  --sk-fill-color: #f5f0e8;
+  --sk-control-radius: 8px;
+
+  min-height: 100dvh;
+  background: var(--auth-canvas);
+  color: var(--auth-body);
+  font-family: var(--auth-sans);
+}
+
+:global(.dark) .page {
+  --auth-canvas: #181715;
+  --auth-foreground: #faf9f5;
+  --auth-body: #d7d2ca;
+  --auth-muted: #aaa69e;
+  --auth-border: #3c3934;
+}
+
+.page h1,
+.page h2,
+.page :global(.font-display) {
+  color: var(--auth-foreground);
+  font-family: var(--auth-display);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+}
+
+.page :global(.sk-primary-button) {
+  min-height: 48px;
+  border-radius: 8px;
+  background: var(--auth-primary);
+  font-family: var(--auth-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.page :global(.sk-primary-button:disabled) {
+  background: var(--auth-border);
+  color: var(--auth-muted);
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+.page :global(.sk-icon-button) {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--auth-border);
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid color-mix(in srgb, var(--auth-border) 75%, transparent);
+  background: color-mix(in srgb, var(--auth-canvas) 86%, transparent);
+  padding-inline: clamp(1rem, 3vw, 2.5rem);
+  backdrop-filter: blur(18px);
+}
+
+.header > a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
+
+.shell {
+  display: grid;
+  min-height: 100dvh;
+  grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr);
+  padding-top: 72px;
+}
+
+.visualPanel {
+  position: relative;
+  min-height: calc(100dvh - 72px);
+  overflow: hidden;
+  background: var(--auth-dark);
+}
+
+.visualImage {
+  object-fit: cover;
+  object-position: center 36%;
+}
+
+.visualScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(24 23 21 / 0.08) 32%, rgb(24 23 21 / 0.88) 100%);
+}
+
+.visualCopy {
+  position: absolute;
+  inset: auto clamp(1.5rem, 5vw, 4.5rem) clamp(2rem, 6vw, 4.5rem);
+  max-width: 690px;
+  color: #faf9f5;
+}
+
+.visualCopy > p {
+  color: #d28a71;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.visualCopy h1 {
+  margin-top: 0.9rem;
+  color: #faf9f5;
+  font-size: clamp(3.2rem, 5.2vw, 5.7rem);
+  line-height: 0.92;
+  text-wrap: balance;
+}
+
+.visualCopy a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  color: #faf9f5;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.visualCopy a:hover {
+  color: #d28a71;
+}
+
+.visualCopy svg,
+.demoAction svg {
+  width: 1rem;
+}
+
+.authPanel {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: clamp(3rem, 8vw, 7rem) clamp(1.5rem, 6vw, 5rem);
+}
+
+.authCard {
+  width: min(100%, 480px);
+}
+
+.eyebrow {
+  color: var(--auth-primary);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.authCard h2 {
+  margin-top: 0.9rem;
+  font-size: clamp(2.8rem, 5vw, 4.6rem);
+  line-height: 0.92;
+  text-wrap: balance;
+}
+
+.lead {
+  margin-top: 1.4rem;
+  color: var(--auth-muted);
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.actionArea {
+  margin-top: 2rem;
+}
+
+.configurationNote,
+.errorText {
+  margin-top: 0.7rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.configurationNote {
+  color: var(--auth-muted);
+}
+
+.errorText {
+  color: #c64545;
+}
+
+.demoAction {
+  display: inline-flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  border: 1px solid var(--auth-border);
+  border-radius: 8px;
+  color: var(--auth-foreground);
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.trustList {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 2rem;
+  border-top: 1px solid var(--auth-border);
+  padding-top: 1.5rem;
+}
+
+.trustList > div {
+  display: flex;
+  gap: 0.7rem;
+  color: var(--auth-muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.trustList svg {
+  width: 1rem;
+  min-width: 1rem;
+  color: var(--auth-primary);
+}
+
+.partnerLogo {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .header {
+    position: sticky;
+  }
+
+  .shell {
+    grid-template-columns: 1fr;
+    padding-top: 0;
+  }
+
+  .visualPanel {
+    min-height: 50svh;
+  }
+
+  .visualCopy h1 {
+    font-size: clamp(3rem, 12vw, 4.8rem);
+  }
+
+  .authPanel {
+    min-height: 50svh;
+  }
+}
+
+@media (max-width: 560px) {
+  .visualPanel {
+    min-height: 48svh;
+  }
+
+  .visualCopy {
+    inset-inline: 1.25rem;
+    bottom: 1.5rem;
+  }
+
+  .visualCopy h1 {
+    font-size: 3.2rem;
+  }
+
+  .authPanel {
+    padding: 3.5rem 1.25rem;
+  }
+}

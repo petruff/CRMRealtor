@@ -1,0 +1,112 @@
+schema: 1
+story: '1.2'
+story_title: 'Contact Actions & Persistence'
+gate: CONCERNS
+status_reason: 'All nine acceptance criteria pass through command tests, an optimized build, and focused production-runtime review. Automated browser/server-action and live-Supabase mutation coverage is absent, so integration regression protection remains manual.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'working-tree-sha256:b0b1cf7dbc88927f406671292b10c5cf07ee5ec549942effa4b7912d034ffa90'
+updated: '2026-08-11T00:01:29Z'
+expires: '2026-08-25T00:01:29Z'
+quality_score: 90
+
+top_issues:
+  - id: 'TEST-002'
+    severity: medium
+    finding: 'Create, edit, note, touch, and validation-recovery flows are production-runtime verified but are not protected by automated browser/server-action or live-Supabase integration tests.'
+    suggested_action: 'Add Playwright action-flow coverage and a Supabase integration suite when the project and credentials are provisioned.'
+    suggested_owner: dev
+
+waiver:
+  active: false
+
+evidence:
+  tests_reviewed: 46
+  tests_passed: 46
+  contact_command_tests: 13
+  runtime_flows_reviewed:
+    - 'create -> detail'
+    - 'edit -> detail'
+    - 'append note -> activity history'
+    - 'record touch -> cadence update'
+    - 'server validation -> submitted values preserved'
+  viewports_reviewed:
+    - '390x844'
+    - 'desktop dark mode'
+  console_errors: 0
+  console_warnings: 0
+  production_routes:
+    contacts: '106 kB first load'
+    contact_detail: '108 kB first load'
+    contact_create: '109 kB first load'
+    contact_edit: '109 kB first load'
+    shared: '103 kB first load'
+  quality_gates:
+    lint: PASS
+    typecheck: PASS
+    test: PASS
+    build: PASS
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: []
+
+requirements_trace:
+  - ac: 1
+    given_when_then: 'Given the Contacts route, when a valid essential form is submitted, then the repository creates the contact and the server redirects to its detail route.'
+    evidence: ['contact-commands.test.ts', 'production runtime create flow']
+  - ac: 2
+    given_when_then: 'Given a 390px viewport, when the create form is opened, then essentials lead and optional model fields remain grouped, reachable, and free of horizontal overflow.'
+    evidence: ['responsive runtime review', 'story-1.2-new-mobile-clean.png']
+  - ac: 3
+    given_when_then: 'Given an existing contact, when editable values are saved, then id and createdAt remain unchanged and the detail route shows the update.'
+    evidence: ['contact command identity test', 'production runtime edit flow']
+  - ac: 4
+    given_when_then: 'Given an active contact, when a manual next-touch date is submitted, then override state is persisted; dormant stages clear cadence.'
+    evidence: ['manual override, clear override, and dormant command tests']
+  - ac: 5
+    given_when_then: 'Given an existing contact, when a non-blank note is saved, then it is appended and displayed newest-first; blank notes are rejected.'
+    evidence: ['note command tests', 'production runtime note flow']
+  - ac: 6
+    given_when_then: 'Given a contact with a pending touch, when Mark as contacted is submitted, then lastContactedAt, cadence, override, and new-to-contacted stage are updated.'
+    evidence: ['record-touch command test', 'production runtime touch flow']
+  - ac: 7
+    given_when_then: 'Given untrusted or failed mutation input, when a server action executes, then validation/repository errors are explicit and no success redirect is emitted.'
+    evidence: ['invalid input and repository failure tests', 'production validation-recovery review']
+  - ac: 8
+    given_when_then: 'Given no React runtime, when contact operations are invoked, then all domain rules execute through the repository-independent command module.'
+    evidence: ['13 pure command tests']
+  - ac: 9
+    given_when_then: 'Given the complete CRM package, when all quality gates run, then lint, typecheck, 46 tests, and the optimized production build pass.'
+    evidence: ['QA gate rerun on 2026-08-10']
+
+risk_summary:
+  highest_score: 6
+  highest_risk: 'Mutation integration regressions without automated browser/live-provider coverage'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'All mutation input is parsed on the server, React escapes rendered text, repository errors expose no provider detail, and Supabase ownership remains enforced by authenticated server clients plus RLS.'
+  performance:
+    status: PASS
+    notes: 'No dependency was added; the production build succeeds and shared first-load JavaScript remains 103 kB.'
+  reliability:
+    status: CONCERNS
+    notes: 'Pure commands, error paths, and production memory-runtime flows are verified; automated server-action and configured Supabase integration coverage remains absent.'
+  maintainability:
+    status: PASS
+    notes: 'Mutation rules are isolated from React, routes use the ContactRepository boundary, and the shared form reuses the established design tokens and action-state pattern.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Add Playwright coverage for create, edit, note, touch, and validation-value preservation.'
+      refs:
+        - 'packages/crm/app/contact-actions.ts'
+        - 'packages/crm/components/contact-form.tsx'
+        - 'packages/crm/components/contact-mutations.tsx'
+    - action: 'Run the same mutation contract against Supabase when project credentials and Google OAuth are provisioned.'
+      refs:
+        - 'packages/crm/lib/data/supabase-repository.ts'
+    - action: 'Restore CodeRabbit by installing or correcting the configured Ubuntu WSL distribution.'
+      refs:
+        - '.aexos-core/core-config.yaml'

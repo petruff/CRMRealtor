@@ -1,0 +1,71 @@
+schema: 1
+story: '2.1'
+story_title: 'Omnix Rebrand & Intelligence Workspace'
+gate: PASS
+status_reason: 'Complete shipped-surface rebrand, clean-room workspace intelligence, truthful new routes and responsive runtime pass. External connectors remain correctly outside this local gate.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'sha256:f31c004126a1e44c8432dd7cbe763e36130718658d751a1cf81691f4653ab1a7'
+updated: '2026-08-11T13:48:00Z'
+quality_score: 96
+
+top_issues: []
+
+waiver:
+  active: false
+
+evidence:
+  tests_reviewed: 95
+  tests_passed: 95
+  quality_gates:
+    former_brand_scan: PASS
+    lint: PASS
+    typecheck: PASS
+    test: PASS
+    build: PASS
+    omnix_cli_success: PASS
+    omnix_cli_invalid_date_refusal: PASS
+    responsive_runtime: PASS
+    metadata_runtime: PASS
+    accessibility_runtime: PASS
+  routes_reviewed: ['/connections', '/workspace', '/pipeline', '/insights', '/omnix']
+  viewport:
+    mobile_width: 390
+    mobile_scroll_width: 375
+    desktop_width: 911
+    desktop_scroll_width: 896
+  themes: [light, dark]
+  console_errors: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: []
+
+risk_summary:
+  highest_score: 6
+  highest_risk: 'Real provider authorization, shared-workspace security and production data are not implemented; UI disclosure prevents a false-ready claim.'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'No new secrets or provider calls. Connections forbids password capture; intelligence is read-only and deterministic; legacy env names remain fallback-only.'
+  reliability:
+    status: PASS
+    notes: 'Pipeline and insights derive from the contact repository, recommendations cite deterministic rules, and no second UI source of truth was introduced.'
+  accessibility:
+    status: PASS
+    notes: 'Semantic nav/headings/progress, native links/buttons, existing focus/reduced-motion behavior, 44px controls and mobile containment pass.'
+  maintainability:
+    status: PASS
+    notes: 'Brand constants, lockup component and pure typed intelligence module keep product identity and rules centralized.'
+  legal:
+    status: PASS
+    notes: 'Reference repository was treated as proprietary clean-room inspiration; no upstream code, asset, CSS, prompt or copy ships in Omnix.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Provision shared realtor/assistant workspace and RLS before any live connector or model.'
+      refs: ['docs/prd/omnix-product-expansion.md']
+    - action: 'Implement provider connectors as separate stories with OAuth, signed webhooks, token rotation, receipts, revocation and real-account certification.'
+      refs: ['packages/crm/app/connections/page.tsx']
+    - action: 'Use an approved Omnix/Cyryx brandboard for a final bespoke app icon.'
+      refs: ['packages/crm/app/icon.svg']

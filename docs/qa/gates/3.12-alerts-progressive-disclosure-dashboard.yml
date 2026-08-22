@@ -1,0 +1,84 @@
+schema: 1
+story: '3.12'
+story_title: 'Alerts Progressive-Disclosure Dashboard'
+gate: PASS
+status_reason: 'All 14 acceptance criteria are implemented and independently evidenced by source inspection, 11 focused alert tests over an 88-record fixture, and passing lint, typecheck, full-suite, and production-build gates.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'sha256:fe5de8793d9b488ecb1880c21671296b1474c9fae2d43991051a9dd7cc5e29b9'
+updated: '2026-08-14T00:13:19Z'
+
+top_issues: []
+waiver:
+  active: false
+
+quality_score: 100
+expires: '2026-08-28T00:13:19Z'
+
+evidence:
+  tests_reviewed: 654
+  focused_tests:
+    command: 'npm test -- --run components/alert-center.test.tsx components/alert-center.interaction.test.tsx'
+    result: 'PASS — 2 files, 11 tests'
+    fixture_records: 88
+  full_suite:
+    command: 'npm test'
+    result: 'PASS — 142 files, 654 tests'
+    note: 'An initial unrelated relationship-queue timeout under full-suite load passed in isolation and on the immediate complete-suite rerun.'
+  lint:
+    command: 'npm run lint'
+    result: PASS
+  typecheck:
+    command: 'npm run typecheck'
+    result: PASS
+  build:
+    command: 'npm run build'
+    result: 'PASS — /alerts 7.14 kB, 113 kB first load'
+  provenance:
+    kind: deterministic-working-tree-digest
+    files:
+      - packages/crm/components/alert-center.tsx
+      - packages/crm/components/alert-center.test.tsx
+      - packages/crm/components/alert-center.interaction.test.tsx
+      - packages/crm/package.json
+    note: 'Workspace has no Git metadata; commit and diff evidence are unavailable.'
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    ac_gaps: []
+
+requirements_trace:
+  - ac: [1, 2, 8]
+    evidence: 'Compact truthful evidence row; exactly four canonical count tiles in fixed order; existing semantic tokens reused.'
+  - ac: [3, 6]
+    evidence: 'Case-insensitive reason/category/priority search AND group/category/priority dimensions, with OR inside each dimension; canonical array is filtered without sorting.'
+  - ac: [4, 5, 7]
+    evidence: 'Only Act now initially open; collapsed groups mount no cards; independent 12-record limits; Expand all preserves limits; criteria changes reset every limit.'
+  - ac: [6, 14]
+    evidence: 'Mounted 88-record test reaches every ID in exact per-group canonical order, including final partial batches, without duplicates or omissions.'
+  - ac: [9, 10, 11]
+    evidence: 'Native buttons expose aria-expanded/controls and aria-pressed; polite atomic live status; 200 ms disclosure transitions with motion-reduce override; responsive grid/wrapping, min-width guards, overflow containment, focus rings, and 44 px controls are present.'
+  - ac: [12]
+    evidence: 'Canonical zero, unavailable fail-closed, partial/incomplete, and filtered-zero states have distinct copy and semantics.'
+  - ac: [13]
+    evidence: 'Component contains local presentation state only; no dismiss, snooze, fetch, persistence, mutation, effect, or navigation-write path exists.'
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Unavailable state remains fail-closed and hides counts/details; no new data or mutation boundary was introduced.'
+  performance:
+    status: PASS
+    notes: 'DOM is bounded to 12 cards per open group until explicit batching; collapsed groups mount zero cards and Expand all cannot bypass limits.'
+  reliability:
+    status: PASS
+    notes: 'All focused and final full-suite tests pass; canonical reachability and reset behavior are interaction-tested.'
+  maintainability:
+    status: PASS
+    notes: 'Presentation logic is localized, typed, deterministic, and reuses the existing alert contract and design tokens.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Retain the planned browser visual matrix at 390 px, tablet, and desktop as supplemental release evidence.'
+      refs: ['packages/crm/components/alert-center.tsx']
+    - action: 'Monitor the unrelated relationship-queue interaction timeout for recurrence under heavily loaded test workers.'
+      refs: ['packages/crm/components/relationship-queue.interaction.test.tsx']

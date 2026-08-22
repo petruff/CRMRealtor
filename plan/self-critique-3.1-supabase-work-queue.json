@@ -1,0 +1,32 @@
+{
+  "subtaskId": "3.1-supabase-work-queue",
+  "critiquedAt": "2026-08-11T18:00:00Z",
+  "step5_5": {
+    "predictedBugs": [
+      "A live CLI could accidentally accept a service-role key merely because it was stored under the public-key variable; the shared context rejects secret prefixes, service-role JWTs and configured service-role equality before constructing a client.",
+      "Task completion and its activity event could diverge if written separately; task create and all explicit bulk transitions call atomic migration RPCs and reject malformed envelopes.",
+      "Duplicate preview and Smart List apply could materialize an unbounded contact table; both reuse the canonical workspace-scoped contact list capped at 500.",
+      "A forged actor membership could be sent to security-definer RPCs; adapters require the actor or creator to equal the resolved WorkspaceScope membership before persistence."
+    ],
+    "edgeCases": [
+      "Sample scope is rejected at every Supabase adapter boundary.",
+      "Bulk reopen is rejected for more than one explicit task ID and all other bulk lists are capped at 100 unique IDs.",
+      "Replay receipts preserve noOp, noOpTaskIds and conversion action without collapsing audit truth.",
+      "Live authentication failures return a live error envelope and never construct or return a sample repository."
+    ],
+    "errorHandling": true,
+    "securityCheck": true,
+    "passed": true
+  },
+  "step6_5": {
+    "followsPatterns": true,
+    "noHardcoded": true,
+    "testsAdded": true,
+    "docsUpdated": true,
+    "noConsoleLogs": true,
+    "passed": true
+  },
+  "overallVerdict": "PASSED",
+  "skipped": false,
+  "skipWarning": null
+}

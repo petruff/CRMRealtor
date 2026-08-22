@@ -1,0 +1,76 @@
+- generic [ref=f5e2]:
+  - complementary [ref=f5e3]:
+    - generic [ref=f5e4]:
+      - generic [ref=f5e5]: R
+      - generic [ref=f5e6]:
+        - paragraph [ref=f5e7]: Realtor CRM
+        - paragraph [ref=f5e8]: Your day, in order
+    - navigation "Primary" [ref=f5e9]:
+      - link "Today" [ref=f5e10] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f5e14] [cursor=pointer]:
+        - /url: /contacts
+      - link "Mailers" [ref=f5e20] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f5e24] [cursor=pointer]:
+        - /url: /connections
+    - generic [ref=f5e27]:
+      - generic [ref=f5e28]: Phase 1
+      - button "Switch to dark theme" [ref=f5e29]
+  - main [ref=f5e33]:
+    - generic [ref=f5e34]:
+      - paragraph [ref=f5e38]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - generic [ref=f5e39]:
+        - link "Back to today" [ref=f5e40] [cursor=pointer]:
+          - /url: /
+        - generic [ref=f5e43]:
+          - generic [ref=f5e44]: AM
+          - generic [ref=f5e45]:
+            - generic [ref=f5e46]:
+              - heading "Alicia Monroe" [level=1] [ref=f5e47]
+              - generic [ref=f5e48]: Hot
+            - paragraph [ref=f5e50]: Lead · Buyer
+        - generic [ref=f5e51]:
+          - link "Call" [ref=f5e52] [cursor=pointer]:
+            - /url: tel:(512) 555-0142
+          - link "Text" [ref=f5e55] [cursor=pointer]:
+            - /url: sms:(512) 555-0142
+          - link "Email" [ref=f5e58] [cursor=pointer]:
+            - /url: mailto:alicia.monroe@example.com
+        - generic [ref=f5e63]:
+          - heading "Follow-up" [level=2] [ref=f5e64]
+          - generic [ref=f5e65]:
+            - generic [ref=f5e66]:
+              - term [ref=f5e67]: Last spoke
+              - definition [ref=f5e68]: Never
+            - generic [ref=f5e69]:
+              - term [ref=f5e70]: Next touch
+              - definition [ref=f5e71]: Not scheduled
+            - generic [ref=f5e72]:
+              - term [ref=f5e73]: Rhythm
+              - definition [ref=f5e74]: Every 7 days · first 8 weeks
+          - paragraph [ref=f5e75]: New contact — on the accelerated 8×8 rhythm for their first eight weeks, then settles to every 7 days.
+        - generic [ref=f5e77]:
+          - heading "What they want" [level=2] [ref=f5e78]
+          - generic [ref=f5e79]:
+            - generic [ref=f5e80]:
+              - term [ref=f5e81]: Budget
+              - definition [ref=f5e82]: $420,000 – $510,000
+            - generic [ref=f5e83]:
+              - term [ref=f5e84]: Areas
+              - definition [ref=f5e85]: Round Rock, Pflugerville
+            - generic [ref=f5e86]:
+              - term [ref=f5e87]: Beds
+              - definition [ref=f5e88]: "3"
+            - generic [ref=f5e89]:
+              - term [ref=f5e90]: Timeline
+              - definition [ref=f5e91]: wants to be in before the school year
+            - generic [ref=f5e92]:
+              - term [ref=f5e93]: Pre-approved
+              - definition [ref=f5e94]: Not yet
+        - generic [ref=f5e95]:
+          - heading "Notes" [level=2] [ref=f5e96]
+          - list [ref=f5e98]:
+            - listitem [ref=f5e99]:
+              - paragraph [ref=f5e100]: Signed in at the Willow Creek open house. Relocating from Denver, husband starts a new job in six weeks. Not pre-approved yet — needs a lender intro.
+              - paragraph [ref=f5e101]: Aug 7, 2026

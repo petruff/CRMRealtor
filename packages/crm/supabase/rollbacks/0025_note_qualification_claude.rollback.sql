@@ -1,0 +1,26 @@
+begin;
+drop function if exists public.apply_contact_import_group(uuid,uuid,text,text,jsonb,timestamptz);
+alter function public.apply_contact_import_group_v1(uuid,uuid,text,text,jsonb,timestamptz)
+  rename to apply_contact_import_group;
+grant execute on function public.apply_contact_import_group(uuid,uuid,text,text,jsonb,timestamptz) to authenticated, service_role;
+revoke select, insert on public.notes from authenticated;
+drop function if exists public.save_workspace_ai_configuration_v2(uuid,text,text,boolean,text,integer,jsonb,timestamptz);
+alter table public.workspace_ai_configurations drop constraint if exists workspace_ai_provider;
+alter table public.workspace_ai_configurations drop constraint if exists workspace_ai_model;
+alter table public.workspace_ai_configurations add constraint workspace_ai_provider check(provider='google-gemini');
+alter table public.workspace_ai_configurations add constraint workspace_ai_model check(model in('gemini-3.5-flash-lite','gemini-3.6-flash'));
+drop function if exists public.archive_contact_note(uuid,text,uuid,timestamptz);
+drop function if exists public.restore_contact_note(uuid,uuid,timestamptz);
+drop trigger if exists notes_immutable_content on public.notes;
+drop function if exists public.notes_immutable_content_guard();
+drop table if exists public.note_lifecycle_events;
+drop type if exists public.crm_note_lifecycle_event_type;
+alter table public.notes drop constraint if exists notes_archive_actor_fk;
+alter table public.notes drop constraint if exists notes_archive_state;
+alter table public.notes drop column if exists archived_at;
+alter table public.notes drop column if exists archived_by_membership_id;
+alter table public.notes drop column if exists archive_reason;
+drop index if exists public.contacts_workspace_qualification_idx;
+alter table public.contacts drop column if exists qualification_status;
+drop type if exists public.crm_qualification_status;
+commit;

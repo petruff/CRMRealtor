@@ -1,0 +1,30 @@
+{
+  "subtaskId": "3.20-T1-T4",
+  "critiquedAt": "2026-08-18T16:50:00.000Z",
+  "step5_5": {
+    "predictedBugs": [
+      "Changing queryContacts default to leads could hide clients from Omnix or Today callers unless those callers opt into all.",
+      "A legacy qualification URL could emit both qualification and scope and create two conflicting sources of truth.",
+      "Switching a Smart List or client subview could discard search and lead-temperature parameters if URLs are assembled inline."
+    ],
+    "edgeCases": [
+      "Sphere contacts stay in Leads while active-client and past-client records are excluded.",
+      "Archived records never appear in any active scope and remain searchable only through the archived seam.",
+      "Needs-review remains orthogonal to relationship, so an active client can appear in both Clients and Needs review."
+    ],
+    "errorHandling": true,
+    "securityCheck": true,
+    "passed": true
+  },
+  "step6_5": {
+    "followsPatterns": true,
+    "noHardcoded": true,
+    "testsAdded": true,
+    "docsUpdated": true,
+    "noConsoleLogs": true,
+    "passed": true
+  },
+  "overallVerdict": "PASSED",
+  "skipped": false,
+  "skipWarning": null
+}

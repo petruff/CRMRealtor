@@ -1,0 +1,213 @@
+- generic [ref=f11e2]:
+  - link "Skip to main content" [ref=f11e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=f11e4]:
+    - banner [ref=f11e5]:
+      - generic [ref=f11e6]:
+        - img "Omnix" [ref=f11e7]
+        - generic [ref=f11e8]:
+          - paragraph [ref=f11e9]: Omnix
+          - paragraph [ref=f11e10]: Contacts
+      - generic [ref=f11e11]:
+        - button "Open global search and commands" [ref=f11e12]
+        - link "Open alerts" [ref=f11e16] [cursor=pointer]:
+          - /url: /alerts
+        - link "Open settings" [ref=f11e22] [cursor=pointer]:
+          - /url: /settings
+        - link "Open Omnix workspaces" [ref=f11e26] [cursor=pointer]:
+          - /url: /workspace
+        - button "Sign out" [ref=f11e30]
+        - button "Switch to dark theme" [ref=f11e34]
+    - main [ref=f11e37]:
+      - generic [ref=f11e38]:
+        - paragraph [ref=f11e42]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f11e43]:
+          - generic [ref=f11e44]:
+            - generic [ref=f11e45]:
+              - paragraph [ref=f11e46]: Leads
+              - heading "Working leads" [level=1] [ref=f11e47]
+              - paragraph [ref=f11e48]: 7 people in this view · hottest first.
+            - generic [ref=f11e49]:
+              - link "Archived" [ref=f11e50] [cursor=pointer]:
+                - /url: /contacts?view=archived
+              - link "Review incomplete" [ref=f11e54] [cursor=pointer]:
+                - /url: /contacts/incomplete
+              - link "Import" [ref=f11e55] [cursor=pointer]:
+                - /url: /contacts/import
+              - link "Add contact" [ref=f11e59] [cursor=pointer]:
+                - /url: /contacts/new
+          - navigation "Contact views" [ref=f11e61]:
+            - list [ref=f11e62]:
+              - listitem [ref=f11e63]:
+                - link "Leads 7" [ref=f11e64] [cursor=pointer]:
+                  - /url: /contacts
+                  - text: Leads
+                  - generic [ref=f11e70]: "7"
+              - listitem [ref=f11e71]:
+                - link "Clients 4" [ref=f11e72] [cursor=pointer]:
+                  - /url: /contacts?scope=clients
+                  - text: Clients
+                  - generic [ref=f11e77]: "4"
+              - listitem [ref=f11e78]:
+                - link "Needs review 0" [ref=f11e79] [cursor=pointer]:
+                  - /url: /contacts?scope=needs-review
+                  - text: Needs review
+                  - generic [ref=f11e83]: "0"
+              - listitem [ref=f11e84]:
+                - link "All contacts 11" [ref=f11e85] [cursor=pointer]:
+                  - /url: /contacts?scope=all
+                  - text: All contacts
+                  - generic [ref=f11e91]: "11"
+          - group [ref=f11e92]:
+            - generic "Smart Lists +" [ref=f11e93] [cursor=pointer]
+            - 'option "Default: hottest first" [selected]'
+            - option "Follow-up priority"
+            - option "Name"
+            - option "Next touch"
+            - option "Date added"
+            - option "Ascending" [selected]
+            - option "Descending"
+          - search [ref=f11e95]:
+            - generic [ref=f11e96]:
+              - generic [ref=f11e97]: Search contacts
+              - searchbox "Search contacts" [ref=f11e98]
+            - generic [ref=f11e99]:
+              - generic [ref=f11e100]: Filter by follow-up group
+              - combobox "Filter by follow-up group" [ref=f11e101]:
+                - option "All follow-up groups" [selected]
+                - option "Hot"
+                - option "Warm"
+                - option "Nurture"
+            - button "Search" [ref=f11e103]
+          - generic [ref=f11e107]:
+            - generic [ref=f11e108]:
+              - generic [ref=f11e109]:
+                - generic [ref=f11e110]:
+                  - heading "Hot" [level=2] [ref=f11e112]
+                  - generic [ref=f11e113]: "3"
+                - paragraph [ref=f11e114]: Immediate attention. Weekly rhythm.
+              - list [ref=f11e115]:
+                - listitem [ref=f11e116]:
+                  - generic [ref=f11e117]: AM
+                  - generic [ref=f11e118]:
+                    - link "Alicia Monroe" [ref=f11e119] [cursor=pointer]:
+                      - /url: /contacts/c-monroe
+                    - paragraph [ref=f11e120]: Lead · Buyer · New
+                    - paragraph [ref=f11e121]: 0 activities · 0 open tasks · 0 completed · Unassigned
+                  - generic [ref=f11e122]:
+                    - link "Call Alicia Monroe" [ref=f11e123] [cursor=pointer]:
+                      - /url: tel:(512) 555-0142
+                    - link "Text Alicia Monroe" [ref=f11e126] [cursor=pointer]:
+                      - /url: sms:(512) 555-0142
+                    - link "Email Alicia Monroe" [ref=f11e129] [cursor=pointer]:
+                      - /url: mailto:alicia.monroe@example.com
+                - listitem [ref=f11e133]:
+                  - generic [ref=f11e134]: DO
+                  - generic [ref=f11e135]:
+                    - link "Daniel Okafor" [ref=f11e136] [cursor=pointer]:
+                      - /url: /contacts/c-okafor
+                    - paragraph [ref=f11e137]: Lead · Seller · New
+                    - paragraph [ref=f11e138]: 0 activities · 0 open tasks · 0 completed · Unassigned
+                  - generic [ref=f11e139]:
+                    - link "Call Daniel Okafor" [ref=f11e140] [cursor=pointer]:
+                      - /url: tel:(512) 555-0198
+                    - link "Text Daniel Okafor" [ref=f11e143] [cursor=pointer]:
+                      - /url: sms:(512) 555-0198
+                    - link "Email Daniel Okafor" [ref=f11e146] [cursor=pointer]:
+                      - /url: mailto:d.okafor@example.com
+                - listitem [ref=f11e150]:
+                  - generic [ref=f11e151]: SD
+                  - generic [ref=f11e152]:
+                    - link "Simone Delacroix" [ref=f11e153] [cursor=pointer]:
+                      - /url: /contacts/c-delacroix
+                    - paragraph [ref=f11e154]: Lead · Seller · Contacted
+                    - paragraph [ref=f11e155]: 0 activities · 0 open tasks · 0 completed · Unassigned
+                  - generic [ref=f11e156]:
+                    - link "Call Simone Delacroix" [ref=f11e157] [cursor=pointer]:
+                      - /url: tel:(512) 555-0604
+                    - link "Text Simone Delacroix" [ref=f11e160] [cursor=pointer]:
+                      - /url: sms:(512) 555-0604
+                    - link "Email Simone Delacroix" [ref=f11e163] [cursor=pointer]:
+                      - /url: mailto:simone.d@example.com
+            - generic [ref=f11e167]:
+              - generic [ref=f11e168]:
+                - generic [ref=f11e169]:
+                  - heading "Warm" [level=2] [ref=f11e171]
+                  - generic [ref=f11e172]: "3"
+                - paragraph [ref=f11e173]: Real interest, longer horizon. Weekly rhythm.
+              - list [ref=f11e174]:
+                - listitem [ref=f11e175]:
+                  - generic [ref=f11e176]: MR
+                  - generic [ref=f11e177]:
+                    - link "Marisol Reyes" [ref=f11e178] [cursor=pointer]:
+                      - /url: /contacts/c-reyes
+                    - paragraph [ref=f11e179]: Lead · Buyer · New
+                    - paragraph [ref=f11e180]: 0 activities · 0 open tasks · 0 completed · Unassigned
+                  - generic [ref=f11e181]:
+                    - link "Call Marisol Reyes" [ref=f11e182] [cursor=pointer]:
+                      - /url: tel:(512) 555-0233
+                    - link "Text Marisol Reyes" [ref=f11e185] [cursor=pointer]:
+                      - /url: sms:(512) 555-0233
+                - listitem [ref=f11e188]:
+                  - generic [ref=f11e189]: NB
+                  - generic [ref=f11e190]:
+                    - link "Nadine Baptiste" [ref=f11e191] [cursor=pointer]:
+                      - /url: /contacts/c-baptiste
+                    - paragraph [ref=f11e192]: Lead · Buyer & seller · Contacted
+                    - paragraph [ref=f11e193]: 0 activities · 0 open tasks · 0 completed · Unassigned
+                  - generic [ref=f11e194]:
+                    - link "Call Nadine Baptiste" [ref=f11e195] [cursor=pointer]:
+                      - /url: tel:(512) 555-0377
+                    - link "Text Nadine Baptiste" [ref=f11e198] [cursor=pointer]:
+                      - /url: sms:(512) 555-0377
+                    - link "Email Nadine Baptiste" [ref=f11e201] [cursor=pointer]:
+                      - /url: mailto:nadine.b@example.com
+                - listitem [ref=f11e205]:
+                  - generic [ref=f11e206]: KN
+                  - generic [ref=f11e207]:
+                    - link "Kenji Nakamura" [ref=f11e208] [cursor=pointer]:
+                      - /url: /contacts/c-nakamura
+                    - paragraph [ref=f11e209]: Lead · Investor · Appointment set
+                    - paragraph [ref=f11e210]: 0 activities · 0 open tasks · 0 completed · Unassigned
+                  - generic [ref=f11e211]:
+                    - link "Call Kenji Nakamura" [ref=f11e212] [cursor=pointer]:
+                      - /url: tel:(512) 555-0588
+                    - link "Text Kenji Nakamura" [ref=f11e215] [cursor=pointer]:
+                      - /url: sms:(512) 555-0588
+                    - link "Email Kenji Nakamura" [ref=f11e218] [cursor=pointer]:
+                      - /url: mailto:k.nakamura@example.com
+            - generic [ref=f11e222]:
+              - generic [ref=f11e223]:
+                - generic [ref=f11e224]:
+                  - heading "Nurture" [level=2] [ref=f11e226]
+                  - generic [ref=f11e227]: "1"
+                - paragraph [ref=f11e228]: Sphere and past clients. Monthly rhythm.
+              - list [ref=f11e229]:
+                - listitem [ref=f11e230]:
+                  - generic [ref=f11e231]: RH
+                  - generic [ref=f11e232]:
+                    - link "Ruth Hollings" [ref=f11e233] [cursor=pointer]:
+                      - /url: /contacts/c-hollings
+                    - paragraph [ref=f11e234]: Sphere · Not sure yet · Contacted
+                    - paragraph [ref=f11e235]: 0 activities · 0 open tasks · 0 completed · Unassigned
+                  - generic [ref=f11e236]:
+                    - link "Call Ruth Hollings" [ref=f11e237] [cursor=pointer]:
+                      - /url: tel:(512) 555-0420
+                    - link "Text Ruth Hollings" [ref=f11e240] [cursor=pointer]:
+                      - /url: sms:(512) 555-0420
+                    - link "Email Ruth Hollings" [ref=f11e243] [cursor=pointer]:
+                      - /url: mailto:ruthholl@example.com
+        - paragraph [ref=f11e248]: Powered by Cyryx Labs
+    - navigation "Primary" [ref=f11e249]:
+      - link "Today" [ref=f11e250] [cursor=pointer]:
+        - /url: /
+      - link "Contacts" [ref=f11e254] [cursor=pointer]:
+        - /url: /contacts
+      - link "Activities" [ref=f11e260] [cursor=pointer]:
+        - /url: /activities
+      - link "Mailers" [ref=f11e264] [cursor=pointer]:
+        - /url: /mailers
+      - link "Connections" [ref=f11e268] [cursor=pointer]:
+        - /url: /connections
+  - button "Open Omnix assistant" [ref=f11e271]:
+    - generic [ref=f11e273]: Ask Omnix

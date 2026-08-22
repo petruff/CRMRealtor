@@ -1,0 +1,26 @@
+version: data-portability-api.v1
+parser:
+  max_bytes: 10485760
+  max_sheets: 5
+  max_rows_per_sheet: 5000
+  max_cells_total: 100000
+  max_string_length: 4096
+  max_formulas: 0
+  timeout_ms: 5000
+  memory_mb: 128
+export:
+  max_rows: 5000
+  formats: [csv, xlsx]
+api:
+  max_page_size: 100
+  max_body_bytes: 262144
+  requests_per_minute_per_key: 120
+  idempotency_ttl_seconds: 86400
+keys:
+  max_active_per_workspace: 10
+  default_expiry_days: 90
+webhooks:
+  max_body_bytes: 262144
+  rotation_overlap_seconds: 86400
+  replay_window_seconds: 300
+

@@ -1,0 +1,177 @@
+schema: 1
+story: '3.0'
+story_title: 'Shared Workspace Authority'
+review_type: 'independent-architecture-quality-gate'
+gate: GO
+status_reason: >-
+  The canonical workspace authority is coherent end-to-end: the forward-only
+  migration establishes one active owner, membership-derived RLS and composite
+  workspace relationships; application repositories close over a required
+  WorkspaceScope; privileged intake resolves a server binding before exposing
+  only scoped repositories; and live administration uses an authenticated
+  end-user token rather than service-role authority. Health now probes all six
+  migrated tables with valid workspace-scoped columns, and the health API
+  refuses sample/signed-out callers. Architecture is GO for QA; hosted
+  separate-account UAT remains an explicit external evidence boundary.
+reviewer: 'Vega (System Architect)'
+reviewed_revision: 'filesystem-sha256:77b2d15c085594b54527922a1a299af3a048be4c1112b34a76c85220e35c5690'
+updated: '2026-08-11T12:52:38-04:00'
+quality_score: 98
+
+decision:
+  qa_handoff: GO
+  story_3_1_dependency:
+    architecturally_satisfied_after_qa_closure: true
+    rationale: >-
+      Story 3.1 may treat the canonical persistence boundary as architecturally
+      satisfied once Story 3.0 reaches QA closure. This is not evidence of a
+      hosted deployment, real-account UAT or production readiness.
+
+top_issues: []
+
+resolved_during_review:
+  - id: 'ARCH-3.0-HEALTH-001'
+    resolution: >-
+      Live health now probes contacts, notes, mailers, mailer_sends,
+      contact_external_links and contact_intake_receipts through canonical
+      workspace scope and reports attention when any probe fails.
+    refs:
+      - 'packages/crm/lib/data/supabase-workspace-repository.ts'
+      - 'packages/crm/lib/data/supabase-workspace-repository.test.ts'
+  - id: 'ARCH-3.0-HEALTH-002'
+    resolution: >-
+      /api/workspace/health now returns 401 for sample/signed-out context and
+      exposes workspace health only for a live authenticated owner.
+    refs:
+      - 'packages/crm/app/api/workspace/health/route.ts'
+      - 'packages/crm/app/api/workspace/health/route.test.ts'
+  - id: 'ARCH-3.0-HEALTH-003'
+    resolution: >-
+      Review caught that mailer_sends has no id column. The probe now selects
+      mailer_id, and the focused test asserts that exact column contract.
+    refs:
+      - 'packages/crm/lib/data/supabase-workspace-repository.ts'
+      - 'packages/crm/lib/data/supabase-workspace-repository.test.ts'
+
+evidence_limitations:
+  - id: 'HOSTED-SEPARATE-ACCOUNT-UAT'
+    status: NOT_AVAILABLE
+    gate_effect: 'Does not block architecture GO for QA; blocks any claim that hosted UAT passed.'
+    notes: >-
+      Separate Google/Supabase owner, assistant, revoked-assistant and
+      second-tenant sessions were not available. Local code, SQL and repository
+      proof cannot certify hosted identity configuration or production isolation.
+
+waiver:
+  active: false
+
+architecture_assessment:
+  canonical_workspace_model: PASS
+  migration_backfill_and_owner_invariant: PASS
+  membership_rls_and_composite_relationships: PASS
+  required_workspace_scope_and_repository_context: PASS
+  intake_service_role_boundary: PASS
+  authenticated_cli_key_and_token_rules: PASS
+  health_contract: PASS
+  sample_live_truthfulness: PASS
+  backward_compatibility: PASS
+
+tradeoffs:
+  - decision: 'Retain legacy owner_id during the compatibility window.'
+    benefit: 'Preserves existing relationships and reduces forward-migration risk.'
+    cost: >-
+      Every compatibility write must keep deriving owner_id from the verified
+      active owner; allowing caller input would recreate dual authority.
+  - decision: 'Use security-definer helpers/RPCs for membership authority.'
+    benefit: 'Avoids recursive RLS and centralizes owner-only mutations.'
+    cost: >-
+      Search-path hardening, narrow execute grants and scoped application seams
+      remain mandatory because service-role/database-owner paths bypass RLS.
+  - decision: 'Keep sample mode on the same repository contracts.'
+    benefit: 'Preserves route compatibility and makes non-durable behavior testable.'
+    cost: >-
+      Authentication-sensitive endpoints must not silently reinterpret sample
+      authority as a real authenticated owner contract.
+
+evidence:
+  independent_focused_tests:
+    status: PASS
+    command: >-
+      npx vitest run app/api/intake/contacts/route.test.ts
+      app/api/workspace/health/route.test.ts
+      lib/application/intake-security.test.ts
+      lib/application/workspace-cli.test.ts
+      lib/application/workspace-commands.test.ts
+      lib/data/automation-context.test.ts lib/data/index.test.ts
+      lib/data/memory-workspace-repository.test.ts
+      lib/data/supabase-import-gateway.test.ts
+      lib/data/supabase-mailer-repository.test.ts
+      lib/data/supabase-repository.test.ts
+      lib/data/supabase-workspace-repository.test.ts
+      lib/data/supabase-workspace-scope.test.ts lib/domain/workspace.test.ts
+    test_files: 14
+    tests: 63
+  recorded_local_database_evidence:
+    supabase_db_reset: PASS_NOT_RERUN_BY_ARCHITECT
+    sql_tap: 'PASS_NOT_RERUN_BY_ARCHITECT (11/11)'
+    limitation: >-
+      The architect reviewed migration and SQL test sources; the reset/TAP run
+      result is the handoff evidence supplied for the isolated local project.
+  recorded_full_application_gates:
+    lint: PASS_NOT_RERUN_BY_ARCHITECT
+    typecheck: PASS_NOT_RERUN_BY_ARCHITECT
+    test: 'PASS_NOT_RERUN_BY_ARCHITECT (27 files / 155 tests)'
+    build: PASS_NOT_RERUN_BY_ARCHITECT
+  hosted_separate_account_uat:
+    status: NOT_AVAILABLE
+    proves: []
+    does_not_prove:
+      - 'hosted Google OAuth and Supabase session configuration'
+      - 'separate-account owner/assistant/revocation behavior'
+      - 'hosted cross-workspace browser isolation'
+      - 'production deployment or readiness'
+  trace:
+    acceptance_criteria_supported_by_local_evidence: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    acceptance_criteria_with_concerns: []
+    acceptance_criteria_requiring_hosted_evidence: [9]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: >-
+      RLS, composite FKs, owner-only RPCs, server-only intake binding and CLI
+      rejection of service-role/secret keys form defense in depth. Authenticated
+      workspace health refuses sample/signed-out and assistant contexts.
+  reliability:
+    status: PASS
+    notes: >-
+      Migration assertions fail closed and scope resolution rejects ambiguous or
+      revoked authority. Runtime health probes every migrated tenant table with
+      its valid key column and returns attention when any canonical query fails.
+  performance:
+    status: PASS
+    notes: >-
+      Workspace-scoped indexes cover the primary tenant access paths; bounded
+      membership lookups and composite keys avoid unscoped scans in reviewed code.
+  scalability:
+    status: PASS
+    notes: >-
+      Canonical workspace keys and membership-derived access can extend to later
+      persistent domains without reintroducing owner-bound tenancy. Multi-workspace
+      selection remains intentionally unsupported and fails closed.
+  maintainability:
+    status: PASS
+    notes: >-
+      WorkspaceScope is required at repository construction, service-role clients
+      remain behind a binding resolver, and sample/live implementations share the
+      authority interfaces.
+
+recommendations:
+  before_qa_pass:
+    - 'Record how QA handles the unavailable hosted AC9 evidence without implying it passed.'
+  before_story_3_1_persistence:
+    - >-
+      Confirm Story 3.0 QA closure and keep every new table keyed by workspace_id
+      with membership-derived RLS and composite workspace relationships.
+  before_production_claim:
+    - 'Complete hosted separate-account UAT on a migrated Supabase project.'

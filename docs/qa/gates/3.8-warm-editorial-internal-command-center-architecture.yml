@@ -1,0 +1,237 @@
+schema: 1
+story: '3.8'
+story_title: 'Warm Editorial Internal CRM & Persistent Alert Center'
+review_type: 'pre-implementation-architecture-gate'
+gate: GO
+status_reason: >-
+  Story 3.8 is implementable without a schema migration, notification lifecycle,
+  second alert store or new business rules. The existing deterministic copilot
+  service already owns the closed alert catalog, citations, deduplication and
+  stable order, while WorkspaceScope-bound repositories provide the required
+  tenant authority. GO is conditional on the implementation contract below:
+  extract one canonical read-only alert builder from the existing service,
+  expose it through one server-only request-cached loader, and have the
+  authenticated shell, Today and /alerts consume projections of that same
+  result. The current RouteChrome/AppShell client boundary may not resolve
+  authority or fetch repository data. Global token changes must preserve the
+  module-scoped /welcome warm-editorial contract and its public behavior.
+reviewer: 'Vega (System Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:91923f2b49e3c564c771b9166d15730951c640312a367f33b6da160109aaf45a'
+updated: '2026-08-12T00:00:00-04:00'
+quality_score: 93
+
+decision:
+  implementation_handoff: GO
+  remediation_required_before_start: false
+  rationale: >-
+    The story and current code provide enough authority, deterministic behavior,
+    evidence semantics and UI constraints for implementation. The requirements
+    below are architecture invariants, not optional follow-up work.
+
+open_blockers: []
+
+architecture_contract:
+  alert_authority:
+    source_of_truth:
+      - 'packages/crm/lib/domain/omnix-copilot.ts'
+      - 'packages/crm/lib/application/omnix-copilot-service.ts'
+    required_shape: >-
+      Export one typed application-layer builder/result contract from the
+      existing copilot service. It must accept already-authorized contacts,
+      tasks, the configured calendar date/asOf and capability state, and return
+      alerts plus warnings. Existing CLI alerts execution must call this same
+      builder; UI code must not reproduce OMNIX_COPILOT_ALERT_RULES, priority,
+      order, dedupe, reason or citation logic.
+    result_invariants:
+      - 'alert id, rule, category, priority, order, reason, asOf, recordId, safe href and citations remain canonical'
+      - 'dedupe occurs before count; count equals the length of the authorized canonical alert array'
+      - 'ordering is the existing builder order with deterministic id tie-break behavior, never UI sorting'
+      - 'every rendered item retains at least one exact-record citation'
+      - 'warnings remain separate from empty; capability-unavailable never becomes an all-clear claim'
+      - 'bounded/result-limit warnings remain visible wherever a count or list is shown'
+
+  server_read_seam:
+    required_shape: >-
+      Add one server-only loader that obtains getRepository() once, preserves
+      its WorkspaceScope/mode binding, creates one clock/asOf value, invokes the
+      canonical alert path and returns immutable UI projections. Use React
+      request memoization only to share this exact result among the authenticated
+      layout, Today and /alerts in one render. Do not use cross-user global caches,
+      localStorage, browser fetch polling or stale persisted badge state.
+    scope_rules:
+      - 'WorkspaceScope is resolved from authenticated membership; it is never accepted from query, cookie payload or client props as authority'
+      - 'sample/live mode mismatch fails closed and remains disclosed'
+      - 'forbidden/revoked/scope-mismatch results expose neither count, href, record id nor citation'
+      - 'repositories remain the tenant filter; UI projection is not an authorization layer'
+    read_only_rules:
+      - 'loader and builder may call repository reads only'
+      - 'no snooze, dismiss, read/unread, acknowledgement, delivery, polling or background job state'
+      - 'no inferred deadline, revenue, probability or provider fact'
+
+  consumers:
+    shell: >-
+      Alerts is a semantic Next.js Link available on desktop and mobile without
+      displacing existing destinations. If a badge is rendered, it receives only
+      the server-produced authorized summary count and warning state. AppShell
+      must not import server repositories or the copilot service and must not
+      recompute/filter counts. A badge is omitted when permission is denied or
+      the result is unavailable; zero is shown only for a successful complete
+      authorized result.
+    today: >-
+      The command queue is a bounded projection of the same canonical alerts.
+      Existing ensureNextTouch/buildTriage/summarise buckets and summary tiles
+      remain below it. Do not rebuild alert predicates from triage in page.tsx;
+      workspace-intelligence and triage remain supporting domain facts, while
+      the canonical alert result decides alert membership and order.
+    alerts_route: >-
+      Render the complete bounded canonical result with reason, date, category,
+      evidence/citations and safe Link action. Empty, partial capability,
+      permission and error states are distinct. No Client Component receives
+      WorkspaceScope or raw repository handles.
+
+  ssr_client_boundary:
+    finding: >-
+      packages/crm/components/route-chrome.tsx and app-shell.tsx are Client
+      Components. They cannot safely own the authenticated alert read.
+    required_resolution: >-
+      Introduce an authenticated route-group server layout (route groups retain
+      current URLs) that invokes the server loader and passes a minimal serializable
+      shell summary to AppShell. Keep public /welcome outside that layout. If the
+      team elects not to restructure layouts in P0, the only approved fallback is
+      a static no-count Alerts link in the shell; client fetching or duplicated
+      badge rules are not approved.
+    serialization_allowlist:
+      - 'count'
+      - 'availability: available|partial|unavailable'
+      - 'asOf'
+    forbidden_client_props:
+      - 'WorkspaceScope'
+      - 'repository objects'
+      - 'membership or owner identifiers'
+      - 'forbidden record identifiers or citations'
+
+  visual_tokens:
+    internal_direction: >-
+      Authenticated defaults may move from cool blue/Apple values to the approved
+      canvas #faf9f5, ink #181715, coral #cc785c, hairline #e6dfd8, 12px card and
+      8px control rhythm, with intentional dark equivalents and legal local font
+      fallbacks. Operational hot/warm/nurture tokens remain semantic and distinct
+      from decorative coral.
+    welcome_compatibility: >-
+      /welcome is explicitly out of scope and already defines --we-* plus scoped
+      --sk-* overrides under .landing. Do not delete, rename or broaden those
+      module-scoped overrides. Because globals.css still affects body, headings,
+      focus and shared primitives, /welcome must be regression-tested even though
+      no welcome product file should need redesign.
+    required_regression_proof:
+      - '/welcome renders unchanged in light and dark at 390px, 768px and desktop'
+      - 'no typography, canvas, CTA, focus, motion, overflow or contrast regression'
+      - 'authenticated routes do not depend on --we-* or welcome.module.css'
+      - 'no Claude/Anthropic marks, wording, licensed fonts or exact trade dress'
+
+  backward_compatibility:
+    - 'omnix:copilot alerts schema, rule ids, count and order remain unchanged for the same scope, clock and capabilities'
+    - 'existing route URLs and modified-click/deep-link behavior remain unchanged'
+    - 'pipeline move commands, optimistic rollback, stale-version handling and receipts are untouched'
+    - 'Today triage facts and all AC8 capabilities remain present'
+    - 'no migration and no new client state manager'
+
+required_tests:
+  application_contract:
+    - 'CLI, Today and /alerts return identical alert ids/count/order for the same frozen clock, WorkspaceScope and capability set'
+    - 'duplicate candidates collapse once before every consumer count'
+    - 'each alert exposes exact citations and a safe authorized href'
+    - 'task capability unavailable produces partial state/warning, not false empty'
+    - 'zero alerts is accepted only from a successful complete authorized result'
+    - 'instrument repository fakes/spies to prove the shared loader performs zero writes'
+  security:
+    - 'owner, assistant, revoked membership, two-workspace and forbidden-record cases'
+    - 'forbidden results disclose no badge count, href, record id or citation'
+    - 'sample/live mismatch fails closed'
+  ssr_and_ui:
+    - 'authenticated server layout passes only the serialization allowlist to AppShell'
+    - 'shell link, Today queue and /alerts use semantic Links and preserve modified-click behavior'
+    - 'loading, empty, partial, denied and error states are distinguishable and announced accessibly'
+    - 'no hydration mismatch and no client-side alert repository/service import'
+  visual_regression:
+    - 'authenticated route matrix at 390px, 768px and desktop/wide in light/dark'
+    - '/welcome unchanged matrix at 390px, 768px and desktop in light/dark'
+    - 'keyboard, focus, reduced motion, zoom/reflow, contrast, overflow and console checks'
+
+risks:
+  - id: 'ARCH-3.8-SSR-001'
+    severity: HIGH
+    risk: 'Fetching alerts inside the current client RouteChrome/AppShell would move authority into the browser or add an inconsistent second request.'
+    mitigation: 'Use the authenticated route-group server layout and pass only the allowlisted summary.'
+  - id: 'ARCH-3.8-DRIFT-001'
+    severity: HIGH
+    risk: 'UI-local filtering, sorting or dedupe can diverge from omnix:copilot alerts and leak misleading counts.'
+    mitigation: 'One exported application builder, one server loader and parity tests over exact ids/count/order.'
+  - id: 'ARCH-3.8-TENANT-001'
+    severity: CRITICAL
+    risk: 'A count, href or citation computed before WorkspaceScope filtering can reveal another workspace record.'
+    mitigation: 'Resolve active membership server-side, retain scoped repositories and fail closed before projection.'
+  - id: 'ARCH-3.8-VISUAL-001'
+    severity: HIGH
+    risk: 'Changing :root/.dark tokens can regress the public welcome route despite its module-scoped overrides.'
+    mitigation: 'Preserve .landing overrides and require the explicit welcome regression matrix.'
+  - id: 'ARCH-3.8-SCOPE-001'
+    severity: HIGH
+    risk: 'Treating persistence as read/dismiss state would introduce an unauthorized write model and migration.'
+    mitigation: 'Persistent means globally reachable route over current facts; assert zero writes in tests.'
+
+tradeoffs:
+  - decision: 'Use an authenticated route-group server layout for a global badge.'
+    benefit: 'One authorized request result can feed shell and page without browser authority or duplicate reads.'
+    cost: 'Requires route-file movement under a URL-transparent group and careful route regression testing.'
+  - decision: 'Keep rule construction in the existing copilot application service.'
+    benefit: 'Preserves CLI-first truth, deterministic citations and a single audit surface.'
+    cost: 'UI presentation must adapt typed results instead of optimizing with local filters.'
+  - decision: 'Do not persist alert lifecycle state.'
+    benefit: 'No schema, RLS, retention or synchronization burden; strict read-only P0.'
+    cost: 'Users cannot snooze or dismiss alerts in this story.'
+  - decision: 'Change authenticated global defaults while retaining /welcome scoped overrides.'
+    benefit: 'Creates one coherent internal system without rewriting the accepted marketing experience.'
+    cost: 'Global CSS still creates regression risk and requires dual-surface visual proof.'
+
+evidence:
+  source_review:
+    status: PASS
+    notes:
+      - 'buildAlerts/alertsResult already centralize deterministic rules, citations and order but are private to omnix-copilot-service.ts.'
+      - 'getRepository returns WorkspaceScope and scoped repositories for sample/live operation.'
+      - 'Today currently composes ensureNextTouch, buildTriage and summarise directly.'
+      - 'RouteChrome and AppShell are client components; public routes bypass AppShell by pathname.'
+      - '/welcome uses module-scoped --we-* and .landing --sk-* overrides while globals.css owns application defaults.'
+  git:
+    status: 'UNAVAILABLE: C:/Projetos/CRMRealtor and packages/crm are not Git repositories'
+    effect: 'Gate is bound to the filesystem manifest above; no branch, commit or diff claim is made.'
+  automated_gates:
+    status: NOT_RUN
+    effect: 'Pre-implementation architecture review only; lint, typecheck, tests, build, CLI smoke and browser QA remain mandatory before QA verdict.'
+
+nfr_validation:
+  security:
+    status: PASS_WITH_MANDATORY_CONTROLS
+    notes: 'WorkspaceScope-bound server reads, fail-closed projection and client serialization allowlist prevent tenant/existence leaks.'
+  reliability:
+    status: PASS_WITH_MANDATORY_CONTROLS
+    notes: 'Frozen request clock, canonical dedupe/order and explicit partial states make counts reproducible and honest.'
+  performance:
+    status: PASS_WITH_MANDATORY_CONTROLS
+    notes: 'Request memoization avoids duplicate reads; no polling, provider call or global cross-user cache is approved.'
+  scalability:
+    status: PASS
+    notes: 'The existing bounded application service scales without a second store or event subsystem for P0.'
+  maintainability:
+    status: PASS
+    notes: 'Typed builder, thin projections and a server/client boundary give each layer one responsibility.'
+
+waiver:
+  active: false
+
+qa_handoff_requirements:
+  - 'Verify every architecture_contract invariant against the final source.'
+  - 'Run lint, typecheck, full tests, build and omnix:copilot alerts parity smoke.'
+  - 'Run authenticated and /welcome browser/accessibility matrices before any final PASS.'
+  - 'Reject any snooze/dismiss persistence, rule duplication, invented deadline or client-resolved authority.'

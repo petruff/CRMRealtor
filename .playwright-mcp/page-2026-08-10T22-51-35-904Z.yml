@@ -1,0 +1,73 @@
+- generic [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - complementary [ref=f9e3]:
+      - generic [ref=f9e4]:
+        - generic [ref=f9e5]: R
+        - generic [ref=f9e6]:
+          - paragraph [ref=f9e7]: Realtor CRM
+          - paragraph [ref=f9e8]: Your day, in order
+      - navigation "Primary" [ref=f9e9]:
+        - link "Today" [ref=f9e10] [cursor=pointer]:
+          - /url: /
+        - link "Contacts" [ref=f9e14] [cursor=pointer]:
+          - /url: /contacts
+        - link "Mailers" [ref=f9e20] [cursor=pointer]:
+          - /url: /mailers
+        - link "Connections" [ref=f9e24] [cursor=pointer]:
+          - /url: /connections
+      - generic [ref=f9e27]:
+        - generic [ref=f9e28]: Phase 1
+        - button "Switch to dark theme" [active] [ref=f9e149]
+    - main [ref=f9e33]:
+      - generic [ref=f9e34]:
+        - paragraph [ref=f9e38]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+        - generic [ref=f9e39]:
+          - generic [ref=f9e40]:
+            - paragraph [ref=f9e41]: Connections
+            - heading "Everything in one place." [level=1] [ref=f9e42]
+            - paragraph [ref=f9e43]: You said you were tired of going back and forth between systems. This is the list of what plugs in — and, honestly, what is still waiting on someone else.
+          - generic [ref=f9e44]:
+            - article [ref=f9e45]:
+              - generic [ref=f9e51]:
+                - generic [ref=f9e52]:
+                  - heading "Gmail" [level=2] [ref=f9e53]
+                  - generic [ref=f9e54]: Being built
+                - paragraph [ref=f9e58]: Send from inside the CRM, and log emails onto the contact automatically.
+              - paragraph [ref=f9e59]: Sign-in already uses your Google account, so connecting Gmail is one extra permission — no new password. Because this is a personal app, it needs no lengthy Google review.
+            - article [ref=f9e60]:
+              - generic [ref=f9e65]:
+                - generic [ref=f9e66]:
+                  - heading "Google Calendar" [level=2] [ref=f9e67]
+                  - generic [ref=f9e68]: Being built
+                - paragraph [ref=f9e72]: Your follow-ups appear in the calendar you already look at.
+              - paragraph [ref=f9e73]: Uses the same Google connection as Gmail. Nothing extra to set up.
+            - article [ref=f9e74]:
+              - generic [ref=f9e80]:
+                - generic [ref=f9e81]:
+                  - heading "Mailchimp" [level=2] [ref=f9e82]
+                  - generic [ref=f9e83]: Ready to connect
+                - paragraph [ref=f9e86]: Contacts flow across automatically, tagged Hot / Warm / Nurture. Unsubscribes come back so you never email an opt-out.
+              - paragraph [ref=f9e87]: Needs an API key from your Mailchimp account — takes about a minute. Starting one-way with unsubscribes flowing back, which covers the manual re-typing you wanted gone.
+            - article [ref=f9e88]:
+              - generic [ref=f9e93]:
+                - generic [ref=f9e94]:
+                  - heading "Texting" [level=2] [ref=f9e95]
+                  - generic [ref=f9e96]: Waiting on approval
+                - paragraph [ref=f9e100]: Text contacts from the CRM, with the conversation saved to their record.
+              - paragraph [ref=f9e101]: US business texting requires carrier registration (10DLC), which takes a few weeks and is outside anyone's control. Nothing for you to do — but the sooner it is filed, the sooner this switches on. Tapping a phone number already opens your Messages app in the meantime.
+            - article [ref=f9e102]:
+              - generic [ref=f9e108]:
+                - generic [ref=f9e109]:
+                  - heading "Instagram & Facebook" [level=2] [ref=f9e110]
+                  - generic [ref=f9e111]: Waiting on approval
+                - paragraph [ref=f9e115]: Turn DM enquiries into contacts without retyping them.
+              - paragraph [ref=f9e116]: Needs Meta business verification and app review. You said you were not sure yet how you would want this to work — so it is parked rather than guessed at.
+            - article [ref=f9e117]:
+              - generic [ref=f9e123]:
+                - generic [ref=f9e124]:
+                  - heading "Website forms" [level=2] [ref=f9e125]
+                  - generic [ref=f9e126]: Waiting on approval
+                - paragraph [ref=f9e130]: Anyone who fills in a form on your site lands here as a new contact, ready to screen.
+              - paragraph [ref=f9e131]: Waiting on the website itself, which is a separate build. The CRM side is a small piece of work once it exists.
+  - button "Open Next.js Dev Tools" [ref=f9e144] [cursor=pointer]
+  - alert [ref=f9e148]

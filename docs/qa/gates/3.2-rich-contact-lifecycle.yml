@@ -1,0 +1,135 @@
+schema: 1
+story: '3.2'
+story_title: 'Rich Contact Lifecycle'
+gate: CONCERNS
+status_reason: >-
+  DATA-3.2-001 is resolved end to end: current app callers pass authenticated WorkspaceScope,
+  preview resolves every candidate through the canonical memory/live identity adapter, and the
+  required active/ambiguous/archived outcomes fail closed. CONCERNS remains only because the AC9/AC10
+  browser, accessibility, responsive and console matrix is NOT_RUN without browser authorization.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:e86a7487a69895dba628b97296a1ada07d4baed65ac2baaba2591516fdf1715a'
+updated: '2026-08-11T21:53:12-04:00'
+
+waiver:
+  active: false
+
+risk_summary:
+  highest_score: 6
+  highest_risk: 'Required browser/accessibility/console evidence is unavailable'
+
+top_issues:
+  - id: 'TEST-3.2-002'
+    severity: medium
+    finding: >-
+      The desktop/390px, light/dark, keyboard/focus, responsive-overflow, confirmation,
+      explicit-error, asset and console matrix remains NOT_RUN because browser automation was not
+      authorized. Source review found labelled controls, live feedback roles and archive-aware UI,
+      but source inspection is not browser acceptance evidence.
+    refs:
+      - 'docs/stories/3.2.rich-contact-lifecycle.story.md'
+      - 'packages/crm/components/rich-contact-workspace.tsx:181'
+      - 'packages/crm/components/contact-form.tsx:55'
+      - 'packages/crm/app/contacts/page.tsx:174'
+    suggested_owner: '@qa'
+
+findings_recheck:
+  - id: 'DATA-3.2-001'
+    status: RESOLVED
+    evidence: >-
+      UI preview/commit and automatic-intake callers pass their resolved WorkspaceScope;
+      preview calls resolveContactImportIdentity inside the candidate loop; memory uses real
+      canonical contact points and live calls the workspace-bound SQL RPC. Memory integration
+      tests and an authenticated rollback-only local SQL probe prove secondary-email active-match,
+      shared-third-phone ambiguous-identity with no mutation, and archived-non-primary-point
+      archived-match with no mutation.
+    refs:
+      - 'packages/crm/app/import-actions.ts:18'
+      - 'packages/crm/app/import-actions.ts:43'
+      - 'packages/crm/app/api/intake/contacts/route.ts:159'
+      - 'packages/crm/lib/application/contact-import-service.ts:184'
+      - 'packages/crm/lib/application/contact-import-service.ts:195'
+      - 'packages/crm/lib/data/import-gateway.ts:140'
+      - 'packages/crm/lib/data/supabase-import-gateway.ts:119'
+      - 'packages/crm/lib/application/contact-import-service.test.ts:156'
+      - 'packages/crm/lib/application/contact-import-service.test.ts:181'
+      - 'packages/crm/lib/application/contact-import-service.test.ts:209'
+
+review_scope:
+  manifest_rule: 'Story File List paths, excluding the mutable story and docs/qa/gates/**; ordinal sort; SHA-256 per file; path<TAB>hash rows joined with LF; SHA-256 of UTF-8 manifest'
+  file_list_entries: 53
+  manifest_files: 52
+  missing_files: 0
+
+evidence:
+  qa_reexecuted:
+    - command: 'npm run lint'
+      cwd: 'packages/crm'
+      result: PASS
+    - command: 'npm run typecheck'
+      cwd: 'packages/crm'
+      result: PASS
+    - command: 'npm test -- --run'
+      cwd: 'packages/crm'
+      result: 'PASS (67 files, 369 tests)'
+    - command: 'npm run build'
+      cwd: 'packages/crm'
+      result: 'PASS (Next.js 15.5.23 production build; all declared routes generated)'
+    - command: 'supabase test db supabase/tests/0007_rich_contact_lifecycle_test.sql --local'
+      cwd: 'packages/crm'
+      result: 'PASS (1 file, 18 tests; fixture transaction rolled back)'
+    - command: 'supabase test db supabase/tests --local'
+      cwd: 'packages/crm'
+      result: 'PASS (5 files, 78 tests across migrations 0004-0008)'
+    - command: 'supabase migration list --local'
+      cwd: 'packages/crm'
+      result: 'PASS (local migrations 0001-0008 applied)'
+    - command: 'npx vitest run lib/application/contact-import-service.test.ts lib/data/import-gateway.test.ts lib/data/supabase-import-gateway.test.ts app/api/intake/contacts/route.test.ts'
+      cwd: 'packages/crm'
+      result: 'PASS (4 files, 25 focused tests)'
+    - command: 'Authenticated rollback-only SQL probe against local Supabase/PostgreSQL'
+      result: >-
+        PASS: a real non-primary secondary email returned active-match for the original contact;
+        one real third phone shared by two contacts returned ambiguous-identity with matchCount=2;
+        a real non-primary point on an archived contact returned archived-match for the same ID;
+        workspace contact count remained 4 before/after resolution and the fixture transaction rolled back.
+    - command: 'Source audit of every non-test previewContactImport caller and both identity adapters'
+      result: >-
+        PASS: previewImportAction, commitImportAction and POST /api/intake/contacts pass their
+        resolved WorkspaceScope; preview invokes resolveContactImportIdentity inside the candidate
+        loop with provider/external ID/email/phone; memory resolves canonical points and Supabase
+        verifies workspace scope before calling resolve_contact_import_identity.
+
+requirements_trace:
+  covered: [1, 2, 3, 4, 5, 6, 7, 8]
+  partial: [9, 10]
+  gaps: []
+
+nfr_validation:
+  security: PASS
+  performance: CONCERNS
+  reliability: PASS
+  maintainability: PASS
+  accessibility: CONCERNS
+
+evidence_limitations:
+  - 'No Playwright, browser MCP/CLI or browser automation was used; the AC9/AC10 visual/accessibility/console matrix is NOT_RUN.'
+  - 'No hosted or production Supabase UAT was performed or inferred from local evidence.'
+  - 'CodeRabbit is NOT_AVAILABLE: the configured Ubuntu WSL distribution is absent (WSL_E_DISTRO_NOT_FOUND); this is not recorded as a pass.'
+  - 'Git provenance is unavailable; reviewed_revision is a deterministic local implementation manifest, not a commit.'
+  - 'The local SQL probe and adapter tests do not constitute hosted/production provider or deployment evidence.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Run the AC9/AC10 browser matrix with explicitly authorized browser tooling before a production UX claim.'
+      refs:
+        - 'docs/stories/3.2.rich-contact-lifecycle.story.md'
+    - action: 'Profile sequential canonical identity resolution at the documented 200-500-contact/import-row scale and batch it if latency breaches the operational budget.'
+      refs:
+        - 'packages/crm/lib/application/contact-import-service.ts:184'
+        - 'packages/crm/lib/application/contact-import-service.ts:195'
+
+lifecycle:
+  previous_status: InReview
+  new_status: Done

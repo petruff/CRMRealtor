@@ -1,0 +1,61 @@
+schema: 1
+story: '3.21'
+story_title: 'Airtable-Inspired Editorial Product System'
+gate: FAIL
+status_reason: 'The source-radius blocker is closed and all automated gates pass, but mandatory keyboard, native 200% reflow, representative-state matrix and saved-receipt evidence remains incomplete.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'working-tree-sha256:e38e5c0e6f8bf4c1c32441b64e221ebebad3cbfdae58b2f5ec1317fb163c3d94'
+updated: '2026-08-20T18:51:33Z'
+
+top_issues:
+  - id: 'TEST-001'
+    severity: high
+    finding: 'AC11, AC12 and AC14 remain unproven: keyboard-only traversal was inconclusive, native 200% zoom/reflow was not evidenced, representative populated/empty/loading/error/dense states were not captured in the required light/dark viewport matrix, and no saved Story 3.21 browser receipts are listed.'
+    suggested_action: 'Complete a deterministic keyboard-only path, native 200% zoom/reflow checks, and saved light/dark receipts for the required representative states at 390x844, 768x1024 and 1440x900; record console results and update the story evidence/checklist before re-review.'
+    suggested_owner: dev
+    refs:
+      - 'docs/stories/3.21.airtable-editorial-product-system.story.md:117'
+      - 'docs/stories/3.21.airtable-editorial-product-system.story.md:128'
+
+waiver:
+  active: false
+
+quality_score: 80
+expires: '2026-09-03T18:51:33Z'
+
+evidence:
+  tests_reviewed: 717
+  risks_identified: 1
+  automated:
+    lint: PASS
+    typecheck: PASS
+    focused: 'PASS — 3 files, 9 tests independently re-run'
+    tests: 'PASS — 160 files, 717 tests'
+    build: 'PASS — Next.js optimized build, 18/18 static pages'
+    coderabbit: 'UNAVAILABLE — configured Ubuntu WSL distribution is not installed'
+  browser:
+    status: PARTIAL
+    notes: 'Root review verified no page-level overflow or role=alert on the named routes at 390, 768 and 1440; exact light/dark body colors, 44px controls, and scoped /welcome typography were observed. Keyboard traversal, native 200% zoom, representative state coverage, and saved receipts remain incomplete.'
+  trace:
+    ac_covered: [1, 2, 3, 5, 6, 7, 8, 9, 10, 13]
+    ac_gaps: [4, 11, 12, 14]
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'No authorization, provider, server-action, schema or secret-handling source was changed.'
+  performance:
+    status: PASS
+    notes: 'Optimized build passed; the shared CSS and component changes add no runtime dependency or client state manager.'
+  reliability:
+    status: CONCERNS
+    notes: 'Automated functional regressions pass, but keyboard and representative error/loading-state browser evidence is incomplete.'
+  maintainability:
+    status: PASS
+    notes: 'All ten Connections cards use the centralized radius token, and the focused regression rejects a return to rounded-[20px].'
+
+recommendations:
+  immediate:
+    - action: 'Complete and persist the keyboard, native 200% reflow, state-matrix, light/dark and console evidence required by AC11-AC14.'
+      refs: ['docs/stories/3.21.airtable-editorial-product-system.story.md']
+  future: []

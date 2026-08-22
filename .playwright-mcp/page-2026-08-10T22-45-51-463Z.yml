@@ -1,0 +1,259 @@
+- generic [ref=f3e3]:
+  - banner [ref=f3e4]:
+    - generic [ref=f3e5]:
+      - generic [ref=f3e6]: R
+      - generic [ref=f3e7]:
+        - paragraph [ref=f3e8]: Realtor CRM
+        - paragraph [ref=f3e9]: Today
+    - button "Switch to dark theme" [ref=f3e10]
+  - main [ref=f3e13]:
+    - generic [ref=f3e14]:
+      - paragraph [ref=f3e18]: Sample data. These contacts are made up — the database is not connected yet. Nothing here is real, and nothing you change is saved.
+      - generic [ref=f3e19]:
+        - generic [ref=f3e20]:
+          - paragraph [ref=f3e21]: Monday, August 10
+          - heading "Good evening. 8 people need you today." [level=1] [ref=f3e22]: Good evening.8 people need you today.
+        - generic [ref=f3e23]:
+          - generic [ref=f3e24]:
+            - paragraph [ref=f3e25]: "4"
+            - paragraph [ref=f3e26]: Hot needing attention
+          - generic [ref=f3e27]:
+            - paragraph [ref=f3e28]: "3"
+            - paragraph [ref=f3e29]: Overdue
+          - generic [ref=f3e30]:
+            - paragraph [ref=f3e31]: "2"
+            - paragraph [ref=f3e32]: Due today
+          - generic [ref=f3e33]:
+            - paragraph [ref=f3e34]: "2"
+            - paragraph [ref=f3e35]: Birthdays & homeaversaries
+        - generic [ref=f3e36]:
+          - region "Needs first contact 3 Never been reached. These go cold fastest — call before anything else." [ref=f3e37]:
+            - generic [ref=f3e39]:
+              - generic [ref=f3e40]:
+                - heading "Needs first contact" [level=2] [ref=f3e42]
+                - generic [ref=f3e43]: "3"
+              - paragraph [ref=f3e44]: Never been reached. These go cold fastest — call before anything else.
+            - generic [ref=f3e45]:
+              - article [ref=f3e46]:
+                - generic [ref=f3e47]: DO
+                - generic [ref=f3e48]:
+                  - generic [ref=f3e49]:
+                    - link "Daniel Okafor" [ref=f3e50] [cursor=pointer]:
+                      - /url: /contacts/c-okafor
+                    - generic [ref=f3e51]: Hot
+                  - paragraph [ref=f3e53]: Waiting 6 days · social media
+                  - paragraph [ref=f3e54]: Seller
+                - generic [ref=f3e55]:
+                  - link "Call Daniel Okafor" [ref=f3e56] [cursor=pointer]:
+                    - /url: tel:(512) 555-0198
+                  - link "Text Daniel Okafor" [ref=f3e59] [cursor=pointer]:
+                    - /url: sms:(512) 555-0198
+                  - link "Email Daniel Okafor" [ref=f3e62] [cursor=pointer]:
+                    - /url: mailto:d.okafor@example.com
+              - article [ref=f3e66]:
+                - generic [ref=f3e67]: AM
+                - generic [ref=f3e68]:
+                  - generic [ref=f3e69]:
+                    - link "Alicia Monroe" [ref=f3e70] [cursor=pointer]:
+                      - /url: /contacts/c-monroe
+                    - generic [ref=f3e71]: Hot
+                  - paragraph [ref=f3e73]: Waiting 3 days · open house
+                  - paragraph [ref=f3e74]: Buyer · Round Rock
+                - generic [ref=f3e75]:
+                  - link "Call Alicia Monroe" [ref=f3e76] [cursor=pointer]:
+                    - /url: tel:(512) 555-0142
+                  - link "Text Alicia Monroe" [ref=f3e79] [cursor=pointer]:
+                    - /url: sms:(512) 555-0142
+                  - link "Email Alicia Monroe" [ref=f3e82] [cursor=pointer]:
+                    - /url: mailto:alicia.monroe@example.com
+              - article [ref=f3e86]:
+                - generic [ref=f3e87]: MR
+                - generic [ref=f3e88]:
+                  - generic [ref=f3e89]:
+                    - link "Marisol Reyes" [ref=f3e90] [cursor=pointer]:
+                      - /url: /contacts/c-reyes
+                    - generic [ref=f3e91]: Warm
+                  - paragraph [ref=f3e93]: Waiting 1 day · cold call
+                  - paragraph [ref=f3e94]: Buyer
+                - generic [ref=f3e95]:
+                  - link "Call Marisol Reyes" [ref=f3e96] [cursor=pointer]:
+                    - /url: tel:(512) 555-0233
+                  - link "Text Marisol Reyes" [ref=f3e99] [cursor=pointer]:
+                    - /url: sms:(512) 555-0233
+          - region "Overdue 3 Past their follow-up date, most overdue first." [ref=f3e102]:
+            - generic [ref=f3e104]:
+              - generic [ref=f3e105]:
+                - heading "Overdue" [level=2] [ref=f3e107]
+                - generic [ref=f3e108]: "3"
+              - paragraph [ref=f3e109]: Past their follow-up date, most overdue first.
+            - generic [ref=f3e110]:
+              - article [ref=f3e111]:
+                - generic [ref=f3e112]: RH
+                - generic [ref=f3e113]:
+                  - generic [ref=f3e114]:
+                    - link "Ruth Hollings" [ref=f3e115] [cursor=pointer]:
+                      - /url: /contacts/c-hollings
+                    - generic [ref=f3e116]: Nurture
+                  - paragraph [ref=f3e118]: 20 days overdue
+                  - paragraph [ref=f3e119]: Not sure yet · Contacted
+                - generic [ref=f3e120]:
+                  - link "Call Ruth Hollings" [ref=f3e121] [cursor=pointer]:
+                    - /url: tel:(512) 555-0420
+                  - link "Text Ruth Hollings" [ref=f3e124] [cursor=pointer]:
+                    - /url: sms:(512) 555-0420
+                  - link "Email Ruth Hollings" [ref=f3e127] [cursor=pointer]:
+                    - /url: mailto:ruthholl@example.com
+              - article [ref=f3e131]:
+                - generic [ref=f3e132]: GW
+                - generic [ref=f3e133]:
+                  - generic [ref=f3e134]:
+                    - link "Greg Whitfield" [ref=f3e135] [cursor=pointer]:
+                      - /url: /contacts/c-whitfield
+                    - generic [ref=f3e136]: Hot
+                  - paragraph [ref=f3e138]: 12 days overdue
+                  - paragraph [ref=f3e139]: Buyer · Actively working
+                - generic [ref=f3e140]:
+                  - link "Call Greg Whitfield" [ref=f3e141] [cursor=pointer]:
+                    - /url: tel:(512) 555-0311
+                  - link "Text Greg Whitfield" [ref=f3e144] [cursor=pointer]:
+                    - /url: sms:(512) 555-0311
+                  - link "Email Greg Whitfield" [ref=f3e147] [cursor=pointer]:
+                    - /url: mailto:greg.whitfield@example.com
+              - article [ref=f3e151]:
+                - generic [ref=f3e152]: NB
+                - generic [ref=f3e153]:
+                  - generic [ref=f3e154]:
+                    - link "Nadine Baptiste" [ref=f3e155] [cursor=pointer]:
+                      - /url: /contacts/c-baptiste
+                    - generic [ref=f3e156]: Warm
+                  - paragraph [ref=f3e158]: 4 days overdue
+                  - paragraph [ref=f3e159]: Buyer & seller · Contacted
+                - generic [ref=f3e160]:
+                  - link "Call Nadine Baptiste" [ref=f3e161] [cursor=pointer]:
+                    - /url: tel:(512) 555-0377
+                  - link "Text Nadine Baptiste" [ref=f3e164] [cursor=pointer]:
+                    - /url: sms:(512) 555-0377
+                  - link "Email Nadine Baptiste" [ref=f3e167] [cursor=pointer]:
+                    - /url: mailto:nadine.b@example.com
+          - region "Due today 2 Today's follow-ups, Hot first." [ref=f3e171]:
+            - generic [ref=f3e173]:
+              - generic [ref=f3e174]:
+                - heading "Due today" [level=2] [ref=f3e176]
+                - generic [ref=f3e177]: "2"
+              - paragraph [ref=f3e178]: Today's follow-ups, Hot first.
+            - generic [ref=f3e179]:
+              - article [ref=f3e180]:
+                - generic [ref=f3e181]: LF
+                - generic [ref=f3e182]:
+                  - generic [ref=f3e183]:
+                    - link "Luca Ferraro" [ref=f3e184] [cursor=pointer]:
+                      - /url: /contacts/c-ferraro
+                    - generic [ref=f3e185]: Hot
+                  - paragraph [ref=f3e187]: Due today
+                  - paragraph [ref=f3e188]: Buyer · Under contract
+                - generic [ref=f3e189]:
+                  - link "Call Luca Ferraro" [ref=f3e190] [cursor=pointer]:
+                    - /url: tel:(512) 555-0455
+                  - link "Text Luca Ferraro" [ref=f3e193] [cursor=pointer]:
+                    - /url: sms:(512) 555-0455
+                  - link "Email Luca Ferraro" [ref=f3e196] [cursor=pointer]:
+                    - /url: mailto:luca.ferraro@example.com
+              - article [ref=f3e200]:
+                - generic [ref=f3e201]: JA
+                - generic [ref=f3e202]:
+                  - generic [ref=f3e203]:
+                    - link "Joyce Abernathy" [ref=f3e204] [cursor=pointer]:
+                      - /url: /contacts/c-abernathy
+                    - generic [ref=f3e205]: Nurture
+                  - paragraph [ref=f3e207]: Due today
+                  - paragraph [ref=f3e208]: Not sure yet · Contacted
+                - generic [ref=f3e209]:
+                  - link "Call Joyce Abernathy" [ref=f3e210] [cursor=pointer]:
+                    - /url: tel:(512) 555-0512
+                  - link "Text Joyce Abernathy" [ref=f3e213] [cursor=pointer]:
+                    - /url: sms:(512) 555-0512
+          - region "Birthdays & homeaversaries 2 The easiest calls you will make all week — and the ones that generate referrals." [ref=f3e216]:
+            - generic [ref=f3e218]:
+              - generic [ref=f3e219]:
+                - heading "Birthdays & homeaversaries" [level=2] [ref=f3e221]
+                - generic [ref=f3e222]: "2"
+              - paragraph [ref=f3e223]: The easiest calls you will make all week — and the ones that generate referrals.
+            - generic [ref=f3e224]:
+              - article [ref=f3e225]:
+                - generic [ref=f3e226]: RH
+                - generic [ref=f3e227]:
+                  - generic [ref=f3e228]:
+                    - link "Ruth Hollings" [ref=f3e229] [cursor=pointer]:
+                      - /url: /contacts/c-hollings
+                    - generic [ref=f3e230]: Nurture
+                  - paragraph [ref=f3e232]: 🎂 Birthday in 3 days
+                  - paragraph [ref=f3e233]: Not sure yet · Contacted
+                - generic [ref=f3e234]:
+                  - link "Call Ruth Hollings" [ref=f3e235] [cursor=pointer]:
+                    - /url: tel:(512) 555-0420
+                  - link "Text Ruth Hollings" [ref=f3e238] [cursor=pointer]:
+                    - /url: sms:(512) 555-0420
+                  - link "Email Ruth Hollings" [ref=f3e241] [cursor=pointer]:
+                    - /url: mailto:ruthholl@example.com
+              - article [ref=f3e245]:
+                - generic [ref=f3e246]: JA
+                - generic [ref=f3e247]:
+                  - generic [ref=f3e248]:
+                    - link "Joyce Abernathy" [ref=f3e249] [cursor=pointer]:
+                      - /url: /contacts/c-abernathy
+                    - generic [ref=f3e250]: Nurture
+                  - paragraph [ref=f3e252]: 🏡 Homeaversary in 11 days
+                  - paragraph [ref=f3e253]: Not sure yet · Contacted
+                - generic [ref=f3e254]:
+                  - link "Call Joyce Abernathy" [ref=f3e255] [cursor=pointer]:
+                    - /url: tel:(512) 555-0512
+                  - link "Text Joyce Abernathy" [ref=f3e258] [cursor=pointer]:
+                    - /url: sms:(512) 555-0512
+          - region "Coming up 2 The next 7 days, so nothing surprises you." [ref=f3e261]:
+            - generic [ref=f3e263]:
+              - generic [ref=f3e264]:
+                - heading "Coming up" [level=2] [ref=f3e266]
+                - generic [ref=f3e267]: "2"
+              - paragraph [ref=f3e268]: The next 7 days, so nothing surprises you.
+            - generic [ref=f3e269]:
+              - article [ref=f3e270]:
+                - generic [ref=f3e271]: KN
+                - generic [ref=f3e272]:
+                  - generic [ref=f3e273]:
+                    - link "Kenji Nakamura" [ref=f3e274] [cursor=pointer]:
+                      - /url: /contacts/c-nakamura
+                    - generic [ref=f3e275]: Warm
+                  - paragraph [ref=f3e277]: In 3 days
+                  - paragraph [ref=f3e278]: Investor · Appointment set
+                - generic [ref=f3e279]:
+                  - link "Call Kenji Nakamura" [ref=f3e280] [cursor=pointer]:
+                    - /url: tel:(512) 555-0588
+                  - link "Text Kenji Nakamura" [ref=f3e283] [cursor=pointer]:
+                    - /url: sms:(512) 555-0588
+                  - link "Email Kenji Nakamura" [ref=f3e286] [cursor=pointer]:
+                    - /url: mailto:k.nakamura@example.com
+              - article [ref=f3e290]:
+                - generic [ref=f3e291]: SD
+                - generic [ref=f3e292]:
+                  - generic [ref=f3e293]:
+                    - link "Simone Delacroix" [ref=f3e294] [cursor=pointer]:
+                      - /url: /contacts/c-delacroix
+                    - generic [ref=f3e295]: Hot
+                  - paragraph [ref=f3e297]: In 6 days
+                  - paragraph [ref=f3e298]: Seller · Contacted
+                - generic [ref=f3e299]:
+                  - link "Call Simone Delacroix" [ref=f3e300] [cursor=pointer]:
+                    - /url: tel:(512) 555-0604
+                  - link "Text Simone Delacroix" [ref=f3e303] [cursor=pointer]:
+                    - /url: sms:(512) 555-0604
+                  - link "Email Simone Delacroix" [ref=f3e306] [cursor=pointer]:
+                    - /url: mailto:simone.d@example.com
+  - navigation "Primary" [ref=f3e310]:
+    - link "Today" [ref=f3e311] [cursor=pointer]:
+      - /url: /
+    - link "Contacts" [ref=f3e315] [cursor=pointer]:
+      - /url: /contacts
+    - link "Mailers" [ref=f3e321] [cursor=pointer]:
+      - /url: /mailers
+    - link "Connections" [ref=f3e325] [cursor=pointer]:
+      - /url: /connections

@@ -1,0 +1,39 @@
+{
+  "story": "1.2",
+  "date": "2026-08-10",
+  "postCode": {
+    "status": "PASSED",
+    "checks": {
+      "bugs": "passed_after_fixes",
+      "edgeCases": "passed_after_fixes",
+      "errorHandling": "passed",
+      "security": "passed",
+      "resilience": "passed"
+    },
+    "issuesFound": 4,
+    "issuesFixed": [
+      "Optional Supabase values now map explicit undefined patches to SQL null so edit forms can actually clear fields.",
+      "The mobile form action bar no longer overlays essential inputs.",
+      "Future next-touch dates now use the correct relative-date sign.",
+      "Server validation failures now return a serializable FormData snapshot so non-error fields remain populated without putting contact data in the URL."
+    ]
+  },
+  "postTest": {
+    "status": "PASSED",
+    "checks": {
+      "patterns": "passed",
+      "configuration": "passed",
+      "testing": "passed_after_additions",
+      "documentation": "passed",
+      "codeSmells": "passed",
+      "maintainability": "passed"
+    },
+    "issuesFound": 1,
+    "issuesFixed": [
+      "Added coverage for invalid email, self-referral, orphan notes, and relative-date language."
+    ],
+    "testsRerun": true,
+    "finalTestCount": 46
+  },
+  "readyForReview": true
+}

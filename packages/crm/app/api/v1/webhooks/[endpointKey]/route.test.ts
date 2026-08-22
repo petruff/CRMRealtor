@@ -1,0 +1,4 @@
+import { describe,expect,it } from 'vitest';
+import { POST } from './route';
+
+describe('generic webhook boundary',()=>{it('rejects stale timestamps before dependency or secret access',async()=>{const response=await POST(new Request('http://localhost/api/v1/webhooks/endpoint',{method:'POST',headers:{'x-omnix-timestamp':'2020-01-01T00:00:00Z'},body:'{}'}),{params:Promise.resolve({endpointKey:'endpoint'})});expect(response.status).toBe(401);expect(await response.json()).toMatchObject({error:{code:'timestamp-invalid'}});});it('rejects oversized bodies without echoing them',async()=>{const response=await POST(new Request('http://localhost/api/v1/webhooks/endpoint',{method:'POST',body:'x'.repeat(262145)}),{params:Promise.resolve({endpointKey:'endpoint'})});expect(response.status).toBe(413);expect(await response.text()).not.toContain('xxxxx');});});

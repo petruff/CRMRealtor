@@ -1,0 +1,59 @@
+schema: 1
+story: '3.20'
+story_title: 'Client Segregation & Needs Review Views — client navigation visual remediation'
+gate: PASS
+status_reason: 'The reviewed remediation removes the client-subtab enclosing frame, reuses one 44px button/badge system across both navigation levels, preserves semantic routes and selection state, and contains narrow-width overflow in each navigation landmark.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'worktree-sha256:585f3bbe947248c558fcba1edb0db4be1faa746b3f944b54e7c71526a6616f49'
+updated: '2026-08-18T19:08:00Z'
+
+scope: 'Component-scoped post-release visual remediation; no full-story lifecycle transition applied.'
+top_issues: []
+waiver: { active: false }
+quality_score: 100
+
+evidence:
+  tests_reviewed: 2
+  focused_tests: 'components/contact-scope-navigation.test.tsx — 2/2 passed independently'
+  inherited_mandatory_gates:
+    lint: PASS
+    typecheck: PASS
+    test: 'PASS — 155 files / 698 tests (root evidence)'
+    build: PASS
+  visual_receipts:
+    desktop: 'docs/qa/evidence/3.20-client-subnav-unified-final.png'
+    mobile_390: 'docs/qa/evidence/3.20-client-subnav-unified-390.png'
+    comparison: 'docs/qa/evidence/3.20-client-subnav-unified-comparison.png'
+  checks:
+    no_secondary_enclosing_frame: PASS
+    shared_button_and_badge_language: PASS
+    minimum_target_height_44px: PASS
+    semantic_navigation_and_aria_current: PASS
+    contained_overflow_at_390px: PASS
+    routes_and_labels_preserved: PASS
+  risks_identified: 0
+  trace:
+    ac_covered: [1, 2, 3, 6, 9]
+    ac_gaps: []
+
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Presentation-only change; no data, authorization, or persistence boundary changed.'
+  performance:
+    status: PASS
+    notes: 'Static navigation classes and existing links add no data source or runtime dependency.'
+  reliability:
+    status: PASS
+    notes: 'All seven labels remain intact; Clients stays selected for every client subview and href generation is unchanged.'
+  maintainability:
+    status: PASS
+    notes: 'Both navigation levels reuse the same button, badge, spacing, and overflow vocabulary.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Repeat authenticated production smoke after deployment at desktop and a real narrow touch viewport.'
+      refs: ['packages/crm/components/contact-scope-navigation.tsx']
+
+lifecycle_transition: 'NOT_APPLICABLE — partial remediation gate; Story 3.20 remains InReview for root release authority.'

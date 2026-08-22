@@ -1,0 +1,152 @@
+schema: 1
+story: '3.6'
+story_title: 'Deterministic Organizational Copilot'
+gate: CONCERNS
+status_reason: >-
+  The remediated implementation, architecture gate and all local executable gates pass,
+  including tenant, read-only, citation and telemetry boundaries. CONCERNS remains because
+  the required AC9/AC11 browser, accessibility, responsive and console matrix is NOT_RUN.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:91aff26417bd3382cba22bd94ba0535c028128d3908bfcc96ab5a77c6785d84c'
+updated: '2026-08-11T16:52:39-04:00'
+
+waiver:
+  active: false
+
+risk_summary:
+  highest_score: 6
+  highest_risk: 'Required browser/accessibility/console evidence is unavailable'
+
+top_issues:
+  - id: 'TEST-3.6-001'
+    severity: medium
+    finding: >-
+      The desktop/390px, light/dark, keyboard/focus, screen-reader/live-region,
+      reduced-motion, horizontal-overflow and console matrix remains NOT_RUN because browser
+      automation was not authorized. This is an evidence limitation, not a pass or a hosted
+      or production-readiness claim.
+    refs:
+      - 'docs/stories/3.6.deterministic-organizational-copilot.story.md'
+      - 'packages/crm/components/omnix-copilot.tsx'
+      - 'packages/crm/app/omnix/page.tsx'
+    suggested_owner: '@qa'
+
+findings_recheck:
+  - id: 'ARCH-3.6-CIT-001'
+    status: RESOLVED
+    evidence: >-
+      Typed fact-key maps and semantic tests cover recommendation, search, task, date,
+      needs-attention and stored-versus-derived follow-up evidence paths.
+    refs:
+      - 'packages/crm/lib/application/omnix-copilot-service.ts'
+      - 'packages/crm/lib/application/omnix-copilot-service.test.ts'
+  - id: 'ARCH-3.6-CIT-002'
+    status: RESOLVED
+    evidence: >-
+      Mailer-send citations hash the complete mailer/contact composite key and boundary tests
+      prove distinct 128-character source components retain distinct citation identities.
+    refs:
+      - 'packages/crm/lib/application/omnix-copilot-service.ts'
+      - 'packages/crm/lib/application/omnix-copilot-service.test.ts'
+  - id: 'ARCH-3.6-OBS-001'
+    status: RESOLVED
+    evidence: >-
+      Central fixed telemetry categories normalize authority aliases and reject arbitrary,
+      control-bearing or PII-like error codes from serialized events.
+    refs:
+      - 'packages/crm/lib/observability/omnix-copilot-telemetry.ts'
+      - 'packages/crm/lib/observability/omnix-copilot-telemetry.test.ts'
+  - id: 'ARCH-3.6-DOC-001'
+    status: RESOLVED
+    evidence: 'Operator documentation matches the implemented birthday and home-anniversary date intent.'
+    refs:
+      - 'packages/crm/docs/omnix-copilot.md'
+  - id: 'REQ-3.6-ATTENTION-001'
+    status: RESOLVED
+    evidence: >-
+      needsAttentionNow citations are built from all three contributing triage buckets:
+      first contact, overdue and due today.
+    refs:
+      - 'packages/crm/lib/application/omnix-copilot-service.ts'
+      - 'packages/crm/lib/application/omnix-copilot-service.test.ts'
+
+review_scope:
+  manifest_rule: 'Story File List paths, excluding the mutable story and docs/qa/gates/**; ordinal sort; SHA-256 per file; path<TAB>hash rows joined with LF; SHA-256 of UTF-8 manifest'
+  file_list_entries: 24
+  manifest_files: 23
+  missing_files: 0
+
+evidence:
+  architecture_gate:
+    status: GO
+    artifact: 'docs/qa/gates/3.6-deterministic-organizational-copilot-architecture.yml'
+    artifact_sha256: '2bf8fe2974d004e5433413ea78562f69f7ede66205f51f20cf334485635e0c5e'
+  qa_reexecuted:
+    - command: 'npm run lint'
+      cwd: 'packages/crm'
+      result: 'PASS (final isolated run, zero warnings)'
+    - command: 'npm run typecheck'
+      cwd: 'packages/crm'
+      result: PASS
+    - command: 'npm test'
+      cwd: 'packages/crm'
+      result: >-
+        PASS (48 files, 296 tests) on the remediated source; a later same-source repeat timed
+        out under host I/O saturation without a test failure and its orphan process was stopped.
+    - command: 'npm run build'
+      cwd: 'packages/crm'
+      result: 'PASS (optimized Next.js build; /omnix 5.33 kB, 111 kB first load)'
+    - command: 'Focused copilot service and telemetry tests'
+      cwd: 'packages/crm'
+      result: 'PASS (29/29 after initial remediation; architecture recheck passed 5 files/81 tests)'
+    - command: 'supabase test db supabase/tests/0004_shared_workspace_authority_test.sql --local'
+      cwd: 'packages/crm'
+      result: 'PASS (11/11)'
+    - command: 'supabase test db supabase/tests/0005_crm_work_queue_test.sql --local'
+      cwd: 'packages/crm'
+      result: 'PASS (16/16)'
+    - command: 'omnix:copilot brief/ask/unsupported/live smoke matrix'
+      cwd: 'packages/crm'
+      result: >-
+        PASS: sample brief and exact alias exit 0 with omnix-copilot.v1; unsupported mutation-like
+        text exits 2; missing-credential live mode exits 2 and fails closed without sample fallback;
+        structured telemetry contains only fixed safe categories.
+    - command: 'npm run omnix:brief -- --today 2026-08-11'
+      cwd: 'packages/crm'
+      result: 'PASS: legacy Omnix/Cyryx Labs brief exits 0 with expected deterministic totals.'
+    - command: 'GET http://127.0.0.1:3200/omnix'
+      result: >-
+        PASS_LOCAL_HTTP: 200, content length 52489, with Ask Omnix, Today brief,
+        no-generative-model and Cyryx Labs markers. No browser interaction is inferred.
+
+requirements_trace:
+  covered: [1, 2, 3, 4, 5, 6, 7, 8, 10]
+  partial: [9, 11]
+  gaps: []
+
+nfr_validation:
+  security: PASS
+  performance: PASS
+  reliability: PASS
+  maintainability: PASS
+  accessibility: CONCERNS
+
+evidence_limitations:
+  - 'No Playwright, browser MCP/CLI, or browser automation was used; the AC9/AC11 visual/accessibility/console matrix is NOT_RUN.'
+  - 'No hosted or production Google/Supabase UAT was performed or inferred from local evidence.'
+  - 'CodeRabbit was unavailable because the configured shell dependency is absent.'
+  - 'Git provenance is unavailable because the workspace is not a Git repository; reviewed_revision is a deterministic local implementation manifest.'
+
+recommendations:
+  immediate: []
+  future:
+    - action: 'Run the AC9/AC11 browser matrix in user-authorized tooling before any production claim.'
+      refs:
+        - 'docs/stories/3.6.deterministic-organizational-copilot.story.md'
+    - action: 'Run hosted two-workspace and revoked-membership UAT against deployed RLS before any production claim.'
+      refs:
+        - 'packages/crm/lib/data/automation-context.ts'
+
+lifecycle:
+  previous_status: InReview
+  new_status: Done

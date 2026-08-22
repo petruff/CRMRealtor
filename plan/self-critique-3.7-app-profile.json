@@ -1,0 +1,32 @@
+{
+  "subtaskId": "3.7-app-profile",
+  "critiquedAt": "2026-08-18T23:00:00Z",
+  "step5_5": {
+    "predictedBugs": [
+      "A vendor boolean or numeric cell with an unfamiliar representation could violate the SQL typed-scalar constraint; the parser now falls back to bounded text unless conversion is deterministic.",
+      "A second preview after a create changes the plan to unchanged and could falsely trigger divergent replay; the immutable group key is now bound to the complete plan hash.",
+      "Existing contacts could skip provenance because unchanged rows previously returned early; unchanged groups now pass through the atomic sourceProfile transaction."
+      ,"Workbook candidates could receive the physical title-row offset while nested source facts retained CSV-relative row numbers; both now receive the same bounded offset."
+    ],
+    "edgeCases": [
+      "Empty source cells remain absent instead of creating empty facts, while all 79 populated sanitized fields are retained.",
+      "Unparseable source dates and timestamps remain text evidence rather than rejecting the contact or inventing a date.",
+      "Consent flags are preserved as typed evidence but First Class imports do not set Omnix emailSubscribed authority."
+      ,"An XLSX title row before the discovered header maps both the candidate and every preserved fact to physical worksheet row 3."
+    ],
+    "errorHandling": true,
+    "securityCheck": true,
+    "passed": true
+  },
+  "step6_5": {
+    "followsPatterns": true,
+    "noHardcoded": true,
+    "testsAdded": true,
+    "docsUpdated": true,
+    "noConsoleLogs": true,
+    "passed": true
+  },
+  "overallVerdict": "PASSED",
+  "skipped": false,
+  "skipWarning": null
+}

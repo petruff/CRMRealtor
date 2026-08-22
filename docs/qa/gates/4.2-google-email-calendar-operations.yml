@@ -1,0 +1,44 @@
+schema: 1
+story: '4.2'
+story_title: 'Google Email & Calendar Operations'
+gate: FAIL
+status_reason: >-
+  The remediated local Gmail watch, metadata reconciliation, send ambiguity, Calendar lifecycle and
+  provider-probe implementation passes automated and browser checks. AC10 remains unmet because no
+  approved Google project/consent configuration or realtor-assistant real-account UAT exists.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'filesystem-manifest-sha256:a076b4b5883c075a6b557e4affc27e40ac395430a2a72f9e532f7b1562dc933d'
+updated: '2026-08-12T15:44:00-04:00'
+top_issues:
+  - id: 'REQ-4.2-UAT-001'
+    severity: high
+    finding: >-
+      AC10 requires real incremental consent, send, matched metadata, task create/update/delete,
+      failure and revoke evidence for realtor and assistant; provider configuration and UAT are absent.
+    suggested_action: 'Provision the approved Google Cloud project and test accounts, complete consent/privacy configuration, then execute and retain the AC10 matrix before enablement.'
+    suggested_owner: '@devops + @qa + product owner'
+waiver: { active: false }
+quality_score: 80
+evidence:
+  local_implementation: PASS
+  focused_and_full_tests: PASS
+  browser:
+    result: PASS
+    viewports: ['1292x910', '768x900', '390x844']
+    keyboard_focus: PASS
+    light_dark: PASS
+    horizontal_overflow: false
+    console_errors_or_warnings: 0
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_gaps: [10]
+nfr_validation:
+  security: { status: PASS, notes: 'Incremental scopes, account binding, token CAS and redaction pass local review.' }
+  performance: { status: PASS, notes: 'History pages, scans, renewals and reconciliation are bounded.' }
+  reliability: { status: FAIL, notes: 'Real provider lifecycle evidence required by AC10 is absent.' }
+  maintainability: { status: PASS, notes: 'OAuth, worker, provider and UI boundaries remain typed and separated.' }
+recommendations:
+  immediate:
+    - action: 'Complete real-account AC10 UAT; keep Gmail and Calendar provider capabilities disabled until it passes.'
+      refs: ['docs/stories/4.2.google-email-calendar-operations.story.md']
+  future: []
