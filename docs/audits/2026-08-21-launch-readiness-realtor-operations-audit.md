@@ -72,6 +72,19 @@ The production findings above remain the launch authority until this correction 
 
 Open release gates are now: Preview/Production deployment verification, authenticated post-deploy 390/768/1440 evidence, Mailchimp provider-side completion, Judith Google consent, and the still-open durable cadence task-materialization story.
 
+## Production release evidence — 2026-08-22 01:16 ET
+
+- **Published:** GitHub `main` includes the launch baseline and responsive correction; Vercel production alias `crm-chi-teal-22.vercel.app` resolves to ready deployment `dpl_4pJXJwvCuoPN1GkWQKmfzNnWBDsQ` after Preview health/readiness passed.
+- **Applied with rollback:** dry run reported 191 eligible imported contacts (0 Hot, 8 Warm, 183 Nurture), 0 protected and 0 review exceptions. Atomic receipt `a3eaa5c1-55ab-4f14-959a-fa4c6a3d4c18` records 191 contacts, state `applied`, policy `omnix.import-classification.v1`, rollback available.
+- **Workload corrected:** Today now reports 6 due today, 0 overdue and 71 relationships across Now and the next seven days, instead of treating all 191 imported contacts as overdue.
+- **Reconciliation and duplicates:** 192 source rows remain fully accounted for as 191 added plus 1 validation quarantine; exact canonical duplicate groups remain 0 and no merge was required.
+- **Authenticated responsive evidence:** Today, Data and Connections were checked at 390/768/1440. The decorative Today overflow was corrected; measured document widths do not exceed their viewports. Evidence is stored in `docs/audits/evidence/2026-08-22-release/`.
+- **Assistant authority:** one active assistant membership exists and automated route/RLS tests pass; independent assistant-session UAT still requires that user's login.
+- **Mailchimp:** the customer-facing recovery flow is deployed, but the live provider probe says reauthorization is required. Signed webhook and baseline cannot truthfully complete until Judith reconnects her Mailchimp account.
+- **Google:** the one-click `workspace-core` flow is deployed, but Gmail and Calendar remain permission pending. Judith must consent in her Google account; developer credentials were not substituted.
+
+The CRM core and reconciled contact workload are released. Provider-owned Mailchimp/Google capabilities and the separate transaction/P&L domain must remain labeled incomplete until their external and product-definition gates close.
+
 ## Product direction after launch blockers
 
 - Add the approved property, deal, closing, commission, expense, volume and P&L domains incrementally; do not fake them from contact stages.

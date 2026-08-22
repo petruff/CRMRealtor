@@ -1,79 +1,9 @@
--- Omnix — reversible, owner-approved organization of historical imports.
---
--- A single RPC snapshots every affected CRM field before applying the bounded
--- batch. A second RPC restores the full snapshot only while none of the applied
--- records has been edited afterward. Both operations are transaction-atomic.
---
--- ROLLBACK: ../rollbacks/20260822043055_reversible_imported_contact_organization.rollback.sql
--- is safe only before the first run is written. Product data rollback uses
--- rollback_imported_contact_organization instead.
+-- Honor audited workspace-admin grants for reversible historical import
+-- organization while preserving the active-membership and workspace checks.
 
 begin;
 
-create table public.imported_contact_organization_runs (
-  id uuid primary key default gen_random_uuid(),
-  workspace_id uuid not null references public.workspaces(id) on delete restrict,
-  actor_membership_id uuid not null,
-  policy_version text not null check (length(policy_version) between 1 and 80),
-  request_hash text not null check (request_hash ~ '^[a-f0-9]{64}$'),
-  state text not null check (state in ('applied','rolled-back')),
-  contact_count integer not null check (contact_count between 1 and 500),
-  applied_at timestamptz not null,
-  rolled_back_at timestamptz,
-  rollback_request_hash text check (rollback_request_hash is null or rollback_request_hash ~ '^[a-f0-9]{64}$'),
-  created_at timestamptz not null default now(),
-  constraint imported_contact_organization_runs_actor_workspace_fk
-    foreign key(actor_membership_id,workspace_id)
-    references public.workspace_members(id,workspace_id) on delete restrict,
-  constraint imported_contact_organization_runs_workspace_request_unique
-    unique(workspace_id,request_hash),
-  constraint imported_contact_organization_runs_id_workspace_unique unique(id,workspace_id),
-  constraint imported_contact_organization_runs_lifecycle check (
-    (state='applied' and rolled_back_at is null and rollback_request_hash is null)
-    or (state='rolled-back' and rolled_back_at is not null and rollback_request_hash is not null)
-  )
-);
-
-create table public.imported_contact_organization_items (
-  id uuid primary key default gen_random_uuid(),
-  workspace_id uuid not null,
-  run_id uuid not null,
-  contact_id uuid not null,
-  before_snapshot jsonb not null check (jsonb_typeof(before_snapshot)='object'),
-  after_snapshot jsonb not null check (jsonb_typeof(after_snapshot)='object'),
-  before_updated_at timestamptz not null,
-  after_updated_at timestamptz not null,
-  created_at timestamptz not null default now(),
-  constraint imported_contact_organization_items_run_workspace_fk
-    foreign key(run_id,workspace_id)
-    references public.imported_contact_organization_runs(id,workspace_id) on delete restrict,
-  constraint imported_contact_organization_items_contact_workspace_fk
-    foreign key(contact_id,workspace_id)
-    references public.contacts(id,workspace_id) on delete restrict,
-  constraint imported_contact_organization_items_run_contact_unique unique(run_id,contact_id)
-);
-
-create index imported_contact_organization_runs_workspace_created_idx
-  on public.imported_contact_organization_runs(workspace_id,created_at desc,id);
-create index imported_contact_organization_items_contact_idx
-  on public.imported_contact_organization_items(workspace_id,contact_id,run_id);
-
-alter table public.imported_contact_organization_runs enable row level security;
-alter table public.imported_contact_organization_items enable row level security;
-
-create policy imported_contact_organization_runs_member_read
-  on public.imported_contact_organization_runs for select to authenticated
-  using (public.has_workspace_access(workspace_id));
-create policy imported_contact_organization_items_member_read
-  on public.imported_contact_organization_items for select to authenticated
-  using (public.has_workspace_access(workspace_id));
-
-revoke all on public.imported_contact_organization_runs from public,anon,authenticated;
-revoke all on public.imported_contact_organization_items from public,anon,authenticated;
-grant select on public.imported_contact_organization_runs to authenticated;
-grant select on public.imported_contact_organization_items to authenticated;
-
-create function public.apply_imported_contact_organization(
+create or replace function public.apply_imported_contact_organization(
   target_workspace_id uuid,
   target_actor_membership_id uuid,
   target_policy_version text,
@@ -185,7 +115,7 @@ begin
 end;
 $$;
 
-create function public.rollback_imported_contact_organization(
+create or replace function public.rollback_imported_contact_organization(
   target_run_id uuid,
   target_actor_membership_id uuid,
   target_request_hash text,
