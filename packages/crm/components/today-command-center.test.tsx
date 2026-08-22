@@ -104,6 +104,7 @@ describe('TodayCommandCenter', () => {
     expect(css).toContain("grid-template-areas: 'attention focus moments'");
     expect(css).toContain("grid-template-areas: 'focus' 'attention' 'moments'");
     expect(css).toContain('@container (min-width: 48rem) and (max-width: 61.99rem)');
+    expect(css).toMatch(/\.today-studio\s*{[^}]*overflow-x:\s*clip;/s);
     expect(css).toContain("'focus focus'\n        'attention moments'");
     expect(css).toMatch(/\.today-moments-list\s*{[^}]*overflow:\s*visible;/s);
     expect(css).not.toMatch(/\.today-moments-list\s*{[^}]*max-height:/s);

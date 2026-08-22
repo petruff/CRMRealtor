@@ -206,6 +206,7 @@
     position: relative;
     isolation: isolate;
     container-type: inline-size;
+    overflow-x: clip;
   }
 
   .today-studio::before {
