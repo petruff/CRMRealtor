@@ -217,7 +217,11 @@ async function hasHumanPipelineEdit(
     }),
   ]);
   if (pipelineEvents.length > 0) return true;
-  return updateEvents.some((event) => !event.idempotencyKey.startsWith('contact-import-updated:'));
+  return updateEvents.some((event) => {
+    const importManaged = event.idempotencyKey.startsWith('contact-import-updated:')
+      || event.idempotencyKey.startsWith('rich:contact-import-updated:');
+    return !importManaged;
+  });
 }
 
 function mergeCandidate(target: ContactImportCandidate, incoming: ContactImportCandidate): void {

@@ -164,7 +164,7 @@ describe('contact import service', () => {
       contactId: 'existing-1',
       actorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
       occurredAt: '2026-08-09T12:00:00.000Z',
-      idempotencyKey: 'contact-import-updated:existing-1:prior-import',
+      idempotencyKey: 'rich:contact-import-updated:existing-1:prior-import',
     });
     const parsed = parseContactImport({
       filename: 'status-reconciliation.csv',
