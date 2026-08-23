@@ -174,6 +174,22 @@ export function supabaseRichContactRepository(
       if (error) throw failure('Failed to list contact points', error);
       return ((data ?? []) as ContactPointRow[]).map(point);
     },
+    async listContactPointsForContacts(input, contactIds, includeArchived) {
+      const scope = live(input);
+      const unique = [...new Set(contactIds)];
+      if (unique.length === 0) return [];
+      if (unique.length > LIMIT) {
+        throw new RichContactError('invalid-input', `Contact-point batch cannot exceed ${LIMIT} contacts.`);
+      }
+      let query = supabase.from('contact_points').select('*')
+        .eq('workspace_id', scope.workspaceId)
+        .in('contact_id', unique);
+      if (!includeArchived) query = query.is('archived_at', null);
+      const { data, error } = await query.order('contact_id').order('display_order')
+        .order('created_at').order('id').limit(LIMIT * 4);
+      if (error) throw failure('Failed to list contact points for audit', error);
+      return ((data ?? []) as ContactPointRow[]).map(point);
+    },
     async addContactPoint(input, value) {
       const scope = live(input);
       return rpc('add_contact_point', { target_contact_id: await canonical(scope, value.contactId), target_type: value.type,

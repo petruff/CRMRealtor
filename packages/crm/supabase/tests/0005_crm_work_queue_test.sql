@@ -412,8 +412,13 @@ begin
     raise exception 'incomplete archive/restore state is inconsistent';
   end if;
 
-  delete from incomplete_records
-  where id = '61000000-0000-4000-8000-000000000001';
+  begin
+    delete from incomplete_records
+    where id = '61000000-0000-4000-8000-000000000001';
+    raise exception 'hard delete unexpectedly received table authority';
+  exception when insufficient_privilege then
+    null;
+  end;
 
   if not exists (
     select 1 from incomplete_records

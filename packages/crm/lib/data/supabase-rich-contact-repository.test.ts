@@ -77,6 +77,31 @@ describe('Supabase rich contact repository', () => {
     expect(mock.calls).toContainEqual({ operation: 'limit', value: 500 });
   });
 
+  it('loads a bounded contact-point page without alias RPC calls', async () => {
+    const mock = client();
+    const identityMap = {
+      resolveCanonical: vi.fn(async (_scope: WorkspaceScope, contactId: string) => contactId),
+      listGroupMembers: vi.fn(async () => ({
+        requestedContactId: 'contact-a', canonicalContactId: 'contact-a',
+        memberContactIds: ['contact-a'], aliasEpoch: 0,
+      })),
+      resolvePage: vi.fn(async () => new Map<string, string>()),
+    };
+    const repository = supabaseRichContactRepository(mock.supabase, identityMap);
+
+    await expect(repository.listContactPointsForContacts(
+      scope,
+      ['contact-a', 'contact-b', 'contact-a'],
+      true,
+    )).resolves.toEqual([expect.objectContaining({ id: 'point-a' })]);
+
+    expect(mock.calls).toContainEqual({ operation: 'eq:workspace_id', value: 'workspace-live' });
+    expect(mock.calls).toContainEqual({ operation: 'in:contact_id', value: ['contact-a', 'contact-b'] });
+    expect(mock.calls).toContainEqual({ operation: 'limit', value: 2_000 });
+    expect(identityMap.listGroupMembers).not.toHaveBeenCalled();
+    expect(identityMap.resolvePage).not.toHaveBeenCalled();
+  });
+
   it('binds mutations to the authenticated actor and frozen RPC contract', async () => {
     const mock = client();
     const repository = supabaseRichContactRepository(mock.supabase);

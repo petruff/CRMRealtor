@@ -5,6 +5,7 @@ const SESSION_PUBLIC_PREFIXES = [
   "/api/health",
   "/api/readiness",
   "/api/intake",
+  "/api/v1",
   "/api/internal/connectors/drain",
   "/api/connectors/google/gmail/push",
   "/api/connectors/mailchimp/webhook",

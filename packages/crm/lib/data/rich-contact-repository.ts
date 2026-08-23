@@ -30,6 +30,7 @@ export interface ContactPointInput {
 
 export interface RichContactRepository {
   listContactPoints(scope: WorkspaceScope, contactId: string, includeArchived?: boolean): Promise<readonly ContactPoint[]>;
+  listContactPointsForContacts(scope: WorkspaceScope, contactIds: readonly string[], includeArchived?: boolean): Promise<readonly ContactPoint[]>;
   addContactPoint(scope: WorkspaceScope, input: ContactPointInput): Promise<ContactPoint>;
   updateContactPoint(scope: WorkspaceScope, pointId: string, input: Omit<ContactPointInput, 'contactId' | 'type'>): Promise<ContactPoint>;
   archiveContactPoint(scope: WorkspaceScope, pointId: string, actorMembershipId: string, reason: string, occurredAt: string): Promise<ContactPoint>;

@@ -11,6 +11,7 @@ type DisplayStatus = 'available' | 'possibly-truncated' | 'insufficient-evidence
 export interface InsightsContributorView {
   entityType: 'contact' | 'task';
   recordId: string;
+  label: string;
   href?: string;
   detail?: string;
 }
@@ -203,7 +204,7 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
       {selected ? <div className="mt-5 rounded-[var(--sk-control-radius)] border border-line bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-ink">{selected.label}</h3><p className="mt-1 text-sm text-muted">{selected.scope === 'snapshot' ? `Current snapshot as of ${model.coverage.currentTo.slice(0, 10)}` : `${model.periodDays}-day cohort · ${model.coverage.currentFrom.slice(0, 10)} to ${model.coverage.currentTo.slice(0, 10)}`}</p></div><span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-muted">{selected.contributors.length} records shown</span></div>
         <StatusNote status={selected.status} />
-        {selected.status === 'insufficient-evidence' ? <p className="mt-4 text-sm text-muted">No contributor list is available because the source evidence was not loaded.</p> : selected.contributors.length ? <ul className="mt-4 grid gap-px overflow-hidden rounded-[var(--sk-control-radius)] bg-line">{selected.contributors.map((contributor) => <li key={`${contributor.entityType}:${contributor.recordId}`} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 bg-surface px-4 py-2"><span className="rounded-full bg-surface-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-subtle">{contributor.entityType}</span>{contributor.href ? <Link href={contributor.href} className="font-medium text-ink underline-offset-2 hover:underline">{contributor.recordId}</Link> : <strong className="font-medium text-ink">{contributor.recordId}</strong>}{contributor.detail ? <span className="min-w-0 flex-1 text-sm text-muted">{contributor.detail}</span> : null}</li>)}</ul> : <p className="mt-4 text-sm text-muted">No records contributed to this metric in the selected scope.</p>}
+        {selected.status === 'insufficient-evidence' ? <p className="mt-4 text-sm text-muted">No contributor list is available because the source evidence was not loaded.</p> : selected.contributors.length ? <ul className="mt-4 grid gap-px overflow-hidden rounded-[var(--sk-control-radius)] bg-line">{selected.contributors.map((contributor) => <li key={`${contributor.entityType}:${contributor.recordId}`} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 bg-surface px-4 py-2"><span className="rounded-full bg-surface-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-subtle">{contributor.entityType === 'contact' ? 'Contact' : 'Task'}</span>{contributor.href ? <Link href={contributor.href} className="font-medium text-ink underline-offset-2 hover:underline">{contributor.label}</Link> : <strong className="font-medium text-ink">{contributor.label}</strong>}{contributor.detail ? <span className="min-w-0 flex-1 text-sm text-muted">{contributor.detail}</span> : null}</li>)}</ul> : <p className="mt-4 text-sm text-muted">No records contributed to this metric in the selected scope.</p>}
       </div> : null}
     </section>
 

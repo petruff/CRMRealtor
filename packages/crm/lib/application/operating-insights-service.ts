@@ -6,6 +6,7 @@ import {
   parseOperatingInsightPeriod,
 } from '../domain/operating-insights.ts';
 import type { ActivityEvent } from '../domain/activity.ts';
+import { displayName } from '../domain/contact.ts';
 
 const OPERATING_INSIGHTS_BOUND = 500;
 
@@ -39,7 +40,7 @@ export async function getOperatingInsights(
     context.workspaceRepository.listMemberships(context.workspaceScope),
   ]);
   const events = mergeEvents(transitionEvents, periodEvents);
-  return buildOperatingInsights({
+  const report = buildOperatingInsights({
     periodDays, mode: context.workspaceScope.mode, currentWindow: windows.current, previousWindow: windows.previous,
     contacts, events, tasks, memberships,
     contactBoundedAt: OPERATING_INSIGHTS_BOUND,
@@ -50,4 +51,9 @@ export async function getOperatingInsights(
     eventsTruncated: transitionEvents.length === OPERATING_INSIGHTS_BOUND || periodEvents.length === OPERATING_INSIGHTS_BOUND,
     tasksTruncated: tasks.length === OPERATING_INSIGHTS_BOUND,
   });
+  return {
+    ...report,
+    contactDisplayNames: new Map(contacts.map((contact) => [contact.id, displayName(contact)] as const)),
+    taskDisplayNames: new Map(tasks.map((task) => [task.id, task.title] as const)),
+  };
 }

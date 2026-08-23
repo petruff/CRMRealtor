@@ -58,6 +58,10 @@ const GOOGLE_WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/calendar.app.created',
 ] as const;
 
+function supportReference(value: string): string {
+  return value.replaceAll('-', '').slice(0, 8).toUpperCase();
+}
+
 function connectorServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -933,8 +937,8 @@ export default async function ConnectionsPage({
               <div>
                 <p className="text-sm font-medium text-ink">{job.actionType}</p>
                 <p className="text-xs text-muted">{job.state} · attempt {job.attemptCount}/{job.maxAttempts}</p>
-                <p className="mt-1 break-all font-mono text-[10px] text-subtle">
-                  Correlation {job.correlationId} · {job.nextRetryAt
+                <p className="mt-1 text-[11px] text-subtle" title={`Full support reference: ${job.correlationId}`}>
+                  Support ref {supportReference(job.correlationId)} · {job.nextRetryAt
                     ? `next retry ${new Date(job.nextRetryAt).toLocaleString()}`
                     : `scheduled ${new Date(job.scheduledAt).toLocaleString()}`}
                 </p>
@@ -952,7 +956,7 @@ export default async function ConnectionsPage({
               <div className="mt-2 overflow-x-auto rounded-2xl border border-line">
                 <table className="min-w-full divide-y divide-line text-left text-xs">
                   <thead className="bg-surface-3 text-subtle">
-                    <tr><th className="px-3 py-2 font-medium">Event</th><th className="px-3 py-2 font-medium">Provider status</th><th className="px-3 py-2 font-medium">Error category</th><th className="px-3 py-2 font-medium">Correlation</th><th className="px-3 py-2 font-medium">Time</th></tr>
+                    <tr><th className="px-3 py-2 font-medium">Event</th><th className="px-3 py-2 font-medium">Provider status</th><th className="px-3 py-2 font-medium">Error category</th><th className="px-3 py-2 font-medium">Support ref</th><th className="px-3 py-2 font-medium">Time</th></tr>
                   </thead>
                   <tbody className="divide-y divide-line bg-surface-2 text-muted">
                     {receipts.slice(0, 20).map((receipt) => (
@@ -960,7 +964,7 @@ export default async function ConnectionsPage({
                         <td className="whitespace-nowrap px-3 py-2 text-ink">{receipt.type}</td>
                         <td className="whitespace-nowrap px-3 py-2">{receipt.providerStatus ?? '—'}</td>
                         <td className="whitespace-nowrap px-3 py-2">{receipt.errorCategory}</td>
-                        <td className="max-w-56 break-all px-3 py-2 font-mono text-[10px]">{receipt.correlationId}</td>
+                        <td className="whitespace-nowrap px-3 py-2 font-medium" title={`Full support reference: ${receipt.correlationId}`}>{supportReference(receipt.correlationId)}</td>
                         <td className="whitespace-nowrap px-3 py-2">{new Date(receipt.occurredAt).toLocaleString()}</td>
                       </tr>
                     ))}

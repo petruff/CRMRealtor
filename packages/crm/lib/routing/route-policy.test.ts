@@ -16,6 +16,9 @@ describe("route policy", () => {
     expect(isSessionPublicPath("/api/readiness")).toBe(true);
     expect(isSessionPublicPath("/api/health/private")).toBe(true);
     expect(isSessionPublicPath("/api/intake/contacts")).toBe(true);
+    expect(isSessionPublicPath("/api/v1/status")).toBe(true);
+    expect(isSessionPublicPath("/api/v1/contacts/contact-a")).toBe(true);
+    expect(isSessionPublicPath("/api/v10/status")).toBe(false);
     expect(isSessionPublicPath("/api/internal/connectors/drain")).toBe(true);
     expect(isSessionPublicPath("/api/connectors/google/gmail/push/key")).toBe(true);
     expect(isSessionPublicPath("/api/connectors/mailchimp/webhook/key")).toBe(true);

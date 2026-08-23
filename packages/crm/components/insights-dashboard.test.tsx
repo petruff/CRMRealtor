@@ -40,15 +40,15 @@ const MODEL: InsightsDashboardModel = {
   readiness: [{ label: 'Phone on file', value: 150, detailId: 'readiness-phone' }],
   selectedDrilldownId: 'source-referral',
   drilldowns: [
-    { id: 'portfolio-all', label: 'Relationship book', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'contact', recordId: 'contact-all', href: '/contacts/contact-all' }] },
-    { id: 'stage-new', label: 'New stage and aging', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'contact', recordId: 'contact-new', href: '/contacts/contact-new', detail: '4.5 days in stage' }] },
+    { id: 'portfolio-all', label: 'Relationship book', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'contact', recordId: 'contact-all', label: 'Alex Morgan', href: '/contacts/contact-all' }] },
+    { id: 'stage-new', label: 'New stage and aging', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'contact', recordId: 'contact-new', label: 'Taylor Reed', href: '/contacts/contact-new', detail: '4.5 days in stage' }] },
     { id: 'stage-closed', label: 'Closed stage and aging', status: 'available', scope: 'snapshot', contributors: [] },
-    { id: 'conversion-eligible', label: 'Conversion eligible cohort', status: 'available', scope: 'current-period', contributors: [{ entityType: 'contact', recordId: 'contact-cohort', href: '/contacts/contact-cohort', detail: 'Reached Closed strictly after leaving New' }] },
-    { id: 'tasks-open', label: 'Open tasks', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'task', recordId: 'task-open', detail: 'Open task snapshot' }] },
+    { id: 'conversion-eligible', label: 'Conversion eligible cohort', status: 'available', scope: 'current-period', contributors: [{ entityType: 'contact', recordId: 'contact-cohort', label: 'Jordan Lane', href: '/contacts/contact-cohort', detail: 'Reached Closed strictly after leaving New' }] },
+    { id: 'tasks-open', label: 'Open tasks', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'task', recordId: 'task-open', label: 'Call Jordan', detail: 'Open task snapshot' }] },
     { id: 'tasks-overdue', label: 'Overdue tasks', status: 'available', scope: 'snapshot', contributors: [] },
     { id: 'tasks-due-soon', label: 'Tasks due next 7 days', status: 'available', scope: 'snapshot', contributors: [] },
     { id: 'tasks-completed', label: 'Tasks completed in period', status: 'available', scope: 'current-period', contributors: [] },
-    { id: 'source-referral', label: 'Referral progressed cohort', status: 'available', scope: 'current-period', contributors: [{ entityType: 'contact', recordId: 'contact-referral', href: '/contacts/contact-referral', detail: 'Referral; reached a qualifying stage in selected period' }] },
+    { id: 'source-referral', label: 'Referral progressed cohort', status: 'available', scope: 'current-period', contributors: [{ entityType: 'contact', recordId: 'contact-referral', label: 'Morgan Ellis', href: '/contacts/contact-referral', detail: 'Referral; reached a qualifying stage in selected period' }] },
     { id: 'readiness-phone', label: 'Phone on file', status: 'available', scope: 'snapshot', contributors: [] },
     { id: 'portfolio-attention', label: 'Needs attention now', status: 'available', scope: 'snapshot', contributors: [] },
     { id: 'portfolio-progressing', label: 'Progressing relationships', status: 'available', scope: 'snapshot', contributors: [] },
@@ -96,7 +96,8 @@ describe('Insights dashboard', () => {
     const selector = within(detailRegion).getByRole('combobox', { name: 'Metric detail' });
 
     expect(selector).toHaveValue('source-referral');
-    expect(within(detailRegion).getByRole('link', { name: 'contact-referral' })).toHaveAttribute('href', '/contacts/contact-referral');
+    expect(within(detailRegion).getByRole('link', { name: 'Morgan Ellis' })).toHaveAttribute('href', '/contacts/contact-referral');
+    expect(within(detailRegion).queryByText('contact-referral')).not.toBeInTheDocument();
     expect(within(detailRegion).getByText(/90-day cohort/)).toBeInTheDocument();
     expect(within(detailRegion).getByDisplayValue('90')).toHaveAttribute('name', 'period');
     await user.selectOptions(selector, 'tasks-open');

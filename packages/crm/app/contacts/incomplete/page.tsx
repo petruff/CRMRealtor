@@ -83,16 +83,19 @@ export default async function IncompleteContactsPage({
             placeholder="Name, source, or external ID"
           />
         </label>
-        <select
-          className="sk-input min-h-14 rounded-none border-0 bg-surface"
-          name="status"
-          defaultValue={status}
-        >
-          <option value="pending">Needs review</option>
-          <option value="archived">Archived</option>
-          <option value="converted">Converted</option>
-          <option value="all">All records</option>
-        </select>
+        <label className="bg-surface">
+          <span className="sr-only">Filter incomplete contacts by status</span>
+          <select
+            className="sk-input min-h-14 rounded-none border-0 bg-surface"
+            name="status"
+            defaultValue={status}
+          >
+            <option value="pending">Needs review</option>
+            <option value="archived">Archived</option>
+            <option value="converted">Converted</option>
+            <option value="all">All records</option>
+          </select>
+        </label>
         <button className="sk-primary-button m-2" type="submit">
           Refresh
         </button>

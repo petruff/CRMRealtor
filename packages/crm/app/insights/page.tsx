@@ -32,18 +32,22 @@ function displayStatus(status: InsightAvailability): DisplayStatus {
 
 function contactContributors(
   contactIds: readonly string[],
+  labels: ReadonlyMap<string, string>,
   detail?: (contactId: string) => string | undefined,
 ): InsightsContributorView[] {
   return contactIds.map((recordId) => ({
     entityType: 'contact',
     recordId,
+    label: labels.get(recordId) ?? 'Contact record',
     href: `/contacts/${encodeURIComponent(recordId)}`,
     ...(detail?.(recordId) ? { detail: detail(recordId) } : {}),
   }));
 }
 
-function taskContributors(taskIds: readonly string[], detail: string): InsightsContributorView[] {
-  return taskIds.map((recordId) => ({ entityType: 'task', recordId, detail }));
+function taskContributors(taskIds: readonly string[], labels: ReadonlyMap<string, string>, detail: string): InsightsContributorView[] {
+  return taskIds.map((recordId) => ({
+    entityType: 'task', recordId, label: labels.get(recordId) ?? 'CRM task', detail,
+  }));
 }
 
 function drilldown(
@@ -95,24 +99,24 @@ export default async function InsightsPage({
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
 
   const drilldowns: InsightsDrilldownView[] = [
-    drilldown('portfolio-all', 'Relationship book', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.allContactIds)),
-    drilldown('portfolio-attention', 'Needs attention now', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.needsAttentionContactIds)),
-    drilldown('portfolio-progressing', 'Progressing relationships', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.progressingContactIds)),
-    drilldown('portfolio-under-contract', 'Under contract', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.underContractContactIds)),
+    drilldown('portfolio-all', 'Relationship book', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.allContactIds, report.contactDisplayNames)),
+    drilldown('portfolio-attention', 'Needs attention now', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.needsAttentionContactIds, report.contactDisplayNames)),
+    drilldown('portfolio-progressing', 'Progressing relationships', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.progressingContactIds, report.contactDisplayNames)),
+    drilldown('portfolio-under-contract', 'Under contract', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.underContractContactIds, report.contactDisplayNames)),
     ...(['hot', 'warm', 'nurture'] as const).map((leadType) => drilldown(
       `portfolio-${leadType}`,
       `${leadMetric(leadType)?.label ?? leadType} relationships`,
       portfolioStatus,
       'snapshot',
-      contactContributors(leadMetric(leadType)?.contactIds ?? []),
+      contactContributors(leadMetric(leadType)?.contactIds ?? [], report.contactDisplayNames),
     )),
-    drilldown('portfolio-overdue', 'Overdue follow-ups', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.overdueContactIds)),
-    drilldown('portfolio-needs-qualification', 'Needs qualification', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.needsQualificationContactIds)),
-    drilldown('portfolio-never-contacted', 'Never contacted', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.neverContactedContactIds)),
-    drilldown('readiness-phone', 'Phone on file', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.withPhoneContactIds)),
-    drilldown('readiness-email', 'Email on file', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.withEmailContactIds)),
-    drilldown('readiness-mail', 'Mailer ready', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.mailReadyContactIds)),
-    drilldown('readiness-next-touch', 'Next touch set', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.withNextTouchContactIds)),
+    drilldown('portfolio-overdue', 'Overdue follow-ups', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.overdueContactIds, report.contactDisplayNames)),
+    drilldown('portfolio-needs-qualification', 'Needs qualification', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.needsQualificationContactIds, report.contactDisplayNames)),
+    drilldown('portfolio-never-contacted', 'Never contacted', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.neverContactedContactIds, report.contactDisplayNames)),
+    drilldown('readiness-phone', 'Phone on file', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.withPhoneContactIds, report.contactDisplayNames)),
+    drilldown('readiness-email', 'Email on file', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.withEmailContactIds, report.contactDisplayNames)),
+    drilldown('readiness-mail', 'Mailer ready', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.mailReadyContactIds, report.contactDisplayNames)),
+    drilldown('readiness-next-touch', 'Next touch set', portfolioStatus, 'snapshot', contactContributors(report.portfolio.contributors.withNextTouchContactIds, report.contactDisplayNames)),
     ...report.pipeline.current.stageMetrics.map((stage) => {
       const daysByContact = new Map(stage.contributors.map((item) => [item.recordId, item.daysInStage] as const));
       return drilldown(
@@ -120,7 +124,7 @@ export default async function InsightsPage({
         `${stage.label} stage and aging`,
         pipelineStatus,
         'snapshot',
-        contactContributors(stage.contributors.map((item) => item.recordId), (contactId) => {
+        contactContributors(stage.contributors.map((item) => item.recordId), report.contactDisplayNames, (contactId) => {
           const days = daysByContact.get(contactId);
           return days === null || days === undefined ? 'Aging evidence unavailable' : `${days} days in stage`;
         }),
@@ -133,15 +137,15 @@ export default async function InsightsPage({
     'Conversion eligible cohort',
     pipelineStatus,
     'current-period',
-    contactContributors(report.pipeline.current.conversion.eligibleContactIds, (contactId) => (
+    contactContributors(report.pipeline.current.conversion.eligibleContactIds, report.contactDisplayNames, (contactId) => (
       closedCohort.has(contactId) ? 'Reached Closed strictly after leaving New' : 'Eligible; no later Closed event in period'
     )),
   ));
   drilldowns.push(
-    drilldown('tasks-open', 'Open tasks', workStatus, 'snapshot', taskContributors(report.taskRhythm.workload.openTaskIds, 'Open task snapshot')),
-    drilldown('tasks-overdue', 'Overdue tasks', workStatus, 'snapshot', taskContributors(report.taskRhythm.workload.overdueTaskIds, 'Open and due before as-of time')),
-    drilldown('tasks-due-soon', 'Tasks due next 7 days', workStatus, 'snapshot', taskContributors(report.taskRhythm.workload.dueSoonTaskIds, 'Open and due within seven days')),
-    drilldown('tasks-completed', 'Tasks completed in period', workStatus, 'current-period', taskContributors(report.taskRhythm.current.completedTaskIds, 'Distinct stored completion event in selected period')),
+    drilldown('tasks-open', 'Open tasks', workStatus, 'snapshot', taskContributors(report.taskRhythm.workload.openTaskIds, report.taskDisplayNames, 'Open task snapshot')),
+    drilldown('tasks-overdue', 'Overdue tasks', workStatus, 'snapshot', taskContributors(report.taskRhythm.workload.overdueTaskIds, report.taskDisplayNames, 'Open and due before as-of time')),
+    drilldown('tasks-due-soon', 'Tasks due next 7 days', workStatus, 'snapshot', taskContributors(report.taskRhythm.workload.dueSoonTaskIds, report.taskDisplayNames, 'Open and due within seven days')),
+    drilldown('tasks-completed', 'Tasks completed in period', workStatus, 'current-period', taskContributors(report.taskRhythm.current.completedTaskIds, report.taskDisplayNames, 'Distinct stored completion event in selected period')),
     ...report.sourceProgression.sources.map((source) => {
       const closed = new Set(source.current.closedContactIds);
       return drilldown(
@@ -149,7 +153,7 @@ export default async function InsightsPage({
         `${source.label} progressed cohort`,
         sourceStatus,
         'current-period',
-        contactContributors(source.current.progressedContactIds, (contactId) => (
+        contactContributors(source.current.progressedContactIds, report.contactDisplayNames, (contactId) => (
           closed.has(contactId) ? `${source.label}; progressed to Closed in selected period` : `${source.label}; reached a qualifying stage in selected period`
         )),
       );
