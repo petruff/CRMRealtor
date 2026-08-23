@@ -107,7 +107,7 @@ describe('contact import service', () => {
       action: 'update', matchBy: 'email',
       candidate: {
         leadType: 'hot', relationship: 'active-client', intent: 'seller',
-        source: 'other', pipelineStage: 'active', qualificationStatus: 'qualified',
+        source: 'other', pipelineStage: 'closed', qualificationStatus: 'qualified',
       },
       changes: expect.arrayContaining(['leadType', 'qualificationStatus', 'relationship', 'intent', 'pipelineStage']),
     });
@@ -116,8 +116,71 @@ describe('contact import service', () => {
     expect(result).toMatchObject({ ok: true, updated: 1, created: 0 });
     expect(state.contacts[0]).toMatchObject({
       firstName: 'Jamie', leadType: 'hot', relationship: 'active-client', intent: 'seller',
-      source: 'other', pipelineStage: 'active', qualificationStatus: 'qualified',
+      source: 'other', pipelineStage: 'closed', qualificationStatus: 'qualified',
     });
+  });
+
+  it('keeps a pipeline stage edited by a person and reports the protected conflict', async () => {
+    const state = repository([contact({ pipelineStage: 'active' })]);
+    const activityRepository = createMemoryActivityRepository();
+    await activityRepository.appendEvent(SAMPLE_WORKSPACE_SCOPE, {
+      type: 'contact-updated',
+      contactId: 'existing-1',
+      actorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+      occurredAt: '2026-08-09T12:00:00.000Z',
+      idempotencyKey: 'contact-updated:existing-1:manual',
+    });
+    const parsed = parseContactImport({
+      filename: 'status-reconciliation.csv',
+      content: 'First Name,Email,Pipeline Stage\nJamie,jamie@example.com,client',
+    });
+    const gateway = memoryImportGateway({ repository: state.repo });
+    const preview = await previewContactImport(
+      state.repo,
+      gateway,
+      parsed,
+      SAMPLE_WORKSPACE_SCOPE,
+      activityRepository,
+    );
+
+    expect(preview.counts.protected).toBe(1);
+    expect(preview.rows[0]).toMatchObject({ protectedFields: ['pipelineStage'] });
+    expect(preview.rows[0]?.patch).not.toHaveProperty('pipelineStage');
+
+    const result = await executeContactImport(state.repo, gateway, preview, NOW);
+    expect(result.protected).toBe(1);
+    expect(result.rowOutcomes[0]).toMatchObject({
+      outcome: 'updated',
+      errorCode: 'manual-pipeline-stage-protected',
+    });
+    expect(state.contacts[0]?.pipelineStage).toBe('active');
+  });
+
+  it('allows an import-managed stage to be corrected on re-import', async () => {
+    const state = repository([contact({ pipelineStage: 'active' })]);
+    const activityRepository = createMemoryActivityRepository();
+    await activityRepository.appendEvent(SAMPLE_WORKSPACE_SCOPE, {
+      type: 'contact-updated',
+      contactId: 'existing-1',
+      actorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+      occurredAt: '2026-08-09T12:00:00.000Z',
+      idempotencyKey: 'contact-import-updated:existing-1:prior-import',
+    });
+    const parsed = parseContactImport({
+      filename: 'status-reconciliation.csv',
+      content: 'First Name,Email,Pipeline Stage\nJamie,jamie@example.com,client',
+    });
+    const gateway = memoryImportGateway({ repository: state.repo });
+    const preview = await previewContactImport(
+      state.repo,
+      gateway,
+      parsed,
+      SAMPLE_WORKSPACE_SCOPE,
+      activityRepository,
+    );
+
+    expect(preview.counts.protected).toBe(0);
+    expect(preview.rows[0]?.patch).toMatchObject({ pipelineStage: 'closed' });
   });
 
   it('uses the canonical identity resolver so additional contact points cannot create duplicates', async () => {

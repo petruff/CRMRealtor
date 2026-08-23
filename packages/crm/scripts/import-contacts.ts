@@ -3,7 +3,8 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
-import { parseContactImport, type ImportSource } from '../lib/application/contact-import.ts';
+import { type ImportPipelineStage, type ImportSource } from '../lib/application/contact-import.ts';
+import { parsePortableContactImport } from '../lib/application/workbook-portability.ts';
 
 interface Options {
   file?: string;
@@ -16,7 +17,7 @@ interface Options {
 
 function usage() {
   return [
-    'Usage: npm run contacts:import -- <file.csv|file.vcf> [options]',
+    'Usage: npm run contacts:import -- <file.csv|file.vcf|file.xls|file.xlsx|file.numbers> [options]',
     '',
     '  --source <auto|spreadsheet|mailchimp|google|apple|boldtrail>',
     '  --commit                    Send to the configured live intake endpoint',
@@ -51,8 +52,24 @@ function options(argv: string[]): Options {
 async function main() {
   const selected = options(process.argv.slice(2));
   if (!selected.file) throw new Error(usage());
-  const content = await readFile(selected.file, 'utf8');
-  const parsed = parseContactImport({ content, filename: basename(selected.file), source: selected.source });
+  const bytes = new Uint8Array(await readFile(selected.file));
+  const parsed = await parsePortableContactImport({
+    bytes,
+    filename: basename(selected.file),
+    source: selected.source,
+  });
+  const pipelineStages: Record<ImportPipelineStage, number> = {
+    new: 0,
+    contacted: 0,
+    'appointment-set': 0,
+    active: 0,
+    'under-contract': 0,
+    closed: 0,
+    lost: 0,
+  };
+  for (const candidate of parsed.candidates) {
+    if (candidate.pipelineStage) pipelineStages[candidate.pipelineStage] += 1;
+  }
   const preview = {
     ok: true,
     mode: 'preview',
@@ -60,9 +77,10 @@ async function main() {
     format: parsed.format,
     totalRows: parsed.totalRows,
     accepted: parsed.candidates.length,
-    rejected: parsed.rejected,
+    rejected: parsed.rejected.map((row) => ({ rowNumber: row.rowNumber, errors: row.errors })),
     recognizedFields: parsed.recognizedFields,
     unknownFields: parsed.unknownFields,
+    pipelineStages,
   };
   if (!selected.commit) {
     console.log(JSON.stringify(preview, null, 2));

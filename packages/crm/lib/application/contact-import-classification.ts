@@ -83,6 +83,7 @@ function lifecycleFromCanonical(input: ContactImportCandidate): Lifecycle | unde
   if (input.relationship === 'sphere') return 'sphere';
   if (input.relationship === 'active-client') return 'active-client';
   if (input.pipelineStage === 'active') return 'active-lead';
+  if (input.pipelineStage === 'contacted') return 'new-lead';
   if (input.pipelineStage === 'new') return 'new-lead';
   return undefined;
 }

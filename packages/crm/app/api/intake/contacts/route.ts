@@ -161,6 +161,7 @@ export async function POST(request: NextRequest) {
       context.importGateway,
       parsed,
       context.workspaceScope,
+      context.activityRepository,
     );
     const result = await executeContactImport(
       context.repository,

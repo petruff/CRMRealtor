@@ -36,6 +36,8 @@ export interface ContactImportPlanRow {
   candidate: ContactImportCandidate;
   patch?: Partial<Contact>;
   changes: string[];
+  /** Explicit fields left untouched because CRM activity proves a person edited them. */
+  protectedFields?: Array<'pipelineStage'>;
   classification: ContactImportClassification;
 }
 
@@ -50,7 +52,7 @@ export interface ContactImportPreview {
   preservedFields: string[];
   rows: ContactImportPlanRow[];
   rejected: ParsedContactImport['rejected'];
-  counts: Record<ImportRowAction | 'rejected', number>;
+  counts: Record<ImportRowAction | 'rejected' | 'protected', number>;
   classificationCounts: {
     explicit: number;
     automatic: number;
@@ -71,6 +73,7 @@ export interface ContactImportResult {
   notesAdded: number;
   rejected: number;
   quarantined: number;
+  protected: number;
   failed: number;
   errors: Array<{ rowNumber: number; message: string }>;
   rowOutcomes: Array<{ rowNumber: number; outcome: 'created'|'updated'|'unchanged'|'rejected'|'quarantined'|'failed'; contactId?: string; errorCode?: string }>;
@@ -195,6 +198,28 @@ function patchFor(
   return patch;
 }
 
+async function hasHumanPipelineEdit(
+  activityRepository: ActivityRepository | undefined,
+  workspaceScope: WorkspaceScope | undefined,
+  contactId: string,
+): Promise<boolean> {
+  if (!activityRepository || !workspaceScope) return false;
+  const [pipelineEvents, updateEvents] = await Promise.all([
+    activityRepository.listEvents(workspaceScope, {
+      contactId,
+      type: 'pipeline-stage-changed',
+      limit: 1,
+    }),
+    activityRepository.listEvents(workspaceScope, {
+      contactId,
+      type: 'contact-updated',
+      limit: 25,
+    }),
+  ]);
+  if (pipelineEvents.length > 0) return true;
+  return updateEvents.some((event) => !event.idempotencyKey.startsWith('contact-import-updated:'));
+}
+
 function mergeCandidate(target: ContactImportCandidate, incoming: ContactImportCandidate): void {
   for (const field of FILLABLE_FIELDS) {
     if (!target[field] && incoming[field]) (target as unknown as Record<string, unknown>)[field] = incoming[field];
@@ -216,6 +241,7 @@ export async function previewContactImport(
   gateway: ImportGateway,
   parsed: ParsedContactImport,
   workspaceScope?: WorkspaceScope,
+  activityRepository?: ActivityRepository,
 ): Promise<ContactImportPreview> {
   const contacts = await repository.list({ includeArchived: true });
   const byId = new Map(contacts.map((contact) => [contact.id, contact]));
@@ -232,7 +258,20 @@ export async function previewContactImport(
   const linked = new Map(links.map((link) => [link.externalId, byId.get(link.contactId)]));
   const pendingIdentities = new Map<string, ContactImportPlanRow>();
   const plannedByContact = new Map<string, ContactImportPlanRow>();
+  const pipelineProtection = new Map<string, Promise<boolean>>();
   const rows: ContactImportPlanRow[] = [];
+
+  async function protectHumanPipelineStage(existing: Contact, patch: Partial<Contact>): Promise<Array<'pipelineStage'>> {
+    if (patch.pipelineStage === undefined || patch.pipelineStage === existing.pipelineStage) return [];
+    let check = pipelineProtection.get(existing.id);
+    if (!check) {
+      check = hasHumanPipelineEdit(activityRepository, workspaceScope, existing.id);
+      pipelineProtection.set(existing.id, check);
+    }
+    if (!await check) return [];
+    delete patch.pipelineStage;
+    return ['pipelineStage'];
+  }
 
   for (const sourceCandidate of parsed.candidates) {
     const organized = classifyContactImportCandidate(sourceCandidate);
@@ -329,8 +368,10 @@ export async function previewContactImport(
         earlier.candidate = reorganized.candidate;
         earlier.classification = reorganized.classification;
         const combinedPatch = patchFor(existing, earlier.candidate, reorganized.classification);
+        const protectedFields = await protectHumanPipelineStage(existing, combinedPatch);
         earlier.patch = combinedPatch;
         earlier.changes = Object.keys(combinedPatch);
+        earlier.protectedFields = protectedFields;
         earlier.action = earlier.changes.length ? 'update' : 'unchanged';
         rows.push({
           rowNumber: candidate.rowNumber,
@@ -344,6 +385,7 @@ export async function previewContactImport(
         continue;
       }
       const patch = patchFor(existing, candidate, organized.classification);
+      const protectedFields = await protectHumanPipelineStage(existing, patch);
       const changes = Object.keys(patch);
       const row: ContactImportPlanRow = {
         rowNumber: candidate.rowNumber,
@@ -354,6 +396,7 @@ export async function previewContactImport(
         classification: organized.classification,
         patch,
         changes,
+        ...(protectedFields.length ? { protectedFields } : {}),
       };
       rows.push(row);
       plannedByContact.set(existing.id, row);
@@ -433,6 +476,7 @@ export async function previewContactImport(
       'archived-match': count('archived-match'),
       'ambiguous-identity': count('ambiguous-identity'),
       rejected: parsed.rejected.length,
+      protected: rows.filter((row) => (row.protectedFields?.length ?? 0) > 0).length,
     },
     classificationCounts: {
       explicit: rows.filter((row) => row.classification.mode === 'explicit').length,
@@ -469,6 +513,7 @@ export async function executeContactImport(
     notesAdded: 0,
     rejected: preview.rejected.length,
     quarantined,
+    protected: preview.counts.protected,
     failed: 0,
     errors: preview.rejected.map((row) => ({ rowNumber: row.rowNumber, message: row.errors.join(' ') })),
     rowOutcomes: preview.rejected.map((row) => ({ rowNumber: row.rowNumber, outcome: workQueue ? 'quarantined' as const : 'rejected' as const, errorCode: 'validation-rejected' })),
@@ -557,7 +602,16 @@ export async function executeContactImport(
         if (applied.notesAdded) result.notesAdded += 1;
       } else if (row.action === 'merge') result.merged += 1;
       else result.unchanged += 1;
-      result.rowOutcomes.push({ rowNumber: row.rowNumber, outcome: row.action === 'create' && !applied.noOp ? 'created' : row.action === 'update' && !applied.noOp ? 'updated' : 'unchanged', contactId });
+      result.rowOutcomes.push({
+        rowNumber: row.rowNumber,
+        outcome: row.action === 'create' && !applied.noOp
+          ? 'created'
+          : row.action === 'update' && !applied.noOp ? 'updated' : 'unchanged',
+        contactId,
+        ...((row.protectedFields?.length ?? 0) > 0
+          ? { errorCode: 'manual-pipeline-stage-protected' }
+          : {}),
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Import failed for this row.';
       result.failed += 1;

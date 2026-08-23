@@ -438,7 +438,8 @@ export function ContactImportWorkspace() {
                 {preview.counts.merge} duplicate rows ·{" "}
                 {preview.counts.unchanged} clients already existing · {preview.counts.rejected}{" "}
                 rejected · {preview.counts["archived-match"]} archived matches ·{" "}
-                {preview.counts["ambiguous-identity"]} identity conflicts
+                {preview.counts["ambiguous-identity"]} identity conflicts ·{" "}
+                {preview.counts.protected} manual stages protected
               </p>
               <p className="mt-2 text-sm font-medium text-ink">
                 {preview.classificationCounts.automatic} organized automatically ·{" "}
@@ -549,6 +550,11 @@ export function ContactImportWorkspace() {
                     </td>
                     <td className="px-4 py-3 text-ink">
                       {actionLabel(row)}
+                      {row.protectedFields?.includes("pipelineStage") ? (
+                        <span className="mt-1 block text-xs font-medium text-warm">
+                          Manual pipeline stage kept
+                        </span>
+                      ) : null}
                     </td>
                     <td className="max-w-72 px-4 py-3 text-muted">
                       <span className="font-medium text-ink">
@@ -559,7 +565,7 @@ export function ContactImportWorkspace() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted">
-                      {row.changes.join(", ") || "—"}
+                      {row.changes.join(", ") || (row.protectedFields?.length ? "No automatic overwrite" : "—")}
                     </td>
                   </tr>
                 ))}

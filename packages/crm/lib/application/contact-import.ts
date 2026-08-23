@@ -482,12 +482,14 @@ function relationshipValue(value: string | undefined): ImportRelationship | unde
   return undefined;
 }
 
-function pipelineStageValue(value: string | undefined): ImportPipelineStage | undefined {
+export function normalizeImportPipelineStage(value: string | undefined): ImportPipelineStage | undefined {
   const canonical = enumValue(value, ['new', 'contacted', 'appointment-set', 'active', 'under-contract', 'closed', 'lost']);
   if (canonical) return canonical;
   const normalized = value?.toLowerCase().trim().replace(/[^a-z0-9]+/g, ' ');
-  if (normalized === 'new lead' || normalized === 'prospect') return 'new';
-  if (normalized === 'active lead' || normalized === 'client' || normalized === 'active client') return 'active';
+  if (normalized === 'new lead') return 'new';
+  if (normalized === 'prospect') return 'contacted';
+  if (normalized === 'active lead' || normalized === 'active client') return 'active';
+  if (normalized === 'client') return 'closed';
   if (normalized === 'appointment' || normalized === 'appointment set' || normalized === 'consultation') return 'appointment-set';
   if (normalized === 'pending' || normalized === 'in contract' || normalized === 'escrow') return 'under-contract';
   if (normalized === 'past client' || normalized === 'sold') return 'closed';
@@ -600,7 +602,7 @@ function candidateFromRecord(
   const source = firstClassExport
     ? firstClassSourceValue(values.get('source'))
     : leadSourceValue(values.get('source'));
-  const pipelineStage = pipelineStageValue(values.get('pipelineStage'));
+  const pipelineStage = normalizeImportPipelineStage(values.get('pipelineStage'));
   const emailSubscribed = booleanValue(values.get('emailSubscribed'));
   if (values.get('leadType') && !leadType) errors.push('Lead type must be Hot, Warm, or Nurture.');
   if (values.get('qualificationStatus') && !qualificationStatus) errors.push('Qualification status must be Qualified or Needs review.');

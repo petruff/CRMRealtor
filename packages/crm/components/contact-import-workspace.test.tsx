@@ -100,7 +100,7 @@ describe('ContactImportWorkspace automatic organization', () => {
         provider: 'spreadsheet', filename: 'contacts.numbers', format: 'numbers', totalRows: 3,
         headers: ['First Name', 'Lead Type', 'Pipeline Stage'], recognizedFields: ['firstName', 'leadType', 'pipelineStage'],
         unknownFields: [], preservedFields: [], rejected: [],
-        counts: { create: 3, update: 0, unchanged: 0, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 0 },
+        counts: { create: 3, update: 0, unchanged: 0, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 0, protected: 0 },
         classificationCounts: { automatic: 3, explicit: 0, needsReview: 0 },
         rows: [
           { rowNumber: 2, action: 'create', candidate: { firstName: 'Hot', lastName: 'Contact', tags: [], leadType: 'hot', pipelineStage: 'active' }, classification: { summary: 'Active lead.' }, changes: [] },

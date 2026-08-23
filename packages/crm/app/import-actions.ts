@@ -63,14 +63,20 @@ function inputDigest(input: ImportActionInput): string {
 
 export async function previewImportAction(input: ImportActionInput) {
   try {
-    const { repository, importGateway, workspaceScope, isLive } = await getRepository();
+    const { repository, importGateway, activityRepository, workspaceScope, isLive } = await getRepository();
     if (!isLive && isSupabaseConfigured()) {
       return { ok: false as const, message: 'Sign in to an authorized Omnix workspace before previewing contact files.' };
     }
     // Resolve authenticated workspace authority before spending the bounded
     // worker budget on user-controlled workbook bytes.
     const parsed = await parseInputForWorkspace(input, workspaceScope.workspaceId);
-    const preview = await previewContactImport(repository, importGateway, parsed, workspaceScope);
+    const preview = await previewContactImport(
+      repository,
+      importGateway,
+      parsed,
+      workspaceScope,
+      activityRepository,
+    );
     return { ok: true as const, preview, isLive };
   } catch (error) {
     return { ok: false as const, message: error instanceof Error ? error.message : 'The file could not be previewed.' };
@@ -99,7 +105,13 @@ export async function commitImportAction(input: ImportActionInput) {
     }
     const parsed = await parseInputForWorkspace(input, workspaceScope.workspaceId);
     recordImportCommitStage('parsed', startedAtMs, { rows: parsed.totalRows });
-    const preview = await previewContactImport(repository, importGateway, parsed, workspaceScope);
+    const preview = await previewContactImport(
+      repository,
+      importGateway,
+      parsed,
+      workspaceScope,
+      activityRepository,
+    );
     recordImportCommitStage('previewed', startedAtMs, { rows: preview.totalRows });
     const now = new Date();
     const result = await executeContactImport(repository, importGateway, preview, now, {
@@ -123,7 +135,7 @@ export async function commitImportAction(input: ImportActionInput) {
       target_mapping_profile_id: null, target_mapping_version: null, target_source: preview.provider,
       target_format: preview.format, target_file_hash: fileHash, target_idempotency_key: `ui:${fileHash}`,
       target_outcome: result.ok ? (result.failed||result.rejected?'partial':'succeeded') : 'failed',
-      target_counts: { total: result.totalRows, created: result.created, updated: result.updated, unchanged: result.unchanged, rejected: result.rejected, quarantined: result.quarantined, failed: result.failed },
+      target_counts: { total: result.totalRows, created: result.created, updated: result.updated, unchanged: result.unchanged, protected: result.protected, rejected: result.rejected, quarantined: result.quarantined, failed: result.failed },
       target_rows: result.rowOutcomes,
       target_started_at: startedAt.toISOString(), target_completed_at: now.toISOString(), target_correlation_id: randomUUID(),
     });

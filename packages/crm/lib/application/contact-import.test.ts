@@ -135,11 +135,26 @@ describe('contact import parser', () => {
 
     expect(parsed.rejected).toEqual([]);
     expect(parsed.candidates).toEqual([
-      expect.objectContaining({ leadType: 'hot', relationship: 'active-client', intent: 'seller', source: 'other', pipelineStage: 'active' }),
+      expect.objectContaining({ leadType: 'hot', relationship: 'active-client', intent: 'seller', source: 'other', pipelineStage: 'closed' }),
       expect.objectContaining({ leadType: 'warm', relationship: 'lead', intent: 'buyer', source: 'cold-call', pipelineStage: 'lost' }),
       expect.objectContaining({ leadType: 'nurture', relationship: 'lead', intent: 'buyer', source: 'website', pipelineStage: 'new' }),
-      expect.objectContaining({ relationship: 'lead', intent: 'seller', source: 'other', pipelineStage: 'new' }),
+      expect.objectContaining({ relationship: 'lead', intent: 'seller', source: 'other', pipelineStage: 'contacted' }),
     ]);
+  });
+
+  it.each([
+    [' new lead ', 'new'],
+    ['PROSPECT', 'contacted'],
+    [' Active   Lead ', 'active'],
+    ['client', 'closed'],
+    ['ARCHIVED', 'lost'],
+  ] as const)('maps imported pipeline status %s to %s', (sourceStage, expectedStage) => {
+    const parsed = parseContactImport({
+      filename: 'status-fidelity.csv',
+      content: `First Name,Pipeline Stage\nSynthetic,${sourceStage}`,
+    });
+    expect(parsed.rejected).toEqual([]);
+    expect(parsed.candidates[0]?.pipelineStage).toBe(expectedStage);
   });
 
   it('uses a KvCore filename hint when source columns were renamed and retains original provenance', () => {
