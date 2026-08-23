@@ -413,6 +413,84 @@ describe('executeOmnixCopilot', () => {
     expect(response.alerts.every((alert) => alert.citations.length > 0)).toBe(true);
   });
 
+  it('projects alerts as a people-first attention brief without changing canonical alert order', async () => {
+    const contacts = Array.from({ length: 8 }, (_, index) => contact(`c-attention-${index + 1}`, {
+      firstName: `Client ${index + 1}`,
+      lastName: 'Morgan',
+      leadType: index === 0 ? 'hot' : 'warm',
+      relationship: 'active-client',
+      source: 'open-house',
+      pipelineStage: 'active',
+      nextTouchAt: '2026-08-10',
+    }));
+    const fixture = context({
+      contacts,
+      tasks: [task('t-attention', '2026-08-10T16:00:00.000Z', {
+        title: 'Confirm inspection window',
+        contactId: contacts[0]?.id,
+      })],
+    });
+
+    const response = await executeOmnixCopilot(request('who needs attention'), {
+      getRepository: async () => fixture.repositoryContext,
+      timeZone: 'UTC',
+    });
+    const summary = response.answerBlocks.find((item) => item.id === 'attention-summary');
+    const actNow = response.answerBlocks.find((item) => item.id === 'attention-overdue');
+    const taskBlock = response.answerBlocks.find((item) => item.id === 'attention-tasks');
+    const presentedIds = response.answerBlocks
+      .filter((item) => item.kind === 'list')
+      .flatMap((item) => item.items.map((entry) => entry.id));
+
+    expect(summary).toMatchObject({
+      kind: 'metric',
+      title: '9 attention items',
+      detail: '8 people and 1 task need review. Start with Act now.',
+    });
+    expect(summary?.items.map((item) => [item.label, item.value])).toEqual([
+      ['People', 8],
+      ['Tasks', 1],
+      ['Act now', 9],
+      ['Due today', 0],
+      ['Coming up', 0],
+      ['Reminders', 0],
+    ]);
+    expect(actNow?.items[0]).toMatchObject({
+      label: 'Client 1 Morgan',
+      value: 'Hot',
+      href: '/contacts/c-attention-1',
+    });
+    expect(actNow?.items[0]?.detail).toContain('Active client · Actively working · Open house');
+    expect(taskBlock?.items[0]).toMatchObject({
+      label: 'Confirm inspection window',
+      value: 'Task',
+      href: '/activities?task=t-attention',
+    });
+    expect(taskBlock?.items[0]?.detail).toContain('For Client 1 Morgan');
+    expect(actNow?.items.every((item) => !item.label.includes('follow-up'))).toBe(true);
+    expect(presentedIds).toEqual(response.alerts.map((alert) => alert.id));
+    expect(response.alerts.map((alert) => alert.order)).toEqual(
+      [...response.alerts.map((alert) => alert.order)].sort((left, right) => left - right),
+    );
+    expect(response.suggestions[0]).toMatchObject({ href: '/alerts', title: 'View the complete alert center' });
+  });
+
+  it('uses a calm user-facing empty state when nothing needs attention', async () => {
+    const fixture = context({ contacts: [], tasks: [] });
+    const response = await executeOmnixCopilot(request('alerts today'), {
+      getRepository: async () => fixture.repositoryContext,
+      timeZone: 'UTC',
+    });
+
+    expect(response.answerBlocks).toEqual([expect.objectContaining({
+      id: 'alerts-empty',
+      kind: 'empty',
+      title: "You're caught up",
+      detail: 'No follow-up, task or relationship reminder needs attention right now.',
+    })]);
+    expect(response.answerBlocks[0]?.items).toHaveLength(0);
+  });
+
   it('cites the stored inputs used to derive missing next-touch dates from the approved cadence', async () => {
     const fixture = context({
       contacts: [

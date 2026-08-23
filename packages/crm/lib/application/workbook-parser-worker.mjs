@@ -45,7 +45,7 @@ const preflightXlsxPackage = (bytes, limits) => {
 
 try {
   const bytes = new Uint8Array(workerData.bytes);
-  if (workerData.format === 'xlsx') preflightXlsxPackage(bytes, workerData.limits);
+  if (workerData.format !== 'xls') preflightXlsxPackage(bytes, workerData.limits);
   const workbook = read(bytes, {
     type: 'array', dense: false,
     cellFormula: true, cellHTML: false, cellStyles: false, bookVBA: true,

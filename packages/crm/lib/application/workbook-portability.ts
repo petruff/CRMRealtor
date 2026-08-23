@@ -11,7 +11,8 @@ export const WORKBOOK_LIMITS = Object.freeze({
   maxZipEntryUncompressedBytes: 16_777_216, maxZipCompressionRatio: 200, maxZipPathLength: 512,
 });
 
-export type PortableImportFormat = 'csv' | 'vcard' | 'xls' | 'xlsx';
+export type PortableImportFormat = 'csv' | 'vcard' | 'xls' | 'xlsx' | 'numbers';
+type BinaryWorkbookFormat = Extract<PortableImportFormat, 'xls' | 'xlsx' | 'numbers'>;
 
 const HEADER_SCAN_ROWS = 10;
 
@@ -133,16 +134,17 @@ function preflightXlsxPackage(bytes: Uint8Array): void {
   }
 }
 
-function workbookFormat(filename: string, bytes: Uint8Array): 'xls' | 'xlsx' {
+function workbookFormat(filename: string, bytes: Uint8Array): BinaryWorkbookFormat {
   const extension = extname(filename).toLowerCase();
   const zip = bytes[0] === 0x50 && bytes[1] === 0x4b;
   const cfb = bytes.length >= 8 && [0xd0,0xcf,0x11,0xe0,0xa1,0xb1,0x1a,0xe1].every((value, index) => bytes[index] === value);
   if (extension === '.xlsx' && zip) return 'xlsx';
+  if (extension === '.numbers' && zip) return 'numbers';
   if (extension === '.xls' && cfb) return 'xls';
-  throw new ContactImportError('The file extension does not match a supported XLS or XLSX workbook signature.');
+  throw new ContactImportError('The file extension does not match a supported XLS, XLSX, or Numbers workbook signature.');
 }
 
-async function parseWorkbookInWorker(bytes: Uint8Array, format: 'xls' | 'xlsx'): Promise<WorkerSuccess> {
+async function parseWorkbookInWorker(bytes: Uint8Array, format: BinaryWorkbookFormat): Promise<WorkerSuccess> {
   return new Promise((resolve, reject) => {
     const copy = bytes.slice();
     // The worker remains a real filesystem asset in the Vercel trace. A
@@ -162,9 +164,9 @@ async function parseWorkbookInWorker(bytes: Uint8Array, format: 'xls' | 'xlsx'):
   });
 }
 
-async function parseWorkbookInProcess(bytes: Uint8Array, format: 'xls' | 'xlsx'): Promise<WorkerSuccess> {
+async function parseWorkbookInProcess(bytes: Uint8Array, format: BinaryWorkbookFormat): Promise<WorkerSuccess> {
   try {
-    if (format === 'xlsx') preflightXlsxPackage(bytes);
+    if (format !== 'xls') preflightXlsxPackage(bytes);
     const { read, utils } = await import('xlsx');
     const workbook = read(bytes, {
       type: 'array', dense: false,
@@ -232,7 +234,7 @@ async function parseWorkbookInProcess(bytes: Uint8Array, format: 'xls' | 'xlsx')
   }
 }
 
-async function parseWorkbook(bytes: Uint8Array, format: 'xls' | 'xlsx'): Promise<WorkerSuccess> {
+async function parseWorkbook(bytes: Uint8Array, format: BinaryWorkbookFormat): Promise<WorkerSuccess> {
   // Production must retain memory and timeout isolation. Vercel traces the
   // process-rooted worker asset explicitly; a missing production asset fails
   // closed instead of moving compressed workbook parsing into the app process.
@@ -256,7 +258,9 @@ export async function parsePortableContactImport(input: { bytes: Uint8Array; fil
     if (input.bytes.byteLength > MAX_IMPORT_BYTES) throw new ContactImportError('CSV and vCard files retain the 2 MB safe import limit.');
     return parseContactImport({ content: new TextDecoder('utf-8', { fatal: true }).decode(input.bytes), filename: input.filename, source: input.source, mapping: input.mapping });
   }
-  if (extension !== '.xls' && extension !== '.xlsx') throw new ContactImportError('Only CSV, VCF, XLS, and XLSX files are supported.');
+  if (extension !== '.xls' && extension !== '.xlsx' && extension !== '.numbers') {
+    throw new ContactImportError('Only CSV, VCF, XLS, XLSX, and Apple Numbers files are supported.');
+  }
   const format = workbookFormat(input.filename, input.bytes);
   const workbook = await parseWorkbook(input.bytes, format);
   const first = workbook.sheets[0];

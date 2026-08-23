@@ -88,6 +88,38 @@ describe('contact import service', () => {
     expect(state.contacts[0]).toMatchObject({ firstName: 'Existing', city: 'Austin', tags: ['Client', 'VIP'], emailSubscribed: false });
   });
 
+  it('applies reviewed realtor organization fields to an existing matched contact', async () => {
+    const state = repository([contact({
+      email: 'existing@example.com', leadType: 'nurture', relationship: 'lead',
+      intent: 'unknown', source: 'other', pipelineStage: 'new',
+    })]);
+    const parsed = parseContactImport({
+      filename: 'contacts-omnix.csv',
+      content: [
+        'First Name,Email,Lead Type,Relationship,Intent,Source,Pipeline Stage,Tags',
+        'Jamie,existing@example.com,Hot,client,seller,lead import,client,nurture',
+      ].join('\n'),
+    });
+    const gateway = memoryImportGateway({ repository: state.repo });
+    const preview = await previewContactImport(state.repo, gateway, parsed);
+
+    expect(preview.rows[0]).toMatchObject({
+      action: 'update', matchBy: 'email',
+      candidate: {
+        leadType: 'hot', relationship: 'active-client', intent: 'seller',
+        source: 'other', pipelineStage: 'active', qualificationStatus: 'qualified',
+      },
+      changes: expect.arrayContaining(['leadType', 'qualificationStatus', 'relationship', 'intent', 'pipelineStage']),
+    });
+
+    const result = await executeContactImport(state.repo, gateway, preview, NOW);
+    expect(result).toMatchObject({ ok: true, updated: 1, created: 0 });
+    expect(state.contacts[0]).toMatchObject({
+      firstName: 'Jamie', leadType: 'hot', relationship: 'active-client', intent: 'seller',
+      source: 'other', pipelineStage: 'active', qualificationStatus: 'qualified',
+    });
+  });
+
   it('uses the canonical identity resolver so additional contact points cannot create duplicates', async () => {
     const existing = contact({ id: 'contact-with-secondary-email', email: 'primary@example.com' });
     const state = repository([existing]);
@@ -574,6 +606,26 @@ describe('contact import service', () => {
     expect(result).toMatchObject({ ok: true, created: 1, merged: 1, failed: 0 });
     expect(state.contacts).toHaveLength(1);
     expect(state.contacts[0]).toMatchObject({ firstName: 'First', lastName: 'Client', city: 'Miami' });
+  });
+
+  it('preserves generic spreadsheet contacts with distinct emails that share a household phone', async () => {
+    const state = repository();
+    const gateway = memoryImportGateway({ repository: state.repo });
+    const parsed = parseContactImport({
+      filename: 'household.csv',
+      content: [
+        'First Name,Email,Phone,Lead Type,Relationship,Pipeline Stage',
+        'Avery,avery@example.com,5551234567,Hot,lead,active lead',
+        'Jordan,jordan@example.com,5551234567,Warm,client,client',
+      ].join('\n'),
+    });
+
+    const preview = await previewContactImport(state.repo, gateway, parsed);
+    const result = await executeContactImport(state.repo, gateway, preview, NOW);
+
+    expect(preview.rows.map((row) => row.action)).toEqual(['create', 'create']);
+    expect(result).toMatchObject({ ok: true, created: 2, merged: 0, failed: 0 });
+    expect(state.contacts).toHaveLength(2);
   });
 
   it('preserves distinct First Class contacts that legitimately share a household phone', async () => {

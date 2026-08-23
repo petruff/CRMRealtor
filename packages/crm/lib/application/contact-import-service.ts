@@ -122,6 +122,14 @@ const FILLABLE_FIELDS = [
   'mailingAddress', 'city', 'state', 'postalCode', 'birthdate', 'homePurchaseDate',
 ] as const satisfies readonly (keyof ContactImportCandidate)[];
 
+const IMPORT_ORGANIZATION_FIELDS = [
+  'leadType', 'qualificationStatus', 'relationship', 'pipelineStage',
+] as const satisfies readonly (keyof ContactImportCandidate & keyof Contact)[];
+
+const EXPLICIT_ORGANIZATION_FIELDS = [
+  'intent', 'source',
+] as const satisfies readonly (keyof ContactImportCandidate & keyof Contact)[];
+
 function contactForm(candidate: ContactImportCandidate, provider: string): FormData {
   const form = new FormData();
   const values: Record<string, string | undefined> = {
@@ -153,7 +161,11 @@ function contactForm(candidate: ContactImportCandidate, provider: string): FormD
   return form;
 }
 
-function patchFor(existing: Contact, candidate: ContactImportCandidate): Partial<Contact> {
+function patchFor(
+  existing: Contact,
+  candidate: ContactImportCandidate,
+  classification: ContactImportClassification,
+): Partial<Contact> {
   const patch: Partial<Contact> = {};
   for (const field of FILLABLE_FIELDS) {
     const incoming = candidate[field];
@@ -166,6 +178,20 @@ function patchFor(existing: Contact, candidate: ContactImportCandidate): Partial
   if (tags.length !== existing.tags.length) patch.tags = tags;
   // An unsubscribe is safety-sensitive and must win over an older opt-in.
   if (candidate.emailSubscribed === false && existing.emailSubscribed) patch.emailSubscribed = false;
+  const automaticFields = new Set(classification.decisions.map((decision) => decision.field));
+  for (const field of IMPORT_ORGANIZATION_FIELDS) {
+    const incoming = candidate[field];
+    const hasReliableFileEvidence = !automaticFields.has(field) || !classification.needsReview;
+    if (hasReliableFileEvidence && incoming !== undefined && incoming !== existing[field]) {
+      (patch as Record<string, unknown>)[field] = incoming;
+    }
+  }
+  for (const field of EXPLICIT_ORGANIZATION_FIELDS) {
+    const incoming = candidate[field];
+    if (!automaticFields.has(field) && incoming !== undefined && incoming !== existing[field]) {
+      (patch as Record<string, unknown>)[field] = incoming;
+    }
+  }
   return patch;
 }
 
@@ -302,7 +328,7 @@ export async function previewContactImport(
         const reorganized = classifyContactImportCandidate(earlier.candidate);
         earlier.candidate = reorganized.candidate;
         earlier.classification = reorganized.classification;
-        const combinedPatch = patchFor(existing, earlier.candidate);
+        const combinedPatch = patchFor(existing, earlier.candidate, reorganized.classification);
         earlier.patch = combinedPatch;
         earlier.changes = Object.keys(combinedPatch);
         earlier.action = earlier.changes.length ? 'update' : 'unchanged';
@@ -317,7 +343,7 @@ export async function previewContactImport(
         });
         continue;
       }
-      const patch = patchFor(existing, candidate);
+      const patch = patchFor(existing, candidate, organized.classification);
       const changes = Object.keys(patch);
       const row: ContactImportPlanRow = {
         rowNumber: candidate.rowNumber,
@@ -344,13 +370,15 @@ export async function previewContactImport(
       .find(({ key, row }) => {
         if (!row) return false;
         // A household may legitimately share a phone number while each person
-        // remains a distinct source-system contact. Exact external IDs and
-        // emails remain authoritative; phone-only merging is allowed only when
-        // either row lacks an external ID or both IDs agree.
-        if (key.startsWith('phone:')
-          && candidate.externalId
-          && row.candidate.externalId
-          && candidate.externalId !== row.candidate.externalId) return false;
+        // remains a distinct contact. Distinct external IDs or distinct emails
+        // are stronger identity evidence and must prevent a phone-only merge.
+        if (key.startsWith('phone:')) {
+          if (candidate.externalId
+            && row.candidate.externalId
+            && candidate.externalId !== row.candidate.externalId) return false;
+          const earlierEmail = normalizeEmailIdentity(row.candidate.email);
+          if (email && earlierEmail && email !== earlierEmail) return false;
+        }
         return true;
       })?.row;
     if (earlier) {

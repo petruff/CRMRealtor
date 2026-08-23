@@ -75,6 +75,18 @@ function lifecycleFrom(signal: string, hasClosedDate: boolean): Lifecycle | unde
   return undefined;
 }
 
+function lifecycleFromCanonical(input: ContactImportCandidate): Lifecycle | undefined {
+  if (input.pipelineStage === 'under-contract') return 'under-contract';
+  if (input.pipelineStage === 'appointment-set') return 'appointment';
+  if (input.pipelineStage === 'closed' || input.relationship === 'past-client') return 'past-client';
+  if (input.pipelineStage === 'lost') return 'lost';
+  if (input.relationship === 'sphere') return 'sphere';
+  if (input.relationship === 'active-client') return 'active-client';
+  if (input.pipelineStage === 'active') return 'active-lead';
+  if (input.pipelineStage === 'new') return 'new-lead';
+  return undefined;
+}
+
 function intentFrom(facts: readonly ContactImportSourceFact[]): ContactImportCandidate['intent'] {
   const dealType = textFact(facts, 'deal-type');
   if (/\bbuyer\b/.test(dealType) && /\bseller\b/.test(dealType)) return 'both';
@@ -139,7 +151,7 @@ export function classifyContactImportCandidate(
   const noteSignal = normalized(input.note);
   const signal = [status, tagSignal, noteSignal].filter(Boolean).join(' ');
   const hasClosedDate = Boolean(sourceFact(facts, 'last-closed-date')?.value || input.homePurchaseDate);
-  const lifecycle = lifecycleFrom(signal, hasClosedDate);
+  const lifecycle = lifecycleFromCanonical(input) ?? lifecycleFrom(signal, hasClosedDate);
   const rating = numericFact(facts, 'rating');
   const hasBusinessEvidence = lifecycle !== undefined || rating !== undefined;
   const confidence: ContactImportClassification['confidence'] = lifecycle || rating !== undefined

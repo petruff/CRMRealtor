@@ -50,6 +50,22 @@ const ACTION_LABEL: Record<ImportRowAction, string> = {
   "ambiguous-identity": "Needs identity review",
 };
 
+const LEAD_TYPE_SUMMARY = [
+  { value: 'hot', label: 'Hot', className: 'border-hot-border bg-hot-soft text-hot' },
+  { value: 'warm', label: 'Warm', className: 'border-warm-border bg-warm-soft text-warm' },
+  { value: 'nurture', label: 'Nurture', className: 'border-line bg-surface-2 text-muted' },
+] as const;
+
+const PIPELINE_SUMMARY = [
+  { value: 'new', label: 'New / Prospect' },
+  { value: 'contacted', label: 'Contacted' },
+  { value: 'appointment-set', label: 'Appointment set' },
+  { value: 'active', label: 'Active' },
+  { value: 'under-contract', label: 'Under contract' },
+  { value: 'closed', label: 'Closed' },
+  { value: 'lost', label: 'Archived / Lost' },
+] as const;
+
 function actionLabel(row: ContactImportPreview["rows"][number]) {
   if (row.action === "unchanged" && row.matchBy) return "Client already exists";
   if (row.action === "merge") return "Duplicate row — not imported";
@@ -108,7 +124,7 @@ export function ContactImportWorkspace() {
     setMessage("");
     setResult(undefined);
     setPreview(undefined);
-    const binary = /\.xlsx?$/i.test(file.name);
+    const binary = /\.(?:xlsx?|numbers)$/i.test(file.name);
     const byteLimit = binary ? WORKBOOK_MAX_BYTES : CSV_VCARD_MAX_BYTES;
     if (file.size > byteLimit) {
       setMessage(binary
@@ -126,7 +142,7 @@ export function ContactImportWorkspace() {
         ...(binary ? { contentBase64: await fileBase64(file) } : { content: await file.text() }),
       };
     } catch {
-      setMessage('The selected file could not be read. Choose the original export again or save it as CSV/XLSX.');
+      setMessage('The selected file could not be read. Choose the original export again or save it as CSV, XLSX, or Numbers.');
       return;
     }
     setInput(nextInput);
@@ -379,16 +395,16 @@ export function ContactImportWorkspace() {
             </span>
             <span className="mt-4 block font-medium text-ink">
               {input?.filename ??
-                (dragActive ? "Drop it here" : "Drop or choose CSV, vCard, XLS, or XLSX")}
+                (dragActive ? "Drop it here" : "Drop or choose CSV, vCard, XLS, XLSX, or Numbers")}
             </span>
             <span className="mt-1 block text-xs text-muted">
-              CSV/vCard up to 2 MB; workbooks up to 10 MB. Row count is not capped; safe cell, column, and processing limits still apply. Nothing is saved before review.
+              CSV/vCard up to 2 MB; XLS, XLSX, and Numbers workbooks up to 10 MB. Row count is not capped; safe cell, column, and processing limits still apply. Nothing is saved before review.
             </span>
           </button>
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,.vcf,.xls,.xlsx,text/csv,text/vcard,text/x-vcard,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept=".csv,.vcf,.xls,.xlsx,.numbers,text/csv,text/vcard,text/x-vcard,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.apple.numbers"
             className="sr-only"
             onChange={(event) => void chooseFile(event.target.files?.[0])}
           />
@@ -429,6 +445,21 @@ export function ContactImportWorkspace() {
                 {preview.classificationCounts.explicit} already classified ·{" "}
                 {preview.classificationCounts.needsReview} safely queued for review
               </p>
+              <div className="mt-4 flex flex-wrap gap-2" aria-label="Final contact organization">
+                {LEAD_TYPE_SUMMARY.map((item) => (
+                  <span key={item.value} className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${item.className}`}>
+                    {preview.rows.filter((row) => row.candidate.leadType === item.value).length} {item.label}
+                  </span>
+                ))}
+                {PIPELINE_SUMMARY.map((item) => {
+                  const count = preview.rows.filter((row) => row.candidate.pipelineStage === item.value).length;
+                  return count > 0 ? (
+                    <span key={item.value} className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-medium text-muted">
+                      {count} {item.label}
+                    </span>
+                  ) : null;
+                })}
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <button

@@ -37,6 +37,15 @@ describe('workbook portability', () => {
     const parsed = await parsePortableContactImport({ filename: 'contacts.xlsx', bytes: workbook([['First Name','Email'],['Ada','ADA@example.com']]) });
     expect(parsed.format).toBe('xlsx'); expect(parsed.candidates[0]).toMatchObject({ firstName: 'Ada', email: 'ada@example.com' });
   });
+
+  it('routes Apple Numbers packages through the bounded binary workbook parser', async () => {
+    const parsed = await parsePortableContactImport({
+      filename: 'contacts.numbers',
+      bytes: workbook([['First Name', 'Pipeline Stage'], ['Ada', 'active lead']]),
+    });
+    expect(parsed).toMatchObject({ format: 'numbers', totalRows: 1, rejected: [] });
+    expect(parsed.candidates[0]).toMatchObject({ firstName: 'Ada', pipelineStage: 'active' });
+  });
   it('parses a bounded XLSX through the traced worker in Vercel mode', async () => {
     const parsed = await inVercelRuntime(() => parsePortableContactImport({
         filename: 'contacts.xlsx',

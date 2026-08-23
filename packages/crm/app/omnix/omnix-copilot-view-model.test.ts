@@ -54,7 +54,7 @@ describe('mapOmnixCopilotEnvelope', () => {
         kind: 'list',
         title: "Today's tasks",
         detail: 'One authorized task is due today.',
-        items: [{ id: 't-1', label: 'Review follow-up', href: '/workspace', citations: [citation] }],
+        items: [{ id: 't-1', label: 'Call Alicia Morgan', href: '/workspace', citations: [citation] }],
         citations: [citation],
       }],
       citations: [citation],
@@ -75,7 +75,7 @@ describe('mapOmnixCopilotEnvelope', () => {
       status: 'success',
       dataMode: 'live',
       answerBlocks: [{ items: [{ href: '/workspace', citationIds: [citation.id] }] }],
-      citations: [{ target: '/workspace', recordId: 't-1' }],
+      citations: [{ target: '/workspace', recordId: 't-1', displayLabel: 'Call Alicia Morgan' }],
       suggestions: [{ href: '/workspace' }],
     });
   });

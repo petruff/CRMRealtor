@@ -40,6 +40,7 @@ const responseWithSource: OmnixCopilotUiResult = {
     asOf: '2026-08-21T16:00:00.000Z',
     target: '/contacts/5cfc13f8-844c-4f4c-a992-f02c060939c8',
     rule: 'needs-first-contact',
+    displayLabel: 'Alicia Morgan',
   }],
 };
 
@@ -96,15 +97,81 @@ describe('OmnixAssistantLauncher', () => {
     await user.click(await screen.findByRole('button', { name: 'What should I do today?' }));
     await user.click(await screen.findByText('View source (1)'));
 
-    expect(await screen.findByText('Contact record')).toBeInTheDocument();
+    expect(await screen.findByText('Alicia Morgan')).toBeInTheDocument();
     expect(screen.getByText(/Based on pipeline stage, last contact, date added, lead temperature, and lead source/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Open contact/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Open Alicia Morgan/i })).toHaveAttribute(
       'href',
       '/contacts/5cfc13f8-844c-4f4c-a992-f02c060939c8',
     );
     expect(screen.queryByText(/5cfc13f8-844c-4f4c-a992-f02c060939c8/)).not.toBeInTheDocument();
     expect(screen.queryByText(/pipelineStage|lastContactedAt|createdAt|leadType/)).not.toBeInTheDocument();
     expect(screen.queryByText(/2026-08-20T17:54:45.764Z/)).not.toBeInTheDocument();
+  });
+
+  it('renders who needs attention as a bounded people-first decision brief', async () => {
+    const user = userEvent.setup();
+    const attentionItems = Array.from({ length: 8 }, (_, index) => ({
+      id: `alert:overdue-follow-up:contact-${index + 1}:2026-08-23`,
+      label: `Client ${index + 1} Morgan`,
+      detail: '1 day overdue · Active client · Actively working · Referral',
+      value: index === 0 ? 'Hot' : 'Warm',
+      href: `/contacts/contact-${index + 1}`,
+      citationIds: [],
+    }));
+    const attentionResponse: OmnixCopilotUiResult = {
+      ...response,
+      question: 'Who needs attention?',
+      intent: 'alerts',
+      answerBlocks: [
+        {
+          id: 'attention-summary',
+          kind: 'metric',
+          title: '8 attention items',
+          detail: '8 people and 0 tasks need review. Start with Act now.',
+          items: [
+            { id: 'attention-people-count', label: 'People', value: 8, citationIds: [] },
+            { id: 'attention-overdue-count', label: 'Act now', value: 8, citationIds: [] },
+          ],
+          citationIds: [],
+        },
+        {
+          id: 'attention-overdue',
+          kind: 'list',
+          title: 'Act now',
+          detail: 'Start with overdue follow-up and first-contact work.',
+          items: attentionItems,
+          citationIds: [],
+        },
+      ],
+    };
+
+    render(<OmnixAssistantLauncher
+      action={vi.fn().mockResolvedValue(attentionResponse)}
+      loadProfile={vi.fn().mockResolvedValue({ available: true, firstName: 'Judith', dataMode: 'live' })}
+    />);
+
+    await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
+    await user.click(await screen.findByRole('button', { name: 'Who needs attention?' }));
+
+    expect(await screen.findByText('Omnix · Attention brief')).toBeInTheDocument();
+    expect(screen.getByText('8 people and 0 tasks need review. Start with Act now.')).toBeInTheDocument();
+    expect(screen.getByText('Client 1 Morgan')).toBeInTheDocument();
+    expect(screen.getByText('Client 6 Morgan')).toBeInTheDocument();
+    expect(screen.queryByText('Client 7 Morgan')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open Client 1 Morgan' })).toHaveAttribute(
+      'href',
+      '/contacts/contact-1',
+    );
+    expect(screen.queryByText(/overdue-follow-up|Review source|Contact record 1/)).not.toBeInTheDocument();
+    expect(screen.getByText('Showing 6 of 8 attention items')).toBeInTheDocument();
+
+    const reveal = screen.getByRole('button', { name: 'Show next 2' });
+    reveal.focus();
+    await user.click(reveal);
+    expect(screen.getByText('Client 7 Morgan')).toBeInTheDocument();
+    expect(screen.getByText('Client 8 Morgan')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All attention items shown' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'All attention items shown' })).toHaveAttribute('aria-disabled', 'true');
   });
 
   it('keeps large source sets calm and progressively reveals every citation', async () => {

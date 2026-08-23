@@ -121,6 +121,27 @@ describe('contact import parser', () => {
     expect(parsed.candidates[0]?.pipelineStage).toBeUndefined();
   });
 
+  it('normalizes realtor-facing organization labels while explicit lead type wins over tags', () => {
+    const parsed = parseContactImport({
+      filename: 'omnix-contacts.csv',
+      content: [
+        'First Name,Lead Type,Relationship,Intent,Source,Pipeline Stage,Tags',
+        'Active,Hot,client,seller,lead import,client,nurture',
+        'Archived,Warm,lead,buyer,cold call,archived,hot',
+        'Website,,lead,buyer,organic website,new lead,nurture',
+        'Prospect,,lead,seller,manual add,prospect,',
+      ].join('\n'),
+    });
+
+    expect(parsed.rejected).toEqual([]);
+    expect(parsed.candidates).toEqual([
+      expect.objectContaining({ leadType: 'hot', relationship: 'active-client', intent: 'seller', source: 'other', pipelineStage: 'active' }),
+      expect.objectContaining({ leadType: 'warm', relationship: 'lead', intent: 'buyer', source: 'cold-call', pipelineStage: 'lost' }),
+      expect.objectContaining({ leadType: 'nurture', relationship: 'lead', intent: 'buyer', source: 'website', pipelineStage: 'new' }),
+      expect.objectContaining({ relationship: 'lead', intent: 'seller', source: 'other', pipelineStage: 'new' }),
+    ]);
+  });
+
   it('uses a KvCore filename hint when source columns were renamed and retains original provenance', () => {
     const parsed = parseContactImport({
       filename: 'kvcore-edited.csv',

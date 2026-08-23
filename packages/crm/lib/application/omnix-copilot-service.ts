@@ -15,7 +15,10 @@ import {
 } from '../domain/activity.ts';
 import {
   displayName,
+  LEAD_TYPE_LABEL,
   PIPELINE_LABEL,
+  RELATIONSHIP_LABEL,
+  SOURCE_LABEL,
   type Contact,
   type PipelineStage,
 } from '../domain/contact.ts';
@@ -38,6 +41,7 @@ import {
   type OmnixCopilotAlert,
   type OmnixCopilotAlertRule,
   type OmnixCopilotAnswerBlock,
+  type OmnixCopilotAnswerItem,
   type OmnixCopilotCitation,
   type OmnixCopilotExecutor,
   type OmnixCopilotIntent,
@@ -693,23 +697,149 @@ function alertsResult(
     taskCapabilityAvailable,
     historicalImportContactIds,
   });
-  return {
-    answerBlocks: [block(
-      alerts.length ? 'alerts' : 'alerts-empty',
-      alerts.length ? 'list' : 'empty',
-      `Alerts for ${today}`,
-      alerts.length ? 'Deterministic alerts ordered by the fixed catalog.' : 'No authorized record matched an alert rule.',
-      alerts.map((alert) => ({
+
+  const contactsById = new Map(contacts.map((contact) => [contact.id, contact]));
+  const tasksById = new Map(tasks.map((task) => [task.id, task]));
+  const attentionItem = (alert: OmnixCopilotAlert): OmnixCopilotAnswerItem => {
+    const task = alert.category === 'task' ? tasksById.get(alert.recordId) : undefined;
+    if (task) {
+      const relatedContact = task.contactId ? contactsById.get(task.contactId) : undefined;
+      return {
         id: alert.id,
-        label: alert.rule,
-        detail: alert.reason,
+        label: task.title,
+        detail: [
+          alert.reason,
+          relatedContact ? `For ${displayName(relatedContact)}` : undefined,
+        ].filter(Boolean).join(' · '),
+        value: 'Task',
         href: alert.href,
         citations: alert.citations,
-      })),
-    )],
+      };
+    }
+
+    const contact = contactsById.get(alert.recordId);
+    if (contact) {
+      return {
+        id: alert.id,
+        label: displayName(contact),
+        detail: [
+          alert.reason,
+          RELATIONSHIP_LABEL[contact.relationship],
+          PIPELINE_LABEL[contact.pipelineStage],
+          SOURCE_LABEL[contact.source],
+        ].join(' · '),
+        value: LEAD_TYPE_LABEL[contact.leadType],
+        href: alert.href,
+        citations: alert.citations,
+      };
+    }
+
+    return {
+      id: alert.id,
+      label: alert.category === 'task' ? 'CRM task' : 'CRM follow-up',
+      detail: alert.reason,
+      href: alert.href,
+      citations: alert.citations,
+    };
+  };
+
+  const bucketDefinitions = [
+    {
+      id: 'attention-overdue',
+      title: 'Act now',
+      detail: 'Start with overdue follow-up and first-contact work.',
+      rules: new Set<OmnixCopilotAlertRule>(['needs-first-contact', 'overdue-follow-up']),
+    },
+    {
+      id: 'attention-today',
+      title: 'Due today',
+      detail: 'These relationships and tasks are due on the CRM calendar today.',
+      rules: new Set<OmnixCopilotAlertRule>(['due-today-follow-up']),
+    },
+    {
+      id: 'attention-upcoming',
+      title: 'Coming up',
+      detail: 'Prepare these next touches before they become urgent.',
+      rules: new Set<OmnixCopilotAlertRule>(['upcoming-follow-up']),
+    },
+  ] as const;
+  const bucketedRules = new Set(bucketDefinitions.flatMap((definition) => [...definition.rules]));
+  const groupedBlocks = bucketDefinitions.map((definition) => {
+    const items = alerts.filter((alert) => definition.rules.has(alert.rule)).map(attentionItem);
+    return block(definition.id, 'list', definition.title, definition.detail, items);
+  });
+  const reminderItems = alerts
+    .filter((alert) => alert.category !== 'task' && !bucketedRules.has(alert.rule))
+    .map(attentionItem);
+  if (reminderItems.length) {
+    groupedBlocks.push(block(
+      'attention-reminders',
+      'list',
+      'Relationship reminders',
+      'Celebrations, pipeline gaps and mailing details worth reviewing.',
+      reminderItems,
+    ));
+  }
+  const taskItems = alerts.filter((alert) => alert.category === 'task').map(attentionItem);
+  if (taskItems.length) {
+    groupedBlocks.push(block(
+      'attention-tasks',
+      'list',
+      'Open tasks',
+      'Task deadlines stay in the fixed CRM alert order.',
+      taskItems,
+    ));
+  }
+
+  const contactCount = new Set(alerts
+    .filter((alert) => alert.category !== 'task' && contactsById.has(alert.recordId))
+    .map((alert) => alert.recordId)).size;
+  const taskCount = new Set(alerts
+    .filter((alert) => alert.category === 'task')
+    .map((alert) => alert.recordId)).size;
+  const countRules = (...rules: OmnixCopilotAlertRule[]) => alerts
+    .filter((alert) => rules.includes(alert.rule)).length;
+
+  if (!alerts.length) {
+    return {
+      answerBlocks: [block(
+        'alerts-empty',
+        'empty',
+        "You're caught up",
+        'No follow-up, task or relationship reminder needs attention right now.',
+      )],
+      alerts,
+      warnings,
+      suggestions: [reviewSuggestion('review-alerts', 'Open the alert center', 'See the complete CRM attention queue.', '/alerts')],
+    };
+  }
+
+  const summary = block(
+    'attention-summary',
+    'metric',
+    `${alerts.length} attention ${alerts.length === 1 ? 'item' : 'items'}`,
+    `${contactCount} ${contactCount === 1 ? 'person' : 'people'} and ${taskCount} ${taskCount === 1 ? 'task' : 'tasks'} need review. Start with Act now.`,
+    [
+      { id: 'attention-people-count', label: 'People', value: contactCount, citations: [] },
+      { id: 'attention-task-count', label: 'Tasks', value: taskCount, citations: [] },
+      { id: 'attention-overdue-count', label: 'Act now', value: countRules('needs-first-contact', 'overdue-follow-up', 'task-overdue'), citations: [] },
+      { id: 'attention-today-count', label: 'Due today', value: countRules('due-today-follow-up', 'task-due-today'), citations: [] },
+      { id: 'attention-upcoming-count', label: 'Coming up', value: countRules('upcoming-follow-up'), citations: [] },
+      { id: 'attention-reminder-count', label: 'Reminders', value: reminderItems.length, citations: [] },
+    ],
+  );
+
+  return {
+    answerBlocks: [summary, ...groupedBlocks.filter((item) => item.items.length)],
     alerts,
     warnings,
-    suggestions: [reviewSuggestion('review-alerts', 'Review CRM work', 'Open the existing work queue.', '/activities', alerts.flatMap((alert) => alert.citations))],
+    suggestions: [reviewSuggestion(
+      'review-alerts',
+      'View the complete alert center',
+      'Open every current alert with the same CRM evidence and ordering.',
+      '/alerts',
+      alerts.flatMap((alert) => alert.citations),
+    )],
   };
 }
 

@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { createContactTemplate, parsePortableContactImport } from '../lib/application/workbook-portability.ts';
+import { classifyContactImportCandidate } from '../lib/application/contact-import-classification.ts';
 import { createGovernedContactExport } from '../lib/application/governed-export.ts';
 import { createOperationalApiPlaintext, operationalApiVerifier, OPERATIONAL_API_SCOPES, type OperationalApiScope } from '../lib/security/operational-api.ts';
 import { createWebhookCredential, webhookSecretVerifier } from '../lib/security/generic-webhook.ts';
@@ -18,9 +19,22 @@ if (command === 'template') {
   const bytes = await createContactTemplate(format); await writeFile(target, bytes);
   output({ ok: true, schemaVersion: 'data-portability.v1', command, format, output: target, bytes: bytes.byteLength });
 } else if (command === 'preview') {
-  const file = args[1]; if (!file) throw new Error('Usage: npm run data -- preview <file.csv|file.vcf|file.xls|file.xlsx>');
+  const file = args[1]; if (!file) throw new Error('Usage: npm run data -- preview <file.csv|file.vcf|file.xls|file.xlsx|file.numbers>');
   const bytes = new Uint8Array(await readFile(resolve(file))); const parsed = await parsePortableContactImport({ bytes, filename: basename(file) });
-  output({ ok: true, schemaVersion: 'data-portability.v1', command, fileHash: createHash('sha256').update(bytes).digest('hex'), format: parsed.format, rows: parsed.totalRows, accepted: parsed.candidates.length, rejected: parsed.rejected.length, recognizedFields: parsed.recognizedFields, preservedFields: parsed.preservedFields, unknownFields: parsed.unknownFields });
+  const organized = parsed.candidates.map((candidate) => classifyContactImportCandidate(candidate));
+  const countBy = (values: readonly string[]) => Object.fromEntries([...new Set(values)].sort().map((value) => [value, values.filter((item) => item === value).length]));
+  output({
+    ok: true, schemaVersion: 'data-portability.v1', command,
+    fileHash: createHash('sha256').update(bytes).digest('hex'),
+    format: parsed.format, rows: parsed.totalRows, accepted: parsed.candidates.length, rejected: parsed.rejected.length,
+    recognizedFields: parsed.recognizedFields, preservedFields: parsed.preservedFields, unknownFields: parsed.unknownFields,
+    organization: {
+      modes: countBy(organized.map((item) => item.classification.mode)),
+      needsReview: organized.filter((item) => item.classification.needsReview).length,
+      leadTypes: countBy(organized.map((item) => item.candidate.leadType ?? 'unclassified')),
+      pipelineStages: countBy(organized.map((item) => item.candidate.pipelineStage ?? 'unclassified')),
+    },
+  });
 } else if (command === 'export') {
   const format=value('--format')==='xlsx'?'xlsx':'csv'; const target=resolve(value('--output')??`omnix-contacts-export.${format}`); const fields=(value('--fields')??'id,firstName,lastName,email,phone,leadType,relationship,pipelineStage,nextTouchAt,updatedAt').split(',');
   const live=args.includes('--live'); const liveContext=live?await createAuthenticatedCliContext():undefined; const repository=liveContext?supabaseRepository(liveContext.client,liveContext.scope):memoryRepository();

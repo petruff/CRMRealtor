@@ -40,6 +40,13 @@ const SUPPORTED_PROMPTS = [
 
 const INLINE_SOURCE_LIMIT = 3;
 const SOURCE_BATCH_SIZE = 12;
+const ATTENTION_BATCH_SIZE = 6;
+
+function intentLabel(intent?: string): string {
+  if (intent === 'alerts') return 'Attention brief';
+  if (intent === 'brief') return 'Daily brief';
+  return intent ?? '';
+}
 
 interface TranscriptEntry {
   id: string;
@@ -63,10 +70,10 @@ function CitationLinks({
   const remaining = sources.length - visibleSources.length;
   return (
     <p className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-relaxed text-subtle">
-      <span>Sources:</span>
-      {visibleSources.map((citation, index) => isSafeInProductTarget(citation.target) ? (
+      <span>CRM source:</span>
+      {visibleSources.map((citation) => isSafeInProductTarget(citation.target) ? (
         <Link key={citation.id} href={citation.target} className="break-words text-accent hover:underline">
-          {evidenceEntityLabel(citation.entityType)} {index + 1}
+          {citation.displayLabel ?? evidenceEntityLabel(citation.entityType)}
         </Link>
       ) : null)}
       {remaining > 0 ? <span>+{remaining} more in the source list</span> : null}
@@ -76,6 +83,7 @@ function CitationLinks({
 
 function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
   const [visibleSourceCount, setVisibleSourceCount] = useState(SOURCE_BATCH_SIZE);
+  const [visibleAttentionCount, setVisibleAttentionCount] = useState(ATTENTION_BATCH_SIZE);
   const isProblem = result.status === 'error';
   const isLimited = result.status === 'unsupported' || result.status === 'unavailable';
   const Icon = isProblem ? CircleAlert : isLimited ? CircleHelp : Sparkles;
@@ -83,6 +91,13 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
   const visibleAlerts = result.alerts.filter((alert) => !itemIds.has(alert.id));
   const visibleCitations = result.citations.slice(0, visibleSourceCount);
   const remainingSources = result.citations.length - visibleCitations.length;
+  const attentionItems = result.answerBlocks
+    .filter((block) => block.kind === 'list' && block.id.startsWith('attention-'))
+    .flatMap((block) => block.items);
+  const visibleAttentionIds = new Set(attentionItems
+    .slice(0, visibleAttentionCount)
+    .map((item) => item.id));
+  const remainingAttention = Math.max(0, attentionItems.length - visibleAttentionCount);
 
   return (
     <article
@@ -96,7 +111,7 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-              {result.intent ? `Omnix · ${result.intent}` : 'Omnix'}
+              {result.intent ? `Omnix · ${intentLabel(result.intent)}` : 'Omnix'}
             </p>
             {result.dataMode ? (
               <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-subtle">
@@ -109,8 +124,20 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
               {result.message}
             </p>
           ) : null}
-          {result.answerBlocks.map((block) => (
-            <section key={block.id} className="mt-3 first:mt-1" aria-labelledby={`${block.id}-title`}>
+          {result.answerBlocks.map((block) => {
+            const isAttentionList = block.kind === 'list' && block.id.startsWith('attention-');
+            const visibleItems = isAttentionList
+              ? block.items.filter((item) => visibleAttentionIds.has(item.id))
+              : block.items;
+            if (isAttentionList && !visibleItems.length) return null;
+            return (
+            <section
+              key={block.id}
+              className={block.id === 'attention-summary'
+                ? 'mt-3 rounded-2xl border border-line bg-surface-2 p-4 first:mt-1'
+                : 'mt-4 first:mt-1'}
+              aria-labelledby={`${block.id}-title`}
+            >
               {block.title ? (
                 <h3 id={`${block.id}-title`} className="text-sm font-semibold text-ink">
                   {block.title}
@@ -119,10 +146,10 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
               <p className="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-muted">
                 {block.detail}
               </p>
-              {block.items.length ? (
-                <ul className={`mt-3 grid gap-2 ${block.kind === 'metric' ? 'sm:grid-cols-2' : ''}`}>
-                  {block.items.map((item) => (
-                    <li key={item.id} className="min-w-0 rounded-xl bg-surface-2 p-3">
+              {visibleItems.length ? (
+                <ul className={`mt-3 grid gap-2 ${block.kind === 'metric' ? 'grid-cols-2 sm:grid-cols-3' : ''}`}>
+                  {visibleItems.map((item) => (
+                    <li key={item.id} className={`min-w-0 rounded-xl p-3 ${block.kind === 'metric' ? 'border border-line bg-surface' : 'bg-surface-2'}`}>
                       <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
                         <p className="break-words text-sm font-medium text-ink">{item.label}</p>
                         {item.value !== undefined ? (
@@ -135,8 +162,13 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                         <p className="mt-1 break-words text-xs leading-relaxed text-muted">{item.detail}</p>
                       ) : null}
                       {item.href && isSafeInProductTarget(item.href) ? (
-                        <Link href={item.href} className="sk-secondary-button mt-2 text-xs">
-                          Review source <ArrowUpRight className="size-3.5" aria-hidden />
+                        <Link
+                          href={item.href}
+                          className="sk-secondary-button mt-2 max-w-full text-xs"
+                          aria-label={`Open ${item.label}`}
+                        >
+                          <span className="truncate">Open {item.label}</span>
+                          <ArrowUpRight className="size-3.5 shrink-0" aria-hidden />
                         </Link>
                       ) : null}
                       <CitationLinks ids={item.citationIds} citations={result.citations} />
@@ -146,7 +178,32 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
               ) : null}
               <CitationLinks ids={block.citationIds} citations={result.citations} />
             </section>
-          ))}
+            );
+          })}
+
+          {attentionItems.length > ATTENTION_BATCH_SIZE ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-3">
+              <button
+                type="button"
+                className="sk-secondary-button text-xs"
+                aria-disabled={remainingAttention === 0}
+                onClick={() => {
+                  if (!remainingAttention) return;
+                  setVisibleAttentionCount((current) => Math.min(
+                    current + ATTENTION_BATCH_SIZE,
+                    attentionItems.length,
+                  ));
+                }}
+              >
+                {remainingAttention > 0
+                  ? `Show next ${Math.min(ATTENTION_BATCH_SIZE, remainingAttention)}`
+                  : 'All attention items shown'}
+              </button>
+              <span className="text-[11px] text-subtle">
+                Showing {Math.min(visibleAttentionCount, attentionItems.length)} of {attentionItems.length} attention items
+              </span>
+            </div>
+          ) : null}
 
           {result.status === 'empty' && !result.message && !result.answerBlocks.length ? (
             <p className="mt-1 text-sm leading-relaxed text-muted">
@@ -192,7 +249,7 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                   return (
                     <li key={citation.id} className="min-w-0 rounded-xl bg-surface-2 p-3">
                       <p className="break-words text-xs font-medium text-ink">
-                        {evidenceEntityLabel(citation.entityType)}
+                        {citation.displayLabel ?? evidenceEntityLabel(citation.entityType)}
                       </p>
                       <p className="mt-1 break-words text-[11px] leading-relaxed text-muted">
                         Based on {evidenceFactSummary(citation.factKeys) || 'stored CRM details'}.
@@ -200,7 +257,8 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                       </p>
                       {isSafeInProductTarget(citation.target) ? (
                         <Link href={citation.target} className="sk-secondary-button mt-2 text-xs">
-                          {evidenceEntityLinkLabel(citation.entityType)} <ArrowUpRight className="size-3.5" aria-hidden />
+                          {citation.displayLabel ? `Open ${citation.displayLabel}` : evidenceEntityLinkLabel(citation.entityType)}
+                          <ArrowUpRight className="size-3.5" aria-hidden />
                         </Link>
                       ) : null}
                     </li>
@@ -243,7 +301,7 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                     ) : null}
                     {suggestion.href && isSafeInProductTarget(suggestion.href) ? (
                       <Link href={suggestion.href} className="sk-secondary-button mt-2 text-xs">
-                        Review in Omnix <ArrowUpRight className="size-3.5" aria-hidden />
+                        Open next step <ArrowUpRight className="size-3.5" aria-hidden />
                       </Link>
                     ) : null}
                     <CitationLinks ids={suggestion.citationIds} citations={result.citations} />
@@ -261,7 +319,7 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
 
           {result.asOf ? (
             <p className="mt-3 text-[11px] text-subtle">
-              Updated {new Date(result.asOf).toLocaleString()} · Nothing changed
+              CRM checked {new Date(result.asOf).toLocaleString()} · Read-only response
             </p>
           ) : null}
           {result.model ? (

@@ -2,7 +2,7 @@
 
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +11,7 @@ const actions = vi.hoisted(() => ({
   previewOrganization: vi.fn(),
   applyOrganization: vi.fn(),
   rollbackOrganization: vi.fn(),
+  previewImport: vi.fn(),
 }));
 
 vi.mock('@/app/import-actions', () => ({
@@ -18,7 +19,7 @@ vi.mock('@/app/import-actions', () => ({
   previewExistingImportOrganizationAction: actions.previewOrganization,
   applyExistingImportOrganizationAction: actions.applyOrganization,
   rollbackExistingImportOrganizationAction: actions.rollbackOrganization,
-  previewImportAction: vi.fn(),
+  previewImportAction: actions.previewImport,
   commitImportAction: vi.fn(),
   saveImportMappingProfileAction: vi.fn(),
 }));
@@ -60,6 +61,7 @@ describe('ContactImportWorkspace automatic organization', () => {
       ok: true,
       receipt: { runId: '67e55044-10b1-426f-9247-bb680e5fe0c8', contactCount: 138, state: 'rolled-back', noOp: false },
     });
+    actions.previewImport.mockResolvedValue({ ok: false, message: 'Read-only routing check.' });
   });
 
   it('explains and applies the bounded existing-import cleanup in one action', async () => {
@@ -87,5 +89,42 @@ describe('ContactImportWorkspace automatic organization', () => {
     await user.click(await screen.findByRole('button', { name: /restore previous values/i }));
     expect(actions.rollbackOrganization).toHaveBeenCalledWith('67e55044-10b1-426f-9247-bb680e5fe0c8');
     expect(await screen.findByText(/138 contacts were restored/i)).toBeInTheDocument();
+  });
+
+  it('reads Apple Numbers files as bounded binary input instead of CSV text', async () => {
+    const user = userEvent.setup();
+    actions.previewImport.mockResolvedValueOnce({
+      ok: true,
+      isLive: true,
+      preview: {
+        provider: 'spreadsheet', filename: 'contacts.numbers', format: 'numbers', totalRows: 3,
+        headers: ['First Name', 'Lead Type', 'Pipeline Stage'], recognizedFields: ['firstName', 'leadType', 'pipelineStage'],
+        unknownFields: [], preservedFields: [], rejected: [],
+        counts: { create: 3, update: 0, unchanged: 0, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 0 },
+        classificationCounts: { automatic: 3, explicit: 0, needsReview: 0 },
+        rows: [
+          { rowNumber: 2, action: 'create', candidate: { firstName: 'Hot', lastName: 'Contact', tags: [], leadType: 'hot', pipelineStage: 'active' }, classification: { summary: 'Active lead.' }, changes: [] },
+          { rowNumber: 3, action: 'create', candidate: { firstName: 'Warm', lastName: 'Contact', tags: [], leadType: 'warm', pipelineStage: 'new' }, classification: { summary: 'Warm prospect.' }, changes: [] },
+          { rowNumber: 4, action: 'create', candidate: { firstName: 'Nurture', lastName: 'Contact', tags: [], leadType: 'nurture', pipelineStage: 'lost' }, classification: { summary: 'Archived lead.' }, changes: [] },
+        ],
+      },
+    });
+    const { container } = render(<ContactImportWorkspace />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], 'contacts.numbers', {
+      type: 'application/vnd.apple.numbers',
+    });
+
+    await user.upload(input, file);
+
+    await waitFor(() => expect(actions.previewImport).toHaveBeenCalledWith(expect.objectContaining({
+      filename: 'contacts.numbers',
+      contentBase64: expect.any(String),
+    })));
+    expect(actions.previewImport.mock.calls[0]?.[0]).not.toHaveProperty('content');
+    expect(await screen.findByText('1 Hot')).toBeInTheDocument();
+    expect(screen.getByText('1 Warm')).toBeInTheDocument();
+    expect(screen.getByText('1 Nurture')).toBeInTheDocument();
+    expect(screen.getByText('1 Active')).toBeInTheDocument();
   });
 });

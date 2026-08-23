@@ -39,6 +39,17 @@ describe('automatic imported-contact classification', () => {
     expect(result.candidate).toMatchObject({ leadType: 'nurture', relationship: 'past-client', pipelineStage: 'closed' });
   });
 
+  it.each([
+    ['active', 'lead', 'warm', 'qualified'],
+    ['active', 'active-client', 'warm', 'qualified'],
+    ['lost', 'lead', 'nurture', 'qualified'],
+    ['new', 'lead', 'nurture', 'qualified'],
+  ] as const)('uses canonical pipeline %s and relationship %s as structured evidence', (pipelineStage, relationship, leadType, qualificationStatus) => {
+    const result = classifyContactImportCandidate(candidate({ pipelineStage, relationship }));
+    expect(result.candidate).toMatchObject({ pipelineStage, relationship, leadType, qualificationStatus });
+    expect(result.classification).toMatchObject({ confidence: 'high', needsReview: false });
+  });
+
   it('preserves every explicit canonical classification value', () => {
     const result = classifyContactImportCandidate(candidate({
       leadType: 'warm', qualificationStatus: 'qualified', relationship: 'sphere', intent: 'seller',

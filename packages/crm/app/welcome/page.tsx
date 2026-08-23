@@ -59,7 +59,7 @@ const CAPABILITIES = [
   },
   {
     title: 'Bring existing contacts with you',
-    detail: 'Preview CSV and vCard imports, merge conservatively and keep incomplete rows available for review.',
+    detail: 'Preview CSV, vCard, Excel, and Apple Numbers imports, merge conservatively and keep incomplete rows available for review.',
     icon: Upload,
   },
   {

@@ -207,7 +207,7 @@ export interface ContactImportRejection {
 
 export interface ParsedContactImport {
   filename: string;
-  format: 'csv' | 'vcard' | 'json' | 'xls' | 'xlsx';
+  format: 'csv' | 'vcard' | 'json' | 'xls' | 'xlsx' | 'numbers';
   requestedSource: ImportSource;
   detectedSource: Exclude<ImportSource, 'auto'>;
   /** Stable source key used for external-id deduplication (for example zillow). */
@@ -224,7 +224,7 @@ export interface ParsedContactImport {
 /** Reuses the canonical allowlisted candidate projection for trusted tabular adapters. */
 export function parseContactImportRecords(input: {
   filename: string;
-  format: 'xls' | 'xlsx';
+  format: 'xls' | 'xlsx' | 'numbers';
   headers: readonly string[];
   rows: readonly (readonly string[])[];
   source?: ImportSource;
@@ -237,7 +237,7 @@ export function parseContactImportRecords(input: {
     .join('\n');
   const parsed = parseContactImport({
     content,
-    filename: input.filename.replace(/\.(xlsx?|xls)$/i, '.csv'),
+    filename: input.filename.replace(/\.(xlsx?|xls|numbers)$/i, '.csv'),
     source: input.source,
     mapping: input.mapping,
     // The workbook worker already enforced the original-file, cell-count,
@@ -453,10 +453,57 @@ function enumValue<T extends string>(value: string | undefined, allowed: readonl
 }
 
 function leadTypeValue(value: string | undefined, tags: string[]): ImportLeadType | undefined {
-  const haystack = [value, ...tags].filter(Boolean).join(' ').toLowerCase();
+  const explicit = enumValue(value, ['hot', 'warm', 'nurture']);
+  if (explicit) return explicit;
+  const haystack = tags.join(' ').toLowerCase();
   if (/\bhot\b/.test(haystack)) return 'hot';
   if (/\bwarm\b/.test(haystack)) return 'warm';
   if (/\bnurture\b/.test(haystack)) return 'nurture';
+  return undefined;
+}
+
+function qualificationStatusValue(value: string | undefined): ContactImportCandidate['qualificationStatus'] {
+  const canonical = enumValue(value, ['qualified', 'needs-qualification']);
+  if (canonical) return canonical;
+  const normalized = value?.toLowerCase().trim().replace(/[^a-z0-9]+/g, ' ');
+  return normalized === 'needs review' || normalized === 'needs qualification'
+    ? 'needs-qualification'
+    : undefined;
+}
+
+function relationshipValue(value: string | undefined): ImportRelationship | undefined {
+  const canonical = enumValue(value, ['lead', 'active-client', 'past-client', 'sphere']);
+  if (canonical) return canonical;
+  const normalized = value?.toLowerCase().trim().replace(/[^a-z0-9]+/g, ' ');
+  if (normalized === 'client' || normalized === 'active client' || normalized === 'current client') return 'active-client';
+  if (normalized === 'past client' || normalized === 'former client') return 'past-client';
+  if (normalized === 'prospect' || normalized === 'active lead' || normalized === 'new lead') return 'lead';
+  if (normalized === 'soi' || normalized === 'sphere of influence') return 'sphere';
+  return undefined;
+}
+
+function pipelineStageValue(value: string | undefined): ImportPipelineStage | undefined {
+  const canonical = enumValue(value, ['new', 'contacted', 'appointment-set', 'active', 'under-contract', 'closed', 'lost']);
+  if (canonical) return canonical;
+  const normalized = value?.toLowerCase().trim().replace(/[^a-z0-9]+/g, ' ');
+  if (normalized === 'new lead' || normalized === 'prospect') return 'new';
+  if (normalized === 'active lead' || normalized === 'client' || normalized === 'active client') return 'active';
+  if (normalized === 'appointment' || normalized === 'appointment set' || normalized === 'consultation') return 'appointment-set';
+  if (normalized === 'pending' || normalized === 'in contract' || normalized === 'escrow') return 'under-contract';
+  if (normalized === 'past client' || normalized === 'sold') return 'closed';
+  if (normalized === 'archived' || normalized === 'inactive' || normalized === 'dead' || normalized === 'dnc') return 'lost';
+  return undefined;
+}
+
+function leadSourceValue(value: string | undefined): ImportLeadSource | undefined {
+  const canonical = enumValue(value, ['cold-call', 'open-house', 'referral', 'social-media', 'website', 'mailer', 'other']);
+  if (canonical) return canonical;
+  const normalized = value?.toLowerCase().trim().replace(/[^a-z0-9]+/g, ' ');
+  if (normalized === 'lead import' || normalized === 'manual add' || normalized === 'manual entry' || normalized === 'import') return 'other';
+  if (normalized === 'direct website' || normalized === 'organic website' || normalized === 'web form') return 'website';
+  if (normalized === 'facebook' || normalized === 'instagram' || normalized === 'social') return 'social-media';
+  if (normalized === 'open house') return 'open-house';
+  if (normalized === 'cold call' || normalized === 'cold calling') return 'cold-call';
   return undefined;
 }
 
@@ -474,14 +521,7 @@ function tagsValue(value: string | undefined): string[] {
 }
 
 function firstClassSourceValue(value: string | undefined): ImportLeadSource | undefined {
-  if (!value) return undefined;
-  const normalized = value.toLowerCase().trim();
-  const canonical = enumValue(normalized, ['cold-call', 'open-house', 'referral', 'social-media', 'website', 'mailer', 'other']);
-  if (canonical) return canonical;
-  if (normalized === 'cold call') return 'cold-call';
-  if (normalized === 'direct website' || normalized === 'organic website') return 'website';
-  if (normalized === 'lead import' || normalized === 'manual add') return 'other';
-  return undefined;
+  return leadSourceValue(value);
 }
 
 function firstClassPhoneValue(value: string | undefined): string | undefined {
@@ -554,13 +594,13 @@ function candidateFromRecord(
 
   const tags = tagsValue(values.get('tags'));
   const leadType = leadTypeValue(values.get('leadType'), tags);
-  const qualificationStatus = enumValue(values.get('qualificationStatus'), ['qualified', 'needs-qualification']);
-  const relationship = enumValue(values.get('relationship'), ['lead', 'active-client', 'past-client', 'sphere']);
+  const qualificationStatus = qualificationStatusValue(values.get('qualificationStatus'));
+  const relationship = relationshipValue(values.get('relationship'));
   const intent = enumValue(values.get('intent'), ['buyer', 'seller', 'both', 'investor', 'renter', 'unknown']);
   const source = firstClassExport
     ? firstClassSourceValue(values.get('source'))
-    : enumValue(values.get('source'), ['cold-call', 'open-house', 'referral', 'social-media', 'website', 'mailer', 'other']);
-  const pipelineStage = enumValue(values.get('pipelineStage'), ['new', 'contacted', 'appointment-set', 'active', 'under-contract', 'closed', 'lost']);
+    : leadSourceValue(values.get('source'));
+  const pipelineStage = pipelineStageValue(values.get('pipelineStage'));
   const emailSubscribed = booleanValue(values.get('emailSubscribed'));
   if (values.get('leadType') && !leadType) errors.push('Lead type must be Hot, Warm, or Nurture.');
   if (values.get('qualificationStatus') && !qualificationStatus) errors.push('Qualification status must be Qualified or Needs review.');

@@ -14,6 +14,7 @@ export interface OmnixCopilotCitationView {
   asOf: string;
   target: string;
   rule?: string;
+  displayLabel?: string;
 }
 
 export interface OmnixCopilotAnswerBlockView {
@@ -137,6 +138,31 @@ export function mapOmnixCopilotEnvelope(
   const empty = envelope.answerBlocks.length > 0
     && envelope.answerBlocks.every((block) => block.kind === 'empty');
 
+  const answerBlocks = envelope.answerBlocks.map((block) => ({
+    id: block.id,
+    kind: block.kind,
+    title: block.title,
+    detail: block.detail,
+    items: block.items.map((item) => ({
+      id: item.id,
+      label: item.label,
+      detail: item.detail,
+      value: item.value,
+      href: item.href,
+      citationIds: item.citations.map((citation) => citation.id),
+    })),
+    citationIds: block.citations.map((citation) => citation.id),
+  }));
+  const citationLabels = new Map<string, string>();
+  for (const block of answerBlocks) {
+    for (const item of block.items) {
+      if (!item.href) continue;
+      for (const citationId of item.citationIds) {
+        if (!citationLabels.has(citationId)) citationLabels.set(citationId, item.label);
+      }
+    }
+  }
+
   return {
     status: unavailable ? 'unavailable' : empty ? 'empty' : 'success',
     question,
@@ -144,21 +170,7 @@ export function mapOmnixCopilotEnvelope(
     intent: envelope.resolvedIntent.kind,
     dataMode: envelope.dataMode,
     asOf: envelope.asOf,
-    answerBlocks: envelope.answerBlocks.map((block) => ({
-      id: block.id,
-      kind: block.kind,
-      title: block.title,
-      detail: block.detail,
-      items: block.items.map((item) => ({
-        id: item.id,
-        label: item.label,
-        detail: item.detail,
-        value: item.value,
-        href: item.href,
-        citationIds: item.citations.map((citation) => citation.id),
-      })),
-      citationIds: block.citations.map((citation) => citation.id),
-    })),
+    answerBlocks,
     citations: envelope.citations.map((citation) => ({
       id: citation.id,
       entityType: citation.entityType,
@@ -168,6 +180,7 @@ export function mapOmnixCopilotEnvelope(
       asOf: citation.responseAsOf,
       target: citation.target,
       rule: citation.rule,
+      displayLabel: citationLabels.get(citation.id),
     })),
     suggestions: envelope.suggestions.map((suggestion) => ({
       id: suggestion.id,
