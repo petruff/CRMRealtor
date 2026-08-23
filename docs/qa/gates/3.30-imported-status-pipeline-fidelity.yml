@@ -1,0 +1,54 @@
+schema: 1
+story: '3.30'
+story_title: 'Imported Status to Pipeline Fidelity'
+gate: PASS
+status_reason: 'The real Numbers workbook parses 144 of 144 rows and the deterministic stage distribution matches every source status. Re-import protection distinguishes live Supabase import provenance from human edits, with all project gates passing.'
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'commit:0903052d1a96'
+updated: '2026-08-23T16:39:13-04:00'
+top_issues: []
+waiver:
+  active: false
+quality_score: 100
+evidence:
+  tests_reviewed: 831
+  risks_identified: 2
+  trace:
+    ac_covered: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ac_gaps: []
+  real_workbook:
+    total_rows: 144
+    accepted: 144
+    rejected: 0
+    pipeline_stages:
+      new: 34
+      contacted: 6
+      appointment_set: 0
+      active: 47
+      under_contract: 0
+      closed: 8
+      lost: 49
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'No workbook PII is committed or printed; CLI rejection output is restricted to row numbers and validation errors.'
+  performance:
+    status: PASS
+    notes: 'Workbook parsing remains worker-bounded; human-edit checks run only for matched contacts whose imported stage differs.'
+  reliability:
+    status: PASS
+    notes: 'Unknown stages fail review, real import-managed event keys remain correctable, and human pipeline changes are protected and receipted.'
+  maintainability:
+    status: PASS
+    notes: 'One canonical stage normalizer feeds CLI, UI and intake paths, with focused regression tests for all five source statuses.'
+recommendations:
+  immediate:
+    - action: 'Before applying any live correction, capture a current Production backup, verify restore/read-back, and retain the dry-run receipt.'
+      refs: ['docs/stories/3.30.import-status-pipeline-fidelity.story.md']
+  future: []
+automation:
+  coderabbit: 'unavailable-fallback-manual-review'
+  lint: PASS
+  typecheck: PASS
+  tests: PASS
+  build: PASS
