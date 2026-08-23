@@ -10,6 +10,7 @@ alter default privileges in schema public
 -- Core browser reads/writes were previously relying on hosted-project ACL
 -- defaults that are not reproduced by a clean local project. Declare the
 -- repository contract explicitly while RLS remains the row authority.
+revoke delete on table public.contacts from public, anon, authenticated;
 grant select, insert, update on table public.contacts to authenticated;
 grant select on table public.contacts to service_role;
 grant select on table public.incomplete_records to service_role;

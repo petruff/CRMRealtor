@@ -129,6 +129,7 @@ describe('contact import service', () => {
       actorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
       occurredAt: '2026-08-09T12:00:00.000Z',
       idempotencyKey: 'contact-updated:existing-1:manual',
+      metadata: { changedFields: 'firstName,pipelineStage' },
     });
     const parsed = parseContactImport({
       filename: 'status-reconciliation.csv',
@@ -154,6 +155,35 @@ describe('contact import service', () => {
       errorCode: 'manual-pipeline-stage-protected',
     });
     expect(state.contacts[0]?.pipelineStage).toBe('active');
+  });
+
+  it('does not mistake an unrelated contact edit for a manual pipeline change', async () => {
+    const state = repository([contact({ pipelineStage: 'active' })]);
+    const activityRepository = createMemoryActivityRepository();
+    await activityRepository.appendEvent(SAMPLE_WORKSPACE_SCOPE, {
+      type: 'contact-updated',
+      contactId: 'existing-1',
+      actorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+      occurredAt: '2026-08-09T12:00:00.000Z',
+      idempotencyKey: 'contact-updated:existing-1:manual',
+      metadata: { changedFields: 'city,preferredName' },
+    });
+    const parsed = parseContactImport({
+      filename: 'status-reconciliation.csv',
+      content: 'First Name,Email,Pipeline Stage\nJamie,jamie@example.com,client',
+    });
+    const gateway = memoryImportGateway({ repository: state.repo });
+    const preview = await previewContactImport(
+      state.repo,
+      gateway,
+      parsed,
+      SAMPLE_WORKSPACE_SCOPE,
+      activityRepository,
+    );
+
+    expect(preview.rows[0]).toMatchObject({ action: 'update' });
+    expect(preview.rows[0]?.changes).toContain('pipelineStage');
+    expect(preview.rows[0]?.protectedFields).toBeUndefined();
   });
 
   it('allows an import-managed stage to be corrected on re-import', async () => {

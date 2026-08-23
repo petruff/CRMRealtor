@@ -11,6 +11,8 @@ describe('application error boundary', () => {
     }));
     expect(markup).toContain('This page could not load');
     expect(markup).not.toContain('Today could not load');
+    expect(markup).toContain('Try again or continue to another part of Omnix.');
+    expect(markup).not.toContain('secure read');
     expect(markup).not.toContain('hidden');
   });
 });

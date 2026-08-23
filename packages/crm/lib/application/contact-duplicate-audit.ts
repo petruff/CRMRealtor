@@ -90,7 +90,7 @@ export async function loadContactDuplicateAudit(
   const points = await context.richContactRepository.listContactPointsForContacts(
     context.workspaceScope,
     contacts.map((contact) => contact.id),
-    true,
+    false,
   );
   return {
     audit: buildContactDuplicateAudit({

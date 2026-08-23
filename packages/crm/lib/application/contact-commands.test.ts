@@ -299,6 +299,28 @@ describe('contact commands', () => {
       'touch-recorded',
     ]);
     expect(events.every((event) => event.contactId === created.id)).toBe(true);
+    const updateEvent = events.find((event) => event.type === 'contact-updated');
+    expect(updateEvent?.metadata?.changedFields).toContain('city');
+    expect(updateEvent?.metadata?.changedFields).not.toContain('pipelineStage');
+  });
+
+  it('records pipelineStage in changed-field metadata when the contact form moves it', async () => {
+    const repository = new FakeRepository([contact({ pipelineStage: 'active' })]);
+    const activityRepository = createMemoryActivityRepository();
+    await updateContactCommand(
+      repository,
+      'c-1',
+      form({ pipelineStage: 'closed' }),
+      NOW,
+      { repository: activityRepository, scope: SAMPLE_WORKSPACE_SCOPE },
+    );
+
+    const events = await activityRepository.listEvents(SAMPLE_WORKSPACE_SCOPE, {
+      contactId: 'c-1',
+      type: 'contact-updated',
+      limit: 10,
+    });
+    expect(events[0]?.metadata?.changedFields).toContain('pipelineStage');
   });
 
   it('propagates repository failures instead of claiming success', async () => {

@@ -66,12 +66,12 @@ describe('buildContactDuplicateAudit', () => {
       { ...base, id: 'contact-a', firstName: 'A' },
       { ...base, id: 'contact-b', firstName: 'B' },
     ];
-    const batches: string[][] = [];
+    const batches: Array<{ contactIds: string[]; includeArchived: boolean | undefined }> = [];
     const result = await loadContactDuplicateAudit({
       repository: { list: async () => contacts },
       richContactRepository: {
-        listContactPointsForContacts: async (_scope: WorkspaceScope, contactIds: readonly string[]) => {
-          batches.push([...contactIds]);
+        listContactPointsForContacts: async (_scope: WorkspaceScope, contactIds: readonly string[], includeArchived?: boolean) => {
+          batches.push({ contactIds: [...contactIds], includeArchived });
           return [
             point('point-a', 'contact-a', 'email', 'same@example.com'),
             point('point-b', 'contact-b', 'email', 'same@example.com'),
@@ -84,7 +84,7 @@ describe('buildContactDuplicateAudit', () => {
       },
     } as unknown as Parameters<typeof loadContactDuplicateAudit>[0], new Date('2026-08-14T12:00:00.000Z'));
 
-    expect(batches).toEqual([['contact-a', 'contact-b']]);
+    expect(batches).toEqual([{ contactIds: ['contact-a', 'contact-b'], includeArchived: false }]);
     expect(result.audit.duplicateGroups).toHaveLength(1);
   });
 });

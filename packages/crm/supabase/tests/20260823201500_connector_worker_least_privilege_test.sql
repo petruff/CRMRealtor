@@ -59,7 +59,9 @@ select ok(
   has_table_privilege('authenticated', 'public.contacts', 'SELECT')
     and has_table_privilege('authenticated', 'public.contacts', 'INSERT')
     and has_table_privilege('authenticated', 'public.contacts', 'UPDATE')
-    and not has_table_privilege('authenticated', 'public.contacts', 'DELETE'),
+    and not has_table_privilege('authenticated', 'public.contacts', 'DELETE')
+    and not has_table_privilege('anon', 'public.contacts', 'DELETE')
+    and not has_table_privilege('public', 'public.contacts', 'DELETE'),
   'authenticated contact repository has read/write but no permanent-delete authority'
 );
 

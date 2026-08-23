@@ -220,8 +220,33 @@ async function hasHumanPipelineEdit(
   return updateEvents.some((event) => {
     const importManaged = event.idempotencyKey.startsWith('contact-import-updated:')
       || event.idempotencyKey.startsWith('rich:contact-import-updated:');
-    return !importManaged;
+    const changedFields = typeof event.metadata?.changedFields === 'string'
+      ? event.metadata.changedFields.split(',').map((field) => field.trim())
+      : [];
+    return !importManaged && changedFields.includes('pipelineStage');
   });
+}
+
+const PIPELINE_PROTECTION_CONCURRENCY = 8;
+
+async function primePipelineProtection(
+  contactIds: readonly string[],
+  protection: Map<string, Promise<boolean>>,
+  activityRepository: ActivityRepository | undefined,
+  workspaceScope: WorkspaceScope | undefined,
+): Promise<void> {
+  if (!activityRepository || !workspaceScope || contactIds.length === 0) return;
+  let cursor = 0;
+  const workerCount = Math.min(PIPELINE_PROTECTION_CONCURRENCY, contactIds.length);
+  await Promise.all(Array.from({ length: workerCount }, async () => {
+    while (cursor < contactIds.length) {
+      const contactId = contactIds[cursor++];
+      if (!contactId) break;
+      const check = hasHumanPipelineEdit(activityRepository, workspaceScope, contactId);
+      protection.set(contactId, check);
+      await check;
+    }
+  }));
 }
 
 function mergeCandidate(target: ContactImportCandidate, incoming: ContactImportCandidate): void {
@@ -264,6 +289,33 @@ export async function previewContactImport(
   const plannedByContact = new Map<string, ContactImportPlanRow>();
   const pipelineProtection = new Map<string, Promise<boolean>>();
   const rows: ContactImportPlanRow[] = [];
+
+  const protectionContactIds = new Set<string>();
+  for (const sourceCandidate of parsed.candidates) {
+    const candidate = classifyContactImportCandidate(sourceCandidate).candidate;
+    if (!candidate.pipelineStage) continue;
+    const email = normalizeEmailIdentity(candidate.email);
+    const phone = normalizePhoneIdentity(candidate.phone);
+    const potentialMatches = Array.from(new Map(
+      [
+        candidate.externalId ? linked.get(candidate.externalId) : undefined,
+        ...(email ? byEmail.get(email) ?? [] : []),
+        ...(phone ? byPhone.get(phone) ?? [] : []),
+      ]
+        .filter((item): item is Contact => Boolean(item))
+        .map((item) => [item.id, item]),
+    ).values());
+    const potentialMatch = potentialMatches.length === 1 ? potentialMatches[0] : undefined;
+    if (potentialMatch && potentialMatch.pipelineStage !== candidate.pipelineStage) {
+      protectionContactIds.add(potentialMatch.id);
+    }
+  }
+  await primePipelineProtection(
+    [...protectionContactIds],
+    pipelineProtection,
+    activityRepository,
+    workspaceScope,
+  );
 
   async function protectHumanPipelineStage(existing: Contact, patch: Partial<Contact>): Promise<Array<'pipelineStage'>> {
     if (patch.pipelineStage === undefined || patch.pipelineStage === existing.pipelineStage) return [];
