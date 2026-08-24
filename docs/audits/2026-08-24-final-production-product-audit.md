@@ -117,9 +117,19 @@ The six equal-width columns truncated the search intent. The desktop grid now gi
 - Transaction regression: invalid calendar dates and invalid idempotency UUIDs are rejected.
 - CodeRabbit: intentionally not used because the product owner explicitly removed it from this individual CRM workflow.
 
+## Production release evidence
+
+- Commit: `07bcfa4` on `codex/story-3-29-production-hardening`.
+- Preview deployment: `dpl_dis5Kq7YVegzaeWL3kAjXrASrXzU`, Ready, health endpoint returned `health.v1` with `process: ready`.
+- Production deployment: `dpl_Gb7hUHogmV3Q1tpqnhDyb13JLiyk`, Ready, aliased to `https://crm-chi-teal-22.vercel.app`.
+- Production health endpoint returned HTTP 200 with `health.v1` and `process: ready`.
+- Authenticated Insights smoke showed 12 of 308 exact records on page one, 13–24 on page two, successful filtered-empty recovery, no false incomplete-result warning, no unintended horizontal overflow and no browser-console errors.
+- Vercel production error-log query for the new deployment returned no error records during the verification window.
+- The integrated-browser viewport override did not change its physical viewport despite reporting success. Real 390- and 768-pixel authenticated screenshots therefore remain an explicit external validation item; responsive CSS and component interaction tests passed, but that is not equivalent to real-device evidence.
+
 ## Release gate
 
-**Application release:** PASS WITH EXTERNAL CONCERNS after authenticated post-deployment smoke.
+**Application release:** PASS WITH EXTERNAL CONCERNS.
 
 **Fully operational across all requested providers:** NOT YET — blocked by Google authorization, Mailchimp baseline/webhook completion, AI provider configuration, 10DLC and Meta approval.
 
