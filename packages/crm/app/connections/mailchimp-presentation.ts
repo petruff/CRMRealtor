@@ -1,6 +1,8 @@
 import { ConnectorError, sha256Hex } from '@/lib/domain/connector';
 
 export type MailchimpAudienceLoadIssueKind = 'reconnect' | 'temporary' | 'developer';
+export type MailchimpSetupNoticeCode = 'mailchimp-setup-failed' | 'mailchimp-setup-developer'
+  | 'mailchimp-setup-reconnect' | 'mailchimp-setup-temporary' | 'mailchimp-audience-required';
 
 export interface MailchimpAudienceLoadIssue {
   readonly kind: MailchimpAudienceLoadIssueKind;
@@ -28,6 +30,15 @@ export function classifyMailchimpAudienceLoadIssue(error: unknown): MailchimpAud
     title: 'Mailchimp needs developer attention',
     message: 'Your account remains saved. Judith does not need to change any settings while the secure connection is reviewed.',
   };
+}
+
+export function mailchimpSetupNoticeCode(error: unknown): MailchimpSetupNoticeCode {
+  if (!(error instanceof ConnectorError)) return 'mailchimp-setup-failed';
+  if (error.code === 'configuration-required') return 'mailchimp-setup-developer';
+  if (error.code === 'forbidden') return 'mailchimp-setup-reconnect';
+  if (error.code === 'provider-retryable') return 'mailchimp-setup-temporary';
+  if (error.code === 'not-found') return 'mailchimp-audience-required';
+  return 'mailchimp-setup-failed';
 }
 
 export function mailchimpConnectionStatusLabel(status: string): string {

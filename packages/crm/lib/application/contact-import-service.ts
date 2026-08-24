@@ -77,6 +77,8 @@ export interface ContactImportResult {
   failed: number;
   errors: Array<{ rowNumber: number; message: string }>;
   rowOutcomes: Array<{ rowNumber: number; outcome: 'created'|'updated'|'unchanged'|'rejected'|'quarantined'|'failed'; contactId?: string; errorCode?: string }>;
+  /** Indicates that an exact-file replay read or reconstructed immutable evidence. */
+  receiptState?: 'recorded' | 'recovered';
 }
 
 export interface ContactImportWorkQueueContext {

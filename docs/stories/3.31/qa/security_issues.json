@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-08-23T21:55:00-04:00",
+  "story_id": "3.31",
+  "summary": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "total": 0,
+    "blocking": false
+  },
+  "issues": [],
+  "scan_coverage": {
+    "files_scanned": 17,
+    "patterns_checked": 8,
+    "lines_analyzed": 4752,
+    "scope": "Modified non-test JavaScript and TypeScript source files"
+  },
+  "manual_controls_verified": [
+    "OAuth route telemetry excludes exception messages, tokens, codes, provider bodies, and account identifiers.",
+    "Import telemetry contains only format, bounded aggregate counts, safe database code, and support reference.",
+    "The import preflight is workspace-bound, membership-validated, and explicitly unavailable to anonymous callers.",
+    "Recovered row evidence is cross-checked against request hashes, workspace contacts, and contact-imported activity events.",
+    "Google OAuth finalization remains service-role only and persists each granted capability independently."
+  ],
+  "recommendation": "PASS for static security patterns; database replay and authenticated Production smoke remain separate release gates."
+}

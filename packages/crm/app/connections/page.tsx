@@ -51,6 +51,7 @@ import {
   recordMailchimpReadFailure,
   type MailchimpAudienceLoadIssue,
 } from './mailchimp-presentation';
+import { googleConnectionPresentation } from './google-presentation';
 
 const GOOGLE_WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/gmail.send',
@@ -367,7 +368,12 @@ export default async function ConnectionsPage({
       });
     }
   }
-  if (isLive && googleDefinition?.enabled && googleConnection) {
+  const googlePresentation = googleConnection
+    ? googleConnectionPresentation(googleConnection)
+    : undefined;
+  const googleConsentPending = googlePresentation?.consentPending ?? false;
+  if (isLive && googleDefinition?.enabled && googleConnection
+    && googlePresentation?.shouldReadCapabilityHealth) {
     try {
       const authenticated = await createSupabaseServerClient();
       googleCapabilityState = await supabaseGoogleOperationRepository({ authenticated })
@@ -665,7 +671,7 @@ export default async function ConnectionsPage({
             {googleConnection.remoteAccountLabel ?? 'Connected Google account'}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Connection state: {googleConnection.status}. Each capability below is derived from the exact granted Google scopes.
+            {googlePresentation?.description}
           </p>
           {googleCapabilityState ? (
             <div className="mt-4 grid gap-px overflow-hidden rounded-2xl bg-line sm:grid-cols-3">
@@ -681,6 +687,10 @@ export default async function ConnectionsPage({
                 </div>
               ))}
             </div>
+          ) : googleConsentPending ? (
+            <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs leading-relaxed text-warm">
+              Authorization has started, but no Google permission has been saved yet. Click Finish Google connection and complete the Google consent window.
+            </p>
           ) : (
             <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs text-warm">
               Capability health is unavailable. No Google action will be presented as successful without a receipt.

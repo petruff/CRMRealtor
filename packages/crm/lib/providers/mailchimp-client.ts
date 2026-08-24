@@ -171,7 +171,7 @@ export class MailchimpMarketingClient {
       ...init,
       headers: {
         accept: 'application/json',
-        authorization: `OAuth ${this.accessToken}`,
+        authorization: `Bearer ${this.accessToken}`,
         ...(init.body ? { 'content-type': 'application/json' } : {}),
       },
       redirect: 'error',

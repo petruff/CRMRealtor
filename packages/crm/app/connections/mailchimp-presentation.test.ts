@@ -3,6 +3,7 @@ import { ConnectorError } from '@/lib/domain/connector';
 import {
   classifyMailchimpAudienceLoadIssue,
   mailchimpConnectionStatusLabel,
+  mailchimpSetupNoticeCode,
   recordMailchimpReadFailure,
 } from './mailchimp-presentation';
 
@@ -35,5 +36,17 @@ describe('Mailchimp connection presentation', () => {
     expect(mailchimpConnectionStatusLabel('active')).toBe('Connected');
     expect(mailchimpConnectionStatusLabel('reauthorization-required')).toBe('Reconnect required');
     expect(mailchimpConnectionStatusLabel('unexpected')).toBe('Connection status unavailable');
+  });
+
+  it('maps guided setup failures to stable user-facing notice codes', () => {
+    expect(mailchimpSetupNoticeCode(new ConnectorError('forbidden', 'token rejected')))
+      .toBe('mailchimp-setup-reconnect');
+    expect(mailchimpSetupNoticeCode(new ConnectorError('provider-retryable', 'rate limited')))
+      .toBe('mailchimp-setup-temporary');
+    expect(mailchimpSetupNoticeCode(new ConnectorError('configuration-required', 'missing webhook')))
+      .toBe('mailchimp-setup-developer');
+    expect(mailchimpSetupNoticeCode(new ConnectorError('not-found', 'audience missing')))
+      .toBe('mailchimp-audience-required');
+    expect(mailchimpSetupNoticeCode(new Error('unexpected'))).toBe('mailchimp-setup-failed');
   });
 });

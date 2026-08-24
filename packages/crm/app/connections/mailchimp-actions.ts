@@ -20,6 +20,7 @@ import {
 import { MailchimpMarketingClient } from '@/lib/providers/mailchimp-client';
 import { loadMailchimpConfiguredRuntimeConfiguration } from '@/lib/config/connector-runtime';
 import { ConnectorError } from '@/lib/domain/connector';
+import { mailchimpSetupNoticeCode } from './mailchimp-presentation';
 
 function field(formData: FormData, name: string): string | undefined {
   const raw = formData.get(name);
@@ -111,6 +112,7 @@ export async function reconcileMailchimpBaselineAction(formData: FormData) {
 }
 
 export async function finishMailchimpSetupAction(formData: FormData) {
+  const supportReference = randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase();
   try {
     const context = await getRepository();
     if (!context.isLive || context.workspaceScope.role !== 'owner') {
@@ -142,8 +144,14 @@ export async function finishMailchimpSetupAction(formData: FormData) {
       );
     }
   } catch (error) {
-    const message = error instanceof ConnectorError ? error.message : 'Mailchimp setup could not be completed safely.';
-    notice('error', message.slice(0, 160));
+    console.error(JSON.stringify({
+      schemaVersion: 'mailchimp-guided-setup.v1',
+      operation: 'finish-setup',
+      outcome: 'failed',
+      category: error instanceof ConnectorError ? error.code : 'internal-error',
+      supportReference,
+    }));
+    notice('error', mailchimpSetupNoticeCode(error));
   }
   notice('success', 'Mailchimp setup is finishing. Contact matching and subscription updates are being prepared.');
 }

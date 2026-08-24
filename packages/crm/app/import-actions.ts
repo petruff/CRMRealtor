@@ -10,6 +10,10 @@ import { getRepository } from '@/lib/data';
 import { randomUUID } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
+import {
+  importResultFromReceipt,
+  parseImportReceiptPreflight,
+} from '@/lib/application/import-receipt-recovery';
 
 export interface ImportActionInput {
   content?: string;
@@ -22,15 +26,35 @@ export interface ImportActionInput {
 const MAX_CONCURRENT_IMPORT_PARSES_PER_WORKSPACE = 2;
 const activeImportParses = new Map<string, number>();
 
-type ImportCommitStage = 'authority-resolved' | 'parsed' | 'previewed' | 'applied' | 'receipt-recorded' | 'failed';
+type ImportCommitStage = 'authority-resolved' | 'parsed' | 'previewed' | 'preflight-ready'
+  | 'receipt-recovered' | 'applied' | 'receipt-recorded' | 'failed';
 
-function recordImportCommitStage(stage: ImportCommitStage, startedAtMs: number, counts?: Record<string, number>) {
+function recordImportCommitStage(
+  stage: ImportCommitStage,
+  startedAtMs: number,
+  details?: {
+    readonly format?: string;
+    readonly counts?: Record<string, number>;
+    readonly supportReference?: string;
+    readonly databaseCode?: string;
+  },
+) {
   console.info(JSON.stringify({
     event: 'contact_import_commit_stage',
     stage,
     elapsedMs: Date.now() - startedAtMs,
-    ...(counts ? { counts } : {}),
+    ...details,
   }));
+}
+
+function safeDatabaseCode(error: { readonly code?: unknown } | null): string {
+  return typeof error?.code === 'string' && /^[A-Z0-9]{2,12}$/.test(error.code)
+    ? error.code
+    : 'UNCLASSIFIED';
+}
+
+function supportReference(correlationId: string): string {
+  return correlationId.replaceAll('-', '').slice(0, 8).toUpperCase();
 }
 
 async function parseInput(input: ImportActionInput) {
@@ -85,6 +109,8 @@ export async function previewImportAction(input: ImportActionInput) {
 
 export async function commitImportAction(input: ImportActionInput) {
   const startedAtMs = Date.now();
+  const correlationId = randomUUID();
+  const reference = supportReference(correlationId);
   try {
     const startedAt = new Date();
     const {
@@ -104,7 +130,11 @@ export async function commitImportAction(input: ImportActionInput) {
       };
     }
     const parsed = await parseInputForWorkspace(input, workspaceScope.workspaceId);
-    recordImportCommitStage('parsed', startedAtMs, { rows: parsed.totalRows });
+    recordImportCommitStage('parsed', startedAtMs, {
+      format: parsed.format,
+      counts: { rows: parsed.totalRows },
+      supportReference: reference,
+    });
     const preview = await previewContactImport(
       repository,
       importGateway,
@@ -112,42 +142,110 @@ export async function commitImportAction(input: ImportActionInput) {
       workspaceScope,
       activityRepository,
     );
-    recordImportCommitStage('previewed', startedAtMs, { rows: preview.totalRows });
+    recordImportCommitStage('previewed', startedAtMs, {
+      format: preview.format,
+      counts: { rows: preview.totalRows },
+      supportReference: reference,
+    });
+    const fileHash = inputDigest(input);
+    const receiptIdempotencyKey = `ui:${fileHash}`;
+    const supabase = await import('@/lib/supabase/server')
+      .then(({ createSupabaseServerClient }) => createSupabaseServerClient());
+    const { data: preparedData, error: preflightError } = await supabase.rpc('prepare_data_import_run', {
+      target_workspace_id: workspaceScope.workspaceId,
+      target_actor_membership_id: workspaceScope.membershipId,
+      target_source: preview.provider,
+      target_format: preview.format,
+      target_file_hash: fileHash,
+      target_idempotency_key: receiptIdempotencyKey,
+      target_expected_rows: preview.totalRows,
+      target_correlation_id: correlationId,
+      target_occurred_at: new Date().toISOString(),
+    });
+    if (preflightError) {
+      recordImportCommitStage('failed', startedAtMs, {
+        format: preview.format,
+        supportReference: reference,
+        databaseCode: safeDatabaseCode(preflightError),
+      });
+      return {
+        ok: false as const,
+        message: `Omnix needs a developer update before this file can be saved. No contacts were changed. Support reference ${reference}.`,
+      };
+    }
+    const prepared = parseImportReceiptPreflight(preparedData);
+    if (prepared.state !== 'ready') {
+      const result = importResultFromReceipt(preview, prepared);
+      recordImportCommitStage('receipt-recovered', startedAtMs, {
+        format: preview.format,
+        counts: {
+          rows: result.totalRows,
+          created: result.created,
+          updated: result.updated,
+          unchanged: result.unchanged,
+        },
+        supportReference: reference,
+      });
+      revalidatePath('/data');
+      return { ok: true as const, result };
+    }
+    recordImportCommitStage('preflight-ready', startedAtMs, {
+      format: preview.format,
+      counts: { rows: preview.totalRows },
+      supportReference: reference,
+    });
     const now = new Date();
     const result = await executeContactImport(repository, importGateway, preview, now, {
       workspaceScope,
       incompleteRecordRepository,
       activityRepository,
       richContactRepository,
-      idempotencyKeyBase: `ui:${inputDigest(input)}`,
+      idempotencyKeyBase: receiptIdempotencyKey,
     });
     recordImportCommitStage('applied', startedAtMs, {
-      rows: result.totalRows,
-      created: result.created,
-      updated: result.updated,
-      unchanged: result.unchanged,
-      failed: result.failed,
+      format: preview.format,
+      counts: {
+        rows: result.totalRows,
+        created: result.created,
+        updated: result.updated,
+        unchanged: result.unchanged,
+        failed: result.failed,
+      },
+      supportReference: reference,
     });
-    const fileHash=inputDigest(input);
-    const supabase = await import('@/lib/supabase/server').then(({createSupabaseServerClient})=>createSupabaseServerClient());
     const { error: receiptError } = await supabase.rpc('record_data_import_run', {
       target_workspace_id: workspaceScope.workspaceId, target_actor_membership_id: workspaceScope.membershipId,
       target_mapping_profile_id: null, target_mapping_version: null, target_source: preview.provider,
-      target_format: preview.format, target_file_hash: fileHash, target_idempotency_key: `ui:${fileHash}`,
+      target_format: preview.format, target_file_hash: fileHash, target_idempotency_key: receiptIdempotencyKey,
       target_outcome: result.ok ? (result.failed||result.rejected?'partial':'succeeded') : 'failed',
       target_counts: { total: result.totalRows, created: result.created, updated: result.updated, unchanged: result.unchanged, protected: result.protected, rejected: result.rejected, quarantined: result.quarantined, failed: result.failed },
       target_rows: result.rowOutcomes,
-      target_started_at: startedAt.toISOString(), target_completed_at: now.toISOString(), target_correlation_id: randomUUID(),
+      target_started_at: startedAt.toISOString(), target_completed_at: now.toISOString(), target_correlation_id: correlationId,
     });
-    if (receiptError) throw new Error('Import completed but its immutable receipt could not be recorded.');
-    recordImportCommitStage('receipt-recorded', startedAtMs, { rows: result.totalRows });
+    if (receiptError) {
+      recordImportCommitStage('failed', startedAtMs, {
+        format: preview.format,
+        counts: { rows: result.totalRows, failed: result.failed },
+        supportReference: reference,
+        databaseCode: safeDatabaseCode(receiptError),
+      });
+      return {
+        ok: false as const,
+        message: `Your contacts are safe, but Omnix could not finish the audit record. Select the same file again after support reviews reference ${reference}; Omnix will recover it without adding duplicates.`,
+      };
+    }
+    recordImportCommitStage('receipt-recorded', startedAtMs, {
+      format: preview.format,
+      counts: { rows: result.totalRows },
+      supportReference: reference,
+    });
     revalidatePath('/');
     revalidatePath('/contacts');
     revalidatePath('/contacts/incomplete');
     revalidatePath('/activities');
     return { ok: true as const, result };
   } catch (error) {
-    recordImportCommitStage('failed', startedAtMs);
+    recordImportCommitStage('failed', startedAtMs, { supportReference: reference });
     return { ok: false as const, message: error instanceof Error ? error.message : 'The import could not be saved.' };
   }
 }

@@ -52,6 +52,9 @@ describe('Mailchimp fixed-endpoint provider client', () => {
       audienceId: 'audience-a', subscriberHash: 'a'.repeat(32), tagName: 'Omnix: Hot',
     });
     expect(fetcher.mock.calls[0]?.[0]).toMatch(/^https:\/\/us21\.api\.mailchimp\.com\/3\.0\/lists/);
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+      headers: expect.objectContaining({ authorization: 'Bearer oauth-token' }),
+    });
     expect(fetcher.mock.calls[1]?.[0]).toBe(
       `https://us21.api.mailchimp.com/3.0/lists/audience-a/members/${'a'.repeat(32)}/tags`,
     );

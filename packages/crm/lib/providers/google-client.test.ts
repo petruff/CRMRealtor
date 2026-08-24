@@ -63,6 +63,31 @@ describe('Google fixed-endpoint OAuth client', () => {
     expect(revoke).toHaveBeenCalledWith('https://oauth2.googleapis.com/revoke', expect.objectContaining({ method: 'POST' }));
   });
 
+  it('preserves a usable partial guided workspace grant but rejects identity-only consent', async () => {
+    const partial = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        access_token: 'access-token', refresh_token: 'refresh-token', expires_in: 3600,
+        scope: 'openid email https://www.googleapis.com/auth/gmail.send',
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        sub: 'google-user-1', email: 'owner@example.com', email_verified: true,
+      }), { status: 200 }));
+    await expect(exchangeGoogleOAuthCode({
+      configuration, code: 'one-time-code', codeVerifier: 'v'.repeat(64),
+      requestedBundle: 'workspace-core', fetcher: partial,
+    })).resolves.toMatchObject({
+      grantedScopes: ['email', 'https://www.googleapis.com/auth/gmail.send', 'openid'],
+    });
+
+    const identityOnly: typeof fetch = async () => new Response(JSON.stringify({
+      access_token: 'access-token', expires_in: 3600, scope: 'openid email',
+    }), { status: 200 });
+    await expect(exchangeGoogleOAuthCode({
+      configuration, code: 'one-time-code', codeVerifier: 'v'.repeat(64),
+      requestedBundle: 'workspace-core', fetcher: identityOnly,
+    })).rejects.toMatchObject({ code: 'forbidden' });
+  });
+
   it('refreshes an access token only through the fixed token endpoint', async () => {
     const fetcher: typeof fetch = vi.fn(async (...args: Parameters<typeof fetch>) => {
       void args;

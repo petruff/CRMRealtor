@@ -1,0 +1,48 @@
+{
+  "timestamp": "2026-08-23T21:55:00-04:00",
+  "story_id": "3.31",
+  "framework": "supabase",
+  "summary": {
+    "schema_changes_detected": 2,
+    "migrations_found": 2,
+    "migrations_missing": 0,
+    "rollbacks_found": 2,
+    "migrations_applied": 0,
+    "issues_found": 3,
+    "blocking_for_production": true
+  },
+  "validation": {
+    "forward_migrations_exist": "PASS",
+    "rollback_files_exist": "PASS",
+    "data_preservation": "PASS_STATIC_REVIEW",
+    "rls_required": "NOT_APPLICABLE_NO_NEW_TABLE",
+    "function_privileges": "PASS_STATIC_REVIEW",
+    "local_database_replay": "NOT_RUN_DOCKER_UNAVAILABLE",
+    "linked_database_lint": "NOT_RUN_PROJECT_ACCESS_UNAVAILABLE",
+    "production_migration_history": "NOT_VERIFIED"
+  },
+  "issues": [
+    {
+      "id": "MIG-001",
+      "type": "MIGRATION_NOT_REPLAYED",
+      "severity": "HIGH",
+      "description": "The forward migrations and pgTAP tests could not be executed because Docker Desktop cannot start the local PostgreSQL service.",
+      "required_resolution": "Execute a clean forward migration and pgTAP replay before Production promotion."
+    },
+    {
+      "id": "MIG-002",
+      "type": "ROLLBACK_NOT_REHEARSED",
+      "severity": "HIGH",
+      "description": "Both rollback files preserve evidence statically, but neither rollback was executed against PostgreSQL.",
+      "required_resolution": "Rehearse rollback after forward migration and verify that existing import and OAuth evidence remains readable."
+    },
+    {
+      "id": "MIG-003",
+      "type": "NO_AUTHORIZED_MIGRATION_DELIVERY_PATH",
+      "severity": "HIGH",
+      "description": "The repository has no GitHub workflow for Supabase migration delivery, the CLI is not linked, and the available Supabase account cannot list the Production project.",
+      "required_resolution": "Use an authorized, migration-history-preserving Supabase deployment path before deploying the dependent application code."
+    }
+  ],
+  "recommendation": "CONCERNS — code may be committed and reviewed, but Production promotion is blocked until forward replay, rollback rehearsal, and authorized migration delivery are evidenced."
+}

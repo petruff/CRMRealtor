@@ -1,5 +1,7 @@
 import { ConnectorError } from '../domain/connector.ts';
 import {
+  GOOGLE_BUNDLE_SCOPES,
+  GOOGLE_IDENTITY_SCOPES,
   googleRequestedScopes,
   parseGoogleAccountIdentity,
   type GoogleAccountIdentity,
@@ -153,9 +155,18 @@ export async function exchangeGoogleOAuthCode(input: {
     ? [...new Set(token.scope.split(/\s+/).filter(Boolean))].sort()
     : [];
   const required = googleRequestedScopes(input.requestedBundle);
+  const identityGranted = GOOGLE_IDENTITY_SCOPES.every((scope) => grantedScopes.includes(scope));
+  const operationalGrantPresent = GOOGLE_BUNDLE_SCOPES[input.requestedBundle]
+    .some((scope) => grantedScopes.includes(scope));
+  const requestedGrantComplete = required.every((scope) => grantedScopes.includes(scope));
+  const grantIsUsable = requestedGrantComplete || (
+    input.requestedBundle === 'workspace-core'
+    && identityGranted
+    && operationalGrantPresent
+  );
   if (!accessToken || accessToken.length > 8_192 || (refreshToken?.length ?? 0) > 8_192
     || !Number.isInteger(expiresInSeconds) || expiresInSeconds < 60 || expiresInSeconds > 86_400
-    || required.some((scope) => !grantedScopes.includes(scope))) {
+    || !grantIsUsable) {
     throw new ConnectorError('forbidden', 'Google did not grant the requested feature bundle.');
   }
   const identityResponse = await fetcher(USERINFO_ENDPOINT, {

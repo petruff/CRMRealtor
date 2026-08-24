@@ -242,8 +242,19 @@ export function ContactImportWorkspace() {
           )}
         </span>
         <h2 className="mt-5 text-2xl">
-          {complete ? "Import complete." : "Import finished with issues."}
+          {result.receiptState === 'recovered'
+            ? 'Import record recovered.'
+            : complete ? "Import complete." : "Import finished with issues."}
         </h2>
+        {result.receiptState === 'recovered' ? (
+          <p className="mt-2 max-w-2xl rounded-2xl border border-nurture-border bg-nurture-soft px-4 py-3 text-sm leading-relaxed text-nurture">
+            Omnix recognized the exact file, kept every existing contact unchanged, and rebuilt the missing audit record from the original row receipts.
+          </p>
+        ) : result.receiptState === 'recorded' ? (
+          <p className="mt-2 max-w-2xl rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm leading-relaxed text-muted">
+            This exact file was already imported. No contacts, notes, or activities were added again.
+          </p>
+        ) : null}
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
           {result.created} created · {result.updated} enriched · {result.merged}{" "}
           duplicate rows merged · {result.notesAdded} notes added ·{" "}

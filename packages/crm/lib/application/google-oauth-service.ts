@@ -170,6 +170,9 @@ export async function completeGoogleOAuth(input: {
   return {
     connectionId: completed.connectionId, accountEmail: exchange.identity.email,
     grantedScopes: completed.grantedScopes, bundle,
+    missingScopes: googleRequestedScopes(bundle).filter((scope) => (
+      !completed.grantedScopes.includes(scope)
+    )),
     safeReturnPath: returnPath(transaction.safeReturnPath),
   };
 }

@@ -1,0 +1,70 @@
+schema: 1
+story: '3.31'
+story_title: 'Production Import Receipt and Connector Recovery'
+gate: CONCERNS
+status_reason: >-
+  The application changes are causally aligned with all three confirmed Production defects and pass
+  lint, typecheck, 843 tests, the optimized build, and static security review. Production promotion
+  remains blocked because the Supabase migrations and rollbacks have not been replayed, CodeRabbit is
+  unavailable, authenticated responsive smoke has not run, and Judith-only provider UAT is incomplete.
+reviewer: 'Argus (Test Architect)'
+reviewed_revision: 'working-tree:uncommitted'
+updated: '2026-08-23T21:57:00-04:00'
+top_issues:
+  - id: 'MIG-3.31-001'
+    severity: high
+    finding: 'Forward migration, pgTAP, and rollback execution are not evidenced because local PostgreSQL and authorized remote project access are unavailable.'
+    suggested_action: 'Replay forward migrations and pgTAP, rehearse rollback, and preserve migration history before deploying the dependent application code.'
+    suggested_owner: '@data-engineer + @github-devops'
+  - id: 'REL-3.31-002'
+    severity: high
+    finding: 'Authenticated 390/768/1440 smoke, exact-file Production receipt recovery, and redacted connector health checks have not run on the release candidate.'
+    suggested_action: 'Complete authenticated release smoke after database and application deployment.'
+    suggested_owner: '@qa + @github-devops'
+  - id: 'UAT-3.31-003'
+    severity: high
+    finding: 'Google and Mailchimp real-account authorization and safe-operation evidence require Judith and cannot be substituted by a developer account.'
+    suggested_action: 'Have Judith complete owner consent, then retain provider receipts for baseline/webhook, one safe operation, and disconnect/revoke.'
+    suggested_owner: 'Workspace owner + @qa'
+waiver: { active: false }
+quality_score: 82
+evidence:
+  focused_tests: PASS
+  full_tests: 'PASS: 181 files, 843 tests'
+  lint: PASS
+  typecheck: PASS
+  build: PASS
+  static_security_scan: PASS
+  coderabbit: NOT_RUN
+  database_migration_replay: NOT_RUN
+  rollback_rehearsal: NOT_RUN
+  authenticated_production_smoke: NOT_RUN
+  provider_uat: NOT_RUN
+  trace:
+    ac_covered_locally: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ac_external_or_release_gaps: [10, 11]
+nfr_validation:
+  security:
+    status: PASS
+    notes: 'Static scan found no dangerous execution, XSS, hardcoded secret, SQL injection, validation, or CORS patterns; manual review confirmed secret-free telemetry and evidence cross-checking.'
+  reliability:
+    status: CONCERNS
+    notes: 'Application recovery behavior is tested, but database replay and live exact-file recovery are not yet evidenced.'
+  maintainability:
+    status: PASS
+    notes: 'Provider, presentation, telemetry, import projection, migration, rollback, and test boundaries remain explicit and typed.'
+recommendations:
+  immediate:
+    - action: 'Do not deploy the application before both additive Supabase migrations are applied through a migration-history-preserving path.'
+      refs: ['docs/stories/3.31/qa/migration_validation.json']
+    - action: 'After deployment, recover the same Numbers file before asking Judith to perform any further import.'
+      refs: ['docs/incidents/INC-2026-08-23-01-import-receipt-and-connector-activation.md']
+  future:
+    - action: 'Add repository CI for migration replay, rollback rehearsal, application quality gates, and release smoke orchestration.'
+      refs: ['docs/stories/3.31/qa/migration_validation.json']
+automation:
+  coderabbit: 'unavailable-no-ubuntu-wsl-or-native-cli'
+  lint: PASS
+  typecheck: PASS
+  tests: PASS
+  build: PASS
