@@ -2,6 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { ConnectorError, sha256Hex } from '../domain/connector.ts';
 import {
   googleRequestedScopes,
+  isGoogleScopeGranted,
   parseGoogleFeatureBundle,
   type GoogleFeatureBundle,
 } from '../domain/google-connector.ts';
@@ -171,7 +172,7 @@ export async function completeGoogleOAuth(input: {
     connectionId: completed.connectionId, accountEmail: exchange.identity.email,
     grantedScopes: completed.grantedScopes, bundle,
     missingScopes: googleRequestedScopes(bundle).filter((scope) => (
-      !completed.grantedScopes.includes(scope)
+      !isGoogleScopeGranted(completed.grantedScopes, scope)
     )),
     safeReturnPath: returnPath(transaction.safeReturnPath),
   };

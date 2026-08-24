@@ -14,6 +14,21 @@ export const GOOGLE_IDENTITY_SCOPES = [
   'email',
 ] as const;
 
+const GOOGLE_SCOPE_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  email: [
+    'email',
+    'https://www.googleapis.com/auth/userinfo.email',
+  ],
+};
+
+export function isGoogleScopeGranted(
+  grantedScopes: readonly string[],
+  requestedScope: string,
+): boolean {
+  return (GOOGLE_SCOPE_ALIASES[requestedScope] ?? [requestedScope])
+    .some((scope) => grantedScopes.includes(scope));
+}
+
 export const GOOGLE_BUNDLE_SCOPES: Readonly<Record<GoogleFeatureBundle, readonly string[]>> = {
   'workspace-core': [
     'https://www.googleapis.com/auth/gmail.send',

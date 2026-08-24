@@ -73,7 +73,7 @@ describe('Google incremental OAuth service', () => {
     const fetcher = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({
         access_token: 'access-token', refresh_token: 'refresh-token', expires_in: 3600,
-        scope: 'openid email https://www.googleapis.com/auth/gmail.metadata',
+        scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.metadata',
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         sub: 'subject-a', email: 'owner@example.com', email_verified: true,
@@ -82,7 +82,9 @@ describe('Google incremental OAuth service', () => {
       repository, scope, actorUserId: 'user-a', sessionSecret: 'session-secret',
       state, code: 'provider-code', configuration, resolver, fetcher,
       now: new Date('2026-08-12T12:00:01Z'),
-    })).resolves.toMatchObject({ accountEmail: 'owner@example.com', bundle: 'gmail-metadata' });
+    })).resolves.toMatchObject({
+      accountEmail: 'owner@example.com', bundle: 'gmail-metadata', missingScopes: [],
+    });
     expect(repository.complete).toHaveBeenCalledWith(scope, expect.objectContaining({
       bundle: 'gmail-metadata', accessTokenEnvelope: expect.objectContaining({ ciphertext: expect.any(String) }),
       refreshTokenEnvelope: expect.objectContaining({ ciphertext: expect.any(String) }),
