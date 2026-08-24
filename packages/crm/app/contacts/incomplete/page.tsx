@@ -52,13 +52,12 @@ export default async function IncompleteContactsPage({
         <ArrowLeft className="size-4" aria-hidden /> Contacts
       </Link>
       <header className="mb-8">
-        <p className="eyebrow">Intake safety net</p>
+        <p className="eyebrow">New contact review</p>
         <h1 className="mt-2 font-display text-[2.5rem] leading-[1.04] text-ink sm:text-5xl">
-          Review incomplete contacts.
+          Make every new lead usable.
         </h1>
         <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-muted">
-          Only safe, allowlisted identity details are shown here. Nothing is
-          deleted; archival is reversible.
+          Omnix collects unmatched contacts from connected services here. Review only what needs attention; matched contacts are handled automatically and archival remains reversible.
         </p>
       </header>
       <form

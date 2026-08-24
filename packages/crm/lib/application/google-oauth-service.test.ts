@@ -89,6 +89,7 @@ describe('Google incremental OAuth service', () => {
       bundle: 'gmail-metadata', accessTokenEnvelope: expect.objectContaining({ ciphertext: expect.any(String) }),
       refreshTokenEnvelope: expect.objectContaining({ ciphertext: expect.any(String) }),
       expectedAccessSecretVersion: 2, expectedRefreshSecretVersion: 4,
+      grantedScopes: ['email', 'https://www.googleapis.com/auth/gmail.metadata', 'openid'],
     }));
   });
 });

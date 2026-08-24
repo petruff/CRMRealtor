@@ -14,11 +14,13 @@ export const GOOGLE_IDENTITY_SCOPES = [
   'email',
 ] as const;
 
+const GOOGLE_EMAIL_SCOPE_ALIASES = [
+  'email',
+  'https://www.googleapis.com/auth/userinfo.email',
+] as const;
+
 const GOOGLE_SCOPE_ALIASES: Readonly<Record<string, readonly string[]>> = {
-  email: [
-    'email',
-    'https://www.googleapis.com/auth/userinfo.email',
-  ],
+  email: GOOGLE_EMAIL_SCOPE_ALIASES,
 };
 
 export function isGoogleScopeGranted(
@@ -27,6 +29,12 @@ export function isGoogleScopeGranted(
 ): boolean {
   return (GOOGLE_SCOPE_ALIASES[requestedScope] ?? [requestedScope])
     .some((scope) => grantedScopes.includes(scope));
+}
+
+export function normalizeGoogleGrantedScopes(grantedScopes: readonly string[]): readonly string[] {
+  return [...new Set(grantedScopes.map((scope) => (
+    GOOGLE_EMAIL_SCOPE_ALIASES.includes(scope as (typeof GOOGLE_EMAIL_SCOPE_ALIASES)[number]) ? 'email' : scope
+  )))].sort();
 }
 
 export const GOOGLE_BUNDLE_SCOPES: Readonly<Record<GoogleFeatureBundle, readonly string[]>> = {

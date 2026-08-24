@@ -3,6 +3,7 @@ import { ConnectorError, sha256Hex } from '../domain/connector.ts';
 import {
   googleRequestedScopes,
   isGoogleScopeGranted,
+  normalizeGoogleGrantedScopes,
   parseGoogleFeatureBundle,
   type GoogleFeatureBundle,
 } from '../domain/google-connector.ts';
@@ -144,6 +145,7 @@ export async function completeGoogleOAuth(input: {
     configuration: input.configuration, code: input.code,
     codeVerifier: verifier, requestedBundle: bundle, fetcher: input.fetcher,
   });
+  const grantedScopes = normalizeGoogleGrantedScopes(exchange.grantedScopes);
   const accessTokenEnvelope = encryptConnectorSecret(exchange.accessToken, {
     workspaceId: scope.workspaceId, connectionId: transaction.connectionId,
     provider: 'google', secretType: ACCESS_TOKEN_SECRET_TYPE,
@@ -159,7 +161,7 @@ export async function completeGoogleOAuth(input: {
   const completed = await input.repository.complete(scope, {
     transactionId: transaction.transactionId, connectionId: transaction.connectionId,
     correlationId: randomUUID(), bundle,
-    identity: exchange.identity, grantedScopes: exchange.grantedScopes,
+    identity: exchange.identity, grantedScopes,
     accessTokenEnvelope, ...(refreshTokenEnvelope ? { refreshTokenEnvelope } : {}),
     ...(transaction.expectedAccessSecretVersion !== undefined
       ? { expectedAccessSecretVersion: transaction.expectedAccessSecretVersion } : {}),

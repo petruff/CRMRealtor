@@ -13,9 +13,16 @@ import { recordConnectorOAuthRouteEvent } from '@/lib/observability/connector-oa
 
 export const dynamic = 'force-dynamic';
 
-function redirectWithNotice(origin: string, path: string, kind: 'success' | 'error', value: string) {
+function redirectWithNotice(
+  origin: string,
+  path: string,
+  kind: 'success' | 'error',
+  value: string,
+  supportReference?: string,
+) {
   const url = new URL(safeInternalPath(path, '/connections'), origin);
   url.searchParams.set(kind, value);
+  if (supportReference) url.searchParams.set('ref', supportReference);
   const response = NextResponse.redirect(url);
   response.cookies.delete('omnix_google_oauth');
   return response;
@@ -68,10 +75,16 @@ export async function GET(request: Request) {
       partial ? 'google-workspace-core-partial' : `google-${completed.bundle}-connected`,
     );
   } catch (error) {
-    recordConnectorOAuthRouteEvent({
+    const event = recordConnectorOAuthRouteEvent({
       provider: 'google', operation: 'oauth-callback', stage,
       outcome: 'failed', correlationId, error,
     });
-    return redirectWithNotice(url.origin, '/connections', 'error', 'google-oauth-failed');
+    return redirectWithNotice(
+      url.origin,
+      '/connections',
+      'error',
+      'google-oauth-failed',
+      event.supportReference,
+    );
   }
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   googleRequestedScopes,
+  normalizeGoogleGrantedScopes,
   parseGoogleAccountIdentity,
   parseGoogleFeatureBundle,
   createGoogleRawTextMessage,
@@ -14,6 +15,11 @@ describe('Google connector domain', () => {
     ]);
     expect(googleRequestedScopes('calendar-app-created')).not.toContain('https://www.googleapis.com/auth/calendar.events');
     expect(() => parseGoogleFeatureBundle('gmail.readonly')).toThrow(/bundle is invalid/i);
+    expect(normalizeGoogleGrantedScopes([
+      'openid',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/gmail.send',
+    ])).toEqual(['email', 'https://www.googleapis.com/auth/gmail.send', 'openid']);
   });
 
   it('builds a bounded plain-text Gmail message without header injection', () => {

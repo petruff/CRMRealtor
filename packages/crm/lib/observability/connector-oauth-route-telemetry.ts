@@ -37,8 +37,9 @@ export function connectorOAuthRouteEvent(input: {
 
 export function recordConnectorOAuthRouteEvent(
   input: Parameters<typeof connectorOAuthRouteEvent>[0],
-): void {
+): ConnectorOAuthRouteEvent {
   const event = connectorOAuthRouteEvent(input);
   const write = event.outcome === 'failed' ? console.error : console.info;
   write(JSON.stringify(event));
+  return event;
 }

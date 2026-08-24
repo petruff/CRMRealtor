@@ -2,6 +2,7 @@ export interface ConnectionNotice {
   readonly tone: 'success' | 'warning';
   readonly title: string;
   readonly message: string;
+  readonly supportReference?: string;
 }
 
 const SUCCESS_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = {
@@ -102,16 +103,28 @@ const ERROR_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = 
   },
 };
 
-export function connectionNotice(input: { readonly success?: string; readonly error?: string }): ConnectionNotice | undefined {
-  if (input.error) {
-    const content = ERROR_NOTICES[input.error] ?? {
+function noticeValue(value: unknown): string | undefined {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return typeof candidate === 'string' ? candidate.trim() || undefined : undefined;
+}
+
+export function connectionNotice(input: {
+  readonly success?: unknown;
+  readonly error?: unknown;
+  readonly ref?: unknown;
+}): ConnectionNotice | undefined {
+  const error = noticeValue(input.error);
+  const success = noticeValue(input.success);
+  const supportReference = noticeValue(input.ref)?.replace(/[^A-Z0-9]/gi, '').slice(0, 8).toUpperCase();
+  if (error) {
+    const content = ERROR_NOTICES[error] ?? {
       title: 'Connection needs attention',
       message: 'Nothing was changed. Try again or ask the developer to review the connection health.',
     };
-    return { tone: 'warning', ...content };
+    return { tone: 'warning', ...content, ...(supportReference ? { supportReference } : {}) };
   }
-  if (input.success) {
-    const content = SUCCESS_NOTICES[input.success] ?? {
+  if (success) {
+    const content = SUCCESS_NOTICES[success] ?? {
       title: 'Connection updated',
       message: 'The authorization was saved successfully.',
     };

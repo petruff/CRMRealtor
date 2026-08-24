@@ -292,7 +292,7 @@ export const metadata: Metadata = { title: 'Connections' };
 export default async function ConnectionsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ success?: string; error?: string }>;
+  searchParams?: Promise<{ success?: string | string[]; error?: string | string[]; ref?: string | string[] }>;
 }) {
   const { repository, connectorRepository, workspaceScope, isLive } = await getRepository();
   const notice = await searchParams;
@@ -463,6 +463,9 @@ export default async function ConnectionsPage({
           : 'border-nurture-border bg-nurture-soft text-nurture'}`} role="status">
           <p className="font-medium">{feedback.title}</p>
           <p className="mt-0.5 text-xs leading-relaxed opacity-90">{feedback.message}</p>
+          {feedback.supportReference ? (
+            <p className="mt-1 text-[11px] font-medium opacity-80">Support reference: {feedback.supportReference}</p>
+          ) : null}
         </div>
       )}
 
