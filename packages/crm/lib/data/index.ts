@@ -53,6 +53,12 @@ import { createMemoryPipelineRepository } from './memory-pipeline-repository';
 import { supabasePipelineRepository } from './supabase-pipeline-repository';
 import { supabaseContactIdentityMap } from './supabase-contact-identity-map';
 import { selectedWorkspaceId } from './selected-workspace';
+import type { AttentionRepository } from './attention-repository';
+import { createMemoryAttentionRepository } from './memory-attention-repository';
+import { supabaseAttentionRepository } from './supabase-attention-repository';
+import type { TransactionRepository } from './transaction-repository';
+import { createMemoryTransactionRepository } from './memory-transaction-repository';
+import { supabaseTransactionRepository } from './supabase-transaction-repository';
 
 // Sample work-queue repositories intentionally live for the lifetime of this
 // server process. Recreating them inside every request would make a successful
@@ -78,6 +84,10 @@ const samplePipelineRepository = createMemoryPipelineRepository({
   contacts: sampleContactRepository,
   activities: sampleActivityRepository,
 });
+export const sampleAttentionRepository = createMemoryAttentionRepository({
+  activeMembershipIds: [SAMPLE_WORKSPACE_SCOPE.membershipId, SAMPLE_ASSISTANT_MEMBERSHIP_ID],
+});
+const sampleTransactionRepository = createMemoryTransactionRepository(sampleContactRepository);
 const connectorConfiguration = loadConfiguredConnectorRuntimeConfiguration();
 const sampleConnectorRepository = createMemoryConnectorRepository({
   definitions: connectorConfiguration.definitions,
@@ -104,6 +114,8 @@ export interface RepositoryContext {
   activityRepository: ActivityRepository;
   pipelineRepository: PipelineRepository;
   connectorRepository: ConnectorRepository;
+  attentionRepository: AttentionRepository;
+  transactionRepository: TransactionRepository;
   /** Unavailable only while the live database is missing Story 3.2 migration support. */
   richContactRepository?: RichContactRepository;
   workspaceScope: WorkspaceScope;
@@ -149,6 +161,8 @@ export async function getRepository(): Promise<RepositoryContext> {
       activityRepository: sampleActivityRepository,
       pipelineRepository: samplePipelineRepository,
       connectorRepository: sampleConnectorRepository,
+      attentionRepository: sampleAttentionRepository,
+      transactionRepository: sampleTransactionRepository,
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
@@ -173,6 +187,8 @@ export async function getRepository(): Promise<RepositoryContext> {
       activityRepository: sampleActivityRepository,
       pipelineRepository: samplePipelineRepository,
       connectorRepository: sampleConnectorRepository,
+      attentionRepository: sampleAttentionRepository,
+      transactionRepository: sampleTransactionRepository,
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
@@ -194,6 +210,8 @@ export async function getRepository(): Promise<RepositoryContext> {
     activityRepository: supabaseActivityRepository(supabase, contactIdentityMap),
     pipelineRepository: supabasePipelineRepository(supabase, contactIdentityMap),
     connectorRepository: supabaseConnectorRepository(supabase, connectorConfiguration.definitions),
+    attentionRepository: supabaseAttentionRepository(supabase),
+    transactionRepository: supabaseTransactionRepository(supabase),
     richContactRepository: supabaseRichContactRepository(supabase, contactIdentityMap),
     workspaceScope,
     isLive: true,

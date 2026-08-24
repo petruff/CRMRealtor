@@ -4,6 +4,8 @@ import {
   ArrowUpRight, BriefcaseBusiness, CalendarClock, CheckCircle2, CircleDollarSign,
   Database, Gauge, HeartHandshake, ShieldCheck, Sparkles, UsersRound,
 } from 'lucide-react';
+import { createTransactionAction } from '@/app/insights/actions';
+import type { RealEstateTransaction, TransactionMetrics } from '@/lib/domain/transaction';
 
 type VisualStyle = CSSProperties & Record<`--${string}`, string | number>;
 type DisplayStatus = 'available' | 'possibly-truncated' | 'insufficient-evidence';
@@ -74,6 +76,11 @@ export interface InsightsDashboardModel {
   readiness: readonly { label: string; value: number | null; detailId: string }[];
   drilldowns: readonly InsightsDrilldownView[];
   selectedDrilldownId: string;
+  transactionStatus: DisplayStatus;
+  transactionMessage?: string;
+  transactionMetrics: TransactionMetrics | null;
+  transactions: readonly RealEstateTransaction[];
+  transactionContacts: readonly { id: string; label: string }[];
   coverage: {
     contactBoundedAt: number; contactPossiblyTruncated: boolean;
     transitionBoundedAt: number; transitionPossiblyTruncated: boolean;
@@ -109,6 +116,15 @@ function detailHref(model: InsightsDashboardModel, detailId: string): string {
 
 function displayed(value: number | null): string {
   return value === null ? '—' : String(value);
+}
+
+function currency(cents: number | null): string {
+  if (cents === null) return '—';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(cents / 100);
+}
+
+function titleCase(value: string): string {
+  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function StatusNote({ status }: { status: DisplayStatus }) {
@@ -215,6 +231,38 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
       <details className="insights-evidence-details"><summary>View evidence and coverage</summary><dl><div><dt>Contract</dt><dd>{model.coverage.schemaVersion} · {model.coverage.mode === 'live' ? 'live authenticated' : 'sample process-local'}</dd></div><div><dt>Current period</dt><dd>{model.coverage.currentFrom.slice(0, 10)} to {model.coverage.currentTo.slice(0, 10)}</dd></div><div><dt>Previous period</dt><dd>{model.coverage.previousFrom.slice(0, 10)} to {model.coverage.previousTo.slice(0, 10)}</dd></div><div><dt>Rows read</dt><dd>{displayed(model.coverage.contactRows)}/{model.coverage.contactBoundedAt} contacts · {displayed(model.coverage.transitionRows)}/{model.coverage.transitionBoundedAt * 2} events · {displayed(model.coverage.taskRows)}/{model.coverage.taskBoundedAt} tasks · {displayed(model.coverage.membershipRows)} members</dd></div><div><dt>Scope</dt><dd>Active workspace contacts; archived contacts excluded. Stored events and tasks remain workspace-scoped.</dd></div></dl></details>
     </section>
 
-    <section className="insights-future" aria-labelledby="transaction-intelligence-title"><span><CircleDollarSign className="size-6" aria-hidden /></span><div><p className="eyebrow">Transaction intelligence</p><h2 id="transaction-intelligence-title">Financial metrics are intentionally unavailable.</h2><p>Volume, GCI, commission, expenses, forecast, and source ROI will appear only after deals and transactions have a verified source of truth.</p></div><span className="insights-future-badge">Evidence protected</span></section>
+    <section id="transaction-intelligence" className="insights-transactions" aria-labelledby="transaction-intelligence-title">
+      <div className="insights-section-heading"><div><p className="eyebrow">Transaction intelligence</p><h2 id="transaction-intelligence-title">The financial pulse of the business.</h2></div><p><CircleDollarSign className="size-4" aria-hidden /> Live workspace ledger · selected {model.periodDays}-day close period</p></div>
+      {model.transactionMessage ? <p className={model.transactionStatus === 'available' ? 'insights-transaction-message' : 'insights-coverage-warning'} role="status">{model.transactionMessage}</p> : null}
+      {model.transactionStatus === 'insufficient-evidence' || !model.transactionMetrics ? <div className="insights-coverage-warning" role="status"><ShieldCheck className="size-5" aria-hidden /><div><strong>Financial ledger needs its database update</strong><p>Metrics remain withheld until the verified transaction schema is available in this workspace.</p></div></div> : <>
+        <div className="insights-financial-grid" aria-label="Verified financial metrics">
+          <article className="is-primary"><span>Closed volume</span><strong>{currency(model.transactionMetrics.closedVolumeCents)}</strong><small>{model.transactionMetrics.closedDeals} closed {model.transactionMetrics.closedDeals === 1 ? 'deal' : 'deals'}</small></article>
+          <article><span>Gross commission</span><strong>{currency(model.transactionMetrics.grossCommissionCents)}</strong><small>GCI from closed deals</small></article>
+          <article><span>Net commission</span><strong>{currency(model.transactionMetrics.netCommissionCents)}</strong><small>Explicitly recorded net</small></article>
+          <article><span>Tracked expenses</span><strong>{currency(model.transactionMetrics.trackedExpensesCents)}</strong><small>Marketing + deal costs</small></article>
+          <article className={model.transactionMetrics.netIncomeCents < 0 ? 'is-negative' : 'is-positive'}><span>Net income</span><strong>{currency(model.transactionMetrics.netIncomeCents)}</strong><small>Net commission − tracked costs</small></article>
+          <article><span>Active GCI forecast</span><strong>{currency(model.transactionMetrics.activeForecastGciCents)}</strong><small>Pending + under contract, unweighted</small></article>
+        </div>
+        <div className="insights-transaction-grid">
+          <div className="insights-transaction-ledger">
+            <div className="insights-panel-heading"><span><BriefcaseBusiness className="size-5" aria-hidden /></span><div><p className="eyebrow">Deal ledger</p><h3>Recent transactions</h3></div></div>
+            {model.transactions.length ? <div className="insights-deal-list">{model.transactions.map((transaction) => <article key={transaction.id}><div><strong>{transaction.contactName}</strong><span>{transaction.propertyAddress}</span></div><div><span className={`insights-deal-status is-${transaction.status}`}>{titleCase(transaction.status)}</span><strong>{currency(transaction.salePriceCents)}</strong><small>{titleCase(transaction.side)} · {titleCase(transaction.source)}</small></div></article>)}</div> : <div className="insights-empty-deals"><CircleDollarSign className="size-7" aria-hidden /><strong>No deals recorded yet</strong><p>Add the first transaction. Verified zeroes are already live; every saved deal updates this view immediately.</p></div>}
+            {model.transactionMetrics.sourceMetrics.length ? <div className="insights-source-roi"><h3>Source return</h3>{model.transactionMetrics.sourceMetrics.map((source) => <article key={source.source}><div><strong>{titleCase(source.source)}</strong><span>{source.deals} closed · {currency(source.volumeCents)} volume</span></div><div><strong>{source.roiPercentage === null ? 'ROI —' : `${source.roiPercentage}% ROI`}</strong><span>{source.roiPercentage === null ? 'Add marketing cost to calculate' : `${currency(source.netIncomeCents)} net income`}</span></div></article>)}</div> : null}
+          </div>
+          <form action={createTransactionAction} className="insights-deal-form">
+            <div><p className="eyebrow">Verified entry</p><h3>Add a deal</h3><p>Amounts are stored as exact USD cents. Under-contract and closed deals also move the linked contact in Pipeline.</p></div>
+            <input type="hidden" name="period" value={model.periodDays} />
+            <label>Contact<select className="sk-input" name="contactId" required defaultValue=""><option value="" disabled>Select a contact</option>{model.transactionContacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.label}</option>)}</select></label>
+            <div className="insights-deal-form-row"><label>Status<select className="sk-input" name="status" defaultValue="under-contract"><option value="pending">Pending</option><option value="under-contract">Under contract</option><option value="closed">Closed</option><option value="lost">Lost</option><option value="cancelled">Cancelled</option></select></label><label>Side<select className="sk-input" name="side" defaultValue="buyer"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="dual">Dual</option><option value="referral">Referral</option></select></label></div>
+            <label>Property address<input className="sk-input" name="propertyAddress" maxLength={240} required placeholder="123 Main Street, City, State" /></label>
+            <div className="insights-deal-form-row"><label>Expected close<input className="sk-input" type="date" name="expectedCloseDate" /></label><label>Closed date<input className="sk-input" type="date" name="closedAt" /></label></div>
+            <div className="insights-deal-form-row"><label>Sale price<input className="sk-input" inputMode="decimal" name="salePrice" placeholder="$0" /></label><label>Gross commission (GCI)<input className="sk-input" inputMode="decimal" name="grossCommission" placeholder="$0" /></label></div>
+            <div className="insights-deal-form-row"><label>Net commission<input className="sk-input" inputMode="decimal" name="netCommission" placeholder="$0" /></label><label>Marketing cost<input className="sk-input" inputMode="decimal" name="marketingCost" placeholder="$0" /></label></div>
+            <label>Other deal expenses<input className="sk-input" inputMode="decimal" name="expenses" placeholder="$0" /></label>
+            <button className="sk-primary-button min-h-11" type="submit" disabled={!model.transactionContacts.length}>Save verified deal</button>
+          </form>
+        </div>
+      </>}
+    </section>
   </div>;
 }

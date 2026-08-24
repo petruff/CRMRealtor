@@ -38,6 +38,22 @@ const MODEL: InsightsDashboardModel = {
     ],
   },
   readiness: [{ label: 'Phone on file', value: 150, detailId: 'readiness-phone' }],
+  transactionStatus: 'available',
+  transactionMetrics: {
+    closedDeals: 1, closedVolumeCents: 42500000, grossCommissionCents: 1275000,
+    netCommissionCents: 820000, trackedExpensesCents: 70000, netIncomeCents: 750000,
+    activeForecastGciCents: 900000, averageSalePriceCents: 42500000,
+    sourceMetrics: [{ source: 'referral', deals: 1, volumeCents: 42500000, netIncomeCents: 750000, marketingCostCents: 20000, roiPercentage: 3750 }],
+  },
+  transactions: [{
+    id: 'transaction-1', workspaceId: 'workspace-live', contactId: '00000000-0000-4000-8000-000000000001',
+    contactName: 'Morgan Ellis', status: 'closed', side: 'seller', propertyAddress: '123 Main Street',
+    source: 'referral', closedAt: '2026-08-20', salePriceCents: 42500000,
+    grossCommissionCents: 1275000, netCommissionCents: 820000, marketingCostCents: 20000,
+    expenseCents: 50000, createdByMembershipId: 'membership-live',
+    createdAt: '2026-08-20T15:00:00.000Z', updatedAt: '2026-08-20T15:00:00.000Z',
+  }],
+  transactionContacts: [{ id: '00000000-0000-4000-8000-000000000001', label: 'Morgan Ellis' }],
   selectedDrilldownId: 'source-referral',
   drilldowns: [
     { id: 'portfolio-all', label: 'Relationship book', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'contact', recordId: 'contact-all', label: 'Alex Morgan', href: '/contacts/contact-all' }] },
@@ -134,9 +150,17 @@ describe('Insights dashboard', () => {
     expect(screen.getByText(/500-event read boundary/)).toBeInTheDocument();
   });
 
-  it('keeps unavailable finance explicit', () => {
+  it('renders verified live finance and a linked deal intake path', () => {
     render(<InsightsDashboard model={MODEL} />);
-    expect(screen.getByRole('heading', { name: 'Financial metrics are intentionally unavailable.' })).toBeInTheDocument();
-    expect(document.body).not.toHaveTextContent('$0');
+    expect(screen.getByRole('heading', { name: 'The financial pulse of the business.' })).toBeInTheDocument();
+    expect(screen.getAllByText('$425,000')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Save verified deal' })).toBeEnabled();
+    expect(screen.getByRole('combobox', { name: 'Contact' })).toHaveValue('');
+  });
+
+  it('withholds finance when the verified ledger read fails', () => {
+    render(<InsightsDashboard model={{ ...MODEL, transactionStatus: 'insufficient-evidence', transactionMetrics: null, transactions: [] }} />);
+    expect(screen.getByText(/Financial ledger needs its database update/)).toBeInTheDocument();
+    expect(screen.queryByText('$425,000')).not.toBeInTheDocument();
   });
 });

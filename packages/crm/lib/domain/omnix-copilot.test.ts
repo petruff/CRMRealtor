@@ -46,6 +46,10 @@ describe('Omnix copilot fixed grammar', () => {
 
   it.each([
     ['what should I do today', { kind: 'brief', date: 'today' }],
+    ['what are my priorities today?', { kind: 'brief', date: 'today' }],
+    ['Show me my priorities today', { kind: 'brief', date: 'today' }],
+    ['what do I need to do today?', { kind: 'brief', date: 'today' }],
+    ['what needs my attention today?', { kind: 'brief', date: 'today' }],
     ['who needs attention', { kind: 'alerts', date: 'today' }],
     ['show overdue follow-ups', { kind: 'tasks', window: 'overdue' }],
     ["show today's tasks", { kind: 'tasks', window: 'today' }],
@@ -59,7 +63,7 @@ describe('Omnix copilot fixed grammar', () => {
   });
 
   it('documents the exact fixed alias table', () => {
-    expect(OMNIX_COPILOT_FIXED_ALIASES).toHaveLength(9);
+    expect(OMNIX_COPILOT_FIXED_ALIASES).toHaveLength(13);
   });
 
   it('normalizes case, whitespace and terminal punctuation only', () => {

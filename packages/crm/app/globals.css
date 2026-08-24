@@ -2705,6 +2705,47 @@
   .insights-future h2 { margin-top: 0.2rem; font-size: 1.15rem; font-weight: 600; }
   .insights-future p:last-child { max-width: 52rem; margin-top: 0.35rem; color: var(--sk-muted-text-color); font-size: 0.75rem; line-height: 1.55; }
   .insights-future-badge { padding: 0.45rem 0.7rem; border: 1px solid var(--sk-border-color); border-radius: 9999px; background: var(--sk-card-background); color: var(--sk-muted-text-color); font-size: 0.625rem; font-weight: 600; }
+  .insights-transactions { position: relative; isolation: isolate; margin-top: 1.25rem; overflow: hidden; border: 1px solid color-mix(in srgb, var(--sk-accent-color) 34%, var(--sk-border-color)); border-radius: calc(var(--sk-card-radius) + 0.35rem); padding: clamp(1.25rem, 2.8vw, 2rem); background: radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--sk-accent-color) 18%, transparent), transparent 32%), linear-gradient(145deg, color-mix(in srgb, var(--sk-card-background) 94%, var(--sk-accent-color)), var(--sk-card-background)); box-shadow: 0 22px 70px color-mix(in srgb, var(--sk-body-text-color) 11%, transparent); }
+  .insights-transactions::before { position: absolute; z-index: -1; inset: 0; content: ''; pointer-events: none; opacity: 0.32; background-image: linear-gradient(color-mix(in srgb, var(--sk-border-color) 40%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--sk-border-color) 40%, transparent) 1px, transparent 1px); background-size: 42px 42px; mask-image: linear-gradient(to bottom, black, transparent 72%); }
+  .insights-transactions > .insights-section-heading > p { display: inline-flex; align-items: center; gap: 0.45rem; }
+  .insights-transaction-message { margin-top: 1rem; border: 1px solid color-mix(in srgb, var(--omnix-nurture) 38%, var(--sk-border-color)); border-radius: var(--sk-control-radius); padding: 0.8rem 1rem; background: color-mix(in srgb, var(--omnix-nurture) 9%, var(--sk-card-background)); color: var(--sk-body-text-color); font-size: 0.8rem; }
+  .insights-financial-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.7rem; margin-top: 1.25rem; }
+  .insights-financial-grid article { min-width: 0; min-height: 8.2rem; display: flex; flex-direction: column; justify-content: flex-end; border: 1px solid var(--sk-border-color); border-radius: var(--sk-control-radius); padding: 1rem; background: color-mix(in srgb, var(--sk-card-background) 90%, transparent); backdrop-filter: blur(14px); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+  .insights-financial-grid article:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--sk-accent-color) 48%, var(--sk-border-color)); box-shadow: 0 14px 30px color-mix(in srgb, var(--sk-body-text-color) 10%, transparent); }
+  .insights-financial-grid article.is-primary { background: linear-gradient(145deg, color-mix(in srgb, var(--sk-accent-color) 23%, var(--sk-card-background)), var(--sk-card-background)); }
+  .insights-financial-grid article > span { color: var(--sk-muted-text-color); font-size: 0.68rem; font-weight: 650; letter-spacing: 0.02em; }
+  .insights-financial-grid article strong { margin-top: 0.45rem; overflow-wrap: anywhere; font-family: var(--font-display); font-size: clamp(1.35rem, 2vw, 2rem); font-weight: 560; line-height: 1; }
+  .insights-financial-grid article small { margin-top: 0.5rem; color: var(--sk-muted-text-color); font-size: 0.62rem; }
+  .insights-financial-grid article.is-positive strong { color: var(--omnix-nurture); }
+  .insights-financial-grid article.is-negative strong { color: var(--omnix-hot); }
+  .insights-transaction-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr); gap: 1rem; margin-top: 1rem; }
+  .insights-transaction-ledger, .insights-deal-form { border: 1px solid var(--sk-border-color); border-radius: var(--sk-control-radius); padding: clamp(1rem, 2vw, 1.35rem); background: color-mix(in srgb, var(--sk-card-background) 94%, transparent); }
+  .insights-deal-list { display: grid; gap: 0.6rem; margin-top: 1rem; }
+  .insights-deal-list > article { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 1rem; border-top: 1px solid var(--sk-border-color); padding-top: 0.75rem; }
+  .insights-deal-list > article:first-child { border-top: 0; padding-top: 0; }
+  .insights-deal-list > article > div { min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+  .insights-deal-list > article > div:last-child { align-items: flex-end; text-align: right; }
+  .insights-deal-list span, .insights-deal-list small { color: var(--sk-muted-text-color); font-size: 0.68rem; }
+  .insights-deal-status { width: fit-content; border-radius: 999px; padding: 0.22rem 0.5rem; background: var(--sk-fill-secondary-color); color: var(--sk-body-text-color) !important; font-size: 0.56rem !important; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+  .insights-deal-status.is-closed { background: color-mix(in srgb, var(--omnix-nurture) 14%, var(--sk-card-background)); color: var(--omnix-nurture) !important; }
+  .insights-deal-status.is-under-contract { background: color-mix(in srgb, var(--sk-accent-color) 16%, var(--sk-card-background)); color: var(--sk-accent-color) !important; }
+  .insights-empty-deals { display: grid; justify-items: start; gap: 0.4rem; margin-top: 1rem; border: 1px dashed var(--sk-border-color); border-radius: var(--sk-control-radius); padding: 1.25rem; color: var(--sk-muted-text-color); }
+  .insights-empty-deals p { max-width: 34rem; font-size: 0.75rem; line-height: 1.55; }
+  .insights-source-roi { margin-top: 1.2rem; border-top: 1px solid var(--sk-border-color); padding-top: 1rem; }
+  .insights-source-roi > h3 { font-size: 0.82rem; }
+  .insights-source-roi > article { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding-top: 0.7rem; }
+  .insights-source-roi > article > div { display: flex; flex-direction: column; gap: 0.15rem; }
+  .insights-source-roi > article > div:last-child { align-items: flex-end; text-align: right; }
+  .insights-source-roi span { color: var(--sk-muted-text-color); font-size: 0.65rem; }
+  .insights-deal-form { display: grid; align-content: start; gap: 0.85rem; }
+  .insights-deal-form > div:first-child > h3 { margin-top: 0.15rem; font-family: var(--font-display); font-size: 1.45rem; font-weight: 560; }
+  .insights-deal-form > div:first-child > p:last-child { margin-top: 0.35rem; color: var(--sk-muted-text-color); font-size: 0.7rem; line-height: 1.5; }
+  .insights-deal-form label { display: grid; gap: 0.35rem; color: var(--sk-muted-text-color); font-size: 0.68rem; font-weight: 650; }
+  .insights-deal-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+  @media (max-width: 1180px) { .insights-financial-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .insights-transaction-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 680px) { .insights-financial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .insights-financial-grid article { min-height: 7rem; } .insights-deal-form-row { grid-template-columns: 1fr; } .insights-deal-list > article { align-items: start; } }
+  @media (max-width: 420px) { .insights-transactions { padding-inline: 0.9rem; } .insights-financial-grid { grid-template-columns: 1fr; } .insights-financial-grid article { min-height: 6.4rem; } }
+  @media (prefers-reduced-motion: reduce) { .insights-financial-grid article { transition: none; } .insights-financial-grid article:hover { transform: none; } }
 
   .insights-loading,
   .insights-error { display: flex; min-height: 19rem; align-items: center; justify-content: center; gap: 1rem; padding: 2rem; border: 1px solid var(--sk-border-color); border-radius: calc(var(--sk-card-radius) + 0.25rem); background: var(--sk-card-background); text-align: left; }

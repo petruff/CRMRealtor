@@ -15,7 +15,7 @@ export default async function AlertsPage() {
           What needs attention,<br className="hidden sm:block" /> <span className="text-muted">with the evidence attached.</span>
         </h1>
         <p className="mt-3 hidden max-w-2xl text-[15px] leading-relaxed text-muted sm:mt-4 sm:block sm:text-[17px]">
-          This read-only center uses the same stored-fact rules and deterministic order as Omnix Copilot. It does not dismiss, snooze, send or schedule anything.
+          One prioritized queue for follow-ups, tasks, relationship moments, and data readiness. Omnix keeps its position until you act or the source record is resolved.
         </p>
       </header>
       <AlertCenter {...result} />

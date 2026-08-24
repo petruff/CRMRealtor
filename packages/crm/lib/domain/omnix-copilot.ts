@@ -29,6 +29,10 @@ export const OMNIX_COPILOT_SUPPORTED_EXAMPLES = [
 
 export const OMNIX_COPILOT_FIXED_ALIASES = [
   { phrase: 'what should I do today', canonical: 'brief today' },
+  { phrase: 'what are my priorities today', canonical: 'brief today' },
+  { phrase: 'show me my priorities today', canonical: 'brief today' },
+  { phrase: 'what do I need to do today', canonical: 'brief today' },
+  { phrase: 'what needs my attention today', canonical: 'brief today' },
   { phrase: 'who needs attention', canonical: 'alerts today' },
   { phrase: 'show overdue follow-ups', canonical: 'tasks overdue' },
   { phrase: "show today's tasks", canonical: 'tasks today' },
@@ -130,6 +134,12 @@ export interface OmnixCopilotAlert {
   readonly recordId: string;
   readonly href: string;
   readonly citations: readonly OmnixCopilotCitation[];
+  /** Stable operational identity; absent only on legacy fixtures/readers. */
+  readonly occurrenceKey?: string;
+  /** SHA-256 of the authoritative facts that define this occurrence. */
+  readonly sourceFingerprint?: string;
+  readonly dueAt?: string;
+  readonly dismissAllowed?: boolean;
 }
 
 export interface OmnixCopilotSuggestion {
@@ -479,6 +489,10 @@ export interface CreateOmnixCopilotAlertInput {
   readonly recordId: unknown;
   readonly href: unknown;
   readonly citations: readonly OmnixCopilotCitation[];
+  readonly occurrenceKey?: unknown;
+  readonly sourceFingerprint?: unknown;
+  readonly dueAt?: unknown;
+  readonly dismissAllowed?: unknown;
 }
 
 export function createOmnixCopilotAlert(input: CreateOmnixCopilotAlertInput): OmnixCopilotAlert {
@@ -499,6 +513,19 @@ export function createOmnixCopilotAlert(input: CreateOmnixCopilotAlertInput): Om
   }
   const asOf = instant(input.asOf, 'asOf');
   const recordId = identifier(input.recordId, 'recordId');
+  const occurrenceKey = input.occurrenceKey === undefined
+    ? undefined
+    : printable(input.occurrenceKey, 'occurrenceKey', 200);
+  if (occurrenceKey && !/^[A-Za-z0-9._:-]{1,200}$/.test(occurrenceKey)) {
+    throw new OmnixCopilotError('invalid-input', 'Alert occurrence key is invalid.');
+  }
+  if (input.sourceFingerprint !== undefined
+    && (typeof input.sourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(input.sourceFingerprint))) {
+    throw new OmnixCopilotError('invalid-input', 'Alert source fingerprint is invalid.');
+  }
+  if (input.dismissAllowed !== undefined && typeof input.dismissAllowed !== 'boolean') {
+    throw new OmnixCopilotError('invalid-input', 'Alert dismissal policy is invalid.');
+  }
   return Object.freeze({
     id: `alert:${input.rule}:${recordId}:${asOf.slice(0, 10)}`,
     rule: input.rule,
@@ -510,6 +537,12 @@ export function createOmnixCopilotAlert(input: CreateOmnixCopilotAlertInput): Om
     recordId,
     href: safeTarget(input.href, 'href'),
     citations: dedupeOmnixCopilotCitations(input.citations),
+    ...(occurrenceKey ? { occurrenceKey } : {}),
+    ...(typeof input.sourceFingerprint === 'string'
+      ? { sourceFingerprint: input.sourceFingerprint }
+      : {}),
+    ...(input.dueAt === undefined ? {} : { dueAt: instant(input.dueAt, 'dueAt') }),
+    ...(typeof input.dismissAllowed === 'boolean' ? { dismissAllowed: input.dismissAllowed } : {}),
   });
 }
 

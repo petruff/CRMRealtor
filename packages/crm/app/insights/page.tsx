@@ -9,6 +9,7 @@ import { getOperatingInsights } from '@/lib/application/operating-insights-servi
 import { getRepository } from '@/lib/data';
 import { PIPELINE_STAGE_ORDER } from '@/lib/domain/workspace-intelligence';
 import type { InsightAvailability } from '@/lib/domain/operating-insights';
+import { calculateTransactionMetrics, type RealEstateTransaction } from '@/lib/domain/transaction';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Insights' };
@@ -63,7 +64,7 @@ function drilldown(
 export default async function InsightsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string | string[]; detail?: string | string[] }>;
+  searchParams: Promise<{ period?: string | string[]; detail?: string | string[]; transaction?: string | string[]; message?: string | string[] }>;
 }) {
   const params = await searchParams;
   const periodDays = period(typeof params.period === 'string' ? params.period : undefined);
@@ -71,6 +72,19 @@ export default async function InsightsPage({
   const now = new Date();
   const context = await getRepository();
   const report = await getOperatingInsights(context, { period: periodDays }, now);
+  let transactions: readonly RealEstateTransaction[] = [];
+  let transactionStatus: DisplayStatus = 'available';
+  let transactionError: string | undefined;
+  try {
+    transactions = await context.transactionRepository.list(context.workspaceScope);
+  } catch (error) {
+    transactionStatus = 'insufficient-evidence';
+    transactionError = 'Financial data could not be loaded safely. No values were estimated; refresh or ask the developer to review the workspace connection.';
+    console.error('Transaction intelligence read failed.', error);
+  }
+  const transactionMetrics = transactionStatus === 'available'
+    ? calculateTransactionMetrics(transactions, report.currentWindow.from, report.currentWindow.to)
+    : null;
 
   const portfolioStatus = displayStatus(report.portfolio.status);
   const pipelineStatus = displayStatus(report.pipeline.status);
@@ -220,6 +234,15 @@ export default async function InsightsPage({
     ],
     drilldowns,
     selectedDrilldownId,
+    transactionStatus,
+    transactionMessage: typeof params.transaction === 'string'
+      ? params.transaction === 'saved' ? 'Deal saved. Insights and pipeline are now up to date.'
+        : typeof params.message === 'string' ? params.message : 'The deal was not saved.'
+      : transactionError,
+    transactionMetrics,
+    transactions: transactions.slice(0, 8),
+    transactionContacts: [...report.contactDisplayNames.entries()]
+      .map(([id, label]) => ({ id, label })).sort((left, right) => left.label.localeCompare(right.label)),
     coverage: {
       contactBoundedAt: report.coverage.contacts.boundedAt ?? 500,
       contactPossiblyTruncated: report.coverage.contacts.truncated,
