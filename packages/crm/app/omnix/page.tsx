@@ -47,7 +47,7 @@ export default async function OmnixPage() {
           <span className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Explainable preview</span>
         </div>
         <h1 className="mt-2 max-w-4xl font-display text-[2.5rem] leading-[1.04] text-ink sm:text-5xl md:text-[3.5rem]">
-          Your business,<br /><span className="text-muted">already organized.</span>
+          Your business, <br /><span className="text-muted">already organized.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-muted">
           Omnix turns stored CRM facts into a prioritized brief. No generative model is connected, and nothing is sent, changed or scheduled autonomously.

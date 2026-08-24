@@ -7,6 +7,7 @@ const connectionsSource = readFileSync(new URL('./connections/page.tsx', import.
 const brandLockupSource = readFileSync(new URL('../components/brand-lockup.tsx', import.meta.url), 'utf8');
 const assistantSource = readFileSync(new URL('../components/omnix-assistant-launcher.tsx', import.meta.url), 'utf8');
 const welcomeMotionSource = readFileSync(new URL('../components/welcome-motion.tsx', import.meta.url), 'utf8');
+const dataOperationsSource = readFileSync(new URL('./data/page.tsx', import.meta.url), 'utf8');
 
 function cssBlock(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -59,6 +60,24 @@ describe('authenticated editorial design contract', () => {
     expect(globalCss).toMatch(/\.sk-nav-link\[aria-current='page'\]\s*{[^}]*box-shadow:\s*inset 3px 0 var\(--sk-accent-color\);/s);
     expect(globalCss).toMatch(/\.sk-mobile-tab\[aria-current='page'\]\s*{[^}]*box-shadow:\s*inset 0 -3px var\(--sk-accent-color\);/s);
     expect(globalCss).toMatch(/\.sk-overflow-rail\s*{[^}]*overflow-x:\s*auto;/s);
+  });
+
+  it('keeps native controls and dense Insights workspaces inside their available container', () => {
+    const input = cssBlock('.sk-input');
+
+    expect(input).toContain('width: 100%;');
+    expect(input).toContain('min-width: 0;');
+    expect(input).toContain('max-width: 100%;');
+    expect(globalCss).toMatch(/input\[type='date'\]\.sk-input,[^{]+\{[^}]*min-inline-size:\s*0;/s);
+    expect(globalCss).toContain('@container (max-width: 63.99rem) { .insights-financial-grid');
+    expect(globalCss).toContain('.insights-transaction-grid { grid-template-columns: 1fr; }');
+    expect(globalCss).toContain('@container (max-width: 63.99rem) { .insights-contributor-controls { grid-template-columns: repeat(2,');
+  });
+
+  it('keeps developer-only connection commands out of the realtor-facing data workspace', () => {
+    expect(dataOperationsSource).not.toContain('npm run data');
+    expect(dataOperationsSource).toContain('restricted to the developer');
+    expect(dataOperationsSource).toContain('Incoming automations');
   });
 
   it('keeps public typography scoped while sharing the authenticated palette', () => {

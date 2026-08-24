@@ -1580,6 +1580,8 @@
 
   .sk-input {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     min-height: 2.75rem;
     border: 1px solid var(--sk-control-border-color);
     border-radius: var(--sk-control-radius);
@@ -1589,6 +1591,13 @@
     letter-spacing: -0.012em;
     padding: 0.65rem 0.8rem;
     transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  input[type='date'].sk-input,
+  input[type='datetime-local'].sk-input,
+  input[type='month'].sk-input,
+  input[type='time'].sk-input {
+    min-inline-size: 0;
   }
 
   .sk-input::placeholder {
@@ -2267,8 +2276,8 @@
 
   .pipeline-drag-handle {
     display: grid;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
     flex: none;
     place-items: center;
     border-radius: 0.4rem;
@@ -2332,7 +2341,7 @@
   .pipeline-card-evidence summary,
   .pipeline-card-evidence-link {
     display: flex;
-    min-height: 2.25rem;
+    min-height: 2.75rem;
     align-items: center;
     gap: 0.4rem;
     color: var(--sk-muted-text-color);
@@ -2718,9 +2727,9 @@
   .insights-contributor-list li:hover { background: color-mix(in srgb, var(--sk-fill-secondary-color) 78%, var(--sk-card-background)); box-shadow: inset 3px 0 var(--sk-accent-color); }
   .insights-contributor-avatar { display: grid; width: 2.65rem; height: 2.65rem; flex: none; place-items: center; border: 1px solid color-mix(in srgb, var(--sk-accent-color) 28%, var(--sk-border-color)); border-radius: 9999px; background: color-mix(in srgb, var(--sk-accent-color) 9%, var(--sk-card-background)); color: var(--sk-body-link-color); font-size: 0.6875rem; font-weight: 800; }
   .insights-contributor-list li > div { display: grid; min-width: 0; gap: 0.2rem; }
-  .insights-contributor-type { width: fit-content; color: var(--sk-muted-text-color); font-size: 0.55rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+  .insights-contributor-type { width: fit-content; color: var(--sk-muted-text-color); font-size: 0.625rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
   .insights-contributor-list strong { overflow: hidden; color: var(--sk-body-text-color); font-size: 0.8rem; text-overflow: ellipsis; white-space: nowrap; }
-  .insights-contributor-list small { overflow: hidden; color: var(--sk-muted-text-color); font-size: 0.625rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+  .insights-contributor-list small { overflow: hidden; color: var(--sk-muted-text-color); font-size: 0.6875rem; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
   .insights-contributor-list li > a { display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.4rem; border: 1px solid var(--sk-border-color); border-radius: 9999px; padding: 0 0.75rem; color: var(--sk-body-text-color); font-size: 0.625rem; font-weight: 750; text-decoration: none; }
   .insights-contributor-list li > a:hover { border-color: var(--sk-body-link-color); color: var(--sk-body-link-color); }
   .insights-contributor-no-action { color: var(--sk-muted-text-color); font-size: 0.625rem; }
@@ -2735,8 +2744,9 @@
   .insights-contributor-pagination button:disabled { cursor: not-allowed; opacity: 0.38; }
   .insights-contributor-pagination > span { color: var(--sk-muted-text-color); font-size: 0.6875rem; }
   .insights-contributor-pagination strong { color: var(--sk-body-text-color); }
-  @media (max-width: 1080px) { .insights-contributor-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } .insights-contributor-list { grid-template-columns: 1fr; } }
-  @media (max-width: 620px) { .insights-contributor-hero { flex-direction: column; } .insights-contributor-summary { grid-template-columns: 1fr; } .insights-contributor-summary article { grid-template-columns: minmax(0, 1fr) auto; align-items: center; } .insights-contributor-summary small { grid-column: 1 / -1; } .insights-contributor-controls { grid-template-columns: 1fr; } .insights-contributor-list li { min-height: 0; grid-template-columns: auto minmax(0, 1fr); } .insights-contributor-list li > a, .insights-contributor-no-action { grid-column: 2; width: fit-content; } .insights-contributor-results-heading { align-items: flex-start; flex-direction: column; } .insights-contributor-pagination { flex-wrap: wrap; } .insights-contributor-pagination > span { order: -1; width: 100%; text-align: center; } }
+  @container (max-width: 63.99rem) { .insights-contributor-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @container (max-width: 47.99rem) { .insights-contributor-list { grid-template-columns: 1fr; } }
+  @container (max-width: 38.75rem) { .insights-contributor-hero { flex-direction: column; } .insights-contributor-summary { grid-template-columns: 1fr; } .insights-contributor-summary article { grid-template-columns: minmax(0, 1fr) auto; align-items: center; } .insights-contributor-summary small { grid-column: 1 / -1; } .insights-contributor-controls { grid-template-columns: 1fr; } .insights-contributor-list li { min-height: 0; grid-template-columns: auto minmax(0, 1fr); } .insights-contributor-list li > a, .insights-contributor-no-action { grid-column: 2; width: fit-content; } .insights-contributor-results-heading { align-items: flex-start; flex-direction: column; } .insights-contributor-pagination { flex-wrap: wrap; } .insights-contributor-pagination > span { order: -1; width: 100%; text-align: center; } }
   @media (prefers-reduced-motion: reduce) { .insights-contributor-list li { transition: none; } }
   .insights-readiness-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin-top: 1.5rem; overflow: hidden; border: 1px solid var(--sk-border-color); border-radius: var(--sk-control-radius); background: var(--sk-border-color); }
   .insights-readiness-grid a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.55rem; padding: 1rem; background: var(--sk-card-background); color: var(--sk-body-text-color); text-decoration: none; }
@@ -2793,11 +2803,11 @@
   .insights-deal-form { display: grid; align-content: start; gap: 0.85rem; }
   .insights-deal-form > div:first-child > h3 { margin-top: 0.15rem; font-family: var(--font-display); font-size: 1.45rem; font-weight: 560; }
   .insights-deal-form > div:first-child > p:last-child { margin-top: 0.35rem; color: var(--sk-muted-text-color); font-size: 0.7rem; line-height: 1.5; }
-  .insights-deal-form label { display: grid; gap: 0.35rem; color: var(--sk-muted-text-color); font-size: 0.68rem; font-weight: 650; }
+  .insights-deal-form label { display: grid; min-width: 0; gap: 0.4rem; color: var(--sk-muted-text-color); font-size: 0.75rem; font-weight: 650; }
   .insights-deal-form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
-  @media (max-width: 1180px) { .insights-financial-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .insights-transaction-grid { grid-template-columns: 1fr; } }
-  @media (max-width: 680px) { .insights-financial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .insights-financial-grid article { min-height: 7rem; } .insights-deal-form-row { grid-template-columns: 1fr; } .insights-deal-list > article { align-items: start; } }
-  @media (max-width: 420px) { .insights-transactions { padding-inline: 0.9rem; } .insights-financial-grid { grid-template-columns: 1fr; } .insights-financial-grid article { min-height: 6.4rem; } }
+  @container (max-width: 63.99rem) { .insights-financial-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .insights-transaction-grid { grid-template-columns: 1fr; } }
+  @container (max-width: 42.5rem) { .insights-financial-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .insights-financial-grid article { min-height: 7rem; } .insights-deal-form-row { grid-template-columns: 1fr; } .insights-deal-list > article { align-items: start; } }
+  @container (max-width: 26.25rem) { .insights-transactions { padding-inline: 0.9rem; } .insights-financial-grid { grid-template-columns: 1fr; } .insights-financial-grid article { min-height: 6.4rem; } }
   @media (prefers-reduced-motion: reduce) { .insights-financial-grid article { transition: none; } .insights-financial-grid article:hover { transform: none; } }
 
   .insights-loading,

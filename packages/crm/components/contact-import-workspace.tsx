@@ -415,6 +415,7 @@ export function ContactImportWorkspace() {
           <input
             ref={inputRef}
             type="file"
+            aria-label="Choose a contact import file"
             accept=".csv,.vcf,.xls,.xlsx,.numbers,text/csv,text/vcard,text/x-vcard,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.apple.numbers"
             className="sr-only"
             onChange={(event) => void chooseFile(event.target.files?.[0])}

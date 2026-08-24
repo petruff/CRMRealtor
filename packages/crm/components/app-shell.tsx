@@ -228,7 +228,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 px-4 pb-28 pt-6 sm:px-6 md:px-10 lg:px-14 lg:pb-20 lg:pt-12"
+          className="min-w-0 flex-1 px-4 pb-32 pt-6 sm:px-6 md:px-10 lg:px-14 lg:pb-28 lg:pt-12"
         >
           <div className="mx-auto w-full max-w-6xl">
             {children}

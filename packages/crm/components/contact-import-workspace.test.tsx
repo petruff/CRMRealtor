@@ -111,6 +111,7 @@ describe('ContactImportWorkspace automatic organization', () => {
     });
     const { container } = render(<ContactImportWorkspace />);
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).toHaveAccessibleName('Choose a contact import file');
     const file = new File([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], 'contacts.numbers', {
       type: 'application/vnd.apple.numbers',
     });
