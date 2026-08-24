@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { ConnectorRuntimeConfiguration } from '../config/connector-runtime.ts';
 import type {
   MailchimpReconciliationRepository,
@@ -52,6 +53,60 @@ export async function requestMailchimpReconciliationCommand(
     correlationId: input.correlationId,
     requestedAt: now.toISOString(),
   });
+}
+
+/**
+ * Starts the durable baseline and gives the owner-triggered request a bounded
+ * opportunity to finish immediately. The persisted run remains the source of
+ * truth, so a timeout or provider retry is safely resumed by the cron worker.
+ */
+export async function requestAndDrainMailchimpReconciliationCommand(
+  operations: MailchimpSetupRepository,
+  repository: MailchimpReconciliationRepository,
+  configuration: ConnectorRuntimeConfiguration,
+  scope: WorkspaceScope,
+  input: {
+    readonly connectionId: string;
+    readonly mode?: 'baseline' | 'reconcile';
+    readonly pageSize?: number;
+    readonly correlationId: string;
+  },
+  options: {
+    readonly workerId?: string;
+    readonly runtimeBudgetMs?: number;
+    readonly now?: () => Date;
+    readonly resolver?: ConnectorKekResolver;
+    readonly fetcher?: MailchimpFetch;
+    readonly createClient?: (dataCenter: string, token: string) => Pick<MailchimpMarketingClient, 'listAudienceMembers'>;
+  } = {},
+) {
+  const clock = options.now ?? (() => new Date());
+  const runtimeBudgetMs = options.runtimeBudgetMs ?? Math.min(
+    configuration.worker.maxRuntimeSeconds * 1_000,
+    8_000,
+  );
+  if (!Number.isInteger(runtimeBudgetMs) || runtimeBudgetMs < 1_000 || runtimeBudgetMs > 30_000) {
+    throw new ConnectorError('invalid-input', 'Mailchimp reconciliation runtime budget is invalid.');
+  }
+  const requested = await requestMailchimpReconciliationCommand(
+    operations,
+    repository,
+    scope,
+    input,
+    clock(),
+  );
+  const startedAt = clock().getTime();
+  const drained = await drainMailchimpReconciliationRuns({
+    repository,
+    configuration,
+    workerId: options.workerId ?? randomUUID(),
+    deadlineMs: startedAt + runtimeBudgetMs,
+    now: clock,
+    resolver: options.resolver,
+    fetcher: options.fetcher,
+    createClient: options.createClient,
+  });
+  return { requested, drained };
 }
 
 export interface MailchimpReconciliationDrainResult {

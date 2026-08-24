@@ -12,7 +12,9 @@ import {
   probeLiveMailchimpConnectionCommand,
   setupMailchimpSignedWebhookCommand,
 } from '@/lib/application/mailchimp-commands';
-import { requestMailchimpReconciliationCommand } from '@/lib/application/mailchimp-reconciliation-service';
+import {
+  requestAndDrainMailchimpReconciliationCommand,
+} from '@/lib/application/mailchimp-reconciliation-service';
 import {
   approveMailchimpOutboundBackfillCommand,
   previewMailchimpOutboundBackfillCommand,
@@ -89,6 +91,8 @@ export async function setupMailchimpWebhookAction(formData: FormData) {
 }
 
 export async function reconcileMailchimpBaselineAction(formData: FormData) {
+  let completed = false;
+  let needsReview = false;
   try {
     const context = await getRepository();
     if (!context.isLive || context.workspaceScope.role !== 'owner') {
@@ -98,21 +102,34 @@ export async function reconcileMailchimpBaselineAction(formData: FormData) {
     if (!connectionId) throw new ConnectorError('invalid-input', 'Mailchimp connection is required.');
     const authenticated = await createSupabaseServerClient();
     const server = createMailchimpServerRepository({ authenticated });
-    await requestMailchimpReconciliationCommand(
+    const configuration = loadMailchimpConfiguredRuntimeConfiguration();
+    const progress = await requestAndDrainMailchimpReconciliationCommand(
       server.operations,
       server.reconciliations,
+      configuration,
       context.workspaceScope,
       { connectionId, pageSize: 100, correlationId: randomUUID() },
     );
+    completed = progress.drained.completed > 0;
+    needsReview = progress.drained.review > 0;
   } catch (error) {
     const message = error instanceof ConnectorError ? error.message : 'Mailchimp baseline reconciliation failed safely.';
     notice('error', message.slice(0, 160));
   }
-  notice('success', 'Mailchimp reconciliation queued. Progress and review outcomes remain visible.');
+  if (needsReview) {
+    notice('error', 'Mailchimp contact sync paused for safe review. Open the latest reconciliation details before retrying.');
+  }
+  notice('success', completed
+    ? 'Mailchimp contact sync completed. Subscription status and contact matches are now up to date.'
+    : 'Mailchimp contact sync started. Omnix saved its progress and will resume safely if more time is needed.');
 }
 
 export async function finishMailchimpSetupAction(formData: FormData) {
   const supportReference = randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase();
+  let baselineCompleted = false;
+  let baselineStarted = false;
+  let baselineNeedsReview = false;
+  let webhookCompleted = false;
   try {
     const context = await getRepository();
     if (!context.isLive || context.workspaceScope.role !== 'owner') {
@@ -122,11 +139,12 @@ export async function finishMailchimpSetupAction(formData: FormData) {
     if (!connectionId) throw new ConnectorError('invalid-input', 'Mailchimp connection is required.');
     const authenticated = await createSupabaseServerClient();
     const server = createMailchimpServerRepository({ authenticated });
+    const configuration = loadMailchimpConfiguredRuntimeConfiguration();
     const binding = await server.operations.getSelectedAudience(context.workspaceScope, connectionId);
     if (!binding) throw new ConnectorError('not-found', 'Choose a Mailchimp audience first.');
     if (binding.webhookRegistrationRequired) {
       await setupMailchimpSignedWebhookCommand(
-        server.operations, loadMailchimpConfiguredRuntimeConfiguration(), context.workspaceScope,
+        server.operations, configuration, context.workspaceScope,
         {
           connectionId,
           webhookBaseUrl: process.env.MAILCHIMP_WEBHOOK_BASE_URL ?? '',
@@ -134,14 +152,19 @@ export async function finishMailchimpSetupAction(formData: FormData) {
         },
         { createClient: (dataCenter, token) => new MailchimpMarketingClient(dataCenter, token) },
       );
+      webhookCompleted = true;
     }
     if (binding.baselineRequired) {
-      await requestMailchimpReconciliationCommand(
+      baselineStarted = true;
+      const progress = await requestAndDrainMailchimpReconciliationCommand(
         server.operations,
         server.reconciliations,
+        configuration,
         context.workspaceScope,
         { connectionId, pageSize: 100, correlationId: randomUUID() },
       );
+      baselineCompleted = progress.drained.completed > 0;
+      baselineNeedsReview = progress.drained.review > 0;
     }
   } catch (error) {
     console.error(JSON.stringify({
@@ -153,7 +176,16 @@ export async function finishMailchimpSetupAction(formData: FormData) {
     }));
     notice('error', mailchimpSetupNoticeCode(error));
   }
-  notice('success', 'Mailchimp setup is finishing. Contact matching and subscription updates are being prepared.');
+  if (baselineNeedsReview) {
+    notice('error', 'Mailchimp updates are active, but the initial contact sync paused for safe review. Open the latest reconciliation details before retrying.');
+  }
+  notice('success', baselineCompleted
+    ? 'Mailchimp setup completed. Contact matching and subscribe/unsubscribe updates are active.'
+    : baselineStarted
+      ? 'Mailchimp updates are active and contact sync has started. Omnix saved its progress and will resume safely if needed.'
+      : webhookCompleted
+        ? 'Mailchimp subscribe and unsubscribe updates are now active.'
+        : 'Mailchimp setup is already complete.');
 }
 
 export async function probeMailchimpConnectionAction(formData: FormData) {

@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { loadConnectorRuntimeConfiguration } from '@/lib/config/connector-runtime';
 import type { MailchimpReconciliationRepository, MailchimpReconciliationRun } from '@/lib/data/supabase-mailchimp-reconciliation-repository';
 import { encryptConnectorSecret } from '@/lib/security/connector-secret-envelope';
-import { drainMailchimpReconciliationRuns } from './mailchimp-reconciliation-service';
+import {
+  drainMailchimpReconciliationRuns,
+  requestAndDrainMailchimpReconciliationCommand,
+} from './mailchimp-reconciliation-service';
 
 const resolver = { activeVersion: 'v1', resolve: () => Buffer.alloc(32, 9) };
 const configuration = loadConnectorRuntimeConfiguration({});
@@ -38,6 +41,41 @@ function repository() {
 }
 
 describe('durable Mailchimp reconciliation worker', () => {
+  it('requests and immediately drains an owner-triggered baseline', async () => {
+    const repo = repository();
+    repo.value.request = vi.fn(async () => ({ run: baseRun, noOp: false }));
+    const result = await requestAndDrainMailchimpReconciliationCommand(
+      { getSelectedAudience: vi.fn(async () => ({
+        id: 'binding-a', connectionId: 'connection-a', accountIdHash: 'a'.repeat(64),
+        dataCenter: 'us21', audienceId: 'audience-a', audienceName: 'Audience A',
+        mappingVersion: 1, selectedAt: '2026-08-11T11:00:00.000Z',
+        baselineRequired: true, webhookRegistrationRequired: false,
+      })) } as never,
+      repo.value,
+      configuration,
+      {
+        mode: 'live', workspaceId: 'workspace-a', role: 'owner',
+        authenticatedUserId: 'owner-a', ownerUserId: 'owner-a', membershipId: 'membership-a',
+      },
+      { connectionId: 'connection-a', pageSize: 100, correlationId: 'correlation-a' },
+      {
+        workerId: 'worker-a', runtimeBudgetMs: 10_000,
+        now: () => new Date('2026-08-11T12:00:00Z'), resolver,
+        createClient: () => ({ listAudienceMembers: vi.fn(async () => ({
+          totalItems: 1,
+          members: [{
+            memberId: 'member-a', subscriberHash: '4b9bb80620f03eb3719e0a061c14283d',
+            normalizedEmail: 'buyer@example.com', subscriptionStatus: 'subscribed' as const,
+            lastChangedAt: '2026-08-11T11:00:00.000Z',
+          }],
+        })) }),
+      },
+    );
+
+    expect(repo.value.request).toHaveBeenCalledOnce();
+    expect(result.drained).toEqual({ claimed: 1, completed: 1, deferred: 0, review: 0, pages: 1 });
+  });
+
   it('decrypts a lease-bound token, applies a bounded page and completes it', async () => {
     const repo = repository();
     const result = await drainMailchimpReconciliationRuns({
