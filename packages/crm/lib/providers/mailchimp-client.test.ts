@@ -110,6 +110,7 @@ describe('Mailchimp fixed-endpoint provider client', () => {
       return new Response(JSON.stringify({
       members: [{
         id: 'member-a', email_address: 'Ada@Example.com', status: 'unsubscribed',
+        merge_fields: { FNAME: 'Ada', LNAME: 'Lovelace', PHONE: '+1 305 555 0100' },
         last_changed: '2026-08-11T12:00:00Z',
       }],
       total_items: 1,
@@ -119,9 +120,25 @@ describe('Mailchimp fixed-endpoint provider client', () => {
     await expect(client.listAudienceMembers({ audienceId: 'audience-a', count: 100, offset: 0 }))
       .resolves.toMatchObject({
         totalItems: 1,
-        members: [{ memberId: 'member-a', normalizedEmail: 'ada@example.com', subscriptionStatus: 'unsubscribed' }],
+        members: [{
+          memberId: 'member-a', normalizedEmail: 'ada@example.com', subscriptionStatus: 'unsubscribed',
+          firstName: 'Ada', lastName: 'Lovelace', phone: '+1 305 555 0100',
+        }],
       });
     expect(calls[0]).toContain('/lists/audience-a/members?count=100&offset=0');
+    expect(calls[0]).toContain('members.merge_fields');
+  });
+
+  it('recovers a phone signal from a KVLeads relay address when merge fields are empty', async () => {
+    const client = new MailchimpMarketingClient('us21', 'token-a', async () => new Response(JSON.stringify({
+      members: [{
+        id: 'member-kv', email_address: '3057907984@kvleads.com', status: 'subscribed',
+        merge_fields: {}, last_changed: '2026-08-11T12:00:00Z',
+      }],
+      total_items: 1,
+    }), { status: 200 }));
+    await expect(client.listAudienceMembers({ audienceId: 'audience-a', count: 100, offset: 0 }))
+      .resolves.toMatchObject({ members: [{ phone: '3057907984' }] });
   });
 
   it('classifies 429 and 5xx responses as retryable without returning provider bodies', async () => {

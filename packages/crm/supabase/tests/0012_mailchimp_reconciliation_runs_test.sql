@@ -1,8 +1,8 @@
 -- Story 4.1 resumable reconciliation and identity quarantine matrix.
--- Prerequisite: migrations 0001..0012 applied to an isolated Supabase DB.
+-- Prerequisite: all current migrations applied to an isolated Supabase DB.
 
 begin;
-select '1..24';
+select '1..26';
 
 do $$
 declare target_table text;
@@ -176,13 +176,45 @@ do $$ declare page jsonb; ada_hash text; missing_hash text; begin
 end $$;
 select 'ok 9 - page applies at most approved size and atomically persists offset/count/hash progress';
 
+do $$ declare result jsonb; begin
+ result:=public.enrich_mailchimp_reconciliation_members(
+  current_setting('omnix.test_reconcile_run')::uuid,
+  '28000000-0000-4000-8000-000000000001',
+  current_setting('omnix.test_reconcile_fence')::bigint,
+  repeat('a1',32),
+  jsonb_build_array(
+   jsonb_build_object('memberId','member-ada','normalizedEmail','ada.0012@example.com','sourceHash',repeat('8',64),'firstName','Ada'),
+   jsonb_build_object('memberId','member-missing','normalizedEmail','missing.0012@example.com','sourceHash',repeat('9',64),'firstName','Maria','lastName','Buyer','phone','3055550100')
+  ),'2026-08-12T10:05:00Z'
+ );
+ perform public.enrich_mailchimp_reconciliation_members(
+  current_setting('omnix.test_reconcile_run')::uuid,
+  '28000000-0000-4000-8000-000000000001',
+  current_setting('omnix.test_reconcile_fence')::bigint,
+  repeat('a1',32),
+  jsonb_build_array(
+   jsonb_build_object('memberId','member-ada','normalizedEmail','ada.0012@example.com','sourceHash',repeat('8',64),'firstName','Changed'),
+   jsonb_build_object('memberId','member-missing','normalizedEmail','missing.0012@example.com','sourceHash',repeat('9',64),'firstName','Changed')
+  ),'2026-08-12T10:05:00Z'
+ );
+ if result->>'recordsEnriched'<>'1'
+    or (select candidate->>'firstName' from public.incomplete_records
+        where source='mailchimp-live' and candidate->>'email'='missing.0012@example.com')<>'Maria'
+    or (select candidate->>'lastName' from public.incomplete_records
+        where source='mailchimp-live' and candidate->>'email'='missing.0012@example.com')<>'Buyer'
+    or (select candidate->>'phone' from public.incomplete_records
+        where source='mailchimp-live' and candidate->>'email'='missing.0012@example.com')<>'3055550100' then
+  raise exception 'Mailchimp merge-field enrichment overwrite guard failed'; end if;
+end $$;
+select 'ok 10 - merge-field enrichment fills missing identity once and preserves reviewed values';
+
 do $$ begin
  if (select email_subscribed from public.contact_points where contact_id='27000000-0000-4000-8000-000000000001' and type='email') is distinct from false
     or (select count(*) from public.incomplete_records where workspace_id='22000000-0000-4000-8000-000000000001' and source='mailchimp-live')<>1
     or not exists(select 1 from public.activity_events where type::text='incomplete-record-received')
     or exists(select 1 from public.connector_receipt_events where event_key like 'mailchimp.identity.quarantined:%' and redacted_metadata::text ~* 'example.com') then raise exception 'canonical/quarantine atomic page result failed'; end if;
 end $$;
-select 'ok 10 - missing identity is quarantined with activity while canonical unsubscribe remains authoritative';
+select 'ok 11 - missing identity is quarantined with activity while canonical unsubscribe remains authoritative';
 
 do $$ declare replay jsonb; ada_hash text; missing_hash text; begin
  ada_hash:=encode(extensions.digest(pg_catalog.convert_to('ada.0012@example.com','UTF8'),'md5'),'hex');
@@ -194,7 +226,7 @@ do $$ declare replay jsonb; ada_hash text; missing_hash text; begin
   ),2,3,repeat('a1',32),'2026-08-12T10:05:01Z');
  if not (replay->>'noOp')::boolean or (select count(*) from public.incomplete_records where source='mailchimp-live')<>1 or (select count(*) from public.mailchimp_reconciliation_pages where run_id=current_setting('omnix.test_reconcile_run')::uuid)<>1 then raise exception 'page/quarantine replay duplicated'; end if;
 end $$;
-select 'ok 11 - page and quarantine replay reuse original rows with zero duplicates';
+select 'ok 12 - page and quarantine replay reuse original rows with zero duplicates';
 
 do $$ declare page jsonb; dup_hash text; begin
  dup_hash:=encode(extensions.digest(pg_catalog.convert_to('dup.0012@example.com','UTF8'),'md5'),'hex');
@@ -202,14 +234,43 @@ do $$ declare page jsonb; dup_hash text; begin
   jsonb_build_array(jsonb_build_object('memberId','member-dup','subscriberHash',dup_hash,'normalizedEmail','dup.0012@example.com','status','unsubscribed','sourceHash',repeat('a2',32))),3,3,repeat('a3',32),'2026-08-12T10:05:02Z');
  if not (page->>'finalPage')::boolean or page#>>'{page,review_count}'<>'1' or (select count(*) from public.incomplete_records where source='mailchimp-live')<>2 then raise exception 'final ambiguous page failed'; end if;
 end $$;
-select 'ok 12 - ambiguous identity reaches final checkpoint as review and quarantine without contact merge';
+select 'ok 13 - ambiguous identity reaches final checkpoint as review and quarantine without contact merge';
 
 do $$ declare completed jsonb; begin
  completed:=public.complete_mailchimp_reconciliation_run(current_setting('omnix.test_reconcile_run')::uuid,'28000000-0000-4000-8000-000000000001',current_setting('omnix.test_reconcile_fence')::bigint,repeat('a4',32),'2026-08-12T10:05:03Z');
  if (completed->>'completed')::boolean or completed#>>'{run,state}'<>'review' or completed#>>'{receipt,event_type}'<>'sync.reviewed'
     or not (select baseline_required from public.mailchimp_audience_bindings where id='25000000-0000-4000-8000-000000000001') then raise exception 'review run marked baseline complete'; end if;
 end $$;
-select 'ok 13 - final run with review items is honest review and leaves baseline required';
+select 'ok 14 - final run with review items is honest review and leaves baseline required';
+
+reset role;
+do $$ declare external_identity text; result jsonb; begin
+ external_identity:=(select external_id from public.incomplete_records
+  where workspace_id='22000000-0000-4000-8000-000000000001'
+    and source='mailchimp-live' and candidate->>'email'='missing.0012@example.com'
+  order by created_at,id limit 1);
+ insert into public.incomplete_records(
+  workspace_id,source,external_id,candidate,validation_reasons,
+  intake_idempotency_key,intake_request_hash,created_at,updated_at
+ ) select workspace_id,source,external_id,candidate,validation_reasons,
+   'mailchimp.identity-review:legacy-duplicate',repeat('e',64),
+   '2026-08-12T10:05:04Z','2026-08-12T10:05:04Z'
+ from public.incomplete_records where external_id=external_identity
+ order by created_at,id limit 1;
+ result:=public.quarantine_mailchimp_identity_review(
+  '22000000-0000-4000-8000-000000000001',
+  '24000000-0000-4000-8000-000000000001',
+  '25000000-0000-4000-8000-000000000001',
+  'member-missing',encode(extensions.digest(pg_catalog.convert_to('missing.0012@example.com','UTF8'),'md5'),'hex'),
+  'missing.0012@example.com','no-canonical-match',repeat('f',64),gen_random_uuid(),
+  '2026-08-12T10:05:05Z'
+ );
+ if (select count(*) from public.incomplete_records where external_id=external_identity and status='pending')<>1
+    or (select count(*) from public.incomplete_records where external_id=external_identity and status='archived')<>1
+    or result->>'duplicatesArchived'<>'1' then
+  raise exception 'stable Mailchimp identity consolidation failed'; end if;
+end $$;
+select 'ok 15 - repeated Mailchimp identity keeps one pending review and archives legacy duplicates';
 
 reset role;
 set local role authenticated;
@@ -230,7 +291,7 @@ do $$ declare claimed public.mailchimp_reconciliation_runs%rowtype; completed js
  completed:=public.complete_mailchimp_reconciliation_run(claimed.id,'28000000-0000-4000-8000-000000000002',claimed.fencing_token,repeat('b4',32),'2026-08-12T10:06:04Z');
  if not (completed->>'completed')::boolean or completed#>>'{run,state}'<>'succeeded' or completed#>>'{baselineConfirmation,binding,baseline_required}'<>'false' then raise exception 'clean empty baseline did not complete'; end if;
 end $$;
-select 'ok 14 - zero-item final page is valid and only clean completion clears baseline readiness';
+select 'ok 16 - zero-item final page is valid and only clean completion clears baseline readiness';
 
 do $$ begin
  begin
@@ -238,7 +299,7 @@ do $$ begin
   raise exception 'oversized page accepted';
  exception when invalid_parameter_value then null; when serialization_failure then null; end;
 end $$;
-select 'ok 15 - page input is hard-bounded to 500 items';
+select 'ok 17 - page input is hard-bounded to 500 items';
 
 reset role;
 set local role authenticated;
@@ -248,14 +309,14 @@ do $$ declare created jsonb; begin
  created:=public.request_mailchimp_reconciliation_run('24000000-0000-4000-8000-000000000001','25000000-0000-4000-8000-000000000001','reconcile',repeat('c2',32),repeat('c3',32),100,gen_random_uuid(),'2026-08-12T10:07:00Z',2);
  perform set_config('omnix.test_periodic_run',created#>>'{run,id}',true);
 end $$;
-select 'ok 16 - periodic reconciliation is requestable only after baseline completion';
+select 'ok 18 - periodic reconciliation is requestable only after baseline completion';
 
 do $$ declare replaced jsonb; begin
  replaced:=public.select_mailchimp_audience('24000000-0000-4000-8000-000000000001',repeat('a',64),'us21','audience-a2','Replacement',1,gen_random_uuid(),'2026-08-12T10:07:01Z');
  if (select state from public.mailchimp_reconciliation_runs where id=current_setting('omnix.test_periodic_run')::uuid)<>'cancelled'
     or (select last_error_category from public.mailchimp_reconciliation_runs where id=current_setting('omnix.test_periodic_run')::uuid)<>'audience_replaced' then raise exception 'replace did not invalidate run'; end if;
 end $$;
-select 'ok 17 - audience replacement atomically cancels durable work bound to prior audience';
+select 'ok 19 - audience replacement atomically cancels durable work bound to prior audience';
 
 do $$ begin
  begin
@@ -263,7 +324,7 @@ do $$ begin
   raise exception 'replaced binding requested';
  exception when no_data_found then null; end;
 end $$;
-select 'ok 18 - replaced audience binding cannot be requested or resumed';
+select 'ok 20 - replaced audience binding cannot be requested or resumed';
 
 select set_config('request.jwt.claim.sub','21000000-0000-4000-8000-000000000003',true);
 do $$ declare created jsonb; begin
@@ -287,7 +348,7 @@ do $$ declare first_claim public.mailchimp_reconciliation_runs%rowtype; second_c
  perform public.start_mailchimp_reconciliation_run(second_claim.id,'28000000-0000-4000-8000-000000000004',second_claim.fencing_token,'2026-08-12T10:09:01Z');
  perform set_config('omnix.test_b_fence',second_claim.fencing_token::text,true);
 end $$;
-select 'ok 19 - retry is durable and a new claim fences the prior worker';
+select 'ok 21 - retry is durable and a new claim fences the prior worker';
 
 reset role;
 update connector_private.connector_connection_secrets set ciphertext=null,nonce=null,auth_tag=null,wrapped_dek=null,wrap_nonce=null,wrap_auth_tag=null,destroyed_at='2026-08-12T10:09:02Z'
@@ -300,7 +361,7 @@ do $$ begin
   raise exception 'destroyed token read';
  exception when no_data_found then null; end;
 end $$;
-select 'ok 20 - destroyed access-token envelope fails closed for the exact live worker';
+select 'ok 22 - destroyed access-token envelope fails closed for the exact live worker';
 
 do $$ begin
  begin
@@ -308,14 +369,14 @@ do $$ begin
   raise exception 'wrong offset page accepted';
  exception when serialization_failure then null; end;
 end $$;
-select 'ok 21 - offset CAS rejects skipped/resumed pages without progress mutation';
+select 'ok 23 - offset CAS rejects skipped/resumed pages without progress mutation';
 
 do $$ begin
  if exists(select 1 from public.mailchimp_reconciliation_pages where to_jsonb(mailchimp_reconciliation_pages)::text ~* 'example.com')
     or exists(select 1 from public.connector_receipt_events where event_key like 'mailchimp.reconciliation.%' and redacted_metadata::text ~* 'example.com')
     or exists(select 1 from public.incomplete_records where source='mailchimp-live' and external_id !~ '^mailchimp-member:[0-9a-f]{64}$') then raise exception 'reconciliation/quarantine redaction failed'; end if;
 end $$;
-select 'ok 22 - page/receipt/external identity evidence contains hashes and counts, not raw provider identity';
+select 'ok 24 - page/receipt/external identity evidence contains hashes and counts, not raw provider identity';
 
 reset role;
 do $$ begin
@@ -328,12 +389,12 @@ do $$ begin
   raise exception 'run deleted';
  exception when object_not_in_prerequisite_state then null; end;
 end $$;
-select 'ok 23 - reconciliation page evidence and run authority reject privileged mutation/delete';
+select 'ok 25 - reconciliation page evidence and run authority reject privileged mutation/delete';
 
 do $$ begin
  if (select count(*) from public.incomplete_records where workspace_id='22000000-0000-4000-8000-000000000002')<>0
     or exists(select 1 from public.incomplete_records record join public.connector_receipt_events receipt on receipt.redacted_metadata->>'incompleteRecordId'=record.id::text where record.workspace_id<>receipt.workspace_id) then raise exception 'quarantine crossed workspace'; end if;
 end $$;
-select 'ok 24 - identity quarantine and receipt links remain workspace-contained';
+select 'ok 26 - identity quarantine and receipt links remain workspace-contained';
 
 rollback;

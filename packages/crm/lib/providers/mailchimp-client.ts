@@ -261,7 +261,7 @@ export class MailchimpMarketingClient {
       || !Number.isInteger(offset) || offset < 0) {
       throw new ConnectorError('invalid-input', 'Mailchimp member page is invalid.');
     }
-    const fields = 'members.id,members.email_address,members.unique_email_id,members.status,members.last_changed,total_items';
+    const fields = 'members.id,members.email_address,members.unique_email_id,members.status,members.last_changed,members.merge_fields,total_items';
     const payload = await this.request(`/lists/${input.audienceId}/members?count=${count}&offset=${offset}&fields=${fields}`);
     if (!Array.isArray(payload.members) || !Number.isSafeInteger(payload.total_items)
       || Number(payload.total_items) < 0) {
@@ -271,10 +271,20 @@ export class MailchimpMarketingClient {
       members: payload.members.map((value) => {
         const row = value as Record<string, unknown>;
         const normalizedEmail = typeof row.email_address === 'string' ? row.email_address.toLowerCase() : row.email_address;
+        const mergeFields = row.merge_fields && typeof row.merge_fields === 'object' && !Array.isArray(row.merge_fields)
+          ? row.merge_fields as Record<string, unknown>
+          : {};
+        const mergeValue = (...keys: readonly string[]) => keys
+          .map((key) => mergeFields[key])
+          .find((candidate) => typeof candidate === 'string' && candidate.trim());
+        const inferredPhone = /^(\d{10})@kvleads\.com$/i.exec(String(normalizedEmail ?? ''))?.[1];
         return parseMailchimpAudienceMember({
           memberId: row.id ?? row.unique_email_id,
           subscriberHash: mailchimpSubscriberHash(String(normalizedEmail ?? '')),
           normalizedEmail,
+          firstName: mergeValue('FNAME', 'FIRSTNAME', 'FIRST_NAME'),
+          lastName: mergeValue('LNAME', 'LASTNAME', 'LAST_NAME'),
+          phone: mergeValue('PHONE', 'MMERGE3', 'SMSPHONE') ?? inferredPhone,
           subscriptionStatus: row.status,
           lastChangedAt: row.last_changed,
         });

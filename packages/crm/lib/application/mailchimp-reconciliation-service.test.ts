@@ -126,6 +126,7 @@ describe('durable Mailchimp reconciliation worker', () => {
           members: [{
             memberId: 'member-a', subscriberHash: '4b9bb80620f03eb3719e0a061c14283d',
             normalizedEmail: 'buyer@example.com', subscriptionStatus: 'unsubscribed' as const,
+            firstName: 'Ada', lastName: 'Lovelace', phone: '3055550100',
             lastChangedAt: '2026-08-11T11:00:00.000Z',
           }],
         })) };
@@ -134,7 +135,10 @@ describe('durable Mailchimp reconciliation worker', () => {
     expect(result).toEqual({ claimed: 1, completed: 1, deferred: 0, review: 0, pages: 1 });
     expect(repo.applyPage).toHaveBeenCalledWith(expect.objectContaining({
       nextOffset: 1,
-      members: [expect.objectContaining({ sourceHash: expect.stringMatching(/^[0-9a-f]{64}$/) })],
+      members: [expect.objectContaining({
+        firstName: 'Ada', lastName: 'Lovelace', phone: '3055550100',
+        sourceHash: expect.stringMatching(/^[0-9a-f]{64}$/),
+      })],
     }));
     expect(JSON.stringify(result)).not.toMatch(/buyer@example|token-a/);
   });

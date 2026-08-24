@@ -205,6 +205,23 @@ export function supabaseMailchimpReconciliationRepository(input: {
       });
       if (problem) throw workerError('Failed to apply Mailchimp reconciliation page', problem);
       const result = object(data, 'Mailchimp reconciliation page is invalid.');
+      const enrichedMembers = value.members.map((member) => ({
+        memberId: member.memberId,
+        normalizedEmail: member.normalizedEmail,
+        sourceHash: text(member.sourceHash, 'sourceHash'),
+        ...(member.firstName ? { firstName: member.firstName } : {}),
+        ...(member.lastName ? { lastName: member.lastName } : {}),
+        ...(member.phone ? { phone: member.phone } : {}),
+      }));
+      const { error: enrichmentProblem } = await input.service.rpc('enrich_mailchimp_reconciliation_members', {
+        target_run_id: value.run.id,
+        target_worker_id: value.workerId,
+        target_fencing_token: value.run.fencingToken,
+        target_page_hash: value.pageHash,
+        target_members: enrichedMembers,
+        target_enriched_at: value.appliedAt,
+      });
+      if (enrichmentProblem) throw workerError('Failed to enrich Mailchimp reconciliation members', enrichmentProblem);
       return { run: run(result.run), finalPage: result.finalPage === true, noOp: result.noOp === true };
     },
     async complete(value) {

@@ -177,6 +177,9 @@ export async function drainMailchimpReconciliationRuns(input: {
             memberId: member.memberId,
             subscriberHash: member.subscriberHash,
             status: member.subscriptionStatus,
+            firstName: member.firstName,
+            lastName: member.lastName,
+            phone: member.phone,
             lastChangedAt: member.lastChangedAt,
           }),
         }));

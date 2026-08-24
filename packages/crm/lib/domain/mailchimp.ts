@@ -68,6 +68,9 @@ export interface MailchimpAudienceMember {
   readonly memberId: string;
   readonly subscriberHash: string;
   readonly normalizedEmail: string;
+  readonly firstName?: string;
+  readonly lastName?: string;
+  readonly phone?: string;
   readonly subscriptionStatus: MailchimpSubscriptionStatus;
   readonly lastChangedAt: string;
 }
@@ -79,6 +82,11 @@ function text(value: unknown, field: string, max: number): string {
     throw new ConnectorError('invalid-input', `${field} is invalid.`);
   }
   return clean;
+}
+
+function optionalText(value: unknown, field: string, max: number): string | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  return text(value, field, max);
 }
 
 export function parseMailchimpDataCenter(value: unknown): string {
@@ -193,10 +201,16 @@ export function parseMailchimpAudienceMember(value: unknown): MailchimpAudienceM
   if (!Number.isFinite(new Date(lastChangedAt).getTime())) {
     throw new ConnectorError('invalid-input', 'Mailchimp member timestamp is invalid.');
   }
+  const firstName = optionalText(row.firstName, 'firstName', 120);
+  const lastName = optionalText(row.lastName, 'lastName', 120);
+  const phone = optionalText(row.phone, 'phone', 64);
   return {
     memberId: text(row.memberId, 'memberId', 128),
     subscriberHash,
     normalizedEmail,
+    ...(firstName ? { firstName } : {}),
+    ...(lastName ? { lastName } : {}),
+    ...(phone ? { phone } : {}),
     subscriptionStatus,
     lastChangedAt: new Date(lastChangedAt).toISOString(),
   };
