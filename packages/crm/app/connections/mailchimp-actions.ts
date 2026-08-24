@@ -110,8 +110,8 @@ export async function reconcileMailchimpBaselineAction(formData: FormData) {
       context.workspaceScope,
       { connectionId, pageSize: 100, correlationId: randomUUID() },
     );
-    completed = progress.drained.completed > 0;
-    needsReview = progress.drained.review > 0;
+    completed = progress.targetRun.state === 'succeeded';
+    needsReview = progress.targetRun.state === 'review';
   } catch (error) {
     const message = error instanceof ConnectorError ? error.message : 'Mailchimp baseline reconciliation failed safely.';
     notice('error', message.slice(0, 160));
@@ -163,8 +163,8 @@ export async function finishMailchimpSetupAction(formData: FormData) {
         context.workspaceScope,
         { connectionId, pageSize: 100, correlationId: randomUUID() },
       );
-      baselineCompleted = progress.drained.completed > 0;
-      baselineNeedsReview = progress.drained.review > 0;
+      baselineCompleted = progress.targetRun.state === 'succeeded';
+      baselineNeedsReview = progress.targetRun.state === 'review';
     }
   } catch (error) {
     console.error(JSON.stringify({

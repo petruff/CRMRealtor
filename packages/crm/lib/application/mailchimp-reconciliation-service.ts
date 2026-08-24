@@ -106,7 +106,9 @@ export async function requestAndDrainMailchimpReconciliationCommand(
     fetcher: options.fetcher,
     createClient: options.createClient,
   });
-  return { requested, drained };
+  const targetRun = (await repository.list(scope, input.connectionId, 100))
+    .find((run) => run.id === requested.run.id) ?? requested.run;
+  return { requested, drained, targetRun };
 }
 
 export interface MailchimpReconciliationDrainResult {

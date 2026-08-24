@@ -44,6 +44,7 @@ describe('durable Mailchimp reconciliation worker', () => {
   it('requests and immediately drains an owner-triggered baseline', async () => {
     const repo = repository();
     repo.value.request = vi.fn(async () => ({ run: baseRun, noOp: false }));
+    repo.value.list = vi.fn(async () => [{ ...baseRun, state: 'succeeded' as const }]);
     const result = await requestAndDrainMailchimpReconciliationCommand(
       { getSelectedAudience: vi.fn(async () => ({
         id: 'binding-a', connectionId: 'connection-a', accountIdHash: 'a'.repeat(64),
@@ -74,6 +75,38 @@ describe('durable Mailchimp reconciliation worker', () => {
 
     expect(repo.value.request).toHaveBeenCalledOnce();
     expect(result.drained).toEqual({ claimed: 1, completed: 1, deferred: 0, review: 0, pages: 1 });
+    expect(result.targetRun.state).toBe('succeeded');
+  });
+
+  it('reports the requested run state instead of an unrelated aggregate completion', async () => {
+    const repo = repository();
+    const requestedRun = { ...baseRun, id: 'run-requested', state: 'queued' as const };
+    repo.value.request = vi.fn(async () => ({ run: requestedRun, noOp: false }));
+    repo.value.list = vi.fn(async () => [{ ...requestedRun, state: 'retry_wait' as const }]);
+
+    const result = await requestAndDrainMailchimpReconciliationCommand(
+      { getSelectedAudience: vi.fn(async () => ({
+        id: 'binding-a', connectionId: 'connection-a', accountIdHash: 'a'.repeat(64),
+        dataCenter: 'us21', audienceId: 'audience-a', audienceName: 'Audience A',
+        mappingVersion: 1, selectedAt: '2026-08-11T11:00:00.000Z',
+        baselineRequired: true, webhookRegistrationRequired: false,
+      })) } as never,
+      repo.value,
+      configuration,
+      {
+        mode: 'live', workspaceId: 'workspace-a', role: 'owner',
+        authenticatedUserId: 'owner-a', ownerUserId: 'owner-a', membershipId: 'membership-a',
+      },
+      { connectionId: 'connection-a', pageSize: 100, correlationId: 'correlation-a' },
+      {
+        workerId: 'worker-a', runtimeBudgetMs: 10_000,
+        now: () => new Date('2026-08-11T12:00:00Z'), resolver,
+        createClient: () => ({ listAudienceMembers: vi.fn(async () => ({ totalItems: 0, members: [] })) }),
+      },
+    );
+
+    expect(result.drained.completed).toBe(1);
+    expect(result.targetRun).toMatchObject({ id: 'run-requested', state: 'retry_wait' });
   });
 
   it('decrypts a lease-bound token, applies a bounded page and completes it', async () => {

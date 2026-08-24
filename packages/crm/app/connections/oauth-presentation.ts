@@ -29,6 +29,14 @@ const SUCCESS_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> 
     title: 'Mailchimp is connected',
     message: 'Your account is authorized. Select the audience you want Omnix to keep synchronized.',
   },
+  'mailchimp-setup-complete': {
+    title: 'Mailchimp is ready',
+    message: 'Your newsletter audience, initial contact sync, and subscribe/unsubscribe updates are active.',
+  },
+  'mailchimp-setup-syncing': {
+    title: 'Mailchimp is connected and syncing',
+    message: 'Omnix saved the setup and is finishing the initial contact sync safely in the background.',
+  },
 };
 
 const ERROR_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = {
@@ -87,6 +95,10 @@ const ERROR_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = 
   'mailchimp-setup-failed': {
     title: 'Mailchimp setup could not finish',
     message: 'Your contacts and existing Mailchimp connection are safe. Try once more; if it repeats, the developer can use the connector receipt to diagnose it.',
+  },
+  'mailchimp-setup-review': {
+    title: 'Mailchimp is connected, but some contacts need review',
+    message: 'Subscribe and unsubscribe updates are active. Open the latest contact-sync review before retrying the remaining contacts.',
   },
 };
 

@@ -14,6 +14,12 @@ describe('connection OAuth presentation', () => {
     expect(connectionNotice({ error: 'mailchimp-setup-reconnect' })).toMatchObject({
       tone: 'warning', title: 'Reconnect Mailchimp to finish setup',
     });
+    expect(connectionNotice({ success: 'mailchimp-setup-complete' })).toMatchObject({
+      tone: 'success', title: 'Mailchimp is ready',
+    });
+    expect(connectionNotice({ error: 'mailchimp-setup-review' })).toMatchObject({
+      tone: 'warning', title: 'Mailchimp is connected, but some contacts need review',
+    });
   });
 
   it('creates one guided Google URL and a connection-bound Mailchimp reauthorization URL', () => {
