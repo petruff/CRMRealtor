@@ -13,7 +13,11 @@ export function deriveConnectionCardStatus(
   facts: ConnectionStatusFacts,
 ): { readonly status: ConnectionCardStatus; readonly label?: string } {
   if (!facts.providerEnabled) return { status: 'gated', label: 'External setup required' };
-  if (!facts.connected) return { status: provider === 'mailchimp' ? 'building' : 'uat' };
+  if (!facts.connected) {
+    return provider === 'mailchimp'
+      ? { status: 'ready', label: 'Ready to connect' }
+      : { status: 'uat' };
+  }
   if (provider === 'mailchimp' && (facts.reviewItems ?? 0) > 0) {
     return { status: 'review', label: 'Connected · review required' };
   }
