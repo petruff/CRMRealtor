@@ -4,17 +4,18 @@ story_title: 'Production Import Receipt and Connector Recovery'
 gate: CONCERNS
 status_reason: >-
   The application changes are causally aligned with all three confirmed Production defects and pass
-  lint, typecheck, 843 tests, the optimized build, and static security review. Production promotion
-  remains blocked because the Supabase migrations and rollbacks have not been replayed, CodeRabbit is
-  unavailable, authenticated responsive smoke has not run, and Judith-only provider UAT is incomplete.
+  lint, typecheck, 843 tests, the optimized build, dependency audit, static security review, and
+  verified Production forward contracts. Production promotion remains blocked because migration
+  history and rollback rehearsal are incomplete, authenticated responsive smoke has not run, and
+  Judith-only provider UAT is incomplete. CodeRabbit is not applicable by product-owner scope decision.
 reviewer: 'Argus (Test Architect)'
-reviewed_revision: 'working-tree:uncommitted'
-updated: '2026-08-23T21:57:00-04:00'
+reviewed_revision: '083c22c plus release-evidence update'
+updated: '2026-08-24T09:15:00-04:00'
 top_issues:
   - id: 'MIG-3.31-001'
     severity: high
-    finding: 'Forward migration, pgTAP, and rollback execution are not evidenced because local PostgreSQL and authorized remote project access are unavailable.'
-    suggested_action: 'Replay forward migrations and pgTAP, rehearse rollback, and preserve migration history before deploying the dependent application code.'
+    finding: 'Production forward contracts are verified, but clean replay, migration-history preservation, and rollback rehearsal remain incomplete.'
+    suggested_action: 'Record the applied versions through an authorized Supabase migration path, replay the migrations, and rehearse rollback before Production promotion.'
     suggested_owner: '@data-engineer + @github-devops'
   - id: 'REL-3.31-002'
     severity: high
@@ -35,7 +36,8 @@ evidence:
   typecheck: PASS
   build: PASS
   static_security_scan: PASS
-  coderabbit: NOT_RUN
+  coderabbit: NOT_APPLICABLE_PRODUCT_OWNER_SCOPE
+  production_forward_contracts: PASS
   database_migration_replay: NOT_RUN
   rollback_rehearsal: NOT_RUN
   authenticated_production_smoke: NOT_RUN
@@ -49,13 +51,13 @@ nfr_validation:
     notes: 'Static scan found no dangerous execution, XSS, hardcoded secret, SQL injection, validation, or CORS patterns; manual review confirmed secret-free telemetry and evidence cross-checking.'
   reliability:
     status: CONCERNS
-    notes: 'Application recovery behavior is tested, but database replay and live exact-file recovery are not yet evidenced.'
+    notes: 'Application recovery behavior and Production forward contracts are verified, but clean database replay, migration history, rollback, and live exact-file recovery are not yet evidenced.'
   maintainability:
     status: PASS
     notes: 'Provider, presentation, telemetry, import projection, migration, rollback, and test boundaries remain explicit and typed.'
 recommendations:
   immediate:
-    - action: 'Do not deploy the application before both additive Supabase migrations are applied through a migration-history-preserving path.'
+    - action: 'Do not promote the application until the already-applied Supabase versions are reconciled through a migration-history-preserving path.'
       refs: ['docs/stories/3.31/qa/migration_validation.json']
     - action: 'After deployment, recover the same Numbers file before asking Judith to perform any further import.'
       refs: ['docs/incidents/INC-2026-08-23-01-import-receipt-and-connector-activation.md']
@@ -63,7 +65,7 @@ recommendations:
     - action: 'Add repository CI for migration replay, rollback rehearsal, application quality gates, and release smoke orchestration.'
       refs: ['docs/stories/3.31/qa/migration_validation.json']
 automation:
-  coderabbit: 'unavailable-no-ubuntu-wsl-or-native-cli'
+  coderabbit: 'not-applicable-product-owner-scope'
   lint: PASS
   typecheck: PASS
   tests: PASS

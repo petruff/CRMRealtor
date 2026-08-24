@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-23T21:55:00-04:00",
+  "timestamp": "2026-08-24T09:15:00-04:00",
   "story_id": "3.31",
   "framework": "supabase",
   "summary": {
@@ -7,7 +7,7 @@
     "migrations_found": 2,
     "migrations_missing": 0,
     "rollbacks_found": 2,
-    "migrations_applied": 0,
+    "migrations_applied": 2,
     "issues_found": 3,
     "blocking_for_production": true
   },
@@ -19,14 +19,15 @@
     "function_privileges": "PASS_STATIC_REVIEW",
     "local_database_replay": "NOT_RUN_DOCKER_UNAVAILABLE",
     "linked_database_lint": "NOT_RUN_PROJECT_ACCESS_UNAVAILABLE",
-    "production_migration_history": "NOT_VERIFIED"
+    "production_forward_contracts": "PASS_VERIFIED_READ_ONLY",
+    "production_migration_history": "NOT_RECORDED_SQL_EDITOR_DELIVERY"
   },
   "issues": [
     {
       "id": "MIG-001",
       "type": "MIGRATION_NOT_REPLAYED",
       "severity": "HIGH",
-      "description": "The forward migrations and pgTAP tests could not be executed because Docker Desktop cannot start the local PostgreSQL service.",
+      "description": "Both forward migrations were applied transactionally to Production and verified read-only, but a clean replay with pgTAP could not run because Docker Desktop cannot start the local PostgreSQL service.",
       "required_resolution": "Execute a clean forward migration and pgTAP replay before Production promotion."
     },
     {
@@ -40,9 +41,9 @@
       "id": "MIG-003",
       "type": "NO_AUTHORIZED_MIGRATION_DELIVERY_PATH",
       "severity": "HIGH",
-      "description": "The repository has no GitHub workflow for Supabase migration delivery, the CLI is not linked, and the available Supabase account cannot list the Production project.",
-      "required_resolution": "Use an authorized, migration-history-preserving Supabase deployment path before deploying the dependent application code."
+      "description": "The authorized SQL Editor session applied both migrations, but that delivery path did not create Supabase CLI migration history.",
+      "required_resolution": "Reconcile the applied versions through an authorized, migration-history-preserving Supabase delivery path before Production promotion."
     }
   ],
-  "recommendation": "CONCERNS — code may be committed and reviewed, but Production promotion is blocked until forward replay, rollback rehearsal, and authorized migration delivery are evidenced."
+  "recommendation": "CONCERNS — code may be committed, pushed, and reviewed in Preview, but Production promotion is blocked until clean replay, rollback rehearsal, migration-history reconciliation, authenticated smoke, and exact-file recovery are evidenced."
 }
