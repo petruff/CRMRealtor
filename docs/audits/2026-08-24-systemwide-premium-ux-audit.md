@@ -25,7 +25,7 @@ Local private screenshots are retained under `docs/audits/evidence/2026-08-24-pr
 5. **Pipeline — healthy with an intentional horizontal board.** Desktop drag and drop is supplemented by a move selector. The board is contained in its own horizontal region. Thirty-eight drag/evidence controls were below 40 px in the measured view; the affected controls now use a 44 px target contract.
 6. **Insights overview — visually strong.** Command metrics, stage current, temperature, work, source and readiness sections have coherent hierarchy, truthful zero/withheld states and real contributor drilldowns.
 7. **Exact Contributors — healthy after responsive refinement.** The experience is bounded to 12 records per page with search, record type, ordering and canonical pagination. At the measured 843 px content width, the four filters were needlessly compressed because their breakpoint followed the browser viewport. They now reflow to two columns from the actual Insights container while preserving an efficient two-column record list until that list itself becomes narrow.
-8. **Transaction intelligence — confirmed high-impact defect, corrected locally.** At a 1277 px browser width, the right form column was only 320 px. Each date label received 132 px while Chromium required a 172 px native date input, so both controls exceeded their parents by about 40 px and collided. The transaction grid and financial cards now respond to the 843 px content container, the entry form moves below the ledger, and native controls receive explicit minimum and maximum width rules.
+8. **Transaction intelligence — confirmed high-impact defect, corrected and verified in production.** At a 1277 px browser width, the right form column was only 320 px. Each date label received 132 px while Chromium required a 172 px native date input, so both controls exceeded their parents by about 40 px and collided. A first unnamed-container correction did not activate in the deployed browser and was rejected during same-state verification. The final named-container contract moves the form below the ledger at the measured 843 px content width; both date inputs now measure exactly 393 px inside 393 px parents with no collision. The phone state also has no input or page-level overflow.
 9. **Omnix AI — healthy with corrected assistive text.** The prioritized brief and bounded copilot are understandable. A visual line break concatenated the heading as `business,already` in the accessibility tree; an explicit whitespace node corrects it.
 10. **Mailers — healthy.** Printed-mailer completion remains task-oriented, dated and responsive.
 11. **Connections — visually healthy; provider state still governs functionality.** Google remains presented as incomplete while Mailchimp is presented as connected. No visual audit can prove provider synchronization or user authorization health.
@@ -63,7 +63,7 @@ Local private screenshots are retained under `docs/audits/evidence/2026-08-24-pr
 2. Screenshots and DOM checks do not prove complete keyboard traversal, screen-reader output or contrast compliance across every state.
 3. The floating Omnix launcher remains an overlay by design. It is a valid 56 px target and terminal content has extra clearance, but a future user test should determine whether an auto-minimize-on-scroll behavior is preferable.
 4. Google and Mailchimp provider health, token refresh, webhook delivery and calendar/Gmail authorization require connector receipts and live provider checks; visual state alone is insufficient.
-5. Current production will retain the date collision until this local candidate is released and revalidated at the same authenticated state.
+5. Connector availability and production UX readiness remain different claims. The visual release is verified, while end-to-end provider synchronization remains governed by connector-specific evidence.
 
 ## Quality Evidence
 
@@ -73,7 +73,12 @@ Local private screenshots are retained under `docs/audits/evidence/2026-08-24-pr
 - TypeScript: passed.
 - Next.js production build: passed.
 - Browser console logs during desktop and phone route audits: no errors observed.
+- Production deployment: `dpl_DP8g4QT9Pa4EutHEXDPwmswt2Egz` (`READY`, target `production`).
+- Production health endpoint: `ok`; readiness endpoint: database configured and available.
+- Authenticated post-release geometry: 1292 px desktop and 390 px phone passed with no page-level overflow; both date controls remained inside their parents.
+- Exact Contributors post-release geometry: controls reflowed to a 2 × 2 grid; the bounded 12-record view retained a readable two-column list.
+- Pipeline phone geometry: the board overflow remained inside its 375 px scroller and the drag target measured 44 × 44 px.
 
 ## Current Decision
 
-**READY FOR RELEASE CANDIDATE REVIEW.** The confirmed system-owned UX defects are corrected in the local candidate. Production release and same-state authenticated after-captures remain separate release gates.
+**PRODUCTION PASS WITH DOCUMENTED VERIFICATION GAPS.** The confirmed system-owned visual defects are corrected and the production alias was revalidated in the same authenticated states. This is not a claim of complete WCAG certification or provider-backed connector health; the remaining gaps above stay open.
