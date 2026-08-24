@@ -60,7 +60,7 @@ const MODEL: InsightsDashboardModel = {
     { id: 'stage-new', label: 'New stage and aging', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'contact', recordId: 'contact-new', label: 'Taylor Reed', href: '/contacts/contact-new', detail: '4.5 days in stage' }] },
     { id: 'stage-closed', label: 'Closed stage and aging', status: 'available', scope: 'snapshot', contributors: [] },
     { id: 'conversion-eligible', label: 'Conversion eligible cohort', status: 'available', scope: 'current-period', contributors: [{ entityType: 'contact', recordId: 'contact-cohort', label: 'Jordan Lane', href: '/contacts/contact-cohort', detail: 'Reached Closed strictly after leaving New' }] },
-    { id: 'tasks-open', label: 'Open tasks', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'task', recordId: 'task-open', label: 'Call Jordan', detail: 'Open task snapshot' }] },
+    { id: 'tasks-open', label: 'Open tasks', status: 'available', scope: 'snapshot', contributors: [{ entityType: 'task', recordId: 'task-open', label: 'Call Jordan', href: '/activities?status=all&q=Call%20Jordan', detail: 'Open task snapshot' }] },
     { id: 'tasks-overdue', label: 'Overdue tasks', status: 'available', scope: 'snapshot', contributors: [] },
     { id: 'tasks-due-soon', label: 'Tasks due next 7 days', status: 'available', scope: 'snapshot', contributors: [] },
     { id: 'tasks-completed', label: 'Tasks completed in period', status: 'available', scope: 'current-period', contributors: [] },
@@ -78,6 +78,7 @@ const MODEL: InsightsDashboardModel = {
   coverage: {
     contactBoundedAt: 500, contactPossiblyTruncated: false,
     transitionBoundedAt: 500, transitionPossiblyTruncated: false,
+    eventBoundedAt: 1500,
     taskBoundedAt: 500, taskPossiblyTruncated: false,
     schemaVersion: 'operating-insights.v1',
     currentFrom: '2026-05-24T18:00:00.000Z', currentTo: '2026-08-22T18:00:00.000Z',
@@ -112,12 +113,43 @@ describe('Insights dashboard', () => {
     const selector = within(detailRegion).getByRole('combobox', { name: 'Metric detail' });
 
     expect(selector).toHaveValue('source-referral');
-    expect(within(detailRegion).getByRole('link', { name: 'Morgan Ellis' })).toHaveAttribute('href', '/contacts/contact-referral');
+    expect(within(detailRegion).getByRole('link', { name: 'Open Morgan Ellis' })).toHaveAttribute('href', '/contacts/contact-referral');
     expect(within(detailRegion).queryByText('contact-referral')).not.toBeInTheDocument();
     expect(within(detailRegion).getByText(/90-day cohort/)).toBeInTheDocument();
-    expect(within(detailRegion).getByDisplayValue('90')).toHaveAttribute('name', 'period');
     await user.selectOptions(selector, 'tasks-open');
     expect(selector).toHaveValue('tasks-open');
+    expect(within(detailRegion).getByRole('link', { name: 'Open Call Jordan' })).toHaveAttribute('href', '/activities?status=all&q=Call%20Jordan');
+    expect(window.location.search).toContain('detail=tasks-open');
+  });
+
+  it('keeps large exact sets bounded, searchable, filterable, and paginated', async () => {
+    const user = userEvent.setup();
+    const contributors = Array.from({ length: 25 }, (_, index) => ({
+      entityType: 'contact' as const,
+      recordId: `contact-${index + 1}`,
+      label: `Person ${String(index + 1).padStart(2, '0')}`,
+      href: `/contacts/contact-${index + 1}`,
+      detail: index === 24 ? 'Priority referral relationship' : 'Stored relationship record',
+    }));
+    const drilldowns = MODEL.drilldowns.map((item) => item.id === 'portfolio-all' ? { ...item, contributors } : item);
+    render(<InsightsDashboard model={{ ...MODEL, selectedDrilldownId: 'portfolio-all', drilldowns }} />);
+    const detailRegion = screen.getByRole('region', { name: 'Inspect the records behind one metric' });
+
+    expect(within(detailRegion).getAllByText('25', { selector: 'strong' }).length).toBeGreaterThanOrEqual(2);
+    expect(within(detailRegion).getByText(/Showing/)).toHaveTextContent('Showing 1–12 of 25 exact records');
+    expect(within(detailRegion).getAllByRole('link', { name: /Open Person/ })).toHaveLength(12);
+
+    await user.click(within(detailRegion).getByRole('button', { name: /Next/ }));
+    expect(within(detailRegion).getByText(/Showing/)).toHaveTextContent('Showing 13–24 of 25 exact records');
+
+    await user.type(within(detailRegion).getByRole('textbox', { name: 'Find a contributor' }), 'Priority referral');
+    expect(within(detailRegion).getByText(/Showing/)).toHaveTextContent('Showing 1–1 of 1 matching 25 exact records');
+    expect(within(detailRegion).getByRole('link', { name: 'Open Person 25' })).toBeInTheDocument();
+
+    await user.selectOptions(within(detailRegion).getByRole('combobox', { name: 'Record type' }), 'task');
+    expect(within(detailRegion).getByText('No matching contributors')).toBeInTheDocument();
+    await user.click(within(detailRegion).getByRole('button', { name: 'Clear filters' }));
+    expect(within(detailRegion).getByText(/Showing/)).toHaveTextContent('Showing 1–12 of 25 exact records');
   });
 
   it('shows owner, assistant boundary rows including unassigned and inactive or unknown', () => {
@@ -145,9 +177,10 @@ describe('Insights dashboard', () => {
       drilldowns: incomplete,
       coverage: { ...MODEL.coverage, transitionPossiblyTruncated: true },
     }} />);
-    expect(screen.getAllByText(/Incomplete result/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/Incomplete result/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Incomplete evidence set')).toBeInTheDocument();
     expect(screen.getByText(/affected metrics are incomplete/)).toBeInTheDocument();
-    expect(screen.getByText(/500-event read boundary/)).toBeInTheDocument();
+    expect(screen.getByText(/500-record per-type read boundary/)).toBeInTheDocument();
   });
 
   it('renders verified live finance and a linked deal intake path', () => {

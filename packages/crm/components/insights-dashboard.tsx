@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import {
@@ -6,25 +7,15 @@ import {
 } from 'lucide-react';
 import { createTransactionAction } from '@/app/insights/actions';
 import type { RealEstateTransaction, TransactionMetrics } from '@/lib/domain/transaction';
+import {
+  InsightsContributorExplorer,
+  type InsightsDrilldownView,
+} from '@/components/insights-contributor-explorer';
+
+export type { InsightsContributorView, InsightsDrilldownView } from '@/components/insights-contributor-explorer';
 
 type VisualStyle = CSSProperties & Record<`--${string}`, string | number>;
 type DisplayStatus = 'available' | 'possibly-truncated' | 'insufficient-evidence';
-
-export interface InsightsContributorView {
-  entityType: 'contact' | 'task';
-  recordId: string;
-  label: string;
-  href?: string;
-  detail?: string;
-}
-
-export interface InsightsDrilldownView {
-  id: string;
-  label: string;
-  status: DisplayStatus;
-  scope: 'snapshot' | 'current-period';
-  contributors: readonly InsightsContributorView[];
-}
 
 export interface InsightsStageView {
   stage: string; label: string; count: number; averageDaysInStage: number | null;
@@ -84,6 +75,7 @@ export interface InsightsDashboardModel {
   coverage: {
     contactBoundedAt: number; contactPossiblyTruncated: boolean;
     transitionBoundedAt: number; transitionPossiblyTruncated: boolean;
+    eventBoundedAt: number;
     taskBoundedAt: number; taskPossiblyTruncated: boolean;
     schemaVersion: string; currentFrom: string; currentTo: string;
     previousFrom: string; previousTo: string;
@@ -135,6 +127,7 @@ function StatusNote({ status }: { status: DisplayStatus }) {
 }
 
 export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) {
+  const transactionIdempotencyKey = randomUUID();
   const maxStage = Math.max(1, ...model.pipeline.map((stage) => stage.count));
   const leadValues = [model.portfolio.hot, model.portfolio.warm, model.portfolio.nurture];
   const totalLeadTypes = leadValues.every((value) => value !== null)
@@ -142,10 +135,9 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
     : null;
   const hotEnd = percent(model.portfolio.hot, totalLeadTypes) ?? 0;
   const warmEnd = hotEnd + (percent(model.portfolio.warm, totalLeadTypes) ?? 0);
-  const selected = model.drilldowns.find((item) => item.id === model.selectedDrilldownId) ?? model.drilldowns[0];
   const dataWarnings = [
     model.coverage.contactPossiblyTruncated ? `Contact view reached its ${model.coverage.contactBoundedAt}-record read boundary.` : null,
-    model.coverage.transitionPossiblyTruncated ? `Pipeline history reached its ${model.coverage.transitionBoundedAt}-event read boundary.` : null,
+    model.coverage.transitionPossiblyTruncated ? `Relevant activity history reached a ${model.coverage.transitionBoundedAt}-record per-type read boundary.` : null,
     model.coverage.taskPossiblyTruncated ? `Task history reached its ${model.coverage.taskBoundedAt}-task read boundary.` : null,
   ].filter((warning): warning is string => Boolean(warning));
 
@@ -216,19 +208,20 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
 
     <section id="contributor-details" className="insights-foundation scroll-mt-24" aria-labelledby="contributor-details-title">
       <div className="insights-foundation-heading"><span><Database className="size-5" aria-hidden /></span><div><p className="eyebrow">Exact contributors</p><h2 id="contributor-details-title">Inspect the records behind one metric</h2></div></div>
-      <form method="get" action="/insights#contributor-details" className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end"><input type="hidden" name="period" value={model.periodDays} /><label className="min-w-0 flex-1 text-sm text-muted"><span className="mb-2 block font-medium text-ink">Metric detail</span><select name="detail" defaultValue={selected?.id} className="sk-input">{model.drilldowns.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label><button type="submit" className="sk-primary-button min-h-11 px-4">Show contributors</button></form>
-      {selected ? <div className="mt-5 rounded-[var(--sk-control-radius)] border border-line bg-surface p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-ink">{selected.label}</h3><p className="mt-1 text-sm text-muted">{selected.scope === 'snapshot' ? `Current snapshot as of ${model.coverage.currentTo.slice(0, 10)}` : `${model.periodDays}-day cohort · ${model.coverage.currentFrom.slice(0, 10)} to ${model.coverage.currentTo.slice(0, 10)}`}</p></div><span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-muted">{selected.contributors.length} records shown</span></div>
-        <StatusNote status={selected.status} />
-        {selected.status === 'insufficient-evidence' ? <p className="mt-4 text-sm text-muted">No contributor list is available because the source evidence was not loaded.</p> : selected.contributors.length ? <ul className="mt-4 grid gap-px overflow-hidden rounded-[var(--sk-control-radius)] bg-line">{selected.contributors.map((contributor) => <li key={`${contributor.entityType}:${contributor.recordId}`} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 bg-surface px-4 py-2"><span className="rounded-full bg-surface-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-subtle">{contributor.entityType === 'contact' ? 'Contact' : 'Task'}</span>{contributor.href ? <Link href={contributor.href} className="font-medium text-ink underline-offset-2 hover:underline">{contributor.label}</Link> : <strong className="font-medium text-ink">{contributor.label}</strong>}{contributor.detail ? <span className="min-w-0 flex-1 text-sm text-muted">{contributor.detail}</span> : null}</li>)}</ul> : <p className="mt-4 text-sm text-muted">No records contributed to this metric in the selected scope.</p>}
-      </div> : null}
+      <InsightsContributorExplorer
+        periodDays={model.periodDays}
+        currentFrom={model.coverage.currentFrom}
+        currentTo={model.coverage.currentTo}
+        drilldowns={model.drilldowns}
+        selectedDrilldownId={model.selectedDrilldownId}
+      />
     </section>
 
     <section className="insights-foundation" aria-labelledby="data-foundation-title">
       <div className="insights-foundation-heading"><span><Database className="size-5" aria-hidden /></span><div><p className="eyebrow">Data foundation</p><h2 id="data-foundation-title">What the CRM can act on safely</h2></div></div>
       <div className="insights-readiness-grid">{model.readiness.map((item) => { const readinessPercentage = percent(item.value, model.totalContacts); return <Link key={item.label} href={detailHref(model, item.detailId)}><span>{item.label}</span><strong>{readinessPercentage === null ? '—' : `${readinessPercentage}%`}</strong>{item.value === null || model.totalContacts === null ? <span className="text-xs text-muted">Insufficient evidence</span> : <><progress value={item.value} max={Math.max(1, model.totalContacts)} aria-label={`${item.label}: ${item.value} of ${model.totalContacts}`} /><small>{item.value} of {model.totalContacts}</small></>}</Link>; })}</div>
       {dataWarnings.length ? <div className="insights-coverage-warning" role="status"><ShieldCheck className="size-5" aria-hidden /><div><strong>Coverage boundary reached — affected metrics are incomplete</strong><ul>{dataWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div></div> : <p className="insights-coverage-ok"><ShieldCheck className="size-4" aria-hidden /> This view remained inside every current read boundary.</p>}
-      <details className="insights-evidence-details"><summary>View evidence and coverage</summary><dl><div><dt>Contract</dt><dd>{model.coverage.schemaVersion} · {model.coverage.mode === 'live' ? 'live authenticated' : 'sample process-local'}</dd></div><div><dt>Current period</dt><dd>{model.coverage.currentFrom.slice(0, 10)} to {model.coverage.currentTo.slice(0, 10)}</dd></div><div><dt>Previous period</dt><dd>{model.coverage.previousFrom.slice(0, 10)} to {model.coverage.previousTo.slice(0, 10)}</dd></div><div><dt>Rows read</dt><dd>{displayed(model.coverage.contactRows)}/{model.coverage.contactBoundedAt} contacts · {displayed(model.coverage.transitionRows)}/{model.coverage.transitionBoundedAt * 2} events · {displayed(model.coverage.taskRows)}/{model.coverage.taskBoundedAt} tasks · {displayed(model.coverage.membershipRows)} members</dd></div><div><dt>Scope</dt><dd>Active workspace contacts; archived contacts excluded. Stored events and tasks remain workspace-scoped.</dd></div></dl></details>
+      <details className="insights-evidence-details"><summary>View evidence and coverage</summary><dl><div><dt>Contract</dt><dd>{model.coverage.schemaVersion} · {model.coverage.mode === 'live' ? 'live authenticated' : 'sample process-local'}</dd></div><div><dt>Current period</dt><dd>{model.coverage.currentFrom.slice(0, 10)} to {model.coverage.currentTo.slice(0, 10)}</dd></div><div><dt>Previous period</dt><dd>{model.coverage.previousFrom.slice(0, 10)} to {model.coverage.previousTo.slice(0, 10)}</dd></div><div><dt>Rows read</dt><dd>{displayed(model.coverage.contactRows)}/{model.coverage.contactBoundedAt} contacts · {displayed(model.coverage.transitionRows)}/{model.coverage.eventBoundedAt} relevant events · {displayed(model.coverage.taskRows)}/{model.coverage.taskBoundedAt} tasks · {displayed(model.coverage.membershipRows)} members</dd></div><div><dt>Scope</dt><dd>Active workspace contacts; archived contacts excluded. Only stage-change, task-created and task-completed events are read for this report.</dd></div></dl></details>
     </section>
 
     <section id="transaction-intelligence" className="insights-transactions" aria-labelledby="transaction-intelligence-title">
@@ -252,6 +245,7 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
           <form action={createTransactionAction} className="insights-deal-form">
             <div><p className="eyebrow">Verified entry</p><h3>Add a deal</h3><p>Amounts are stored as exact USD cents. Under-contract and closed deals also move the linked contact in Pipeline.</p></div>
             <input type="hidden" name="period" value={model.periodDays} />
+            <input type="hidden" name="idempotencyKey" value={transactionIdempotencyKey} />
             <label>Contact<select className="sk-input" name="contactId" required defaultValue=""><option value="" disabled>Select a contact</option>{model.transactionContacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.label}</option>)}</select></label>
             <div className="insights-deal-form-row"><label>Status<select className="sk-input" name="status" defaultValue="under-contract"><option value="pending">Pending</option><option value="under-contract">Under contract</option><option value="closed">Closed</option><option value="lost">Lost</option><option value="cancelled">Cancelled</option></select></label><label>Side<select className="sk-input" name="side" defaultValue="buyer"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="dual">Dual</option><option value="referral">Referral</option></select></label></div>
             <label>Property address<input className="sk-input" name="propertyAddress" maxLength={240} required placeholder="123 Main Street, City, State" /></label>

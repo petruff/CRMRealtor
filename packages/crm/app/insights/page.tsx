@@ -48,6 +48,7 @@ function contactContributors(
 function taskContributors(taskIds: readonly string[], labels: ReadonlyMap<string, string>, detail: string): InsightsContributorView[] {
   return taskIds.map((recordId) => ({
     entityType: 'task', recordId, label: labels.get(recordId) ?? 'CRM task', detail,
+    href: `/activities?status=all&q=${encodeURIComponent(labels.get(recordId) ?? 'CRM task')}`,
   }));
 }
 
@@ -248,6 +249,7 @@ export default async function InsightsPage({
       contactPossiblyTruncated: report.coverage.contacts.truncated,
       transitionBoundedAt: report.pipeline.current.evidence.boundedAt,
       transitionPossiblyTruncated: report.coverage.events.truncated,
+      eventBoundedAt: report.coverage.events.boundedAt ?? report.pipeline.current.evidence.boundedAt * 3,
       taskBoundedAt: report.coverage.tasks.boundedAt ?? 500,
       taskPossiblyTruncated: report.coverage.tasks.truncated,
       schemaVersion: report.schemaVersion,

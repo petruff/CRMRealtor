@@ -104,7 +104,7 @@ export default async function ActivitiesPage({
       <form
         method="get"
         role="search"
-        className="sk-group mb-6 grid gap-px bg-line md:grid-cols-2 xl:grid-cols-6"
+        className="activity-filter-grid sk-group mb-6 grid gap-px bg-line md:grid-cols-2"
       >
         <label className="bg-surface p-2">
           <span className="sr-only">Search tasks</span>

@@ -33,6 +33,8 @@ describe('transaction intelligence', () => {
     };
     expect(validateTransactionInput(valid).propertyAddress).toBe('10 Lake Road');
     expect(() => validateTransactionInput({ ...valid, closedAt: undefined })).toThrow(/Closed date/);
+    expect(() => validateTransactionInput({ ...valid, closedAt: '2026-02-31' })).toThrow(/valid date/);
+    expect(() => validateTransactionInput({ ...valid, idempotencyKey: 'not-a-uuid' })).toThrow(/valid UUID/);
     expect(() => validateTransactionInput({ ...valid, expenseCents: -1 })).toThrow(/non-negative/);
   });
 });

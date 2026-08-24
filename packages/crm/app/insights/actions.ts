@@ -1,6 +1,5 @@
 'use server';
 
-import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getRepository } from '@/lib/data';
@@ -23,15 +22,26 @@ function money(formData: FormData, key: string): number {
 function date(formData: FormData, key: string): string | undefined {
   const value = text(formData, key);
   if (!value) return undefined;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00Z`))) {
-    throw new Error(`${key} must be a valid date.`);
+  const label = key === 'expectedCloseDate' ? 'Expected close date' : 'Closed date';
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  const parsed = match ? new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))) : undefined;
+  if (!match || !parsed || parsed.getUTCFullYear() !== Number(match[1]) || parsed.getUTCMonth() !== Number(match[2]) - 1 || parsed.getUTCDate() !== Number(match[3])) {
+    throw new Error(`${label} must be a valid date.`);
+  }
+  return value;
+}
+
+function idempotencyKey(formData: FormData): string {
+  const value = text(formData, 'idempotencyKey');
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)) {
+    throw new Error('This deal form expired. Refresh Insights and try again.');
   }
   return value;
 }
 
 function friendlyFailure(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
-  if (/contact|closed date|property address|dollar amount|choose a/i.test(message)) return message;
+  if (/contact|close date|closed date|property address|dollar amount|choose a|form expired/i.test(message)) return message;
   if (/ledger is unavailable|schema cache|relation/i.test(message)) {
     return 'Financial setup is still finishing. Nothing was saved; please try again shortly.';
   }
@@ -52,7 +62,7 @@ export async function createTransactionAction(formData: FormData): Promise<never
       expectedCloseDate: date(formData, 'expectedCloseDate'), closedAt: date(formData, 'closedAt'),
       salePriceCents: money(formData, 'salePrice'), grossCommissionCents: money(formData, 'grossCommission'),
       netCommissionCents: money(formData, 'netCommission'), marketingCostCents: money(formData, 'marketingCost'),
-      expenseCents: money(formData, 'expenses'), idempotencyKey: randomUUID(),
+      expenseCents: money(formData, 'expenses'), idempotencyKey: idempotencyKey(formData),
     });
     revalidatePath('/insights'); revalidatePath('/pipeline'); revalidatePath('/');
   } catch (error) {

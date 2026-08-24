@@ -67,6 +67,16 @@ function cents(value: number, label: string): number {
   return value;
 }
 
+function validCalendarDate(value: string | undefined): boolean {
+  if (!value) return true;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const parsed = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return parsed.getUTCFullYear() === Number(match[1])
+    && parsed.getUTCMonth() === Number(match[2]) - 1
+    && parsed.getUTCDate() === Number(match[3]);
+}
+
 export function validateTransactionInput(input: CreateRealEstateTransactionInput): CreateRealEstateTransactionInput {
   if (!/^[0-9a-f-]{36}$/i.test(input.contactId)) throw new Error('Choose a valid contact.');
   if (!TRANSACTION_STATUSES.includes(input.status)) throw new Error('Choose a valid transaction status.');
@@ -74,6 +84,11 @@ export function validateTransactionInput(input: CreateRealEstateTransactionInput
   const propertyAddress = input.propertyAddress.trim().replace(/\s+/g, ' ').slice(0, 240);
   if (!propertyAddress) throw new Error('Property address is required.');
   if (input.status === 'closed' && !input.closedAt) throw new Error('Closed date is required for a closed transaction.');
+  if (!validCalendarDate(input.expectedCloseDate)) throw new Error('Expected close date must be a valid date.');
+  if (!validCalendarDate(input.closedAt)) throw new Error('Closed date must be a valid date.');
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.idempotencyKey)) {
+    throw new Error('Transaction idempotency key must be a valid UUID.');
+  }
   return {
     ...input,
     propertyAddress,
