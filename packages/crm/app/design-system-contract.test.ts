@@ -69,8 +69,11 @@ describe('authenticated editorial design contract', () => {
     expect(input).toContain('min-width: 0;');
     expect(input).toContain('max-width: 100%;');
     expect(globalCss).toMatch(/input\[type='date'\]\.sk-input,[^{]+\{[^}]*min-inline-size:\s*0;/s);
-    expect(globalCss).toContain('@container (max-width: 63.99rem) { .insights-financial-grid');
+    expect(globalCss).toContain('container-name: insights-studio;');
+    expect(globalCss).toContain('container-name: deal-form;');
+    expect(globalCss).toContain('@container insights-studio (max-width: 63.99rem) { .insights-financial-grid');
     expect(globalCss).toContain('.insights-transaction-grid { grid-template-columns: 1fr; }');
+    expect(globalCss).toContain('@container deal-form (max-width: 26rem) { .insights-deal-form-row { grid-template-columns: 1fr; }');
     expect(globalCss).toContain('@container (max-width: 63.99rem) { .insights-contributor-controls { grid-template-columns: repeat(2,');
   });
 
