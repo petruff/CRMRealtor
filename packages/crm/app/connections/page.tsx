@@ -877,7 +877,7 @@ export default async function ConnectionsPage({
                   {['active', 'degraded', 'reauthorization-required'].includes(connection.status) && (
                     <form action={disconnectConnectionAction}>
                       <input type="hidden" name="connectionId" value={connection.id} />
-                      <button className="sk-button-secondary" type="submit">Disconnect safely</button>
+                      <button className="sk-button-secondary" type="submit">Disconnect account</button>
                     </form>
                   )}
                 </div>

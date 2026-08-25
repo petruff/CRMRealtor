@@ -48,7 +48,7 @@ async function action(
   } catch (error) {
     const message = error instanceof ConnectorError
       ? error.message
-      : 'The connector operation failed safely. Review its latest receipt.';
+      : 'The connection could not be updated. Nothing unsafe was changed; try again.';
     resultRedirect('error', message.slice(0, 180));
   }
   resultRedirect('success', success);
@@ -68,7 +68,7 @@ export async function disconnectConnectionAction(formData: FormData) {
       connectionId: value(formData, 'connectionId'),
       correlationId: randomUUID(),
     });
-  }, 'Disconnect requested. Revocation evidence will appear in receipts.');
+  }, 'The account is disconnecting. Your CRM history will remain available.');
 }
 
 export async function approveConnectorIntentAction(formData: FormData) {
@@ -80,7 +80,7 @@ export async function approveConnectorIntentAction(formData: FormData) {
       idempotencyKey: `ui-approve:${randomUUID()}`,
       correlationId: randomUUID(),
     });
-  }, 'Approved and queued exactly once.');
+  }, 'Approved. Omnix will complete this action once.');
 }
 
 export async function approveTextingIntentAction(formData: FormData) {
@@ -95,7 +95,7 @@ export async function approveTextingIntentAction(formData: FormData) {
         payloadHash: value(formData, 'payloadHash'),
       },
     );
-  }, 'Text approved with current consent and quiet-hours evidence, then queued exactly once.');
+  }, 'Text approved. Omnix confirmed the contact’s permission and quiet hours before scheduling it.');
 }
 
 export async function disableTextingAction(formData: FormData) {
@@ -109,7 +109,7 @@ export async function disableTextingAction(formData: FormData) {
         destroySendCredentials: value(formData, 'destroySendCredentials') === 'true',
       },
     );
-  }, 'Provider texting disabled; queued sends were cancelled and evidence was retained.');
+  }, 'Business texting was disconnected and waiting messages were cancelled.');
 }
 
 export async function configureTwilioAction(formData: FormData) {
@@ -123,7 +123,7 @@ export async function configureTwilioAction(formData: FormData) {
       scope: context.workspaceScope,
       connectionId: value(formData, 'connectionId'),
     });
-  }, 'Twilio authority verified and stored. Real-number UAT is still required before activation.');
+  }, 'The business texting account was verified. Send one final delivery test to finish setup.');
 }
 
 export async function discoverMetaAssetsAction(formData: FormData) {
@@ -147,7 +147,7 @@ export async function selectMetaAssetsAction(formData: FormData) {
       connectionId: value(formData, 'connectionId') ?? '', snapshotHash: value(formData, 'snapshotHash') ?? '',
       assetHashes, configuration: loadMetaOAuthConfiguration(),
     });
-  }, 'Selected business assets subscribed. Meta must complete the signed webhook challenge before intake is active.');
+  }, 'The selected business accounts were saved. Meta must finish its connection check before new enquiries arrive.');
 }
 
 export async function resolveMetaReviewAction(formData: FormData) {
@@ -157,7 +157,7 @@ export async function resolveMetaReviewAction(formData: FormData) {
       eventId: value(formData, 'eventId') ?? '', contactId: value(formData, 'contactId') ?? '',
       correlationId: randomUUID(),
     });
-  }, 'Meta enquiry linked to the selected contact with preserved source provenance.');
+  }, 'The social media enquiry was linked to the selected contact.');
 }
 
 export async function rejectConnectorIntentAction(formData: FormData) {
@@ -168,7 +168,7 @@ export async function rejectConnectorIntentAction(formData: FormData) {
       expectedVersion: value(formData, 'expectedVersion'),
       correlationId: randomUUID(),
     });
-  }, 'Intent rejected. No provider job was created.');
+  }, 'The pending action was rejected. Nothing was sent or changed.');
 }
 
 export async function editConnectorIntentAction(formData: FormData) {

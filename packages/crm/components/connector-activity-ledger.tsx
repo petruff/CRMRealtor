@@ -23,15 +23,15 @@ const PROVIDER_LABELS: Record<ConnectorProvider, string> = {
 const EVENT_COPY: Partial<Record<ConnectorReceiptType, { title: string; detail: string }>> = {
   'oauth.started': {
     title: 'Authorization started',
-    detail: 'The secure sign-in window was opened. Permissions are saved only after the provider confirms them.',
+    detail: 'The secure sign-in window was opened. Permissions are saved only after the service confirms them.',
   },
   'oauth.completed': {
     title: 'Account connected',
-    detail: 'The provider confirmed the account and Omnix saved the approved access securely.',
+    detail: 'The account was confirmed and Omnix saved the approved access securely.',
   },
   'oauth.token-refreshed': {
     title: 'Access renewed',
-    detail: 'Omnix renewed the saved provider access without asking for another password.',
+    detail: 'Omnix renewed the saved account access without asking for another password.',
   },
   'audience.selected': {
     title: 'Newsletter audience selected',
@@ -43,11 +43,11 @@ const EVENT_COPY: Partial<Record<ConnectorReceiptType, { title: string; detail: 
   },
   'connection.probed': {
     title: 'Connection checked',
-    detail: 'Omnix confirmed whether the provider can be reached with the saved permissions.',
+    detail: 'Omnix confirmed whether the service can be reached with the saved permissions.',
   },
   'connection.tested': {
     title: 'Connection tested',
-    detail: 'A controlled provider check completed and saved a private diagnostic reference.',
+    detail: 'A secure connection check completed successfully.',
   },
   'sync.applied': {
     title: 'Contacts synchronized',
@@ -59,18 +59,18 @@ const EVENT_COPY: Partial<Record<ConnectorReceiptType, { title: string; detail: 
   },
   'reconciliation.started': {
     title: 'Account review started',
-    detail: 'Omnix began comparing saved CRM details with the connected provider.',
+    detail: 'Omnix began comparing saved CRM details with the connected account.',
   },
   'reconciliation.resolved': {
     title: 'Account review completed',
-    detail: 'Provider and CRM records were compared and the final result was recorded.',
+    detail: 'The connected account and CRM records were compared successfully.',
   },
   'webhook.accepted': {
-    title: 'Provider update received',
+    title: 'Account update received',
     detail: 'A verified account update was accepted for processing.',
   },
   'webhook.rejected': {
-    title: 'Provider update blocked',
+    title: 'Unverified update blocked',
     detail: 'An unverified or unexpected update was rejected without changing CRM data.',
   },
   'provider.failed': {
@@ -83,11 +83,11 @@ const EVENT_COPY: Partial<Record<ConnectorReceiptType, { title: string; detail: 
   },
   'connection.disconnected': {
     title: 'Account disconnected',
-    detail: 'New provider activity was stopped while CRM history remained available.',
+    detail: 'New account activity was stopped while CRM history remained available.',
   },
   'revocation.completed': {
-    title: 'Provider access removed',
-    detail: 'The saved provider access was revoked and local credentials were retired.',
+    title: 'Account access removed',
+    detail: 'The saved account access was removed while CRM history remained available.',
   },
 };
 
@@ -108,7 +108,7 @@ function humanize(value: string): string {
 function eventCopy(type: ConnectorReceiptType) {
   return EVENT_COPY[type] ?? {
     title: humanize(type),
-    detail: 'Omnix recorded this provider activity for safe support and auditing.',
+    detail: 'Omnix recorded this account activity in the private connection history.',
   };
 }
 
@@ -193,8 +193,8 @@ export function ConnectorActivityLedger({ receipts }: { readonly receipts: reado
       </div>
 
       <dl className="connector-ledger-summary" aria-label="Connection activity summary">
-        <div><dt>Recent events</dt><dd>{recent.length}</dd><small>Latest protected records</small></div>
-        <div><dt>Needs attention</dt><dd>{attentionCount}</dd><small>{attentionCount ? 'Review the highlighted activity' : 'No recent provider error'}</small></div>
+        <div><dt>Recent events</dt><dd>{recent.length}</dd><small>Latest account updates</small></div>
+        <div><dt>Needs attention</dt><dd>{attentionCount}</dd><small>{attentionCount ? 'Review the highlighted activity' : 'No recent connection issue'}</small></div>
         <div><dt>Latest update</dt><dd className="connector-ledger-summary__date">{shortDate(latestReceipt.occurredAt)}</dd><small>{PROVIDER_LABELS[latestReceipt.provider]}</small></div>
       </dl>
 

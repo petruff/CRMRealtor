@@ -20,7 +20,7 @@ describe('connection card status', () => {
     })).toEqual({ status: 'connected', label: 'Connected · permission pending' });
     expect(deriveConnectionCardStatus('google', {
       providerEnabled: true, connected: true, productionApproved: false, requiredCapabilityActive: true,
-    })).toEqual({ status: 'connected', label: 'Connected · UAT pending' });
+    })).toEqual({ status: 'connected', label: 'Connected · final check pending' });
   });
 
   it('does not present an unconfigured Meta provider as operational', () => {

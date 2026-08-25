@@ -95,7 +95,7 @@ const ERROR_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = 
   },
   'mailchimp-setup-failed': {
     title: 'Mailchimp setup could not finish',
-    message: 'Your contacts and existing Mailchimp connection are safe. Try once more; if it repeats, the developer can use the connector receipt to diagnose it.',
+    message: 'Your contacts and existing Mailchimp connection are safe. Try once more; if it repeats, ask the developer to review the connection.',
   },
   'mailchimp-setup-review': {
     title: 'Mailchimp is connected, but some contacts need review',

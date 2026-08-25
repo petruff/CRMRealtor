@@ -19,6 +19,6 @@ export function googleConnectionPresentation(
     shouldReadCapabilityHealth: !consentPending,
     description: consentPending
       ? 'Google is waiting for the account owner to approve Gmail and Calendar access.'
-      : 'Each capability below is derived from the exact permissions approved in Google.',
+      : 'The features below reflect the permissions approved in Google.',
   };
 }

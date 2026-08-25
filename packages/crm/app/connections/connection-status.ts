@@ -24,6 +24,6 @@ export function deriveConnectionCardStatus(
   if (provider === 'google' && facts.requiredCapabilityActive === false) {
     return { status: 'connected', label: 'Connected · permission pending' };
   }
-  if (facts.productionApproved) return { status: 'ready', label: 'Connected · production approved' };
-  return { status: 'connected', label: 'Connected · UAT pending' };
+  if (facts.productionApproved) return { status: 'ready', label: 'Connected · ready' };
+  return { status: 'connected', label: 'Connected · final check pending' };
 }
