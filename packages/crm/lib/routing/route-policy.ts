@@ -1,6 +1,8 @@
-const PUBLIC_PAGE_PATHS = new Set(["/welcome", "/login"]);
+const PUBLIC_PAGE_PATHS = new Set(["/welcome", "/login", "/offline"]);
 
 const SESSION_PUBLIC_PREFIXES = [
+  "/manifest.webmanifest",
+  "/sw.js",
   "/auth",
   "/api/health",
   "/api/readiness",

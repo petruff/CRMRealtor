@@ -2889,6 +2889,197 @@
   }
 }
 
+@layer components {
+  .pwa-mobile-utilities {
+    top: calc(4.5rem + env(safe-area-inset-top));
+  }
+
+  .pwa-connection-banner,
+  .pwa-update-banner {
+    position: fixed;
+    z-index: 60;
+    right: max(0.75rem, env(safe-area-inset-right));
+    left: max(0.75rem, env(safe-area-inset-left));
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 38rem;
+    margin-inline: auto;
+    border: 1px solid color-mix(in srgb, var(--sk-accent-color) 34%, var(--sk-border-color));
+    border-radius: var(--sk-card-radius);
+    padding: 0.8rem 0.9rem;
+    background: color-mix(in srgb, var(--sk-card-background) 94%, var(--sk-accent-color));
+    box-shadow: var(--sk-shadow-md);
+    color: var(--sk-body-text-color);
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+
+  .pwa-connection-banner {
+    top: calc(0.75rem + env(safe-area-inset-top));
+  }
+
+  .pwa-update-banner {
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    justify-content: space-between;
+  }
+
+  .pwa-update-banner .sk-secondary-button {
+    min-height: 2.5rem;
+    flex: none;
+    padding-inline: 0.8rem;
+  }
+
+  .pwa-install-backdrop {
+    position: fixed;
+    z-index: 70;
+    inset: 0;
+    display: grid;
+    align-items: end;
+    padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    background: color-mix(in srgb, #080b10 68%, transparent);
+    backdrop-filter: blur(8px);
+  }
+
+  .pwa-install-sheet {
+    position: relative;
+    width: min(100%, 32rem);
+    margin-inline: auto;
+    border: 1px solid color-mix(in srgb, var(--sk-accent-color) 38%, var(--sk-border-color));
+    border-radius: calc(var(--sk-card-radius) + 0.35rem);
+    padding: 1.25rem;
+    background: radial-gradient(circle at 88% 4%, color-mix(in srgb, var(--sk-accent-color) 18%, transparent), transparent 34%), var(--sk-card-background);
+    box-shadow: 0 30px 90px rgb(0 0 0 / 0.35);
+  }
+
+  .pwa-install-sheet__mark {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-bottom: 1rem;
+    place-items: center;
+    border-radius: 9999px;
+    background: var(--sk-accent-color);
+    color: #fff;
+  }
+
+  .pwa-install-sheet h2 {
+    margin-top: 0.25rem;
+    color: var(--sk-headline-text-color);
+    font-family: var(--font-display);
+    font-size: clamp(1.55rem, 7vw, 2rem);
+    font-weight: 620;
+    letter-spacing: -0.035em;
+  }
+
+  .pwa-install-sheet p:not(.eyebrow) {
+    margin-top: 0.55rem;
+    color: var(--sk-muted-text-color);
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+
+  .pwa-install-sheet ol {
+    display: grid;
+    gap: 0.65rem;
+    margin-block: 1.15rem;
+  }
+
+  .pwa-install-sheet li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    border: 1px solid var(--sk-border-color);
+    border-radius: var(--sk-control-radius);
+    padding: 0.8rem;
+    background: var(--sk-fill-color);
+  }
+
+  .pwa-install-sheet li > span {
+    display: grid;
+    width: 1.75rem;
+    height: 1.75rem;
+    place-items: center;
+    border-radius: 9999px;
+    background: var(--sk-card-background);
+    color: var(--sk-accent-color);
+    font-size: 0.72rem;
+    font-weight: 750;
+  }
+
+  .pwa-install-sheet li div {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .pwa-install-sheet li strong { font-size: 0.78rem; }
+  .pwa-install-sheet li small { color: var(--sk-muted-text-color); font-size: 0.68rem; }
+  .pwa-install-sheet > .sk-primary-button { width: 100%; }
+
+  .pwa-install-sheet__close {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    place-items: center;
+    border-radius: 9999px;
+    color: var(--sk-muted-text-color);
+  }
+
+  .pwa-install-sheet__close:hover { background: var(--sk-fill-color); color: var(--sk-body-text-color); }
+
+  .pwa-offline-page {
+    display: grid;
+    min-height: 100dvh;
+    place-items: center;
+    padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right)) max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
+    background: radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--sk-accent-color) 20%, transparent), transparent 34%), var(--sk-body-background-color);
+  }
+
+  .pwa-offline-card {
+    width: min(100%, 31rem);
+    border: 1px solid var(--sk-border-color);
+    border-radius: calc(var(--sk-card-radius) + 0.35rem);
+    padding: clamp(1.35rem, 7vw, 2.25rem);
+    background: var(--sk-card-background);
+    box-shadow: var(--sk-shadow-md);
+  }
+
+  .pwa-offline-card__signal {
+    display: flex;
+    align-items: end;
+    gap: 0.3rem;
+    height: 2.3rem;
+    margin-block: 3rem 1.15rem;
+  }
+
+  .pwa-offline-card__signal span {
+    width: 0.45rem;
+    border-radius: 9999px;
+    background: var(--sk-accent-color);
+  }
+
+  .pwa-offline-card__signal span:nth-child(1) { height: 35%; opacity: 0.35; }
+  .pwa-offline-card__signal span:nth-child(2) { height: 65%; opacity: 0.58; }
+  .pwa-offline-card__signal span:nth-child(3) { height: 100%; opacity: 0.82; }
+  .pwa-offline-card h1 { max-width: 10ch; margin-top: 0.45rem; color: var(--sk-headline-text-color); font-family: var(--font-display); font-size: clamp(2.15rem, 10vw, 3.6rem); font-weight: 560; letter-spacing: -0.055em; line-height: 0.96; }
+  .pwa-offline-card > p:not(.eyebrow) { margin-top: 1rem; color: var(--sk-muted-text-color); font-size: 0.88rem; line-height: 1.65; }
+  .pwa-offline-card > .sk-primary-button { width: 100%; margin-top: 1.5rem; }
+  .pwa-offline-card > small { display: block; margin-top: 0.75rem; color: var(--sk-subtle-text-color); text-align: center; font-size: 0.68rem; }
+
+  @media (min-width: 64rem) {
+    .pwa-update-banner { bottom: 1.25rem; }
+    .pwa-install-backdrop { align-items: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pwa-install-backdrop { backdrop-filter: none; }
+  }
+}
+
 @layer utilities {
   .tabular {
     font-variant-numeric: tabular-nums;
@@ -2903,5 +3094,9 @@
 
   .safe-bottom {
     padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
   }
 }
