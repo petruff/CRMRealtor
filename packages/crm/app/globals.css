@@ -136,7 +136,9 @@
   }
 
   body {
+    min-width: 0;
     min-height: 100dvh;
+    overflow-x: clip;
     background: var(--sk-body-background-color);
     color: var(--sk-body-text-color);
     font-family: var(--font-sans);
@@ -1383,6 +1385,10 @@
     box-shadow: 0 1px 0 rgb(0 0 0 / 0.02);
   }
 
+  .sk-group > * {
+    min-width: 0;
+  }
+
   @media (min-width: 64rem) {
     .sk-list-grid > :last-child:nth-child(odd) {
       grid-column: 1 / -1;
@@ -2062,7 +2068,7 @@
   }
 
   .pipeline-filter-row button {
-    min-height: 2.25rem;
+    min-height: 2.75rem;
     flex: none;
     border: 1px solid transparent;
     border-radius: 9999px;
@@ -2651,7 +2657,7 @@
   .insights-action-queues a > span { display: flex; min-width: 0; align-items: center; gap: 0.5rem; font-size: 0.75rem; }
 
   .insights-stage-chart { display: grid; gap: 0.9rem; margin: 1.6rem 0 0; padding: 0; list-style: none; }
-  .insights-stage-chart li > a { display: grid; grid-template-columns: minmax(7rem, 0.9fr) minmax(8rem, 1.4fr) minmax(8rem, 1fr); align-items: center; gap: 0.8rem; color: var(--sk-body-text-color); text-decoration: none; }
+  .insights-stage-chart li > a { display: grid; min-height: 2.75rem; grid-template-columns: minmax(7rem, 0.9fr) minmax(8rem, 1.4fr) minmax(8rem, 1fr); align-items: center; gap: 0.8rem; color: var(--sk-body-text-color); text-decoration: none; }
   .insights-stage-chart li > a:hover strong { color: var(--sk-body-link-color); }
   .insights-stage-chart li > a > div { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.6875rem; }
   .insights-stage-chart li > a > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

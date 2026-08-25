@@ -36,12 +36,12 @@ function PendingButton({
 export function RecordTouchForm({ action }: { action: ContactMutationAction }) {
   const [state, formAction] = useActionState(action, INITIAL_CONTACT_ACTION_STATE);
   return (
-    <form action={formAction} className="mt-4 border-t border-line pt-4">
+    <form action={formAction} className="mt-4 min-w-0 border-t border-line pt-4">
       <PendingButton
         idleLabel="Mark as contacted"
         pendingLabel="Recording…"
         icon={<Check className="size-4" />}
-        className="sk-primary-button"
+        className="sk-primary-button w-full sm:w-auto"
       />
       {state.status === 'error' && state.message ? (
         <p role="alert" className="mt-2 text-sm text-hot">{state.message}</p>

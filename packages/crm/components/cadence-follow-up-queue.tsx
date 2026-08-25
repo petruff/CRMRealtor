@@ -39,11 +39,11 @@ export function CadenceFollowUpQueue({
       {due.length ? (
         <ol className="sk-group grid gap-px lg:grid-cols-2">
           {due.map(({ bucket, entry }) => (
-            <li key={`${bucket}:${entry.contact.id}`} className="bg-surface p-4 sm:p-5">
-              <div className="flex items-start justify-between gap-4">
+            <li key={`${bucket}:${entry.contact.id}`} className="min-w-0 bg-surface p-4 sm:p-5">
+              <div className="flex min-w-0 items-start justify-between gap-3 sm:gap-4">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">{bucket}</p>
-                  <Link href={`/contacts/${encodeURIComponent(entry.contact.id)}`} className="mt-1 block truncate font-medium text-ink hover:text-accent">
+                  <Link href={`/contacts/${encodeURIComponent(entry.contact.id)}`} className="mt-1 flex min-h-11 items-center truncate font-medium text-ink hover:text-accent">
                     {displayName(entry.contact)}
                   </Link>
                   <p className="mt-1 text-sm text-muted">{entry.reason} · {entry.contact.leadType}</p>

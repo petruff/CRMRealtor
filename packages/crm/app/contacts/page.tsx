@@ -389,7 +389,7 @@ export default async function ContactsPage({
                       <div className="min-w-0 flex-1">
                         <Link
                           href={`/contacts/${contact.id}${archivedView ? "?view=archived" : ""}`}
-                          className="block truncate font-medium text-ink underline-offset-2 hover:underline"
+                          className="flex min-h-11 items-center truncate font-medium text-ink underline-offset-2 hover:underline"
                         >
                           {displayName(contact)}
                         </Link>

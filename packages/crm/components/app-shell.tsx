@@ -253,7 +253,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`sk-mobile-tab flex min-h-11 flex-col items-center justify-center gap-1 rounded-[var(--sk-control-radius)] px-1 text-[11px] transition-colors ${
+                className={`sk-mobile-tab flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-[var(--sk-control-radius)] px-0.5 text-[10px] transition-colors sm:px-1 sm:text-[11px] ${
                   active ? "bg-accent-soft font-semibold text-accent" : "text-subtle hover:bg-surface-2 hover:text-ink"
                 }`}
               >
