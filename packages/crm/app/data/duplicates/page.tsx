@@ -16,16 +16,16 @@ export default async function ContactDuplicateAuditPage() {
   return (
     <div className="space-y-8">
       <header>
-        <Link href="/data" className="sk-secondary-button"><ArrowLeft className="size-4" aria-hidden /> Data & API</Link>
+        <Link href="/data" className="sk-secondary-button"><ArrowLeft className="size-4" aria-hidden /> Data tools</Link>
         <p className="mt-8 text-sm font-medium text-accent">Contact hygiene</p>
-        <h1 className="mt-2 max-w-4xl font-display text-4xl text-ink sm:text-5xl">Exact duplicate audit</h1>
-        <p className="mt-3 max-w-3xl text-muted">Only canonical email and phone evidence is compared. Similar names, locations and relationships never trigger an automatic merge.</p>
+        <h1 className="mt-2 max-w-4xl font-display text-4xl text-ink sm:text-5xl">Review duplicate contacts</h1>
+        <p className="mt-3 max-w-3xl text-muted">Omnix checks exact email and phone matches. Similar names, locations, and relationships never trigger an automatic merge.</p>
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Audit summary">
         {[
           ['Active contacts', audit.activeContacts],
-          ['Canonical contact points', audit.canonicalPoints],
+          ['Emails and phones checked', audit.canonicalPoints],
           ['Exact duplicate groups', audit.duplicateGroups.length],
           ['Candidate contacts', audit.candidateContacts],
         ].map(([label, value]) => (
@@ -37,7 +37,7 @@ export default async function ContactDuplicateAuditPage() {
       </section>
 
       {audit.partial ? (
-        <div role="alert" className="rounded-2xl border border-warm-border bg-warm-soft p-5 text-sm text-warm">The workspace exceeds the 500-contact safety bound. This audit is partial and no cleanup is allowed.</div>
+        <div role="alert" className="rounded-2xl border border-warm-border bg-warm-soft p-5 text-sm text-warm">This account has more than 500 contacts. Omnix checked the first 500 and will not merge anything from a partial review.</div>
       ) : null}
 
       {audit.duplicateGroups.length ? (
@@ -46,7 +46,7 @@ export default async function ContactDuplicateAuditPage() {
             <CircleAlert className="size-5 text-warm" aria-hidden />
             <div>
               <h2 id="candidates-title" className="font-display text-2xl text-ink">Review required</h2>
-              <p className="text-sm text-muted">No record has been merged or archived. Each group needs a transactional preservation check first.</p>
+              <p className="text-sm text-muted">Nothing has been merged or archived. Review each group before choosing what to keep.</p>
             </div>
           </div>
           <div className="mt-5 grid gap-4 lg:grid-cols-2">
@@ -64,7 +64,6 @@ export default async function ContactDuplicateAuditPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 break-all text-[11px] text-subtle">Evidence {group.id.slice(-16)} · raw identifier hidden</p>
               </article>
             ))}
           </div>
@@ -75,13 +74,13 @@ export default async function ContactDuplicateAuditPage() {
             <ShieldCheck className="mt-0.5 size-6 shrink-0 text-nurture" aria-hidden />
             <div>
               <h2 id="clean-title" className="font-display text-2xl text-ink">No exact duplicates found</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted">The active database has no contact group sharing the same canonical email or phone. External IDs are independently protected by a workspace uniqueness constraint.</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted">No active contacts share the same email or phone number.</p>
             </div>
           </div>
         </section>
       )}
 
-      <p className="text-xs text-subtle">Audited {new Date(audit.asOf).toLocaleString('en-US')} · {audit.archivedContacts} archived contacts excluded · no mutation performed</p>
+      <p className="text-xs text-subtle">Checked {new Date(audit.asOf).toLocaleString('en-US')} · {audit.archivedContacts} archived contacts excluded · no records changed</p>
     </div>
   );
 }

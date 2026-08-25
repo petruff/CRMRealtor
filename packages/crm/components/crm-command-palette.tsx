@@ -54,7 +54,7 @@ export function CrmCommandPalette({ compact = false }: { compact?: boolean }) {
         <div className="fixed inset-0 z-[70] grid items-start bg-ink/35 px-3 pt-[8vh] backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="crm-search-title" onMouseDown={(event) => { if (event.currentTarget === event.target) setOpen(false); }}>
           <div className="mx-auto max-h-[82vh] w-full max-w-2xl overflow-y-auto rounded-[var(--sk-card-radius)] border border-line bg-surface p-4 shadow-2xl sm:p-6">
             <div className="flex items-center gap-3">
-              <div className="min-w-0 flex-1"><h2 id="crm-search-title" className="font-display text-2xl text-ink">Search and act</h2><p className="text-sm text-muted">Workspace-scoped results and allowlisted actions.</p></div>
+              <div className="min-w-0 flex-1"><h2 id="crm-search-title" className="font-display text-2xl text-ink">Search and act</h2><p className="text-sm text-muted">Find contacts and jump to the actions available for your role.</p></div>
               <button className="sk-icon-button" type="button" onClick={() => setOpen(false)} aria-label="Close search"><X className="size-5" /></button>
             </div>
             <form className="mt-5 flex gap-2" onSubmit={(event) => { event.preventDefault(); search(); }}>

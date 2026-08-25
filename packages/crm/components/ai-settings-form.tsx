@@ -61,7 +61,7 @@ export function AiSettingsForm({ status }: { status: WorkspaceAiStatus }) {
         </div>
         {status.configured ? <form action={removeAction} className="rounded-2xl border border-line bg-surface p-5">
           <input type="hidden" name="expectedSecretVersion" value={status.secretVersion} />
-          <h2 className="font-semibold text-ink">Remove AI key</h2><p className="mt-2 text-sm leading-relaxed text-muted">Cryptoshreds the stored key and returns Omnix to deterministic questions only.</p>
+          <h2 className="font-semibold text-ink">Remove AI key</h2><p className="mt-2 text-sm leading-relaxed text-muted">Permanently removes the saved key and returns Omnix to its built-in question set.</p>
           <button type="submit" disabled={removing} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg border border-hot px-4 text-sm font-medium text-hot"><Trash2 className="size-4" aria-hidden />{removing ? 'Removing…' : 'Remove key'}</button>
         </form> : null}
         {status.configured ? <form action={toggleAction} className="rounded-2xl border border-line bg-surface p-5">

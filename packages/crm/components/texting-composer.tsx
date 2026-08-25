@@ -61,15 +61,15 @@ export function TextingComposer(input: {
           <label className="sk-field"><span className="sk-label">Recipient</span><input className="sk-input" value={input.recipientPhone} readOnly /></label>
           <label className="sk-field"><span className="sk-label">Message</span><textarea name="body" className="sk-input min-h-36" maxLength={1600} required /></label>
           <p className="inline-flex items-start gap-2 text-xs text-muted"><ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden /> {input.realNumberUatRequired
-            ? 'This controlled test uses the same current consent, verified phone, quiet-hours policy and encrypted content. One final Twilio delivery receipt is required to activate ordinary sends.'
+            ? 'This final delivery test uses the contact’s verified phone and communication preferences. A successful text will activate ordinary sends.'
             : 'Omnix rechecks the exact phone, consent, policy and quiet hours. The owner approves the encrypted draft before Twilio is called.'}</p>
-          <Submit>{input.realNumberUatRequired ? 'Queue controlled real-number UAT' : 'Prepare for owner approval'}</Submit>
+          <Submit>{input.realNumberUatRequired ? 'Send final delivery test' : 'Prepare for owner approval'}</Submit>
           {(input.realNumberUatRequired ? uatState : draftState).message ? <p role={(input.realNumberUatRequired ? uatState : draftState).status === 'error' ? 'alert' : 'status'} className="text-sm text-muted">{(input.realNumberUatRequired ? uatState : draftState).message}</p> : null}
         </form>
       </div>
       {input.messages?.length ? (
         <div className="mt-4 border-t border-line pt-4">
-          <p className="text-xs font-medium text-ink">Recent provider receipts</p>
+          <p className="text-xs font-medium text-ink">Recent delivery history</p>
           <ol className="mt-2 grid gap-2">
             {input.messages.slice(0, 5).map((message) => (
               <li key={message.id} className="flex flex-wrap justify-between gap-2 rounded-xl bg-surface px-3 py-2 text-xs">

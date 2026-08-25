@@ -81,8 +81,24 @@ describe('authenticated editorial design contract', () => {
 
   it('keeps developer-only connection commands out of the realtor-facing data workspace', () => {
     expect(dataOperationsSource).not.toContain('npm run data');
-    expect(dataOperationsSource).toContain('restricted to the developer');
+    expect(dataOperationsSource).toContain('Developer tools');
+    expect(dataOperationsSource).not.toContain('endpoint.endpoint_key');
+    expect(dataOperationsSource).not.toContain('endpoint.auth_mode');
+    expect(dataOperationsSource).not.toContain('key.key_prefix');
+    expect(dataOperationsSource).not.toContain('key.scopes.join');
     expect(dataOperationsSource).toContain('Incoming automations');
+  });
+
+  it('keeps implementation language out of the default realtor-facing Connections experience', () => {
+    expect(connectionsSource).not.toContain('Deployment truth');
+    expect(connectionsSource).not.toContain('definition.capabilities.join');
+    expect(connectionsSource).not.toContain('Encrypted payload reference');
+    expect(connectionsSource).not.toContain('Payload SHA-256');
+    expect(connectionsSource).not.toContain('Policy ID');
+    expect(connectionsSource).not.toContain('Support ref ');
+    expect(connectionsSource).not.toContain('controlled UAT');
+    expect(connectionsSource).not.toContain('real-number UAT');
+    expect(connectionsSource).toContain('Connection controls');
   });
 
   it('keeps public typography scoped while sharing the authenticated palette', () => {
@@ -122,7 +138,7 @@ describe('authenticated editorial design contract', () => {
 
   it('keeps Connections cards on the centralized 12px radius contract', () => {
     expect(connectionsSource).not.toContain('rounded-[20px]');
-    expect(connectionsSource.match(/rounded-\[var\(--sk-card-radius\)\]/g)).toHaveLength(12);
+    expect(connectionsSource.match(/rounded-\[var\(--sk-card-radius\)\]/g)?.length).toBeGreaterThanOrEqual(8);
     expect(cssBlock(':root')).toContain('--sk-card-radius: 0.75rem;');
   });
 

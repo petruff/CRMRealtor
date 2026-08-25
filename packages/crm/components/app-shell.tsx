@@ -46,7 +46,7 @@ const BUSINESS_NAV = [
 const OPERATIONS_NAV = [
   { href: "/mailers", label: "Mailers", icon: Send },
   { href: "/connections", label: "Connections", icon: Plug },
-  { href: "/data", label: "Data & API", icon: Database },
+  { href: "/data", label: "Data tools", icon: Database },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

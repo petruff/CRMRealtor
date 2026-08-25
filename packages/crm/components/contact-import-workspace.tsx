@@ -519,10 +519,10 @@ export function ContactImportWorkspace() {
 
           <details className="sk-group bg-surface p-5">
             <summary className="cursor-pointer font-medium text-ink">Edit column mapping</summary>
-            <p className="mt-2 text-xs text-muted">Choose an allowlisted Omnix field or ignore a source column. Re-preview runs immediately; no schema or formula is created.</p>
+            <p className="mt-2 text-xs text-muted">Choose the matching Omnix field or ignore a source column. The preview updates immediately and nothing is saved until you confirm.</p>
             {preview.headers.some((header) => /^(status|rating)$/i.test(header.trim())) ? (
               <p className="mt-3 rounded-xl border border-warm-border bg-warm-soft p-3 text-xs leading-relaxed text-warm">
-                KvCore Status and Rating remain in Imported profile as source evidence. Omnix also uses them to propose a deterministic CRM classification, shown in the preview below.
+                KvCore Status and Rating remain in the imported profile. Omnix uses them to classify each contact automatically, as shown in the preview below.
               </p>
             ) : null}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{preview.headers.map((header)=><label key={header} className="sk-field"><span className="sk-label">{header}</span><select className="sk-input" value={mapping[header]??""} onChange={(event)=>remap(header,event.target.value as ContactImportMappingTarget|"ignore")}><option value="">Auto-map</option><option value="ignore">Ignore</option>{CONTACT_IMPORT_MAPPING_TARGETS.map((target)=><option key={target} value={target}>{target}</option>)}</select></label>)}</div>

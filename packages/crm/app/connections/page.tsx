@@ -14,7 +14,6 @@ import {
   approveTextingIntentAction,
   cancelConnectorJobAction,
   disconnectConnectionAction,
-  editConnectorIntentAction,
   rejectConnectorIntentAction,
   retryConnectorJobAction,
   disableTextingAction,
@@ -52,6 +51,7 @@ import {
   type MailchimpAudienceLoadIssue,
 } from './mailchimp-presentation';
 import { googleConnectionPresentation } from './google-presentation';
+import { ConnectorActivityLedger } from '@/components/connector-activity-ledger';
 
 const GOOGLE_WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/gmail.send',
@@ -59,8 +59,50 @@ const GOOGLE_WORKSPACE_SCOPES = [
   'https://www.googleapis.com/auth/calendar.app.created',
 ] as const;
 
-function supportReference(value: string): string {
-  return value.replaceAll('-', '').slice(0, 8).toUpperCase();
+const PROVIDER_NAMES: Record<string, string> = {
+  google: 'Google Workspace',
+  mailchimp: 'Mailchimp',
+  twilio: 'Texting',
+  meta: 'Instagram & Facebook',
+};
+
+function providerName(provider: string): string {
+  return PROVIDER_NAMES[provider] ?? 'Connected service';
+}
+
+function connectionStatus(status: string): string {
+  if (status === 'active') return 'Connected';
+  if (status === 'degraded') return 'Needs attention';
+  if (status === 'reauthorization-required') return 'Reconnect required';
+  return status.replaceAll('-', ' ');
+}
+
+function actionName(actionType: string): string {
+  const labels: Record<string, string> = {
+    'message.send': 'Send a text message',
+    'audience.sync': 'Update newsletter contacts',
+    'gmail.sync-metadata': 'Update contact email activity',
+    'calendar.create-omnix-calendar': 'Create the Omnix calendar',
+    'calendar.upsert-omnix-event': 'Update a calendar follow-up',
+    'dm.ingest': 'Add a social media enquiry',
+  };
+  return labels[actionType] ?? 'Update a connected service';
+}
+
+function reviewReason(reason: string): string {
+  const labels: Record<string, string> = {
+    'identity-ambiguous': 'More than one contact may match',
+    'identity-missing': 'No matching contact was found',
+    'missing-contact-point': 'Contact information is incomplete',
+  };
+  return labels[reason] ?? 'A person needs to confirm this match';
+}
+
+function jobStatus(state: string, nextRetryAt: string | null | undefined, scheduledAt: string): string {
+  if (state === 'queued') return `Waiting to run · ${new Date(scheduledAt).toLocaleString('en-US')}`;
+  if (state === 'retry-scheduled') return `Will retry automatically · ${new Date(nextRetryAt ?? scheduledAt).toLocaleString('en-US')}`;
+  if (state === 'reconciliation-required') return 'Please review before continuing';
+  return 'Automatic action paused';
 }
 
 function connectorServiceClient() {
@@ -114,7 +156,7 @@ const STATUS_META: Record<Status, { label: string; className: string; icon: Reac
     icon: ShieldCheck,
   },
   uat: {
-    label: 'Implemented · UAT pending',
+    label: 'Final setup required',
     className: 'bg-warm-soft text-warm border-warm-border',
     icon: ShieldCheck,
   },
@@ -140,52 +182,48 @@ const INTEGRATIONS: Integration[] = [
     icon: Mail,
     what: 'Send from inside the CRM, and log emails onto the contact automatically.',
     status: 'uat',
-    detail:
-      'Incremental OAuth, governed send, minimized metadata matching, verified push wake-ups, cursor recovery and no-blind-resend reconciliation are implemented. Production credentials, Google verification and real-account UAT are still required.',
-    access: 'Google OAuth · incremental Gmail scopes',
+    detail: 'Connect Google once, then choose whether Omnix may send email and record contact email activity.',
+    access: 'Authorized through Google',
   },
   {
     name: 'Google Calendar',
     icon: Calendar,
     what: 'Your follow-ups appear in the calendar you already look at.',
     status: 'uat',
-    detail: 'The Omnix-created secondary calendar supports governed task create, update, completion, cancellation, deletion and bounded reconciliation. Production credentials, Google verification and real-account UAT remain required.',
-    access: 'Google OAuth · separate Calendar scopes',
+    detail: 'Omnix uses a separate calendar for follow-ups, so your personal calendar stays organized.',
+    access: 'Authorized through Google',
   },
   {
     name: 'Mailchimp',
     icon: Send,
-    what: 'Connect one selected audience for governed tag sync and inbound subscription updates.',
+    what: 'Keep one newsletter audience, lead tags, and subscription choices synchronized.',
     status: 'uat',
-    detail:
-      'OAuth, audience selection, encrypted per-connection webhook secrets, durable jobs, baseline matching and unsubscribe authority are implemented. Production remains gated by registered credentials and real-account UAT.',
-    access: 'Mailchimp OAuth · selected audience + signed webhooks',
+    detail: 'Choose the audience once. Omnix will keep contact changes and unsubscribes aligned in both places.',
+    access: 'Authorized through Mailchimp',
   },
   {
     name: 'Texting',
     icon: MessageSquare,
     what: 'Text contacts from the CRM, with the conversation saved to their record.',
     status: 'gated',
-    detail:
-      'The governed Twilio workflow, consent and quiet-hours authority, signed callbacks, STOP suppression and reconciliation are implemented. Provider messaging remains blocked until 10DLC approval and controlled real-number UAT pass.',
-    access: 'Twilio service connection · consent and carrier registration',
+    detail: 'Business texting becomes available after carrier registration and a final delivery test.',
+    access: 'Business texting account required',
   },
   {
     name: 'Instagram & Facebook',
     icon: Instagram,
     what: 'Turn DM enquiries into contacts without retyping them.',
     status: 'gated',
-    detail:
-      'Inbound-only Facebook Page and Instagram Professional intake, signed webhook handling, selected-asset authority, review/quarantine and disconnect recovery are implemented. Meta Business Verification, App Review, an approved Graph version and real-account UAT remain external gates.',
-    access: 'Meta Business Login · approved assets and webhook permissions',
+    detail: 'Connect a verified business account to review new enquiries before they become contacts.',
+    access: 'Meta business approval required',
   },
   {
     name: 'Website forms',
     icon: Globe,
     what: 'Authenticated website submissions can land here as new contacts, ready to screen.',
     status: 'ready',
-    detail: 'The authenticated CRM intake endpoint is ready. Connect the website when it exists by adding the live owner, service-role, token, and an idempotency key per submission.',
-    access: 'Server token · owner-bound idempotent intake',
+    detail: 'When the website is ready, its contact form can add new leads automatically.',
+    access: 'Developer setup required',
   },
 ];
 
@@ -222,15 +260,15 @@ function liveIntegrationStatus(
       status: presentation.status,
       statusLabel: presentation.label,
       what: input.mailchimpConnected
-        ? 'Synchronize the selected audience with governed Omnix lead-temperature tags and inbound subscription authority.'
-        : 'Authorize one Mailchimp account, then select exactly one audience for controlled synchronization.',
+        ? 'Keep the selected audience, lead-temperature tags, and subscription choices synchronized.'
+        : 'Connect one Mailchimp account, then choose the audience you want Omnix to keep updated.',
       detail: input.mailchimpConnected
         ? input.mailchimpReviewItems > 0
-          ? `OAuth, the selected audience and the signed webhook are active. The latest reconciliation completed and ${input.mailchimpReviewItems} records need safe identity review before baseline activation.`
-          : `The OAuth connection is persisted. ${input.mailchimpLive
-            ? 'Production activation is approved for this deployment; the selected-audience evidence below remains authoritative.'
-            : 'It remains in UAT until a real tag update, signed unsubscribe, reconciliation and disconnect are proven.'}`
-        : 'The registered-app OAuth flow is available only to the workspace owner when server credentials are configured. No password or API key is requested.',
+          ? `${input.mailchimpReviewItems} contact${input.mailchimpReviewItems === 1 ? '' : 's'} need a quick identity review before the first full synchronization.`
+          : input.mailchimpLive
+            ? 'Mailchimp is connected and ready to keep the selected audience updated.'
+            : 'The account is connected. Complete the first synchronization to finish setup.'
+        : 'The workspace owner can connect Mailchimp without sharing a password with Omnix.',
     };
   }
   if ((integration.name === 'Gmail' || integration.name === 'Google Calendar') && input.googleEnabled) {
@@ -248,10 +286,10 @@ function liveIntegrationStatus(
       status: presentation.status,
       statusLabel: presentation.label,
       detail: input.googleConnected
-        ? `The Google account is bound to this workspace. ${input.googleLive
-          ? 'Production scope review and real-account UAT are approved.'
-          : 'It remains in UAT while each Gmail and Calendar feature bundle is consented and verified.'}`
-        : 'The separate connector OAuth flow is available. The owner chooses Gmail send, Gmail metadata, or the Omnix-created Calendar permission individually.',
+        ? input.googleLive
+          ? 'Google is connected and the selected Gmail and Calendar features are ready.'
+          : 'The Google account is connected. Finish any permission marked below to complete setup.'
+        : 'The workspace owner chooses which Gmail and Calendar features Omnix may use.',
     };
   }
   if (integration.name === 'Texting' && input.twilioEnabled) {
@@ -260,9 +298,9 @@ function liveIntegrationStatus(
       status: input.twilioConnected && input.twilioLive && input.twilioReady ? 'ready' : 'uat',
       detail: input.twilioConnected
         ? `The workspace Messaging Service is bound. ${input.twilioLive
-          ? 'Registration, compliance policy, signed callbacks and controlled real-number UAT are approved.'
-          : 'Provider sends remain blocked while registration, consent/quiet-hours policy, callbacks or real-number UAT are pending.'}`
-        : 'The server-side Twilio boundary is implemented. It never asks for a consumer password; owner configuration and external approval are still required.',
+          ? 'Business texting is approved and ready.'
+          : 'Texting remains paused until registration, contact preferences, and the final delivery test are complete.'}`
+        : 'A business texting account and carrier approval are still required.',
     };
   }
   if (integration.name === 'Instagram & Facebook') {
@@ -278,10 +316,10 @@ function liveIntegrationStatus(
       what: 'Turn verified Facebook Page or Instagram Professional messages into reviewable CRM enquiries.',
       detail: input.metaConnected
         ? `Inbound-only business messaging is bound to selected assets. ${input.metaLive
-          ? 'Business Verification, App Review, retention policy and real-account UAT are approved for this deployment.'
-          : 'It remains in UAT; no outbound reply, Lead Ads, personal-account access or production claim is enabled.'}`
-        : 'The inbound-only Meta boundary is implemented fail-closed. Business Login stays unavailable until the Graph version, exact permissions and eligible assets are verified.',
-      access: 'Meta Business Login · inbound business messages only',
+          ? 'Business messages are connected and ready to become reviewable enquiries.'
+          : 'The account is connected for incoming business messages while Meta completes the remaining approval.'}`
+        : 'Connect an eligible Facebook Page or Instagram Professional account after Meta business approval.',
+      access: 'Incoming business messages only',
     };
   }
   return integration;
@@ -305,9 +343,6 @@ export default async function ConnectionsPage({
     listConnectorReceiptsCommand(connectorRepository, workspaceScope, { limit: 20 }),
   ]);
   const realConnections = persistedConnections.filter((connection) => connection.provider !== 'contract-test');
-  const enabledRealProviders = definitions.filter((definition) => (
-    definition.provider !== 'contract-test' && definition.enabled
-  ));
   const mailchimpDefinition = definitions.find((definition) => definition.provider === 'mailchimp');
   const mailchimpConnection = realConnections.find((connection) => connection.provider === 'mailchimp');
   const googleDefinition = definitions.find((definition) => definition.provider === 'google');
@@ -453,7 +488,7 @@ export default async function ConnectionsPage({
         </p>
         <div className="mt-5 flex max-w-2xl items-start gap-2.5 rounded-2xl bg-surface-2 px-4 py-3 text-sm leading-relaxed text-muted">
           <ShieldCheck className="mt-0.5 size-[18px] shrink-0 text-nurture" aria-hidden />
-          <p><span className="font-medium text-ink">Omnix never asks for a platform password.</span> Connections use provider authorization, server-side tokens, scoped access, receipts, and revocation.</p>
+          <p><span className="font-medium text-ink">Omnix never asks for your Google or Mailchimp password.</span> You sign in on each service’s official page and choose what Omnix may use.</p>
         </div>
       </header>
 
@@ -463,9 +498,6 @@ export default async function ConnectionsPage({
           : 'border-nurture-border bg-nurture-soft text-nurture'}`} role="status">
           <p className="font-medium">{feedback.title}</p>
           <p className="mt-0.5 text-xs leading-relaxed opacity-90">{feedback.message}</p>
-          {feedback.supportReference ? (
-            <p className="mt-1 text-[11px] font-medium opacity-80">Support reference: {feedback.supportReference}</p>
-          ) : null}
         </div>
       )}
 
@@ -523,71 +555,13 @@ export default async function ConnectionsPage({
         <p className="mt-3 flex items-center gap-2 text-xs text-subtle"><ShieldCheck className="size-4 text-nurture" aria-hidden />Omnix never sees or stores your Google or Mailchimp password.</p>
       </section>
 
-      <details className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6">
-        <summary className="cursor-pointer list-none text-sm font-medium text-ink">
-          <span className="inline-flex items-center gap-2"><ShieldCheck className="size-4 text-nurture" aria-hidden />Connection health and technical details</span>
-        </summary>
-        <div className="mt-5" aria-labelledby="connector-control-plane">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="eyebrow">Secure connector control plane</p>
-            <h2 id="connector-control-plane" className="mt-1 font-display text-2xl text-ink">
-              The safety foundation is installed.
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-              OAuth transactions, encrypted secret envelopes, owner approvals, durable jobs,
-              leases, reconciliation, signed-webhook replay protection and redacted receipts now
-              share one workspace-scoped authority.
-            </p>
-          </div>
-          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-medium ${isLive
-            ? 'border-nurture-border bg-nurture-soft text-nurture'
-            : 'border-warm-border bg-warm-soft text-warm'}`}>
-            {isLive ? 'Live workspace authority' : 'Sample · non-durable'}
-          </span>
-        </div>
-
-        <dl className="mt-5 grid gap-px overflow-hidden rounded-2xl bg-line sm:grid-cols-4">
-          {[
-            ['Provider definitions', definitions.length],
-            ['Enabled real providers', enabledRealProviders.length],
-            ['Real connections', realConnections.length],
-            ['Receipts recorded', receipts.length],
-          ].map(([label, value]) => (
-            <div key={String(label)} className="bg-surface-2 px-4 py-3">
-              <dt className="text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">{label}</dt>
-              <dd className="mt-1 font-display text-2xl text-ink">{value}</dd>
-            </div>
-          ))}
-        </dl>
-
-        <div className="mt-5 grid gap-3 lg:grid-cols-2">
-          <div className="rounded-2xl border border-line bg-surface-2 p-4">
-            <h3 className="text-sm font-medium text-ink">Current execution evidence</h3>
-            <p className="mt-1 text-xs leading-relaxed text-muted">
-              {jobs.length
-                ? `${jobs.length} persisted job${jobs.length === 1 ? '' : 's'} visible. Latest state: ${jobs[0]?.state}.`
-                : 'No provider job has been queued in this workspace.'}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-line bg-surface-2 p-4">
-            <h3 className="text-sm font-medium text-ink">Activation boundary</h3>
-            <p className="mt-1 text-xs leading-relaxed text-muted">
-              Real Connect buttons stay unavailable until that provider has credentials,
-              required review or registration, webhook proof and real-account UAT.
-            </p>
-          </div>
-        </div>
-        </div>
-      </details>
-
       {isLive && workspaceScope.role === 'owner' && mailchimpDefinition?.enabled && !mailchimpConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="mailchimp-connect">
           <p className="eyebrow">Mailchimp</p>
           <h2 id="mailchimp-connect" className="mt-1 font-display text-2xl text-ink">Connect your audience securely.</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
             Omnix sends you to Mailchimp to authorize the registered app. Your Mailchimp password never enters Omnix.
-            The connection remains in {mailchimpDefinition.mode === 'uat' ? ' UAT' : ' production'} mode until the selected-audience checks pass.
+            After you return, choose the newsletter audience you want Omnix to keep updated.
           </p>
           <a href={mailchimpConnectHref()} className="sk-button-primary mt-4 inline-flex">Connect Mailchimp</a>
         </section>
@@ -621,10 +595,10 @@ export default async function ConnectionsPage({
           {mailchimpReconciliation && (
             <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-4">
               <p className="text-xs font-medium text-ink">
-                Latest {mailchimpReconciliation.mode === 'baseline' ? 'baseline' : 'reconciliation'} · {mailchimpReconciliation.state.replace('_', ' ')}
+                Latest contact check · {mailchimpReconciliation.state === 'review' ? 'review needed' : 'complete'}
               </p>
               <p className="mt-1 text-xs leading-relaxed text-muted">
-                {mailchimpReconciliation.itemsSeen} member{mailchimpReconciliation.itemsSeen === 1 ? '' : 's'} checked · {mailchimpReconciliation.itemsReviewed} review item{mailchimpReconciliation.itemsReviewed === 1 ? '' : 's'} · {mailchimpReconciliation.pagesApplied} page{mailchimpReconciliation.pagesApplied === 1 ? '' : 's'} checkpointed.
+                {mailchimpReconciliation.itemsSeen} contact{mailchimpReconciliation.itemsSeen === 1 ? '' : 's'} checked · {mailchimpReconciliation.itemsReviewed} need{mailchimpReconciliation.itemsReviewed === 1 ? 's' : ''} review.
               </p>
               {mailchimpReconciliation.state === 'review' && mailchimpReconciliation.itemsReviewed > 0 ? (
                 <Link
@@ -638,8 +612,7 @@ export default async function ConnectionsPage({
           )}
           {workspaceScope.role !== 'owner' ? (
             <p className="mt-4 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-xs text-muted">
-              Read-only health is visible to workspace assistants. Audience selection, webhook setup,
-              reconciliation requests and disconnect remain owner-only.
+              Assistants can see whether Mailchimp is connected. Only the owner can change the audience or disconnect the account.
             </p>
           ) : (
             <MailchimpAudienceSelector
@@ -655,7 +628,7 @@ export default async function ConnectionsPage({
 
       {isLive && workspaceScope.role === 'owner' && googleDefinition?.enabled && !googleConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="google-connect">
-          <p className="eyebrow">Google workspace · {googleDefinition.mode === 'uat' ? 'UAT' : 'live'}</p>
+          <p className="eyebrow">Google Workspace</p>
           <h2 id="google-connect" className="mt-1 font-display text-2xl text-ink">Connect Gmail and Calendar together.</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
             One guided authorization connects email sending, minimized Gmail activity, and the Omnix follow-up calendar. Google shows the exact permissions before anything is saved.
@@ -669,7 +642,7 @@ export default async function ConnectionsPage({
 
       {isLive && googleDefinition?.enabled && googleConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="google-connected">
-          <p className="eyebrow">Google workspace · {googleDefinition.mode === 'uat' ? 'UAT' : 'live'}</p>
+          <p className="eyebrow">Google Workspace</p>
           <h2 id="google-connected" className="mt-1 font-display text-2xl text-ink">
             {googleConnection.remoteAccountLabel ?? 'Connected Google account'}
           </h2>
@@ -679,14 +652,14 @@ export default async function ConnectionsPage({
           {googleCapabilityState ? (
             <div className="mt-4 grid gap-px overflow-hidden rounded-2xl bg-line sm:grid-cols-3">
               <div className="bg-surface-2 px-3 py-3">
-                <p className="text-[11px] uppercase tracking-[0.12em] text-subtle">Token authority</p>
-                <p className="mt-1 text-xs text-ink">{googleCapabilityState.tokenState.refreshPresent ? 'Refresh available' : 'Reauthorization required'}</p>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-subtle">Account access</p>
+                <p className="mt-1 text-xs text-ink">{googleCapabilityState.tokenState.refreshPresent ? 'Connected' : 'Reconnect required'}</p>
               </div>
               {googleCapabilityState.sync.map((sync) => (
                 <div key={sync.stream} className="bg-surface-2 px-3 py-3">
                   <p className="text-[11px] uppercase tracking-[0.12em] text-subtle">{sync.stream.replace('-', ' ')}</p>
-                  <p className="mt-1 text-xs text-ink">{sync.state.replaceAll('_', ' ')} · generation {sync.cursorGeneration}</p>
-                  {sync.lastSuccessAt ? <p className="mt-1 text-[11px] text-muted">Last success {new Date(sync.lastSuccessAt).toLocaleString()}</p> : null}
+                  <p className="mt-1 text-xs text-ink">{sync.state === 'healthy' ? 'Up to date' : sync.state.replaceAll('_', ' ')}</p>
+                  {sync.lastSuccessAt ? <p className="mt-1 text-[11px] text-muted">Last updated {new Date(sync.lastSuccessAt).toLocaleString()}</p> : null}
                 </div>
               ))}
             </div>
@@ -696,7 +669,7 @@ export default async function ConnectionsPage({
             </p>
           ) : (
             <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs text-warm">
-              Capability health is unavailable. No Google action will be presented as successful without a receipt.
+              Omnix could not confirm the connection status. Reconnect Google or try again in a few minutes.
             </p>
           )}
           <div className="mt-4 grid gap-2 sm:grid-cols-3">
@@ -725,19 +698,19 @@ export default async function ConnectionsPage({
             {googleConnection.grantedScopes.includes('https://www.googleapis.com/auth/gmail.metadata') ? (
               <form action={prepareGoogleGmailSyncAction}>
                 <input type="hidden" name="connectionId" value={googleConnection.id} />
-                <button type="submit" className="sk-button-secondary">Prepare Gmail metadata sync</button>
+                <button type="submit" className="sk-button-secondary">Update Gmail activity</button>
               </form>
             ) : null}
             {googleConnection.grantedScopes.includes('https://www.googleapis.com/auth/calendar.app.created') && !googleCapabilityState?.calendar.created ? (
               <form action={prepareGoogleCalendarCreationAction}>
                 <input type="hidden" name="connectionId" value={googleConnection.id} />
-                <button type="submit" className="sk-button-secondary">Prepare Omnix Calendar</button>
+                <button type="submit" className="sk-button-secondary">Create Omnix Calendar</button>
               </form>
             ) : null}
             {googleCapabilityState?.calendar.created ? (
               <form action={prepareGoogleCalendarSyncAction}>
                 <input type="hidden" name="connectionId" value={googleConnection.id} />
-                <button type="submit" className="sk-button-secondary">Prepare Calendar sync</button>
+                <button type="submit" className="sk-button-secondary">Update Calendar</button>
               </form>
             ) : null}
           </div>
@@ -746,17 +719,16 @@ export default async function ConnectionsPage({
 
       {isLive && workspaceScope.role === 'owner' && twilioDefinition?.enabled && !twilioConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="twilio-connect">
-          <p className="eyebrow">Texting · controlled UAT</p>
-          <h2 id="twilio-connect" className="mt-1 font-display text-2xl text-ink">Verify the business Messaging Service.</h2>
+          <p className="eyebrow">Texting setup</p>
+          <h2 id="twilio-connect" className="mt-1 font-display text-2xl text-ink">Connect the business texting account.</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-            Omnix verifies restricted server credentials, the Messaging Service, carrier-registration evidence,
-            consent policy and two signed callback routes. It never asks for a Twilio consumer password.
+            Omnix checks the business number, carrier registration, contact preferences, and quiet hours before texting is enabled.
           </p>
           <form action={configureTwilioAction} className="mt-4">
             <button type="submit" className="sk-button-primary">Verify Twilio configuration</button>
           </form>
           <p className="mt-3 text-[11px] leading-relaxed text-subtle">
-            Successful configuration still does not enable ordinary sends. A consented, owner-approved real-number UAT must reach a final delivery receipt first.
+            After setup, send one approved delivery test before texting contacts normally.
           </p>
         </section>
       )}
@@ -766,7 +738,7 @@ export default async function ConnectionsPage({
           <p className="eyebrow">Instagram &amp; Facebook · inbound only</p>
           <h2 id="meta-connect" className="mt-1 font-display text-2xl text-ink">Choose the business login that owns the enquiries.</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-            Authorization happens on Meta. Omnix stores scoped encrypted tokens and only accepts messages from explicitly selected business assets.
+            Sign in on Meta’s official page, then choose the Facebook Page or Instagram Professional account that receives enquiries.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <a className="sk-button-primary" href="/api/connectors/meta/connect?loginMode=facebook-page">Connect a Facebook Page</a>
@@ -780,8 +752,8 @@ export default async function ConnectionsPage({
 
       {isLive && twilioDefinition?.enabled && twilioConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="twilio-connected">
-          <p className="eyebrow">Texting · {twilioDefinition.mode === 'live' ? 'live configuration' : 'UAT'}</p>
-          <h2 id="twilio-connected" className="mt-1 font-display text-2xl text-ink">Governed provider texting</h2>
+          <p className="eyebrow">Texting</p>
+          <h2 id="twilio-connected" className="mt-1 font-display text-2xl text-ink">Business texting</h2>
           {twilioReadinessState ? (
             <div className="mt-4 grid gap-px overflow-hidden rounded-2xl bg-line sm:grid-cols-3">
               <div className="bg-surface-2 px-3 py-3"><p className="text-[11px] uppercase tracking-[0.12em] text-subtle">Readiness</p><p className="mt-1 text-xs text-ink">{twilioReadinessState.readiness.replaceAll('_', ' ')}</p></div>
@@ -789,14 +761,14 @@ export default async function ConnectionsPage({
               <div className="bg-surface-2 px-3 py-3"><p className="text-[11px] uppercase tracking-[0.12em] text-subtle">Quiet hours</p><p className="mt-1 text-xs text-ink">{twilioReadinessState.quietHoursStart && twilioReadinessState.quietHoursEnd ? `${twilioReadinessState.quietHoursStart}–${twilioReadinessState.quietHoursEnd} recipient local time` : 'Policy required'}</p></div>
             </div>
           ) : (
-            <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs text-warm">Texting authority is unavailable. Omnix will not send through Twilio.</p>
+            <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs text-warm">Omnix could not confirm the texting account. No message will be sent until the connection is restored.</p>
           )}
-          <p className="mt-3 text-xs leading-relaxed text-muted">Device Messages remains a separate fallback. Provider sends require an exact canonical phone, current opt-in, owner approval and a receipt.</p>
+          <p className="mt-3 text-xs leading-relaxed text-muted">Every text requires a valid phone number, current permission from the contact, and owner approval.</p>
           {workspaceScope.role === 'owner' ? (
             <form action={disableTextingAction} className="mt-4 border-t border-line pt-4">
               <input type="hidden" name="connectionId" value={twilioConnection.id} />
               <input type="hidden" name="destroySendCredentials" value="true" />
-              <button type="submit" className="sk-button-secondary">Disable provider texting safely</button>
+              <button type="submit" className="sk-button-secondary">Disconnect texting</button>
             </form>
           ) : null}
         </section>
@@ -810,7 +782,7 @@ export default async function ConnectionsPage({
             <>
               <dl className="mt-4 grid gap-px overflow-hidden rounded-2xl bg-line sm:grid-cols-4">
                 <div className="bg-surface-2 px-3 py-3"><dt className="text-[11px] uppercase tracking-[0.12em] text-subtle">Readiness</dt><dd className="mt-1 text-xs text-ink">{metaConnectionState.readiness.replaceAll('_', ' ')}</dd></div>
-                <div className="bg-surface-2 px-3 py-3"><dt className="text-[11px] uppercase tracking-[0.12em] text-subtle">Login authority</dt><dd className="mt-1 text-xs text-ink">{metaConnectionState.loginMode.replaceAll('-', ' ')}</dd></div>
+                <div className="bg-surface-2 px-3 py-3"><dt className="text-[11px] uppercase tracking-[0.12em] text-subtle">Connected through</dt><dd className="mt-1 text-xs text-ink">{metaConnectionState.loginMode === 'facebook-page' ? 'Facebook Page' : 'Instagram Professional'}</dd></div>
                 <div className="bg-surface-2 px-3 py-3"><dt className="text-[11px] uppercase tracking-[0.12em] text-subtle">Graph version</dt><dd className="mt-1 font-mono text-xs text-ink">{metaConnectionState.graphVersion}</dd></div>
                 <div className="bg-surface-2 px-3 py-3"><dt className="text-[11px] uppercase tracking-[0.12em] text-subtle">Retention</dt><dd className="mt-1 text-xs text-ink">{metaConnectionState.retentionDays} days</dd></div>
               </dl>
@@ -831,7 +803,7 @@ export default async function ConnectionsPage({
                 </div>
               </div>
               <p className="mt-4 text-xs leading-relaxed text-muted">
-                Personal accounts, outbound replies, Lead Ads and guessed contact matches are excluded. New senders without an exact canonical identity remain quarantined for review.
+              Personal accounts, outbound replies, and Lead Ads are excluded. When Omnix cannot match a sender confidently, the enquiry waits here for review.
               </p>
               {workspaceScope.role === 'owner' ? (
                 <div className="mt-4 border-t border-line pt-4">
@@ -854,7 +826,7 @@ export default async function ConnectionsPage({
                           </label>
                         ))}
                       </fieldset>
-                      <p className="text-xs leading-relaxed text-muted">Only selected assets are subscribed to the messages webhook. Page and account identifiers remain encrypted or hashed.</p>
+                      <p className="text-xs leading-relaxed text-muted">Only the accounts selected here can send enquiries into Omnix.</p>
                       <button type="submit" className="sk-button-primary">Select or retry subscriptions</button>
                     </form>
                   ) : null}
@@ -869,7 +841,7 @@ export default async function ConnectionsPage({
                       <form key={item.eventId} action={resolveMetaReviewAction} className="grid gap-3 rounded-2xl border border-line bg-surface-2 p-4 sm:grid-cols-[1fr_minmax(14rem,22rem)_auto] sm:items-end">
                         <div>
                           <p className="text-sm font-medium text-ink">{item.assetLabel} · {item.channel}</p>
-                          <p className="mt-1 text-xs text-muted">{item.reason.replaceAll('_', ' ')} · {new Date(item.providerOccurredAt).toLocaleString()}</p>
+                          <p className="mt-1 text-xs text-muted">{reviewReason(item.reason)} · {new Date(item.providerOccurredAt).toLocaleString()}</p>
                           {item.textPreview ? <blockquote className="mt-2 rounded-xl border border-line bg-surface px-3 py-2 text-sm leading-relaxed text-ink">{item.textPreview}</blockquote> : null}
                           <p className="mt-2 text-xs text-muted">{item.attachmentTypes.length ? `Attachments: ${item.attachmentTypes.join(', ')}` : 'No attachment'}{item.sourceReference ? ` · source ${item.sourceReference}` : ''}</p>
                           <a href={`/contacts/incomplete?q=${encodeURIComponent(item.incompleteRecordId)}&status=all&metaEventId=${encodeURIComponent(item.eventId)}`} className="sk-text-action mt-2 inline-flex">Review or create contact safely</a>
@@ -885,7 +857,7 @@ export default async function ConnectionsPage({
             </>
           ) : (
             <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs text-warm">
-              Meta provider authority is unavailable. Omnix will not accept business-message webhooks.
+              Omnix could not confirm the social account. New enquiries are paused until the connection is restored.
             </p>
           )}
         </section>
@@ -893,15 +865,15 @@ export default async function ConnectionsPage({
 
       {isLive && workspaceScope.role === 'owner' && (realConnections.length > 0 || intents.length > 0 || jobs.length > 0) && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="connector-operations">
-          <h2 id="connector-operations" className="font-display text-2xl text-ink">Owner operations</h2>
-          <p className="mt-1 text-sm text-muted">Every change below uses the same versioned commands and receipts proven by the CLI.</p>
+          <h2 id="connector-operations" className="font-display text-2xl text-ink">Connection controls</h2>
+          <p className="mt-1 text-sm text-muted">Review connected accounts, approve pending actions, and resolve anything that needs attention.</p>
 
           {realConnections.length > 0 && (
             <div className="mt-5 space-y-2">
               <h3 className="text-sm font-medium text-ink">Connections</h3>
               {realConnections.map((connection) => (
                 <div key={connection.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface-2 px-4 py-3">
-                  <div><p className="text-sm font-medium text-ink">{connection.remoteAccountLabel ?? connection.provider}</p><p className="text-xs text-muted">{connection.provider} · {connection.status}</p></div>
+                  <div><p className="text-sm font-medium text-ink">{connection.remoteAccountLabel ?? providerName(connection.provider)}</p><p className="text-xs text-muted">{providerName(connection.provider)} · {connectionStatus(connection.status)}</p></div>
                   {['active', 'degraded', 'reauthorization-required'].includes(connection.status) && (
                     <form action={disconnectConnectionAction}>
                       <input type="hidden" name="connectionId" value={connection.id} />
@@ -916,7 +888,7 @@ export default async function ConnectionsPage({
           {intents.filter((intent) => intent.status === 'pending').map((intent) => (
             <details key={intent.id} className="mt-4 rounded-2xl border border-line bg-surface-2 p-4">
               <summary className="cursor-pointer text-sm font-medium text-ink">Review {intent.summary}</summary>
-              <p className="mt-2 text-xs text-muted">{intent.provider} · {intent.actionType} · version {intent.version}</p>
+              <p className="mt-2 text-xs text-muted">{providerName(intent.provider)} · {actionName(intent.actionType)}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <form action={intent.provider === 'twilio' && intent.actionType === 'message.send'
                   ? approveTextingIntentAction : approveConnectorIntentAction}>
@@ -929,32 +901,17 @@ export default async function ConnectionsPage({
                   <button type="submit" className="sk-button-secondary">Reject</button>
                 </form>
               </div>
-              {intent.provider === 'twilio' && intent.actionType === 'message.send' ? (
-                <p className="mt-4 rounded-xl border border-line bg-surface px-3 py-2 text-xs text-muted">
-                  Message content is encrypted and version-bound. Edit it from the contact record to create a new approval version.
-                </p>
-              ) : <form action={editConnectorIntentAction} className="mt-4 grid gap-2 sm:grid-cols-2">
-                <input type="hidden" name="intentId" value={intent.id} /><input type="hidden" name="expectedVersion" value={intent.version} />
-                <input className="sk-input" name="summary" defaultValue={intent.summary} aria-label="Revised summary" required />
-                <input className="sk-input" name="payloadReference" defaultValue={intent.payloadReference} aria-label="Encrypted payload reference" required />
-                <input className="sk-input" name="payloadHash" defaultValue={intent.payloadHash} aria-label="Payload SHA-256" required />
-                <input className="sk-input" name="policyId" placeholder="Policy ID" aria-label="Policy ID" required />
-                <input className="sk-input" name="policyVersion" defaultValue="1" inputMode="numeric" aria-label="Policy version" required />
-                <button type="submit" className="sk-button-secondary">Save as new version</button>
-              </form>}
+              <p className="mt-4 rounded-xl border border-line bg-surface px-3 py-2 text-xs text-muted">
+                Need to change this action? Reject it here, then make the change from the related contact or service.
+              </p>
             </details>
           ))}
 
           {jobs.filter((job) => ['failed', 'dead-letter', 'reconciliation-required', 'queued', 'retry-scheduled'].includes(job.state)).map((job) => (
             <div key={job.id} className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface-2 px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-ink">{job.actionType}</p>
-                <p className="text-xs text-muted">{job.state} · attempt {job.attemptCount}/{job.maxAttempts}</p>
-                <p className="mt-1 text-[11px] text-subtle" title={`Full support reference: ${job.correlationId}`}>
-                  Support ref {supportReference(job.correlationId)} · {job.nextRetryAt
-                    ? `next retry ${new Date(job.nextRetryAt).toLocaleString()}`
-                    : `scheduled ${new Date(job.scheduledAt).toLocaleString()}`}
-                </p>
+                <p className="text-sm font-medium text-ink">{actionName(job.actionType)}</p>
+                <p className="text-xs text-muted">{jobStatus(job.state, job.nextRetryAt, job.scheduledAt)}</p>
               </div>
               <div className="flex gap-2">
                 {['failed', 'dead-letter', 'reconciliation-required'].includes(job.state) && <form action={retryConnectorJobAction}><input type="hidden" name="jobId" value={job.id} /><button type="submit" className="sk-button-secondary">Retry</button></form>}
@@ -963,29 +920,7 @@ export default async function ConnectionsPage({
             </div>
           ))}
 
-          {receipts.length > 0 && (
-            <div className="mt-5">
-              <h3 className="text-sm font-medium text-ink">Redacted execution receipts</h3>
-              <div className="mt-2 overflow-x-auto rounded-2xl border border-line">
-                <table className="min-w-full divide-y divide-line text-left text-xs">
-                  <thead className="bg-surface-3 text-subtle">
-                    <tr><th className="px-3 py-2 font-medium">Event</th><th className="px-3 py-2 font-medium">Provider status</th><th className="px-3 py-2 font-medium">Error category</th><th className="px-3 py-2 font-medium">Support ref</th><th className="px-3 py-2 font-medium">Time</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-line bg-surface-2 text-muted">
-                    {receipts.slice(0, 20).map((receipt) => (
-                      <tr key={receipt.id}>
-                        <td className="whitespace-nowrap px-3 py-2 text-ink">{receipt.type}</td>
-                        <td className="whitespace-nowrap px-3 py-2">{receipt.providerStatus ?? '—'}</td>
-                        <td className="whitespace-nowrap px-3 py-2">{receipt.errorCategory}</td>
-                        <td className="whitespace-nowrap px-3 py-2 font-medium" title={`Full support reference: ${receipt.correlationId}`}>{supportReference(receipt.correlationId)}</td>
-                        <td className="whitespace-nowrap px-3 py-2">{new Date(receipt.occurredAt).toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          <ConnectorActivityLedger receipts={receipts} />
         </section>
       )}
 
@@ -1027,29 +962,6 @@ export default async function ConnectionsPage({
         })}
       </div>
 
-      <section className="mt-8 border-t border-line pt-6" aria-labelledby="connector-definitions">
-        <h2 id="connector-definitions" className="font-display text-2xl text-ink">Deployment truth</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {definitions.filter((definition) => definition.provider !== 'contract-test').map((definition) => (
-            <article key={definition.provider} className="rounded-2xl border border-line bg-surface px-4 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-medium text-ink">{definition.label}</h3>
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${definition.enabled
-                  ? 'border-nurture-border bg-nurture-soft text-nurture'
-                  : 'border-line-strong bg-surface-3 text-muted'}`}>
-                  {definition.enabled ? 'Enabled' : 'External setup required'}
-                </span>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-muted">
-                {definition.capabilities.join(' · ')}
-              </p>
-              <p className="mt-3 text-[11px] leading-relaxed text-subtle">
-                Next gate: {definition.productionRequirements[0] ?? 'Provider-specific acceptance'}
-              </p>
-            </article>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

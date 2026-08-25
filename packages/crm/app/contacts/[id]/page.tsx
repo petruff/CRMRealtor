@@ -278,8 +278,7 @@ export default async function ContactDetailPage({
           messages={textingSummary?.messages} />
       ) : !archived && twilioConnection && twilioPhonePoint ? (
         <p role="status" className="mt-6 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-sm text-warm">
-          Provider texting is blocked until the workspace owner completes carrier registration,
-          the compliance policy, signed callbacks, and real-number UAT. Device Messages remains available separately.
+          Business texting is not ready yet. The workspace owner still needs to finish carrier registration and one final delivery test. Device Messages remains available separately.
         </p>
       ) : null}
 

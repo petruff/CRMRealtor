@@ -97,8 +97,8 @@ export function IncompleteRecordWorkspace({
           Nothing needs review
         </h2>
         <p className="mt-2 text-sm text-muted">
-          New incomplete intake records will appear here with only their safe,
-          allowlisted details.
+          New contacts that need information will appear here with the details
+          available for review.
         </p>
       </div>
     );
