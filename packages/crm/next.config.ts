@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
       './node_modules/xlsx/**/*',
     ],
   },
+  images: {
+    qualities: [90, 92],
+  },
   experimental: {
     // XLS/XLSX imports accept 10 MB. Binary workbooks travel as base64, which
     // adds roughly 34% plus Server Action metadata. The parser still enforces

@@ -9,6 +9,7 @@ const brandLockupSource = readFileSync(new URL('../components/brand-lockup.tsx',
 const assistantSource = readFileSync(new URL('../components/omnix-assistant-launcher.tsx', import.meta.url), 'utf8');
 const welcomeMotionSource = readFileSync(new URL('../components/welcome-motion.tsx', import.meta.url), 'utf8');
 const dataOperationsSource = readFileSync(new URL('./data/page.tsx', import.meta.url), 'utf8');
+const nextConfigSource = readFileSync(new URL('../next.config.ts', import.meta.url), 'utf8');
 
 function cssBlock(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -116,6 +117,7 @@ describe('authenticated editorial design contract', () => {
     expect(globalCss).toMatch(/\.pipeline-filter-row button\s*\{[^}]*min-height:\s*2\.75rem;/s);
     expect(globalCss).toMatch(/\.insights-stage-chart li > a\s*\{[^}]*min-height:\s*2\.75rem;/s);
     expect(globalCss).toMatch(/body\s*\{[^}]*min-width:\s*0;[^}]*overflow-x:\s*clip;/s);
+    expect(nextConfigSource).toContain('qualities: [90, 92]');
   });
 
   it('keeps Connections cards on the centralized 12px radius contract', () => {
