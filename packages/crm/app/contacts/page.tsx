@@ -10,6 +10,7 @@ import {
   X,
   Archive,
   RotateCcw,
+  Cake,
 } from "lucide-react";
 import {
   INTENT_LABEL,
@@ -38,6 +39,7 @@ import {
   type ContactScope,
 } from "@/lib/application/contact-query";
 import { contactViewHref, type ContactViewState } from "@/lib/application/contact-view-state";
+import { formatHuman } from "@/lib/domain/dates";
 import {
   applySmartListCommand,
   listSmartListsCommand,
@@ -81,7 +83,7 @@ const SCOPE_COPY: Record<ContactScope, { title: string; eyebrow: string; empty: 
   },
   "needs-review": {
     title: "Needs review",
-    eyebrow: "Qualification queue",
+    eyebrow: "Contacts to confirm",
     empty: "Every contact in this view has been reviewed.",
   },
   all: {
@@ -361,6 +363,12 @@ export default async function ContactsPage({
         </div>
       ) : null}
 
+      {!archivedView && scope === "needs-review" ? (
+        <div className="mb-7 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-sm leading-relaxed text-warm">
+          These contacts were added successfully. “Needs review” means Omnix needs your judgment about their relationship or follow-up priority; it does not mean the import failed.
+        </div>
+      ) : null}
+
       {contacts.length ? (
         <div className="space-y-12">
           {ORDER.map((leadType) => {
@@ -403,6 +411,12 @@ export default async function ContactsPage({
                         <p className="mt-1 truncate text-[11px] text-subtle">
                           {activityCounts.get(contact.id) ?? 0} activities · {taskCounts.get(contact.id)?.open ?? 0} open tasks · {taskCounts.get(contact.id)?.completed ?? 0} completed · {assigneeByContact.has(contact.id) ? `Assigned ${assigneeByContact.get(contact.id)}` : "Unassigned"}
                         </p>
+                        {contact.birthdate ? (
+                          <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted">
+                            <Cake className="size-3.5 shrink-0 text-nurture" aria-hidden />
+                            Birthday {formatHuman(contact.birthdate)}
+                          </p>
+                        ) : null}
                       </div>
 
                       {!archivedView ? <div className="col-start-2 flex shrink-0 gap-1.5 sm:ml-auto">

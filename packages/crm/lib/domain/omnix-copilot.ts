@@ -34,10 +34,17 @@ export const OMNIX_COPILOT_FIXED_ALIASES = [
   { phrase: 'what do I need to do today', canonical: 'brief today' },
   { phrase: 'what needs my attention today', canonical: 'brief today' },
   { phrase: 'who needs attention', canonical: 'alerts today' },
+  { phrase: 'who needs my attention', canonical: 'alerts today' },
+  { phrase: 'who needs my attention today', canonical: 'alerts today' },
   { phrase: 'show overdue follow-ups', canonical: 'tasks overdue' },
+  { phrase: 'which tasks are overdue', canonical: 'tasks overdue' },
+  { phrase: 'what tasks are overdue', canonical: 'tasks overdue' },
   { phrase: "show today's tasks", canonical: 'tasks today' },
   { phrase: 'show upcoming dates', canonical: 'dates upcoming' },
   { phrase: 'show pipeline', canonical: 'pipeline' },
+  { phrase: 'show me my pipeline', canonical: 'pipeline' },
+  { phrase: 'what does my pipeline look like', canonical: 'pipeline' },
+  { phrase: 'what is my pipeline', canonical: 'pipeline' },
   { phrase: 'show mailers', canonical: 'mailers' },
   { phrase: 'show recent activity for <contact-id>', canonical: 'activity <contact-id>' },
   { phrase: 'connection status', canonical: 'connections' },
@@ -310,7 +317,7 @@ function normalizedQuestion(value: unknown): string {
     .trim();
 }
 
-/** Parse the documented grammar only; unmatched text is inert and unsupported. */
+/** Parse the documented grammar and a bounded set of common user phrasings. */
 export function parseOmnixCopilotQuestion(value: unknown): OmnixCopilotIntent {
   let question = normalizedQuestion(value);
   let folded = question.toLocaleLowerCase('en-US');
@@ -367,7 +374,7 @@ export function parseOmnixCopilotQuestion(value: unknown): OmnixCopilotIntent {
 
   throw new OmnixCopilotError(
     'unsupported-intent',
-    'That request is outside the deterministic Omnix copilot grammar.',
+    "I couldn't match that wording yet.",
   );
 }
 

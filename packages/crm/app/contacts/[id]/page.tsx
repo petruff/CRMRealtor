@@ -27,7 +27,6 @@ import {
   daysUntilAnniversary,
   anniversaryOrdinal,
   formatHuman,
-  formatMonthDay,
   relativeDays,
   daysBetween,
   parseDateOnly,
@@ -327,8 +326,8 @@ export default async function ContactDetailPage({
             <div className="flex items-center gap-3 bg-surface p-4 sm:p-5">
               <Cake className="size-[18px] shrink-0 text-nurture" />
               <div>
-                <p className="text-sm text-ink">
-                  {formatMonthDay(contact.birthdate)}
+                <p className="text-sm font-medium text-ink">
+                  {formatHuman(contact.birthdate)}
                 </p>
                 <p className="text-xs text-muted">
                   Birthday ·{" "}

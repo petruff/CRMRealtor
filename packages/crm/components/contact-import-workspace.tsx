@@ -263,8 +263,7 @@ export function ContactImportWorkspace() {
         {(result.rejected > 0 || result.failed > 0) && (
           <div className="mt-4 rounded-2xl border border-warm-border bg-warm-soft p-4 text-sm text-warm">
             <p className="font-medium">
-              {result.rejected} rejected · {result.quarantined} saved for review
-              · {result.failed} failed. Valid rows were kept.
+              {result.rejected} need review · {result.failed} failed. All other contacts were saved.
             </p>
             {result.quarantined > 0 && (
               <Link
@@ -285,17 +284,25 @@ export function ContactImportWorkspace() {
             )}
           </div>
         )}
-        <button
-          type="button"
-          className="sk-primary-button mt-6"
-          onClick={() => {
-            setInput(undefined);
-            setPreview(undefined);
-            setResult(undefined);
-          }}
-        >
-          Import another file
-        </button>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Link href="/contacts?scope=all" className="sk-primary-button">View all contacts</Link>
+          {(result.rejected > 0 || result.quarantined > 0) ? (
+            <Link href="/contacts/incomplete" className="sk-secondary-button">Review imported records</Link>
+          ) : null}
+          <Link href="/pipeline" className="sk-secondary-button">Open pipeline</Link>
+          <Link href="/data#import-history" className="sk-secondary-button">View import history</Link>
+          <button
+            type="button"
+            className="sk-text-action min-h-11 px-3"
+            onClick={() => {
+              setInput(undefined);
+              setPreview(undefined);
+              setResult(undefined);
+            }}
+          >
+            Import another file
+          </button>
+        </div>
       </section>
     );
   }

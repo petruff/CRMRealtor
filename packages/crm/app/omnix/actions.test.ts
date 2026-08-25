@@ -102,12 +102,17 @@ describe('askOmnixCopilotAction', () => {
     expect(result).toMatchObject({ status: 'success', intent: 'pipeline', dataMode: 'sample' });
   });
 
-  it('returns the documented supported examples for inert unknown text', async () => {
+  it('returns a concise set of friendly examples for inert unknown text', async () => {
     const result = await askOmnixCopilotAction('run arbitrary automation');
 
     expect(executeOmnixCopilot).not.toHaveBeenCalled();
     expect(result.status).toBe('unsupported');
-    expect(result.answerBlocks[0]?.items.length).toBeGreaterThan(5);
+    expect(result.answerBlocks[0]?.items.map((item) => item.label)).toEqual([
+      'What are my priorities today?',
+      'Who needs my attention?',
+      'Which tasks are overdue?',
+      'Show me my pipeline',
+    ]);
     expect(emitOmnixCopilotTelemetry).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
