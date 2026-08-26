@@ -31,6 +31,39 @@ grant execute on function public.has_workspace_support_grant(uuid)
 grant execute on function public.list_canonical_contact_page(uuid,text,text,text,text,uuid,boolean,integer,integer)
   to authenticated;
 
+-- An earlier forward repair intentionally restores the original attention
+-- reconciliation body. Reapply this migration's explicit text-array typing
+-- without duplicating the large service-only function body here.
+do $$
+declare
+  function_definition text;
+  repaired_definition text;
+begin
+  select pg_get_functiondef(
+    'public.reconcile_attention_items(uuid,jsonb,timestamptz,text)'::regprocedure
+  ) into function_definition;
+
+  repaired_definition := replace(
+    function_definition,
+    'occurrence_keys text[]:=''{}'';',
+    'occurrence_keys text[] := ''{}''::text[];'
+  );
+  repaired_definition := replace(
+    repaired_definition,
+    'occurrence_keys text[] := ''{}'';',
+    'occurrence_keys text[] := ''{}''::text[];'
+  );
+
+  if repaired_definition not like '%occurrence_keys text[] := ''{}''::text[]%' then
+    raise exception 'forward repair failed: attention array declaration is unavailable';
+  end if;
+
+  if repaired_definition <> function_definition then
+    execute repaired_definition;
+  end if;
+end;
+$$;
+
 do $$
 begin
   if pg_get_functiondef('public.read_workspace_ai_secret_envelope(uuid,uuid,uuid)'::regprocedure)
