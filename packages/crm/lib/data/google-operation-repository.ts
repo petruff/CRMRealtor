@@ -36,6 +36,7 @@ export interface GoogleCapabilityState {
 
 export interface GoogleOperationRepository {
   readCapabilityState(scope: WorkspaceScope, connectionId: string): Promise<GoogleCapabilityState>;
+  repairCapabilityState(scope: WorkspaceScope, connectionId: string, occurredAt: string): Promise<GoogleCapabilityState>;
   storeEncryptedPayload(scope: WorkspaceScope, input: {
     readonly connectionId: string;
     readonly payloadKind: 'gmail.send' | 'gmail.sync-metadata' | 'calendar.create-omnix-calendar'
