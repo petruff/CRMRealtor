@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { unstable_rethrow } from 'next/navigation';
 import { ChevronLeft, FileCheck2 } from 'lucide-react';
 import { ContactImportWorkspace } from '@/components/contact-import-workspace';
 import { getRepository } from '@/lib/data';
@@ -36,9 +37,14 @@ async function getLatestImport(): Promise<LatestImport | null> {
       .order('completed_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (error) return null;
+    if (error) {
+      console.error('[contact-import-summary] read-failed', error.code ?? 'database-error');
+      return null;
+    }
     return data as LatestImport | null;
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
+    console.error('[contact-import-summary] unavailable', error instanceof Error ? error.name : 'UnknownError');
     return null;
   }
 }

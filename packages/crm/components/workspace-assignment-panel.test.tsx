@@ -2,7 +2,7 @@
 
 import React from 'react';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Contact } from '@/lib/domain/contact';
 import type { ContactAssignment } from '@/lib/domain/rich-contact';
@@ -37,5 +37,25 @@ describe('WorkspaceAssignmentPanel', () => {
     expect(screen.getByText('You · Owner')).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Assistant' })).toHaveValue('member-assistant');
     expect(screen.queryByText(/raw-owner-user-id|raw-assistant-user-id/)).not.toBeInTheDocument();
+  });
+
+  it('keeps large workspaces bounded and supports search plus progressive disclosure', () => {
+    const contacts = Array.from({ length: 30 }, (_, index) => ({
+      ...contact,
+      id: `contact-${index + 1}`,
+      firstName: `Client ${index + 1}`,
+      lastName: 'Example',
+    }));
+    render(<WorkspaceAssignmentPanel contacts={contacts} assignments={[]} members={members} currentMembershipId="member-owner" />);
+
+    expect(screen.getByText('Showing 24 of 30 matching contacts')).toBeInTheDocument();
+    expect(screen.queryByText('Client 25 Example')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Show 6 more' }));
+    expect(screen.getByText('Client 25 Example')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search contacts to assign' }), { target: { value: 'Client 30' } });
+    expect(screen.getByText('Showing 1 of 1 matching contacts')).toBeInTheDocument();
+    expect(screen.getByText('Client 30 Example')).toBeInTheDocument();
+    expect(screen.queryByText('Client 1 Example')).not.toBeInTheDocument();
   });
 });

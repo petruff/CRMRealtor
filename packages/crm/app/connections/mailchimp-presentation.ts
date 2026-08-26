@@ -54,6 +54,27 @@ export function mailchimpConnectionStatusLabel(status: string): string {
   }
 }
 
+export function mailchimpConnectionNeedsAttention(
+  status: string,
+  loadIssue?: MailchimpAudienceLoadIssue,
+): boolean {
+  return ['degraded', 'reauthorization-required'].includes(status) || Boolean(loadIssue);
+}
+
+export function mailchimpConnectionRequiresReauthorization(
+  status: string,
+  loadIssue?: MailchimpAudienceLoadIssue,
+): boolean {
+  return status === 'reauthorization-required' || loadIssue?.kind === 'reconnect';
+}
+
+export function mailchimpConnectionSummaryLabel(
+  status: string,
+  loadIssue?: MailchimpAudienceLoadIssue,
+): string {
+  return loadIssue?.title ?? mailchimpConnectionStatusLabel(status);
+}
+
 export function recordMailchimpReadFailure(input: {
   readonly operation: 'binding' | 'reconciliation' | 'backfill' | 'audiences';
   readonly connectionId: string;

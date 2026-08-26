@@ -2,6 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { ConnectorError } from '@/lib/domain/connector';
 import {
   classifyMailchimpAudienceLoadIssue,
+  mailchimpConnectionNeedsAttention,
+  mailchimpConnectionRequiresReauthorization,
+  mailchimpConnectionSummaryLabel,
   mailchimpConnectionStatusLabel,
   mailchimpSetupNoticeCode,
   recordMailchimpReadFailure,
@@ -36,6 +39,20 @@ describe('Mailchimp connection presentation', () => {
     expect(mailchimpConnectionStatusLabel('active')).toBe('Connected');
     expect(mailchimpConnectionStatusLabel('reauthorization-required')).toBe('Reconnect required');
     expect(mailchimpConnectionStatusLabel('unexpected')).toBe('Connection status unavailable');
+  });
+
+  it('does not present a saved connection as healthy when live account reads fail', () => {
+    const issue = classifyMailchimpAudienceLoadIssue(new ConnectorError('forbidden', 'token rejected'));
+    expect(mailchimpConnectionNeedsAttention('active', issue)).toBe(true);
+    expect(mailchimpConnectionRequiresReauthorization('active', issue)).toBe(true);
+    expect(mailchimpConnectionSummaryLabel('active', issue)).toBe('Mailchimp needs to be reconnected');
+    expect(mailchimpConnectionNeedsAttention('active')).toBe(false);
+    expect(mailchimpConnectionRequiresReauthorization('active')).toBe(false);
+    expect(mailchimpConnectionSummaryLabel('active')).toBe('Connected');
+
+    const temporary = classifyMailchimpAudienceLoadIssue(new ConnectorError('provider-retryable', 'rate limited'));
+    expect(mailchimpConnectionNeedsAttention('active', temporary)).toBe(true);
+    expect(mailchimpConnectionRequiresReauthorization('active', temporary)).toBe(false);
   });
 
   it('maps guided setup failures to stable user-facing notice codes', () => {

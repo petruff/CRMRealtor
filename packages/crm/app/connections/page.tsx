@@ -46,7 +46,9 @@ import { createClient } from '@supabase/supabase-js';
 import { deriveConnectionCardStatus, type ConnectionCardStatus } from './connection-status';
 import { connectionNotice, googleWorkspaceConnectHref, mailchimpConnectHref } from './oauth-presentation';
 import {
-  mailchimpConnectionStatusLabel,
+  mailchimpConnectionNeedsAttention,
+  mailchimpConnectionRequiresReauthorization,
+  mailchimpConnectionSummaryLabel,
   recordMailchimpReadFailure,
   type MailchimpAudienceLoadIssue,
 } from './mailchimp-presentation';
@@ -234,6 +236,8 @@ function liveIntegrationStatus(
     readonly mailchimpConnected: boolean;
     readonly mailchimpLive: boolean;
     readonly mailchimpReviewItems: number;
+    readonly mailchimpNeedsAttention: boolean;
+    readonly mailchimpRequiresReauthorization: boolean;
     readonly googleEnabled: boolean;
     readonly googleConnected: boolean;
     readonly googleLive: boolean;
@@ -249,6 +253,17 @@ function liveIntegrationStatus(
   },
 ): Integration {
   if (integration.name === 'Mailchimp' && input.mailchimpEnabled) {
+    if (input.mailchimpNeedsAttention) {
+      return {
+        ...integration,
+        status: 'review',
+        statusLabel: input.mailchimpRequiresReauthorization ? 'Reconnect Mailchimp' : 'Connection needs attention',
+        what: 'Restore the selected audience connection before synchronization resumes.',
+        detail: input.mailchimpRequiresReauthorization
+          ? 'The saved audience remains safe. The workspace owner needs to reconnect Mailchimp once.'
+          : 'The saved audience remains safe while Omnix checks the provider again.',
+      };
+    }
     const presentation = deriveConnectionCardStatus('mailchimp', {
       providerEnabled: input.mailchimpEnabled,
       connected: input.mailchimpConnected,
@@ -445,11 +460,19 @@ export default async function ConnectionsPage({
       metaReviewItems = [];
     }
   }
+  const mailchimpNeedsAttention = mailchimpConnection
+    ? mailchimpConnectionNeedsAttention(mailchimpConnection.status, mailchimpAudienceLoadIssue)
+    : false;
+  const mailchimpRequiresReauthorization = mailchimpConnection
+    ? mailchimpConnectionRequiresReauthorization(mailchimpConnection.status, mailchimpAudienceLoadIssue)
+    : false;
   const integrations = INTEGRATIONS.map((integration) => liveIntegrationStatus(integration, {
     mailchimpEnabled: mailchimpDefinition?.enabled === true,
     mailchimpConnected: Boolean(mailchimpConnection),
     mailchimpLive: mailchimpDefinition?.mode === 'live',
     mailchimpReviewItems: mailchimpReconciliation?.itemsReviewed ?? 0,
+    mailchimpNeedsAttention,
+    mailchimpRequiresReauthorization,
     googleEnabled: googleDefinition?.enabled === true,
     googleConnected: Boolean(googleConnection),
     googleLive: googleDefinition?.mode === 'live',
@@ -472,9 +495,6 @@ export default async function ConnectionsPage({
   const googleWorkspaceAuthorized = GOOGLE_WORKSPACE_SCOPES.every((scope) => (
     googleConnection?.grantedScopes.includes(scope)
   ));
-  const mailchimpNeedsReauthorization = Boolean(mailchimpConnection) && (
-    mailchimpConnection?.status === 'reauthorization-required'
-  );
   return (
     <div>
       <header className="mb-10 md:mb-12">
@@ -534,17 +554,34 @@ export default async function ConnectionsPage({
           <article className="group rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 shadow-sm transition duration-300 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lg sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <span className="grid size-12 place-items-center rounded-2xl bg-surface-2 text-ink"><Send className="size-5" aria-hidden /></span>
-              <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${mailchimpConnection && !mailchimpNeedsReauthorization
+              <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${mailchimpConnection && !mailchimpNeedsAttention
                 ? 'border-nurture-border bg-nurture-soft text-nurture'
                 : 'border-warm-border bg-warm-soft text-warm'}`}>
-                {mailchimpConnection && !mailchimpNeedsReauthorization ? 'Connected' : mailchimpConnection ? 'Reconnect needed' : 'Ready to connect'}
+                {mailchimpConnection && !mailchimpNeedsAttention
+                  ? 'Connected'
+                  : mailchimpRequiresReauthorization
+                    ? 'Reconnect needed'
+                    : mailchimpConnection
+                      ? 'Needs attention'
+                      : 'Ready to connect'}
               </span>
             </div>
             <h3 className="mt-5 font-display text-2xl text-ink">Mailchimp</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">Keep the newsletter audience, lead temperature tags, and unsubscribe status synchronized without copying contacts by hand.</p>
             {workspaceScope.role === 'owner' && mailchimpDefinition?.enabled ? (
-              <a href={mailchimpConnectHref(mailchimpConnection?.id)} className={`${mailchimpConnection && !mailchimpNeedsReauthorization ? 'sk-button-secondary' : 'sk-button-primary'} mt-5 inline-flex items-center gap-2`}>
-                {mailchimpConnection ? 'Reconnect Mailchimp' : 'Connect Mailchimp'}
+              <a
+                href={mailchimpRequiresReauthorization || !mailchimpConnection
+                  ? mailchimpConnectHref(mailchimpConnection?.id)
+                  : '#mailchimp-connected'}
+                className={`${mailchimpRequiresReauthorization || !mailchimpConnection ? 'sk-button-primary' : 'sk-button-secondary'} mt-5 inline-flex items-center gap-2`}
+              >
+                {mailchimpRequiresReauthorization
+                  ? 'Reconnect Mailchimp'
+                  : mailchimpConnection && mailchimpNeedsAttention
+                    ? 'Review Mailchimp'
+                    : mailchimpConnection
+                      ? 'Manage Mailchimp'
+                      : 'Connect Mailchimp'}
                 <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
               </a>
             ) : (
@@ -574,7 +611,7 @@ export default async function ConnectionsPage({
             {mailchimpConnection.remoteAccountLabel ?? 'Connected Mailchimp account'}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            {mailchimpConnectionStatusLabel(mailchimpConnection.status)}. {selectedMailchimpAudience
+            {mailchimpConnectionSummaryLabel(mailchimpConnection.status, mailchimpAudienceLoadIssue)}. {selectedMailchimpAudience
               ? `Newsletter audience: ${selectedMailchimpAudience.audienceName}.`
               : 'Choose the newsletter audience you want to keep synchronized.'}
           </p>
