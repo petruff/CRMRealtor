@@ -7,7 +7,11 @@ import {
   parseGoogleFeatureBundle,
   type GoogleFeatureBundle,
 } from '../domain/google-connector.ts';
-import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
+import {
+  isCanonicalWorkspaceOwnerScope,
+  validateWorkspaceScope,
+  type WorkspaceScope,
+} from '../domain/workspace.ts';
 import type { GoogleOAuthRepository } from '../data/google-oauth-repository.ts';
 import {
   createGoogleAuthorizationUrl,
@@ -32,7 +36,7 @@ const REFRESH_TOKEN_SECRET_TYPE = 'google-refresh-token';
 
 function owner(scopeInput: WorkspaceScope): WorkspaceScope {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.mode !== 'live' || scope.role !== 'owner') {
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) {
     throw new ConnectorError('forbidden', 'A signed-in workspace owner is required.');
   }
   return scope;

@@ -563,14 +563,18 @@ describe('executeOmnixCopilot', () => {
       getRepository: async () => ({ ...fixture.repositoryContext, connectorRepository }),
     });
 
-    expect(response.answerBlocks[0]).toMatchObject({ title: 'Connection health', kind: 'list' });
+    expect(response.answerBlocks[0]).toMatchObject({ title: 'Connections', kind: 'list' });
     expect(response.answerBlocks[0]?.items[0]).toMatchObject({
-      label: 'Google', detail: 'active · 1 granted scopes', href: '/connections',
+      label: 'Google', detail: 'A permission still needs approval.',
+      value: 'Setup needed', href: '/connections',
     });
     expect(response.citations[0]).toMatchObject({
       entityType: 'connector', recordId: 'connection-google', target: '/connections',
     });
     expect(JSON.stringify(response)).not.toContain('redacted-account-hash');
+    expect(JSON.stringify(response)).not.toMatch(
+      /granted.?scopes|tokenExpiresAt|scope-pending|degraded|uat|capability|oauth/i,
+    );
   });
 
   it('builds a bounded full contact profile from authorized CRM repositories', async () => {

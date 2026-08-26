@@ -1,6 +1,7 @@
 import { SOURCE_LABEL, displayName, type Contact, type LeadSource, type LeadType } from '../domain/contact.ts';
 
 export const CONTACT_QUERY_MAX = 200;
+export const CONTACT_PAGE_SIZE = 50;
 export const CONTACT_LEAD_TYPES: readonly LeadType[] = ['hot', 'warm', 'nurture'];
 export const CONTACT_SCOPES = [
   'leads',
@@ -24,6 +25,38 @@ export class ContactQueryError extends Error {
     super(message);
     this.name = 'ContactQueryError';
   }
+}
+
+export function parseContactPage(value: string | undefined): number {
+  if (!value) return 1;
+  const page = Number(value);
+  return Number.isSafeInteger(page) && page > 0 ? page : 1;
+}
+
+export function contactPageMetadata(total: number, requestedPage: number, pageSize = CONTACT_PAGE_SIZE) {
+  if (!Number.isSafeInteger(total) || total < 0) throw new ContactQueryError('Contact total must be a positive integer or zero.');
+  if (!Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 100) {
+    throw new ContactQueryError('Contact page size must be from 1 to 100.');
+  }
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, requestedPage), pageCount);
+  const offset = (page - 1) * pageSize;
+  return {
+    total,
+    page,
+    pageCount,
+    offset,
+    from: total ? offset + 1 : 0,
+    to: Math.min(offset + pageSize, total),
+  } as const;
+}
+
+export function paginateContacts<T>(items: readonly T[], requestedPage: number, pageSize = CONTACT_PAGE_SIZE) {
+  const metadata = contactPageMetadata(items.length, requestedPage, pageSize);
+  return {
+    items: items.slice(metadata.offset, metadata.offset + pageSize),
+    ...metadata,
+  } as const;
 }
 
 function normalizeSearchValue(value: string): string {

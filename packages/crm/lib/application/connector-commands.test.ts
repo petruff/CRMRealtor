@@ -63,6 +63,22 @@ describe('connector commands', () => {
     expect(await store.listJobs(SAMPLE_WORKSPACE_SCOPE, { limit: 100 })).toHaveLength(1);
   });
 
+  it('rejects provider approval from a support grant with a forged owner role', async () => {
+    const store = repository();
+    const draft = await createConnectorIntentCommand(store, configuration, SAMPLE_ASSISTANT_SCOPE, {
+      provider: 'contract-test', connectionId: 'connection-contract-test',
+      actionType: 'test.succeed', payloadReference: 'payload-support', summary: 'Support draft.',
+    }, now);
+    await expect(approveConnectorIntentCommand(store, {
+      ...SAMPLE_ASSISTANT_SCOPE,
+      role: 'owner',
+      supportGrant: { active: true },
+    }, {
+      intentId: draft.id, expectedVersion: 1, idempotencyKey: 'support-approval',
+    }, now)).rejects.toMatchObject({ code: 'forbidden' });
+    expect(await store.listJobs(SAMPLE_WORKSPACE_SCOPE, { limit: 100 })).toHaveLength(0);
+  });
+
   it('rejects a pending intent without creating a provider job', async () => {
     const store = repository();
     const draft = await createConnectorIntentCommand(store, configuration, SAMPLE_WORKSPACE_SCOPE, {

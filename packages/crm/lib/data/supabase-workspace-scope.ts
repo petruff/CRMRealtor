@@ -88,6 +88,8 @@ function resolvedScope(
     || owner.role !== 'owner'
     || owner.status !== 'active'
     || !isWorkspaceRole(membership.role)
+    || (membership.role === 'owner'
+      && (membership.id !== owner.id || membership.user_id !== owner.user_id))
   ) {
     throw dataError('Workspace membership authority is inconsistent.');
   }
@@ -99,6 +101,7 @@ function resolvedScope(
     workspaceId: membership.workspace_id,
     role: membership.role,
     mode: 'live',
+    supportGrant: null,
   });
 }
 
@@ -127,8 +130,8 @@ export async function resolveSupabaseWorkspaceScope(
     if (!bootstrap) {
       throw dataError('Personal workspace bootstrap returned no active membership.');
     }
-    if (!isWorkspaceRole(bootstrap.role)) {
-      throw dataError('Personal workspace bootstrap returned an invalid role.');
+    if (bootstrap.role !== 'owner' || bootstrap.owner_user_id !== authenticatedUserId) {
+      throw dataError('Personal workspace bootstrap returned invalid canonical owner authority.');
     }
     return validateWorkspaceScope({
       authenticatedUserId,
@@ -137,6 +140,7 @@ export async function resolveSupabaseWorkspaceScope(
       workspaceId: bootstrap.workspace_id,
       role: bootstrap.role,
       mode: 'live',
+      supportGrant: null,
     });
   }
 
@@ -147,12 +151,20 @@ export async function resolveSupabaseWorkspaceScope(
       ?? memberships.find((candidate) => candidate.role === 'owner');
   if (!membership) throw dataError('Active workspace membership is unavailable.');
   const owner = await activeOwnerForWorkspace(supabase, membership.workspace_id);
-  const { data: privileged, error: privilegeError } = await supabase.rpc('is_workspace_owner', {
-    target_workspace_id: membership.workspace_id,
+  if (membership.role === 'owner') {
+    return resolvedScope(authenticatedUserId, membership, owner);
+  }
+  const { data: supportGrantId, error: supportError } = await supabase.rpc(
+    'resolve_workspace_support_grant_id',
+    { target_workspace_id: membership.workspace_id },
+  );
+  if (supportError) {
+    throw dataError('Failed to resolve workspace support authority', supportError.message);
+  }
+  return validateWorkspaceScope({
+    ...resolvedScope(authenticatedUserId, membership, owner),
+    supportGrant: typeof supportGrantId === 'string'
+      ? { grantId: supportGrantId, active: true }
+      : null,
   });
-  if (privilegeError) throw dataError('Failed to resolve workspace administration', privilegeError.message);
-  const effectiveMembership = privileged === true && membership.role !== 'owner'
-    ? { ...membership, role: 'owner' }
-    : membership;
-  return resolvedScope(authenticatedUserId, effectiveMembership, owner);
 }

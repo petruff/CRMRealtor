@@ -20,4 +20,9 @@ describe('contact view state', () => {
     expect(contactViewHref(state, { leadType: undefined })).toContain('q=Judith+Serna');
     expect(contactViewHref({ scope: 'leads' })).toBe('/contacts');
   });
+
+  it('preserves filters in accessible page links and omits the first page', () => {
+    expect(contactViewHref(state, { page: 3 })).toContain('page=3');
+    expect(contactViewHref(state, { page: 1 })).not.toContain('page=');
+  });
 });

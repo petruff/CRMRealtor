@@ -47,4 +47,52 @@ describe('memory activity repository', () => {
       idempotencyKey: 'task-archived-contact',
     })).rejects.toMatchObject({ code: 'conflict' });
   });
+
+  it('returns exact aggregates only for requested visible contacts', async () => {
+    const repository = createMemoryActivityRepository({
+      initialTasks: [
+        {
+          id: 'task-open', workspaceId: SAMPLE_WORKSPACE_SCOPE.workspaceId, contactId: 'contact-visible',
+          title: 'Call', dueAt: '2026-08-12T00:00:00Z', status: 'open',
+          creatorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+          assigneeMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+          createdAt: '2026-08-11T00:00:00Z', updatedAt: '2026-08-11T00:00:00Z',
+        },
+        {
+          id: 'task-complete', workspaceId: SAMPLE_WORKSPACE_SCOPE.workspaceId, contactId: 'contact-visible',
+          title: 'Email', dueAt: '2026-08-12T00:00:00Z', status: 'completed',
+          creatorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+          assigneeMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+          createdAt: '2026-08-11T00:00:00Z', updatedAt: '2026-08-11T01:00:00Z',
+          completedAt: '2026-08-11T01:00:00Z',
+          completedByMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+        },
+      ],
+      initialEvents: [
+        {
+          id: 'event-visible', workspaceId: SAMPLE_WORKSPACE_SCOPE.workspaceId,
+          type: 'task-created', contactId: 'contact-visible', taskId: 'task-open',
+          actorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+          occurredAt: '2026-08-11T00:00:00Z', createdAt: '2026-08-11T00:00:00Z',
+          idempotencyKey: 'event-visible',
+        },
+        {
+          id: 'event-hidden', workspaceId: SAMPLE_WORKSPACE_SCOPE.workspaceId,
+          type: 'task-created', contactId: 'contact-hidden', taskId: 'task-hidden',
+          actorMembershipId: SAMPLE_WORKSPACE_SCOPE.membershipId,
+          occurredAt: '2026-08-11T00:00:00Z', createdAt: '2026-08-11T00:00:00Z',
+          idempotencyKey: 'event-hidden',
+        },
+      ],
+    });
+
+    await expect(repository.listContactAggregates!(
+      SAMPLE_WORKSPACE_SCOPE,
+      ['contact-visible'],
+    )).resolves.toEqual(new Map([['contact-visible', {
+      activityCount: 1,
+      openTaskCount: 1,
+      completedTaskCount: 1,
+    }]]));
+  });
 });

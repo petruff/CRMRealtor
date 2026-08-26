@@ -24,15 +24,8 @@ import {
 } from './actions';
 import { MailchimpAudienceSelector } from '@/components/mailchimp-audience-selector';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { createMailchimpServerRepository } from '@/lib/data/mailchimp-operation-server-context';
-import { listLiveMailchimpAudiencesCommand } from '@/lib/application/mailchimp-commands';
-import { MailchimpMarketingClient } from '@/lib/providers/mailchimp-client';
-import { loadMailchimpConfiguredRuntimeConfiguration } from '@/lib/config/connector-runtime';
-import type { MailchimpAudience, MailchimpAudienceBinding } from '@/lib/domain/mailchimp';
-import type { MailchimpReconciliationRun } from '@/lib/data/supabase-mailchimp-reconciliation-repository';
-import type { MailchimpOutboundBackfillRun } from '@/lib/data/mailchimp-outbound-backfill-repository';
-import { supabaseGoogleOperationRepository } from '@/lib/data/supabase-google-operation-repository';
-import type { GoogleCapabilityState } from '@/lib/data/google-operation-repository';
+import { readConnectorLifecycleSnapshot } from '@/lib/application/connector-lifecycle-orchestrator';
+import type { ConnectorLifecycleProjection } from '@/lib/domain/connector-lifecycle';
 import { supabaseTwilioOperationRepository, type TwilioReadinessState } from '@/lib/data/twilio-operation-repository';
 import {
   prepareGoogleCalendarCreationAction,
@@ -43,7 +36,18 @@ import { supabaseMetaOperationRepository, type MetaConnectionState, type MetaRev
 import { readMetaEnquiryReviewContext } from '@/lib/application/meta-review-service';
 import { displayName, type Contact } from '@/lib/domain/contact';
 import { createClient } from '@supabase/supabase-js';
-import { deriveConnectionCardStatus, type ConnectionCardStatus } from './connection-status';
+import {
+  canShowConnectorOwnerControls,
+  canRecoverMailchimpLifecycle,
+  canDisconnectLifecycle,
+  canShowGoogleOperations,
+  canShowMailchimpManagement,
+  connectionCardStatus,
+  connectionViewerMessage,
+  SETUP_UNAVAILABLE_LABEL,
+  otherConnectionCardStatus,
+  type ConnectionCardStatus,
+} from './connection-status';
 import { connectionNotice, googleWorkspaceConnectHref, mailchimpConnectHref } from './oauth-presentation';
 import {
   mailchimpConnectionNeedsAttention,
@@ -52,14 +56,13 @@ import {
   recordMailchimpReadFailure,
   type MailchimpAudienceLoadIssue,
 } from './mailchimp-presentation';
-import { googleConnectionPresentation } from './google-presentation';
+import { probeMailchimpConnectionAction } from './mailchimp-actions';
+import {
+  googleConnectionPresentation,
+  googleSyncStateLabel,
+  googleSyncStreamLabel,
+} from './google-presentation';
 import { ConnectorActivityLedger } from '@/components/connector-activity-ledger';
-
-const GOOGLE_WORKSPACE_SCOPES = [
-  'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/gmail.metadata',
-  'https://www.googleapis.com/auth/calendar.app.created',
-] as const;
 
 const PROVIDER_NAMES: Record<string, string> = {
   google: 'Google Workspace',
@@ -232,17 +235,8 @@ const INTEGRATIONS: Integration[] = [
 function liveIntegrationStatus(
   integration: Integration,
   input: {
-    readonly mailchimpEnabled: boolean;
-    readonly mailchimpConnected: boolean;
-    readonly mailchimpLive: boolean;
-    readonly mailchimpReviewItems: number;
-    readonly mailchimpNeedsAttention: boolean;
-    readonly mailchimpRequiresReauthorization: boolean;
-    readonly googleEnabled: boolean;
-    readonly googleConnected: boolean;
-    readonly googleLive: boolean;
-    readonly googleGmailActive: boolean;
-    readonly googleCalendarActive: boolean;
+    readonly mailchimpLifecycle: ConnectorLifecycleProjection;
+    readonly googleLifecycle: ConnectorLifecycleProjection;
     readonly twilioEnabled: boolean;
     readonly twilioConnected: boolean;
     readonly twilioLive: boolean;
@@ -252,62 +246,36 @@ function liveIntegrationStatus(
     readonly metaLive: boolean;
   },
 ): Integration {
-  if (integration.name === 'Mailchimp' && input.mailchimpEnabled) {
-    if (input.mailchimpNeedsAttention) {
-      return {
-        ...integration,
-        status: 'review',
-        statusLabel: input.mailchimpRequiresReauthorization ? 'Reconnect Mailchimp' : 'Connection needs attention',
-        what: 'Restore the selected audience connection before synchronization resumes.',
-        detail: input.mailchimpRequiresReauthorization
-          ? 'The saved audience remains safe. The workspace owner needs to reconnect Mailchimp once.'
-          : 'The saved audience remains safe while Omnix checks the provider again.',
-      };
-    }
-    const presentation = deriveConnectionCardStatus('mailchimp', {
-      providerEnabled: input.mailchimpEnabled,
-      connected: input.mailchimpConnected,
-      productionApproved: input.mailchimpLive,
-      reviewItems: input.mailchimpReviewItems,
-    });
+  if (integration.name === 'Mailchimp') {
+    const presentation = connectionCardStatus(input.mailchimpLifecycle);
     return {
       ...integration,
       status: presentation.status,
       statusLabel: presentation.label,
-      what: input.mailchimpConnected
+      what: input.mailchimpLifecycle.connectionId
         ? 'Keep the selected audience, lead-temperature tags, and subscription choices synchronized.'
         : 'Connect one Mailchimp account, then choose the audience you want Omnix to keep updated.',
-      detail: input.mailchimpConnected
-        ? input.mailchimpReviewItems > 0
-          ? `${input.mailchimpReviewItems} contact${input.mailchimpReviewItems === 1 ? '' : 's'} need a quick identity review before the first full synchronization.`
-          : input.mailchimpLive
-            ? 'Mailchimp is connected and ready to keep the selected audience updated.'
-            : 'The account is connected. Complete the first synchronization to finish setup.'
-        : 'The workspace owner can connect Mailchimp without sharing a password with Omnix.',
+      detail: input.mailchimpLifecycle.safeSummary,
     };
   }
-  if ((integration.name === 'Gmail' || integration.name === 'Google Calendar') && input.googleEnabled) {
-    const requiredCapabilityActive = integration.name === 'Gmail'
-      ? input.googleGmailActive
-      : input.googleCalendarActive;
-    const presentation = deriveConnectionCardStatus('google', {
-      providerEnabled: input.googleEnabled,
-      connected: input.googleConnected,
-      productionApproved: input.googleLive,
-      requiredCapabilityActive,
-    });
+  if (integration.name === 'Gmail' || integration.name === 'Google Calendar') {
+    const presentation = connectionCardStatus(input.googleLifecycle);
     return {
       ...integration,
       status: presentation.status,
       statusLabel: presentation.label,
-      detail: input.googleConnected
-        ? input.googleLive
-          ? 'Google is connected and the selected Gmail and Calendar features are ready.'
-          : 'The Google account is connected. Finish any permission marked below to complete setup.'
-        : 'The workspace owner chooses which Gmail and Calendar features Omnix may use.',
+      detail: input.googleLifecycle.safeSummary,
     };
   }
-  if (integration.name === 'Texting' && input.twilioEnabled) {
+  if (integration.name === 'Texting') {
+    if (!input.twilioEnabled) {
+      return {
+        ...integration,
+        status: 'gated',
+        statusLabel: SETUP_UNAVAILABLE_LABEL,
+        detail: 'This service is not available for this workspace.',
+      };
+    }
     return {
       ...integration,
       status: input.twilioConnected && input.twilioLive && input.twilioReady ? 'ready' : 'uat',
@@ -319,7 +287,7 @@ function liveIntegrationStatus(
     };
   }
   if (integration.name === 'Instagram & Facebook') {
-    const presentation = deriveConnectionCardStatus('meta', {
+    const presentation = otherConnectionCardStatus({
       providerEnabled: input.metaEnabled,
       connected: input.metaConnected,
       productionApproved: input.metaLive,
@@ -348,6 +316,7 @@ export default async function ConnectionsPage({
   searchParams?: Promise<{ success?: string | string[]; error?: string | string[]; ref?: string | string[] }>;
 }) {
   const { repository, connectorRepository, workspaceScope, isLive } = await getRepository();
+  const canonicalOwner = canShowConnectorOwnerControls(workspaceScope);
   const notice = await searchParams;
   const feedback = connectionNotice(notice ?? {});
   const [definitions, persistedConnections, intents, jobs, receipts] = await Promise.all([
@@ -366,72 +335,43 @@ export default async function ConnectionsPage({
   const twilioConnection = realConnections.find((connection) => connection.provider === 'twilio');
   const metaDefinition = definitions.find((definition) => definition.provider === 'meta');
   const metaConnection = realConnections.find((connection) => connection.provider === 'meta');
-  let mailchimpAudiences: readonly MailchimpAudience[] = [];
+  const lifecycleSnapshot = await readConnectorLifecycleSnapshot({
+    connectorRepository,
+    workspaceScope,
+    isLive,
+    definitions,
+    connections: realConnections,
+    includeMailchimpAudiences: canonicalOwner,
+  });
   let mailchimpAudienceLoadIssue: MailchimpAudienceLoadIssue | undefined;
-  let selectedMailchimpAudience: MailchimpAudienceBinding | undefined;
-  let mailchimpReconciliation: MailchimpReconciliationRun | undefined;
-  let mailchimpOutboundBackfills: readonly MailchimpOutboundBackfillRun[] = [];
-  let googleCapabilityState: GoogleCapabilityState | undefined;
   let twilioReadinessState: TwilioReadinessState | undefined;
   let metaConnectionState: MetaConnectionState | undefined;
   let metaReviewItems: readonly MetaReviewItem[] = [];
   let metaReviewContacts: readonly Contact[] = [];
-  if (isLive && mailchimpDefinition?.enabled && mailchimpConnection) {
-    try {
-      const authenticated = await createSupabaseServerClient();
-      const server = createMailchimpServerRepository({ authenticated });
-      const operations = server.operations;
-      const configured = loadMailchimpConfiguredRuntimeConfiguration();
-      const [bindingResult, reconciliationResult, backfillResult] = await Promise.allSettled([
-        operations.getSelectedAudience(workspaceScope, mailchimpConnection.id),
-        server.reconciliations.list(workspaceScope, mailchimpConnection.id, 1),
-        server.outboundBackfills.list(workspaceScope, mailchimpConnection.id, 5),
-      ]);
-      if (bindingResult.status === 'fulfilled') selectedMailchimpAudience = bindingResult.value;
-      else mailchimpAudienceLoadIssue = recordMailchimpReadFailure({
-        operation: 'binding', connectionId: mailchimpConnection.id, error: bindingResult.reason,
+  const mailchimpLifecycle = lifecycleSnapshot.mailchimp.lifecycle;
+  const googleLifecycle = lifecycleSnapshot.google.lifecycle;
+  const selectedMailchimpAudience = lifecycleSnapshot.mailchimp.binding;
+  const mailchimpReconciliation = lifecycleSnapshot.mailchimp.reconciliation;
+  const mailchimpOutboundBackfills = lifecycleSnapshot.mailchimp.backfills;
+  const mailchimpAudiences = lifecycleSnapshot.mailchimp.audiences;
+  const googleCapabilityState = lifecycleSnapshot.google.capabilityState;
+  if (mailchimpConnection) {
+    for (const failure of lifecycleSnapshot.mailchimp.failures) {
+      if (failure.operation === 'capabilities') continue;
+      const issue = recordMailchimpReadFailure({
+        operation: failure.operation,
+        connectionId: mailchimpConnection.id,
+        error: failure.error,
       });
-      if (reconciliationResult.status === 'fulfilled') mailchimpReconciliation = reconciliationResult.value[0];
-      else recordMailchimpReadFailure({
-        operation: 'reconciliation', connectionId: mailchimpConnection.id, error: reconciliationResult.reason,
-      });
-      if (backfillResult.status === 'fulfilled') mailchimpOutboundBackfills = backfillResult.value;
-      else recordMailchimpReadFailure({
-        operation: 'backfill', connectionId: mailchimpConnection.id, error: backfillResult.reason,
-      });
-      if (workspaceScope.role === 'owner' && !mailchimpAudienceLoadIssue) {
-        try {
-          mailchimpAudiences = await listLiveMailchimpAudiencesCommand(
-            operations, configured, workspaceScope,
-            { connectionId: mailchimpConnection.id, limit: 500 },
-            { createClient: (dataCenter, token) => new MailchimpMarketingClient(dataCenter, token) },
-          );
-        } catch (error) {
-          mailchimpAudienceLoadIssue = recordMailchimpReadFailure({
-            operation: 'audiences', connectionId: mailchimpConnection.id, error,
-          });
-        }
+      if (failure.operation === 'binding' || failure.operation === 'audiences') {
+        mailchimpAudienceLoadIssue = issue;
       }
-    } catch (error) {
-      mailchimpAudienceLoadIssue = recordMailchimpReadFailure({
-        operation: 'binding', connectionId: mailchimpConnection.id, error,
-      });
     }
   }
   const googlePresentation = googleConnection
-    ? googleConnectionPresentation(googleConnection)
+    ? googleConnectionPresentation(googleLifecycle)
     : undefined;
   const googleConsentPending = googlePresentation?.consentPending ?? false;
-  if (isLive && googleDefinition?.enabled && googleConnection
-    && googlePresentation?.shouldReadCapabilityHealth) {
-    try {
-      const authenticated = await createSupabaseServerClient();
-      googleCapabilityState = await supabaseGoogleOperationRepository({ authenticated })
-        .readCapabilityState(workspaceScope, googleConnection.id);
-    } catch {
-      googleCapabilityState = undefined;
-    }
-  }
   if (isLive && twilioDefinition?.enabled && twilioConnection) {
     try {
       twilioReadinessState = await supabaseTwilioOperationRepository(await createSupabaseServerClient())
@@ -461,27 +401,14 @@ export default async function ConnectionsPage({
     }
   }
   const mailchimpNeedsAttention = mailchimpConnection
-    ? mailchimpConnectionNeedsAttention(mailchimpConnection.status, mailchimpAudienceLoadIssue)
+    ? mailchimpConnectionNeedsAttention(mailchimpLifecycle)
     : false;
   const mailchimpRequiresReauthorization = mailchimpConnection
-    ? mailchimpConnectionRequiresReauthorization(mailchimpConnection.status, mailchimpAudienceLoadIssue)
+    ? mailchimpConnectionRequiresReauthorization(mailchimpLifecycle)
     : false;
   const integrations = INTEGRATIONS.map((integration) => liveIntegrationStatus(integration, {
-    mailchimpEnabled: mailchimpDefinition?.enabled === true,
-    mailchimpConnected: Boolean(mailchimpConnection),
-    mailchimpLive: mailchimpDefinition?.mode === 'live',
-    mailchimpReviewItems: mailchimpReconciliation?.itemsReviewed ?? 0,
-    mailchimpNeedsAttention,
-    mailchimpRequiresReauthorization,
-    googleEnabled: googleDefinition?.enabled === true,
-    googleConnected: Boolean(googleConnection),
-    googleLive: googleDefinition?.mode === 'live',
-    googleGmailActive: googleCapabilityState?.capabilities.some((capability) => (
-      ['gmail-send', 'gmail-metadata'].includes(capability.bundle) && capability.state === 'active'
-    )) === true,
-    googleCalendarActive: googleCapabilityState?.capabilities.some((capability) => (
-      capability.bundle === 'calendar-app-created' && capability.state === 'active'
-    )) === true,
+    mailchimpLifecycle,
+    googleLifecycle,
     twilioEnabled: twilioDefinition?.enabled === true,
     twilioConnected: Boolean(twilioConnection),
     twilioLive: twilioDefinition?.mode === 'live',
@@ -492,9 +419,9 @@ export default async function ConnectionsPage({
     metaConnected: Boolean(metaConnection),
     metaLive: metaDefinition?.mode === 'live',
   }));
-  const googleWorkspaceAuthorized = GOOGLE_WORKSPACE_SCOPES.every((scope) => (
-    googleConnection?.grantedScopes.includes(scope)
-  ));
+  const googleWorkspaceAuthorized = googleLifecycle.state === 'ready';
+  const googleCard = connectionCardStatus(googleLifecycle);
+  const mailchimpCard = connectionCardStatus(mailchimpLifecycle);
   return (
     <div>
       <header className="mb-10 md:mb-12">
@@ -533,42 +460,40 @@ export default async function ConnectionsPage({
           <article className="group rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 shadow-sm transition duration-300 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lg sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <span className="grid size-12 place-items-center rounded-2xl bg-surface-2 text-ink"><Mail className="size-5" aria-hidden /></span>
-              <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${googleWorkspaceAuthorized
+              <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${googleLifecycle.state === 'ready'
                 ? 'border-nurture-border bg-nurture-soft text-nurture'
                 : 'border-warm-border bg-warm-soft text-warm'}`}>
-                {googleWorkspaceAuthorized ? 'Connected' : googleConnection ? 'Finish setup' : 'Ready to connect'}
+                {googleCard.label}
               </span>
             </div>
             <h3 className="mt-5 font-display text-2xl text-ink">Google Workspace</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">Use Gmail inside Omnix, keep contact email activity together, and place follow-ups on your Google Calendar.</p>
-            {workspaceScope.role === 'owner' && googleDefinition?.enabled ? (
+            {googleDefinition?.enabled !== true ? (
+              <p className="mt-5 text-xs text-muted">{SETUP_UNAVAILABLE_LABEL}</p>
+            ) : canonicalOwner ? (
               <a href={googleWorkspaceConnectHref(googleConnection?.id)} className={`${googleWorkspaceAuthorized ? 'sk-button-secondary' : 'sk-button-primary'} mt-5 inline-flex items-center gap-2`}>
                 {googleWorkspaceAuthorized ? 'Reconnect Google' : googleConnection ? 'Finish Google connection' : 'Connect Google'}
                 <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
               </a>
             ) : (
-              <p className="mt-5 text-xs text-muted">{workspaceScope.role !== 'owner' ? 'The workspace owner manages this connection.' : 'Developer setup is still required.'}</p>
+              <p className="mt-5 text-xs text-muted">{connectionViewerMessage(workspaceScope, 'Google Workspace')}</p>
             )}
           </article>
 
           <article className="group rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 shadow-sm transition duration-300 motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-lg sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <span className="grid size-12 place-items-center rounded-2xl bg-surface-2 text-ink"><Send className="size-5" aria-hidden /></span>
-              <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${mailchimpConnection && !mailchimpNeedsAttention
+              <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${mailchimpLifecycle.state === 'ready'
                 ? 'border-nurture-border bg-nurture-soft text-nurture'
                 : 'border-warm-border bg-warm-soft text-warm'}`}>
-                {mailchimpConnection && !mailchimpNeedsAttention
-                  ? 'Connected'
-                  : mailchimpRequiresReauthorization
-                    ? 'Reconnect needed'
-                    : mailchimpConnection
-                      ? 'Needs attention'
-                      : 'Ready to connect'}
+                {mailchimpCard.label}
               </span>
             </div>
             <h3 className="mt-5 font-display text-2xl text-ink">Mailchimp</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted">Keep the newsletter audience, lead temperature tags, and unsubscribe status synchronized without copying contacts by hand.</p>
-            {workspaceScope.role === 'owner' && mailchimpDefinition?.enabled ? (
+            {mailchimpDefinition?.enabled !== true ? (
+              <p className="mt-5 text-xs text-muted">{SETUP_UNAVAILABLE_LABEL}</p>
+            ) : canonicalOwner ? (
               <a
                 href={mailchimpRequiresReauthorization || !mailchimpConnection
                   ? mailchimpConnectHref(mailchimpConnection?.id)
@@ -585,14 +510,14 @@ export default async function ConnectionsPage({
                 <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
               </a>
             ) : (
-              <p className="mt-5 text-xs text-muted">{workspaceScope.role !== 'owner' ? 'The workspace owner manages this connection.' : 'Developer setup is still required.'}</p>
+              <p className="mt-5 text-xs text-muted">{connectionViewerMessage(workspaceScope, 'Mailchimp')}</p>
             )}
           </article>
         </div>
         <p className="mt-3 flex items-center gap-2 text-xs text-subtle"><ShieldCheck className="size-4 text-nurture" aria-hidden />Omnix never sees or stores your Google or Mailchimp password.</p>
       </section>
 
-      {isLive && workspaceScope.role === 'owner' && mailchimpDefinition?.enabled && !mailchimpConnection && (
+      {isLive && canonicalOwner && mailchimpDefinition?.enabled && !mailchimpConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="mailchimp-connect">
           <p className="eyebrow">Mailchimp</p>
           <h2 id="mailchimp-connect" className="mt-1 font-display text-2xl text-ink">Connect your audience securely.</h2>
@@ -611,7 +536,7 @@ export default async function ConnectionsPage({
             {mailchimpConnection.remoteAccountLabel ?? 'Connected Mailchimp account'}
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            {mailchimpConnectionSummaryLabel(mailchimpConnection.status, mailchimpAudienceLoadIssue)}. {selectedMailchimpAudience
+            {mailchimpConnectionSummaryLabel(mailchimpLifecycle)} {selectedMailchimpAudience
               ? `Newsletter audience: ${selectedMailchimpAudience.audienceName}.`
               : 'Choose the newsletter audience you want to keep synchronized.'}
           </p>
@@ -647,11 +572,11 @@ export default async function ConnectionsPage({
               ) : null}
             </div>
           )}
-          {workspaceScope.role !== 'owner' ? (
+          {!canonicalOwner ? (
             <p className="mt-4 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-xs text-muted">
-              Assistants can see whether Mailchimp is connected. Only the owner can change the audience or disconnect the account.
+              {connectionViewerMessage(workspaceScope, 'Mailchimp')}
             </p>
-          ) : (
+          ) : canShowMailchimpManagement(mailchimpLifecycle) ? (
             <MailchimpAudienceSelector
               connectionId={mailchimpConnection.id}
               audiences={mailchimpAudiences}
@@ -659,11 +584,32 @@ export default async function ConnectionsPage({
               backfillRuns={mailchimpOutboundBackfills}
               loadIssue={mailchimpAudienceLoadIssue}
             />
+          ) : (
+            <div className="mt-4 rounded-2xl border border-line bg-surface-2 px-4 py-3">
+              <p className="text-xs text-muted">Changes stay paused until Omnix can confirm this connection.</p>
+              {canRecoverMailchimpLifecycle(mailchimpLifecycle) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <form action={probeMailchimpConnectionAction}>
+                    <input type="hidden" name="connectionId" value={mailchimpConnection.id} />
+                    <button className="sk-button-secondary" type="submit">Try connection check again</button>
+                  </form>
+                  <a className="sk-button-primary" href={mailchimpConnectHref(mailchimpConnection.id)}>
+                    Reconnect Mailchimp
+                  </a>
+                  {canDisconnectLifecycle(mailchimpLifecycle) && (
+                    <form action={disconnectConnectionAction}>
+                      <input type="hidden" name="connectionId" value={mailchimpConnection.id} />
+                      <button className="sk-button-secondary" type="submit">Disconnect account</button>
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </section>
       )}
 
-      {isLive && workspaceScope.role === 'owner' && googleDefinition?.enabled && !googleConnection && (
+      {isLive && canonicalOwner && googleDefinition?.enabled && !googleConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="google-connect">
           <p className="eyebrow">Google Workspace</p>
           <h2 id="google-connect" className="mt-1 font-display text-2xl text-ink">Connect Gmail and Calendar together.</h2>
@@ -694,8 +640,8 @@ export default async function ConnectionsPage({
               </div>
               {googleCapabilityState.sync.map((sync) => (
                 <div key={sync.stream} className="bg-surface-2 px-3 py-3">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-subtle">{sync.stream.replace('-', ' ')}</p>
-                  <p className="mt-1 text-xs text-ink">{sync.state === 'healthy' ? 'Up to date' : sync.state.replaceAll('_', ' ')}</p>
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-subtle">{googleSyncStreamLabel(sync.stream)}</p>
+                  <p className="mt-1 text-xs text-ink">{googleSyncStateLabel(sync.state)}</p>
                   {sync.lastSuccessAt ? <p className="mt-1 text-[11px] text-muted">Last updated {new Date(sync.lastSuccessAt).toLocaleString()}</p> : null}
                 </div>
               ))}
@@ -715,7 +661,7 @@ export default async function ConnectionsPage({
               ['Gmail activity', 'https://www.googleapis.com/auth/gmail.metadata'],
               ['Omnix Calendar', 'https://www.googleapis.com/auth/calendar.app.created'],
             ] as const).map(([label, scope]) => {
-              const granted = googleConnection.grantedScopes.includes(scope);
+              const granted = googleLifecycle.grantedScopes.includes(scope);
               return (
                 <div key={scope} className="rounded-xl border border-line bg-surface-2 px-3 py-3">
                   <p className="text-xs font-medium text-ink">{label}</p>
@@ -724,21 +670,26 @@ export default async function ConnectionsPage({
               );
             })}
           </div>
-          {workspaceScope.role === 'owner' && (
+          {canonicalOwner && (
             <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
               <a href={googleWorkspaceConnectHref(googleConnection.id)} className={googleWorkspaceAuthorized ? 'sk-button-secondary' : 'sk-button-primary'}>
                 {googleWorkspaceAuthorized ? 'Reconnect Google' : 'Finish Google connection'}
               </a>
             </div>
           )}
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
-            {googleConnection.grantedScopes.includes('https://www.googleapis.com/auth/gmail.metadata') ? (
+          {!canonicalOwner && (
+            <p className="mt-4 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-xs text-muted">
+              {connectionViewerMessage(workspaceScope, 'Google Workspace')}
+            </p>
+          )}
+          {canonicalOwner && canShowGoogleOperations(googleLifecycle) && <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+            {googleLifecycle.grantedScopes.includes('https://www.googleapis.com/auth/gmail.metadata') ? (
               <form action={prepareGoogleGmailSyncAction}>
                 <input type="hidden" name="connectionId" value={googleConnection.id} />
                 <button type="submit" className="sk-button-secondary">Update Gmail activity</button>
               </form>
             ) : null}
-            {googleConnection.grantedScopes.includes('https://www.googleapis.com/auth/calendar.app.created') && !googleCapabilityState?.calendar.created ? (
+            {googleLifecycle.grantedScopes.includes('https://www.googleapis.com/auth/calendar.app.created') && !googleCapabilityState?.calendar.created ? (
               <form action={prepareGoogleCalendarCreationAction}>
                 <input type="hidden" name="connectionId" value={googleConnection.id} />
                 <button type="submit" className="sk-button-secondary">Create Omnix Calendar</button>
@@ -750,11 +701,11 @@ export default async function ConnectionsPage({
                 <button type="submit" className="sk-button-secondary">Update Calendar</button>
               </form>
             ) : null}
-          </div>
+          </div>}
         </section>
       )}
 
-      {isLive && workspaceScope.role === 'owner' && twilioDefinition?.enabled && !twilioConnection && (
+      {isLive && canonicalOwner && twilioDefinition?.enabled && !twilioConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="twilio-connect">
           <p className="eyebrow">Texting setup</p>
           <h2 id="twilio-connect" className="mt-1 font-display text-2xl text-ink">Connect the business texting account.</h2>
@@ -770,7 +721,7 @@ export default async function ConnectionsPage({
         </section>
       )}
 
-      {isLive && workspaceScope.role === 'owner' && metaDefinition?.enabled && !metaConnection && (
+      {isLive && canonicalOwner && metaDefinition?.enabled && !metaConnection && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="meta-connect">
           <p className="eyebrow">Instagram &amp; Facebook · inbound only</p>
           <h2 id="meta-connect" className="mt-1 font-display text-2xl text-ink">Choose the business login that owns the enquiries.</h2>
@@ -801,7 +752,7 @@ export default async function ConnectionsPage({
             <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs text-warm">Omnix could not confirm the texting account. No message will be sent until the connection is restored.</p>
           )}
           <p className="mt-3 text-xs leading-relaxed text-muted">Every text requires a valid phone number, current permission from the contact, and owner approval.</p>
-          {workspaceScope.role === 'owner' ? (
+          {canonicalOwner ? (
             <form action={disableTextingAction} className="mt-4 border-t border-line pt-4">
               <input type="hidden" name="connectionId" value={twilioConnection.id} />
               <input type="hidden" name="destroySendCredentials" value="true" />
@@ -842,7 +793,7 @@ export default async function ConnectionsPage({
               <p className="mt-4 text-xs leading-relaxed text-muted">
               Personal accounts, outbound replies, and Lead Ads are excluded. When Omnix cannot match a sender confidently, the enquiry waits here for review.
               </p>
-              {workspaceScope.role === 'owner' ? (
+              {canonicalOwner ? (
                 <div className="mt-4 border-t border-line pt-4">
                   <form action={discoverMetaAssetsAction}>
                     <input type="hidden" name="connectionId" value={metaConnection.id} />
@@ -900,7 +851,7 @@ export default async function ConnectionsPage({
         </section>
       )}
 
-      {isLive && workspaceScope.role === 'owner' && (realConnections.length > 0 || intents.length > 0 || jobs.length > 0) && (
+      {isLive && canonicalOwner && (realConnections.length > 0 || intents.length > 0 || jobs.length > 0) && (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="connector-operations">
           <h2 id="connector-operations" className="font-display text-2xl text-ink">Connection controls</h2>
           <p className="mt-1 text-sm text-muted">Review connected accounts, approve pending actions, and resolve anything that needs attention.</p>
@@ -910,8 +861,13 @@ export default async function ConnectionsPage({
               <h3 className="text-sm font-medium text-ink">Connections</h3>
               {realConnections.map((connection) => (
                 <div key={connection.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-surface-2 px-4 py-3">
-                  <div><p className="text-sm font-medium text-ink">{connection.remoteAccountLabel ?? providerName(connection.provider)}</p><p className="text-xs text-muted">{providerName(connection.provider)} · {connectionStatus(connection.status)}</p></div>
-                  {['active', 'degraded', 'reauthorization-required'].includes(connection.status) && (
+                  <div><p className="text-sm font-medium text-ink">{connection.remoteAccountLabel ?? providerName(connection.provider)}</p><p className="text-xs text-muted">{providerName(connection.provider)} · {(connection.provider === 'google' ? googleLifecycle : connection.provider === 'mailchimp' ? mailchimpLifecycle : undefined)?.safeSummary ?? connectionStatus(connection.status)}</p></div>
+                  {['active', 'degraded', 'reauthorization-required'].includes(connection.status)
+                    && (connection.provider === 'google'
+                      ? canDisconnectLifecycle(googleLifecycle)
+                      : connection.provider === 'mailchimp'
+                        ? canDisconnectLifecycle(mailchimpLifecycle)
+                        : true) && (
                     <form action={disconnectConnectionAction}>
                       <input type="hidden" name="connectionId" value={connection.id} />
                       <button className="sk-button-secondary" type="submit">Disconnect account</button>

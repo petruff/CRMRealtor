@@ -53,6 +53,8 @@ import {
 import { buildTriage } from '../domain/triage.ts';
 import { buildWorkspaceSnapshot } from '../domain/workspace-intelligence.ts';
 import type { ConnectorConnection, ConnectorDefinition } from '../domain/connector.ts';
+import type { ConnectorLifecycleProjection } from '../domain/connector-lifecycle.ts';
+import { readConnectorLifecycleSnapshot } from './connector-lifecycle-orchestrator.ts';
 import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
 import {
   defaultOmnixCopilotTelemetrySink,
@@ -304,7 +306,7 @@ function connectorCitation(connection: ConnectorConnection, asOf: string): Omnix
   return makeCitation({
     entityType: 'connector',
     recordId: connection.id,
-    factKeys: ['provider', 'status', 'grantedScopes', 'connectedAt', 'updatedAt', 'tokenExpiresAt'],
+    factKeys: ['provider', 'status', 'connectedAt', 'updatedAt'],
     sourceTimestamp: connection.updatedAt,
     responseAsOf: asOf,
     target: '/connections',
@@ -1126,22 +1128,36 @@ function mailersResult(campaigns: readonly MailerCampaign[], campaignId: string 
   };
 }
 
-function connectionsResult(
+export function connectionsResult(
   definitions: readonly ConnectorDefinition[],
   connections: readonly ConnectorConnection[],
+  lifecycles: readonly ConnectorLifecycleProjection[],
   asOf: string,
 ): ReadResult {
+  const lifecycleLabel = (lifecycle: ConnectorLifecycleProjection | undefined): string | undefined => {
+    if (!lifecycle) return undefined;
+    if (lifecycle.state === 'ready') return 'Ready';
+    if (lifecycle.state === 'disconnected') return 'Not connected';
+    if (lifecycle.state === 'not-configured') return 'Unavailable';
+    if (lifecycle.state === 'reconnect-required') return 'Reconnect needed';
+    if (lifecycle.state === 'disconnect-pending') return 'Disconnecting';
+    if (['owner-consent-pending', 'scope-pending', 'webhook-pending', 'baseline-pending'].includes(lifecycle.state)) {
+      return 'Setup needed';
+    }
+    if (lifecycle.state === 'baseline-running') return 'Updating';
+    return 'Needs attention';
+  };
   const byProvider = new Map(connections.map((connection) => [connection.provider, connection]));
+  const lifecycleByProvider = new Map(lifecycles.map((lifecycle) => [lifecycle.provider, lifecycle]));
   const items = definitions.map((definition) => {
     const connection = byProvider.get(definition.provider);
+    const lifecycle = lifecycleByProvider.get(definition.provider as ConnectorLifecycleProjection['provider']);
     const citation = connection ? connectorCitation(connection, asOf) : undefined;
     return {
       id: `connector-${definition.provider}`,
       label: definition.label,
-      detail: connection
-        ? `${connection.status} · ${connection.grantedScopes.length} granted scopes`
-        : definition.enabled ? `${definition.mode} · not connected` : 'provider disabled',
-      value: connection?.status ?? definition.mode,
+      detail: lifecycle?.safeSummary ?? (connection ? 'This connection needs review.' : 'This service is not connected.'),
+      value: lifecycleLabel(lifecycle) ?? (connection ? 'Needs attention' : 'Not connected'),
       href: '/connections',
       citations: citation ? [citation] : [],
     };
@@ -1150,8 +1166,8 @@ function connectionsResult(
     answerBlocks: [block(
       'connections',
       'list',
-      'Connection health',
-      'Redacted workspace connection state. Credentials and provider payloads are never returned.',
+      'Connections',
+      'A safe summary of the services available to this workspace.',
       items,
     )],
     suggestions: [reviewSuggestion(
@@ -1246,11 +1262,13 @@ async function dispatch(
     if (!context.connectorRepository) {
       return unavailable('Connections', 'Workspace connection data is unavailable in this context.', '/connections');
     }
-    const [definitions, connections] = await Promise.all([
-      context.connectorRepository.listDefinitions(scope),
-      context.connectorRepository.listConnections(scope, { limit: 100 }),
-    ]);
-    return connectionsResult(definitions, connections, request.asOf);
+    const snapshot = await readConnectorLifecycleSnapshot({
+      connectorRepository: context.connectorRepository,
+      workspaceScope: scope,
+      isLive: context.isLive,
+      observedAt: asOfDate,
+    });
+    return connectionsResult(snapshot.definitions, snapshot.connections, snapshot.lifecycles, request.asOf);
   }
   if (intent.kind === 'mailers') {
     if (!context.mailerRepository) return unavailable('Physical mailers', 'Physical-mailer data is unavailable in this workspace context.', '/mailers');

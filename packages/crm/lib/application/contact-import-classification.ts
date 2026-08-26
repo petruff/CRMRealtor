@@ -1,4 +1,8 @@
-import type { ContactImportCandidate, ContactImportSourceFact } from '@/lib/application/contact-import';
+import {
+  hasImportedContactSuppression,
+  type ContactImportCandidate,
+  type ContactImportSourceFact,
+} from '@/lib/application/contact-import';
 
 export const CONTACT_IMPORT_CLASSIFICATION_POLICY_VERSION = 'omnix.import-classification.v1';
 
@@ -160,6 +164,7 @@ export function classifyContactImportCandidate(
     : signal || hasClosedDate ? 'medium' : 'review';
   const needsReview = !hasBusinessEvidence;
   const candidate: ContactImportCandidate = { ...input, tags: [...input.tags] };
+  if (hasImportedContactSuppression(candidate)) candidate.emailSubscribed = false;
   const decisions: ImportClassificationDecision[] = [];
 
   function fill(

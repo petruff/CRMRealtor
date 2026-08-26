@@ -7,6 +7,7 @@ export interface ContactViewState {
   readonly leadType?: LeadType;
   readonly source?: LeadSource;
   readonly smartList?: string;
+  readonly page?: number;
 }
 
 type ContactViewChange = Partial<{
@@ -15,6 +16,7 @@ type ContactViewChange = Partial<{
   leadType: LeadType | undefined;
   source: LeadSource | undefined;
   smartList: string | undefined;
+  page: number | undefined;
 }>;
 
 /** Builds canonical active-contact URLs while preserving every unchanged filter. */
@@ -22,13 +24,15 @@ export function contactViewHref(
   current: ContactViewState,
   change: ContactViewChange = {},
 ): string {
-  const next = { ...current, ...change };
+  const changesPageOnly = Object.keys(change).every((key) => key === 'page');
+  const next = { ...current, ...(!changesPageOnly ? { page: undefined } : {}), ...change };
   const params = new URLSearchParams();
   if (next.scope !== 'leads') params.set('scope', next.scope);
   if (next.query) params.set('q', next.query);
   if (next.leadType) params.set('leadType', next.leadType);
   if (next.source) params.set('source', next.source);
   if (next.smartList) params.set('smartList', next.smartList);
+  if (next.page && next.page > 1) params.set('page', String(next.page));
   const query = params.toString();
   return `/contacts${query ? `?${query}` : ''}`;
 }

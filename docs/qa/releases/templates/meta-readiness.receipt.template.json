@@ -1,0 +1,20 @@
+{
+  "kind": "meta-readiness",
+  "result": "pass",
+  "candidateSha": "0000000000000000000000000000000000000000",
+  "deploymentId": "deployment-id",
+  "provider": "meta",
+  "actorClassification": "canonical-owner",
+  "observedAt": "2026-08-26T12:00:00.000Z",
+  "facts": {
+    "businessVerification": "unknown",
+    "appReview": "unknown",
+    "requiredPermissions": ["pages_manage_metadata", "pages_messaging", "pages_show_list", "instagram_business_basic", "instagram_business_manage_messages"],
+    "grantedPermissions": [],
+    "missingPermissions": ["pages_manage_metadata", "pages_messaging", "pages_show_list", "instagram_business_basic", "instagram_business_manage_messages"],
+    "assetBinding": "unknown",
+    "signedWebhook": "unknown",
+    "tokenHealth": "unknown",
+    "realAccountUat": "not-run"
+  }
+}

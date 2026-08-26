@@ -1,4 +1,4 @@
-import type { WorkspaceScope } from '../domain/workspace.ts';
+import { isCanonicalWorkspaceOwnerScope, type WorkspaceScope } from '../domain/workspace.ts';
 import { ConnectorError, sha256Hex, stablePayloadHash } from '../domain/connector.ts';
 import type { GoogleProbeRepository } from '../data/supabase-google-probe-repository.ts';
 import {
@@ -30,6 +30,9 @@ export async function probeLiveGoogleConnection(input: {
   readonly correlationId: string; readonly now?: Date; readonly resolver?: ConnectorKekResolver;
   readonly fetcher?: GoogleFetch; readonly oauthConfiguration?: GoogleOAuthConfiguration;
 }) {
+  if (input.scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(input.scope)) {
+    throw new ConnectorError('forbidden', 'A signed-in workspace owner is required.');
+  }
   const now = input.now ?? new Date();
   if (!Number.isFinite(now.getTime())) throw new ConnectorError('invalid-input', 'Timestamp is invalid.');
   const connectionId = input.connectionId.trim();

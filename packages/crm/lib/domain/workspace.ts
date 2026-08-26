@@ -8,6 +8,32 @@ export type WorkspaceMembershipStatus = (typeof WORKSPACE_MEMBERSHIP_STATUSES)[n
 
 export type WorkspaceMode = 'live' | 'sample';
 
+export const WORKSPACE_SUPPORT_OPERATIONS = [
+  'workspace.memberships.read',
+  'workspace.health.read',
+  'workspace.authority-audit.read',
+] as const;
+export type WorkspaceSupportOperation = (typeof WORKSPACE_SUPPORT_OPERATIONS)[number];
+
+export interface WorkspaceSupportGrant {
+  readonly grantId: string;
+  readonly active: true;
+}
+
+export interface WorkspaceSupportGrantInput {
+  readonly grantId?: string;
+  readonly active: true;
+}
+
+export interface WorkspaceAuthority {
+  readonly actorUserId: string;
+  readonly workspaceId: string;
+  readonly membershipId: string;
+  readonly membershipRole: WorkspaceRole;
+  readonly canonicalOwnerUserId: string;
+  readonly supportGrant: WorkspaceSupportGrant | null;
+}
+
 export interface Workspace {
   readonly id: string;
   readonly name: string;
@@ -38,6 +64,8 @@ export interface WorkspaceScope {
   readonly workspaceId: string;
   readonly role: WorkspaceRole;
   readonly mode: WorkspaceMode;
+  /** Separately verified support capability; never changes membership role. */
+  readonly supportGrant?: WorkspaceSupportGrantInput | null;
 }
 
 export const SAMPLE_WORKSPACE_ID = 'workspace-sample';
@@ -53,6 +81,7 @@ export const SAMPLE_WORKSPACE_SCOPE: WorkspaceScope = Object.freeze({
   workspaceId: SAMPLE_WORKSPACE_ID,
   role: 'owner',
   mode: 'sample',
+  supportGrant: null,
 });
 
 export const SAMPLE_ASSISTANT_SCOPE: WorkspaceScope = Object.freeze({
@@ -62,6 +91,7 @@ export const SAMPLE_ASSISTANT_SCOPE: WorkspaceScope = Object.freeze({
   workspaceId: SAMPLE_WORKSPACE_ID,
   role: 'assistant',
   mode: 'sample',
+  supportGrant: null,
 });
 
 export const WORKSPACE_AUTHORITY_ERROR_CODES = [
@@ -117,6 +147,20 @@ export function validateWorkspaceScope(scope: WorkspaceScope): WorkspaceScope {
   if (!isWorkspaceMode(scope.mode)) {
     throw new WorkspaceAuthorityError('invalid-input', 'Workspace mode is invalid.');
   }
+  let supportGrant: WorkspaceSupportGrant | null | undefined;
+  if (scope.supportGrant !== undefined && scope.supportGrant !== null) {
+    if (scope.supportGrant.active !== true) {
+      throw new WorkspaceAuthorityError('invalid-input', 'Workspace support grant is invalid.');
+    }
+    supportGrant = typeof scope.supportGrant.grantId === 'string'
+      ? {
+          grantId: requiredIdentifier(scope.supportGrant.grantId, 'Workspace support grant'),
+          active: true,
+        }
+      : null;
+  } else {
+    supportGrant = scope.supportGrant;
+  }
   return {
     authenticatedUserId,
     ownerUserId,
@@ -124,11 +168,54 @@ export function validateWorkspaceScope(scope: WorkspaceScope): WorkspaceScope {
     workspaceId,
     role: scope.role,
     mode: scope.mode,
+    ...(supportGrant !== undefined ? { supportGrant } : {}),
   };
 }
 
-export function canManageWorkspaceAuthority(role: WorkspaceRole): boolean {
-  return role === 'owner';
+export function workspaceAuthority(scopeInput: WorkspaceScope): WorkspaceAuthority {
+  const scope = validateWorkspaceScope(scopeInput);
+  const supportGrant = scope.supportGrant?.grantId
+    ? { grantId: scope.supportGrant.grantId, active: true as const }
+    : null;
+  return {
+    actorUserId: scope.authenticatedUserId,
+    workspaceId: scope.workspaceId,
+    membershipId: scope.membershipId,
+    membershipRole: scope.role,
+    canonicalOwnerUserId: scope.ownerUserId,
+    supportGrant,
+  };
+}
+
+export function isCanonicalWorkspaceOwner(authority: WorkspaceAuthority): boolean {
+  return authority.membershipRole === 'owner'
+    && authority.actorUserId === authority.canonicalOwnerUserId;
+}
+
+export function isCanonicalWorkspaceOwnerScope(scope: WorkspaceScope): boolean {
+  return isCanonicalWorkspaceOwner(workspaceAuthority(scope));
+}
+
+export function assertCanonicalWorkspaceOwner(scopeInput: WorkspaceScope): WorkspaceScope {
+  const scope = validateWorkspaceScope(scopeInput);
+  if (!isCanonicalWorkspaceOwnerScope(scope)) {
+    throw new WorkspaceAuthorityError('forbidden', 'Canonical workspace owner authority is required.');
+  }
+  return scope;
+}
+
+export function canManageWorkspaceAuthority(scopeOrRole: WorkspaceScope | WorkspaceRole): boolean {
+  if (typeof scopeOrRole === 'string') return scopeOrRole === 'owner';
+  return isCanonicalWorkspaceOwnerScope(scopeOrRole);
+}
+
+export function canPerformWorkspaceSupportOperation(
+  scopeInput: WorkspaceScope,
+  operation: unknown,
+): operation is WorkspaceSupportOperation {
+  const authority = workspaceAuthority(scopeInput);
+  if (!WORKSPACE_SUPPORT_OPERATIONS.includes(operation as WorkspaceSupportOperation)) return false;
+  return isCanonicalWorkspaceOwner(authority) || authority.supportGrant?.active === true;
 }
 
 /** Enforces the product's one-active-owner and one-active-membership invariants. */

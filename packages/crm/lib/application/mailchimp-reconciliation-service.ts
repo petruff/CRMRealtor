@@ -6,7 +6,7 @@ import type {
 } from '../data/supabase-mailchimp-reconciliation-repository.ts';
 import { ConnectorError, stablePayloadHash } from '../domain/connector.ts';
 import type { WorkspaceScope } from '../domain/workspace.ts';
-import { validateWorkspaceScope } from '../domain/workspace.ts';
+import { isCanonicalWorkspaceOwnerScope, validateWorkspaceScope } from '../domain/workspace.ts';
 import { createEnvironmentKekResolver, decryptConnectorSecret, type ConnectorKekResolver } from '../security/connector-secret-envelope.ts';
 import { MailchimpMarketingClient, type MailchimpFetch } from '../providers/mailchimp-client.ts';
 import type { MailchimpSetupRepository } from '../data/mailchimp-operation-repository.ts';
@@ -24,7 +24,7 @@ export async function requestMailchimpReconciliationCommand(
   now = new Date(),
 ) {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.mode !== 'live' || scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner access is required.');
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   if (!Number.isFinite(now.getTime())) throw new ConnectorError('invalid-input', 'Timestamp is invalid.');
   const connectionId = input.connectionId.trim();
   const pageSize = input.pageSize ?? 100;

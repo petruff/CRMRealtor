@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://omnix.invalid/schemas/release-manifest.schema.json",
+  "title": "Omnix exact-SHA release evidence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "candidate", "artifact", "scheduler", "migrations", "rollback", "providerInventory", "providers", "uat", "gates"],
+  "$defs": {
+    "sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1, "pattern": "^(?![A-Za-z]:|/)(?!.*\\\\)(?!.*(?:^|/)(?:\\.|\\.\\.)(?:/|$))(?!.*//).+$" },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "migration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^packages/crm/supabase/migrations/.+\\.sql$" },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "safeArea": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["top", "right", "bottom", "left", "respected"],
+      "properties": {
+        "top": { "type": "number", "minimum": 0 },
+        "right": { "type": "number", "minimum": 0 },
+        "bottom": { "type": "number", "minimum": 0 },
+        "left": { "type": "number", "minimum": 0 },
+        "respected": { "const": true }
+      }
+    },
+    "overflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["horizontal", "clippedControls"],
+      "properties": {
+        "horizontal": { "const": "none" },
+        "clippedControls": { "const": false }
+      }
+    },
+    "uatEnvironment": {
+      "type": "object",
+      "required": ["device", "browser", "browserVersion", "displayMode", "orientation", "safeArea", "overflow"],
+      "properties": {
+        "device": { "type": "string", "minLength": 1 },
+        "browser": { "type": "string", "minLength": 1 },
+        "browserVersion": { "type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+){1,3}$" },
+        "displayMode": { "enum": ["browser", "standalone"] },
+        "orientation": { "enum": ["portrait", "landscape"] },
+        "safeArea": { "$ref": "#/$defs/safeArea" },
+        "overflow": { "$ref": "#/$defs/overflow" }
+      }
+    },
+    "iphone11Browser": {
+      "allOf": [
+        { "$ref": "#/$defs/uatEnvironment" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["device", "browser", "browserVersion", "viewportWidth", "displayMode", "orientation", "safeArea", "overflow", "evidence"],
+          "properties": {
+            "device": { "const": "iPhone 11" },
+            "browser": { "const": "Mobile Safari" },
+            "browserVersion": { "type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+){1,3}$" },
+            "viewportWidth": { "const": 414 },
+            "displayMode": { "const": "browser" },
+            "orientation": { "const": "portrait" },
+            "safeArea": { "$ref": "#/$defs/safeArea" },
+            "overflow": { "$ref": "#/$defs/overflow" },
+            "evidence": { "$ref": "#/$defs/receipt" }
+          }
+        }
+      ]
+    },
+    "iphone11Pwa": {
+      "allOf": [
+        { "$ref": "#/$defs/uatEnvironment" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["device", "browser", "browserVersion", "viewportWidth", "displayMode", "orientation", "safeArea", "overflow", "evidence"],
+          "properties": {
+            "device": { "const": "iPhone 11" },
+            "browser": { "const": "Mobile Safari" },
+            "browserVersion": { "type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+){1,3}$" },
+            "viewportWidth": { "const": 414 },
+            "displayMode": { "const": "standalone" },
+            "orientation": { "const": "portrait" },
+            "safeArea": { "$ref": "#/$defs/safeArea" },
+            "overflow": { "$ref": "#/$defs/overflow" },
+            "evidence": { "$ref": "#/$defs/receipt" }
+          }
+        }
+      ]
+    }
+  },
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha", "branch", "clean", "createdAt"],
+      "properties": {
+        "sha": { "$ref": "#/$defs/sha" },
+        "branch": { "type": "string", "minLength": 1 },
+        "clean": { "const": true },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["digest", "deployment"],
+      "properties": {
+        "digest": { "$ref": "#/$defs/digest" },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "digest", "candidateSha", "environment", "receipt"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "digest": { "$ref": "#/$defs/digest" },
+            "candidateSha": { "$ref": "#/$defs/sha" },
+            "environment": { "const": "production" },
+            "receipt": { "$ref": "#/$defs/receipt" }
+          }
+        }
+      }
+    },
+    "scheduler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "projectId", "teamId", "plan", "schedule", "supported", "operationalMode", "interactiveConnectorSloMet", "liveConnectorPromotionAllowed", "receipt"],
+      "properties": {
+        "platform": { "const": "vercel" },
+        "projectId": { "type": "string", "pattern": "^prj_.+" },
+        "teamId": { "type": "string", "pattern": "^team_.+" },
+        "plan": { "enum": ["hobby", "pro", "enterprise"] },
+        "schedule": { "enum": ["0 6 * * *", "*/2 * * * *"] },
+        "supported": { "const": true },
+        "operationalMode": { "enum": ["daily-maintenance-only", "interactive-worker"] },
+        "interactiveConnectorSloMet": { "type": "boolean" },
+        "liveConnectorPromotionAllowed": { "type": "boolean" },
+        "receipt": { "$ref": "#/$defs/receipt" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "plan": { "const": "hobby" } }, "required": ["plan"] },
+          "then": {
+            "properties": {
+              "schedule": { "const": "0 6 * * *" },
+              "operationalMode": { "const": "daily-maintenance-only" },
+              "interactiveConnectorSloMet": { "const": false },
+              "liveConnectorPromotionAllowed": { "const": false }
+            }
+          },
+          "else": {
+            "properties": {
+              "schedule": { "const": "*/2 * * * *" },
+              "operationalMode": { "const": "interactive-worker" },
+              "interactiveConnectorSloMet": { "const": true },
+              "liveConnectorPromotionAllowed": { "const": true }
+            }
+          }
+        }
+      ]
+    },
+    "migrations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "historyReceipt", "replayReceipt", "postApplyReceipt"],
+      "properties": {
+        "files": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/migration" } },
+        "historyReceipt": { "$ref": "#/$defs/receipt" },
+        "replayReceipt": { "$ref": "#/$defs/receipt" },
+        "postApplyReceipt": { "$ref": "#/$defs/receipt" }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetDeploymentId", "targetSha", "knownGoodReceipt", "applicationReceipt", "databaseReceipt", "authorityRegressionReceipt"],
+      "properties": {
+        "targetDeploymentId": { "type": "string", "minLength": 1 },
+        "targetSha": { "$ref": "#/$defs/sha" },
+        "knownGoodReceipt": { "$ref": "#/$defs/receipt" },
+        "applicationReceipt": { "$ref": "#/$defs/receipt" },
+        "databaseReceipt": { "$ref": "#/$defs/receipt" },
+        "authorityRegressionReceipt": { "$ref": "#/$defs/receipt" }
+      }
+    },
+    "providerInventory": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9-]+$" }
+    },
+    "providers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["provider", "lifecycle", "actorClassification", "observedAt", "facts", "receipt"],
+        "properties": {
+          "provider": { "type": "string", "minLength": 1 },
+          "lifecycle": { "enum": ["ready", "blocked-external", "disabled"] },
+          "actorClassification": { "const": "canonical-owner" },
+          "observedAt": { "type": "string", "format": "date-time" },
+          "facts": { "type": "object" },
+          "receipt": { "$ref": "#/$defs/receipt" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "provider": { "const": "google" } }, "required": ["provider"] },
+            "then": {
+              "properties": {
+                "facts": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["requiredScopes", "grantedScopes", "missingScopes", "scopeReview", "realAccountUat", "capabilityHealth"],
+                  "properties": {
+                    "requiredScopes": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+                    "grantedScopes": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+                    "missingScopes": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+                    "scopeReview": { "enum": ["approved", "pending", "rejected"] },
+                    "realAccountUat": { "enum": ["pass", "not-run", "fail"] },
+                    "capabilityHealth": { "enum": ["healthy", "degraded", "unknown"] }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": { "properties": { "provider": { "const": "mailchimp" } }, "required": ["provider"] },
+            "then": {
+              "properties": {
+                "facts": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["audienceBinding", "webhook", "baseline", "reconciliation", "realAccountUat"],
+                  "properties": {
+                    "audienceBinding": { "enum": ["selected", "missing", "unknown"] },
+                    "webhook": { "enum": ["active", "pending", "unknown"] },
+                    "baseline": { "enum": ["complete", "pending", "running", "review", "unknown"] },
+                    "reconciliation": { "enum": ["complete", "running", "review", "failed", "unknown"] },
+                    "realAccountUat": { "enum": ["pass", "not-run", "fail"] }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": { "properties": { "provider": { "const": "twilio" } }, "required": ["provider"] },
+            "then": {
+              "properties": {
+                "facts": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["accountStatus", "messagingService", "a2pRegistration", "senderNumber", "inboundWebhook", "statusCallback", "consentStopHelpQuietHours", "realNumberUat"],
+                  "properties": {
+                    "accountStatus": { "enum": ["active", "suspended", "unknown"] },
+                    "messagingService": { "enum": ["configured", "missing", "unknown"] },
+                    "a2pRegistration": { "enum": ["approved", "pending", "rejected", "not-required", "unknown"] },
+                    "senderNumber": { "enum": ["verified", "missing", "unknown"] },
+                    "inboundWebhook": { "enum": ["active", "pending", "unknown"] },
+                    "statusCallback": { "enum": ["active", "pending", "unknown"] },
+                    "consentStopHelpQuietHours": { "enum": ["verified", "not-verified", "unknown"] },
+                    "realNumberUat": { "enum": ["pass", "not-run", "fail"] }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": { "properties": { "provider": { "const": "meta" } }, "required": ["provider"] },
+            "then": {
+              "properties": {
+                "facts": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["businessVerification", "appReview", "requiredPermissions", "grantedPermissions", "missingPermissions", "assetBinding", "signedWebhook", "tokenHealth", "realAccountUat"],
+                  "properties": {
+                    "businessVerification": { "enum": ["approved", "pending", "rejected", "unknown"] },
+                    "appReview": { "enum": ["approved", "pending", "rejected", "unknown"] },
+                    "requiredPermissions": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+                    "grantedPermissions": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+                    "missingPermissions": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+                    "assetBinding": { "enum": ["selected", "missing", "unknown"] },
+                    "signedWebhook": { "enum": ["active", "pending", "unknown"] },
+                    "tokenHealth": { "enum": ["healthy", "expired", "unknown"] },
+                    "realAccountUat": { "enum": ["pass", "not-run", "fail"] }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "uat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authenticated", "testerRole", "workspaceIdHash", "results", "iphone11"],
+      "properties": {
+        "authenticated": { "const": true },
+        "testerRole": { "const": "canonical-owner" },
+        "workspaceIdHash": { "$ref": "#/$defs/digest" },
+        "results": {
+          "type": "array",
+          "minItems": 28,
+          "maxItems": 28,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "allOf": [{ "$ref": "#/$defs/uatEnvironment" }],
+            "required": ["route", "width", "device", "browser", "browserVersion", "displayMode", "orientation", "safeArea", "overflow", "outcome", "health", "readiness", "evidence"],
+            "properties": {
+              "route": { "enum": ["contacts", "import", "pipeline", "omnix", "connections", "insights", "sign-in-theme"] },
+              "width": { "enum": [390, 414, 768, 1440] },
+              "device": { "type": "string", "minLength": 1 },
+              "browser": { "type": "string", "minLength": 1 },
+              "browserVersion": { "type": "string", "pattern": "^[0-9]+(?:\\.[0-9]+){1,3}$" },
+              "displayMode": { "enum": ["browser", "standalone"] },
+              "orientation": { "enum": ["portrait", "landscape"] },
+              "safeArea": { "$ref": "#/$defs/safeArea" },
+              "overflow": { "$ref": "#/$defs/overflow" },
+              "outcome": { "const": "pass" },
+              "health": { "const": "healthy" },
+              "readiness": { "const": "ready" },
+              "evidence": { "$ref": "#/$defs/receipt" }
+            }
+          }
+        },
+        "iphone11": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["safariBrowser", "installedPwa"],
+          "properties": {
+            "safariBrowser": { "$ref": "#/$defs/iphone11Browser" },
+            "installedPwa": { "$ref": "#/$defs/iphone11Pwa" }
+          }
+        }
+      }
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "result", "candidateSha", "receipt"],
+        "properties": {
+          "name": { "enum": ["dependency-audit", "secret-scan", "lint", "typecheck", "test", "build"] },
+          "result": { "const": "pass" },
+          "candidateSha": { "$ref": "#/$defs/sha" },
+          "receipt": { "$ref": "#/$defs/receipt" }
+        }
+      }
+    }
+  }
+}

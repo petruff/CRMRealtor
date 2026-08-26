@@ -13,7 +13,11 @@ import {
   type MailchimpAudienceBinding,
   type MailchimpLeadType,
 } from '../domain/mailchimp.ts';
-import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
+import {
+  isCanonicalWorkspaceOwnerScope,
+  validateWorkspaceScope,
+  type WorkspaceScope,
+} from '../domain/workspace.ts';
 import {
   createEnvironmentKekResolver,
   decryptConnectorSecret,
@@ -66,7 +70,7 @@ export async function listMailchimpAudiencesCommand(
 ) {
   const scope = validateWorkspaceScope(scopeInput);
   enabledMailchimp(configuration);
-  if (scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner access is required.');
+  if (!isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   if (typeof input.connectionId !== 'string' || !input.connectionId.trim()) {
     throw new ConnectorError('invalid-input', 'connectionId is required.');
   }
@@ -97,7 +101,7 @@ export async function listLiveMailchimpAudiencesCommand(
 ) {
   const scope = validateWorkspaceScope(scopeInput);
   enabledMailchimp(configuration);
-  if (scope.mode !== 'live' || scope.role !== 'owner') {
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) {
     throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   }
   if (typeof input.connectionId !== 'string' || !input.connectionId.trim()) {
@@ -132,7 +136,7 @@ export function selectMailchimpAudienceCommand(
   now = new Date(),
 ): MailchimpAudienceBinding {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner access is required.');
+  if (!isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   if (!Number.isFinite(now.getTime())) throw new ConnectorError('invalid-input', 'Timestamp is invalid.');
   const connectionId = typeof input.connectionId === 'string' ? input.connectionId.trim() : '';
   const accountIdHash = typeof input.accountIdHash === 'string' ? input.accountIdHash.trim() : '';
@@ -161,7 +165,7 @@ export async function persistMailchimpAudienceSelectionCommand(
 ) {
   const scope = validateWorkspaceScope(scopeInput);
   enabledMailchimp(configuration);
-  if (scope.mode !== 'live' || scope.role !== 'owner') {
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) {
     throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   }
   const connectionId = typeof input.connectionId === 'string' ? input.connectionId.trim() : '';
@@ -187,7 +191,7 @@ async function liveMailchimpAuthority<Client extends MailchimpProviderClient>(
 ) {
   const scope = validateWorkspaceScope(scopeInput);
   enabledMailchimp(configuration);
-  if (scope.mode !== 'live' || scope.role !== 'owner') {
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) {
     throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   }
   const authority = await operations.readConnectionAuthority(scope, connectionId);

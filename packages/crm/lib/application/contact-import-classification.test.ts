@@ -72,6 +72,16 @@ describe('automatic imported-contact classification', () => {
     expect(result.classification).toMatchObject({ mode: 'safe-default', confidence: 'review', needsReview: true });
   });
 
+  it('forces DNC source evidence to opted out even when another field claims subscription', () => {
+    const result = classifyContactImportCandidate(candidate({
+      emailSubscribed: true,
+      tags: ['VIP', 'DNC'],
+      sourceFacts: [fact('status', 'Active Lead')],
+    }));
+    expect(result.candidate).toMatchObject({ emailSubscribed: false, pipelineStage: 'lost' });
+    expect(result.classification.needsReview).toBe(false);
+  });
+
   it('derives intent from preserved deal type when the canonical value is absent', () => {
     const result = classifyContactImportCandidate(candidate({
       sourceFacts: [fact('status', 'Active Lead'), fact('deal-type', 'buyer and seller')],

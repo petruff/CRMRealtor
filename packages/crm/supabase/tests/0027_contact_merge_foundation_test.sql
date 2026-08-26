@@ -105,7 +105,7 @@ select throws_ok(
 select set_config('request.jwt.claim.sub','17000000-0000-4000-8000-000000000028',true);
 select throws_ok(
   $$select public.plan_exact_contact_merge('27000000-0000-4000-8000-000000000027','37000000-0000-4000-8000-000000000028','email',repeat('a',64),repeat('b',64),'assistant-plan-0001','{}',now()+interval '1 hour',now())$$,
-  '42501','active rich-contact actor authority is required','assistant cannot create a merge plan');
+  '42501','authenticated canonical owner required','assistant cannot create a merge plan');
 select is((select count(*)::integer from public.contact_merge_events),0,'assistant cannot read owner-only merge events');
 
 select set_config('request.jwt.claim.sub','17000000-0000-4000-8000-000000000029',true);

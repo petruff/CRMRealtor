@@ -20,6 +20,7 @@ import {
   SOURCE_LABEL,
   displayName,
   initials,
+  type Contact,
   type LeadType,
   type LeadSource,
 } from "@/lib/domain/contact";
@@ -27,8 +28,13 @@ import { getRepository } from "@/lib/data";
 import { Avatar, IconAction, SectionHeader } from "@/components/ui";
 import { SmartListControls } from "@/components/smart-list-controls";
 import { ContactScopeNavigation } from "@/components/contact-scope-navigation";
+import { ContactPagination } from "@/components/contact-pagination";
 import {
   CONTACT_QUERY_MAX,
+  CONTACT_PAGE_SIZE,
+  contactPageMetadata,
+  paginateContacts,
+  parseContactPage,
   CONTACT_LEAD_TYPES,
   CONTACT_SCOPES,
   parseContactScope,
@@ -104,6 +110,7 @@ export default async function ContactsPage({
     view?: string | string[];
     qualification?: string | string[];
     scope?: string | string[];
+    page?: string | string[];
   }>;
 }) {
   const params = await searchParams;
@@ -138,68 +145,106 @@ export default async function ContactsPage({
   }
   const rawSmartListId =
     typeof params.smartList === "string" ? params.smartList : undefined;
-  const { repository, smartListRepository, activityRepository, richContactRepository, workspaceScope } =
+  const requestedPage = parseContactPage(typeof params.page === "string" ? params.page : undefined);
+  const {
+    repository, smartListRepository, activityRepository, richContactRepository, workspaceScope,
+  } =
     await getRepository();
-  const allContacts = await repository.list(archivedView ? { archivedOnly: true } : undefined);
   const smartLists = await listSmartListsCommand(
     smartListRepository,
     workspaceScope,
     "all",
   );
   const selectedSmartList = !archivedView && rawSmartListId
-    ? smartLists.find((list) => list.id === rawSmartListId)
+    ? smartLists.find((list) => list.id === rawSmartListId && list.status === "active")
     : undefined;
-  let smartListError: string | undefined;
-  let scopedContacts = allContacts;
-  if (rawSmartListId && !archivedView) {
-    try {
-      const applied = await applySmartListCommand(
-        smartListRepository,
-        { list: async () => allContacts },
-        workspaceScope,
-        rawSmartListId,
-      );
-      const ids = new Set(applied.contactIds);
-      scopedContacts = allContacts.filter((contact) => ids.has(contact.id));
-    } catch (error) {
-      smartListError =
-        error instanceof Error
-          ? error.message
-          : "That Smart List could not be applied.";
+  let smartListError = rawSmartListId && !archivedView && !selectedSmartList
+    ? "That Smart List is no longer available."
+    : undefined;
+  const listPage = repository.listPage?.bind(repository);
+  let allContacts: Awaited<ReturnType<typeof repository.list>> = [];
+  let contacts: Awaited<ReturnType<typeof repository.list>> = [];
+  let contactPage: ReturnType<typeof paginateContacts<Contact>>;
+  let scopeCounts: Record<ContactScope, number>;
+  let leadTypeCounts: Record<LeadType, number>;
+  let activeTotal = 0;
+
+  if (listPage) {
+    const requestedOffset = (requestedPage - 1) * CONTACT_PAGE_SIZE;
+    const request = {
+      scope,
+      query,
+      ...(leadType ? { leadType } : {}),
+      ...(source ? { source } : {}),
+      ...(selectedSmartList ? {
+        smartListId: selectedSmartList.id,
+        smartListDefinition: selectedSmartList.definition,
+      } : {}),
+      archivedOnly: archivedView,
+      offset: requestedOffset,
+      limit: CONTACT_PAGE_SIZE,
+    } as const;
+    let pageResult = await listPage(request);
+    const metadata = contactPageMetadata(pageResult.total, requestedPage);
+    if (metadata.offset !== requestedOffset) {
+      pageResult = await listPage({ ...request, offset: metadata.offset });
+      if (pageResult.total !== metadata.total) {
+        throw new Error("Contact counts changed while this page was loading. Please refresh.");
+      }
     }
+    contacts = [...pageResult.items];
+    contactPage = { items: contacts, ...metadata };
+    scopeCounts = { ...pageResult.scopeCounts };
+    leadTypeCounts = { ...pageResult.leadTypeCounts };
+    activeTotal = pageResult.activeTotal;
+  } else {
+    allContacts = await repository.list(archivedView ? { archivedOnly: true } : undefined);
+    let scopedContacts = allContacts;
+    if (rawSmartListId && !archivedView) {
+      try {
+        const applied = await applySmartListCommand(
+          smartListRepository,
+          { list: async () => allContacts },
+          workspaceScope,
+          rawSmartListId,
+        );
+        const ids = new Set(applied.contactIds);
+        scopedContacts = allContacts.filter((contact) => ids.has(contact.id));
+      } catch (error) {
+        smartListError = error instanceof Error ? error.message : "That Smart List could not be applied.";
+      }
+    }
+    contacts = archivedView
+      ? queryArchivedContacts(scopedContacts, { query, leadType, source })
+      : queryContacts(scopedContacts, { query, leadType, source, scope });
+    contactPage = paginateContacts(contacts, requestedPage);
+    activeTotal = archivedView ? (await repository.list()).length : allContacts.length;
+    scopeCounts = Object.fromEntries(CONTACT_SCOPES.map((candidate) => [
+      candidate,
+      queryContacts(scopedContacts, { query, leadType, source, scope: candidate }).length,
+    ])) as Record<ContactScope, number>;
+    leadTypeCounts = Object.fromEntries(ORDER.map((candidate) => [
+      candidate,
+      contacts.filter((contact) => contact.leadType === candidate).length,
+    ])) as Record<LeadType, number>;
   }
-  const contacts = archivedView
-    ? queryArchivedContacts(scopedContacts, { query, leadType, source })
-    : queryContacts(scopedContacts, { query, leadType, source, scope });
+  const visibleContacts = contactPage.items;
   const viewState: ContactViewState = {
     scope,
     ...(query ? { query } : {}),
     ...(leadType ? { leadType } : {}),
     ...(source ? { source } : {}),
     ...(rawSmartListId ? { smartList: rawSmartListId } : {}),
+    ...(contactPage.page > 1 ? { page: contactPage.page } : {}),
   };
-  const scopeCounts = Object.fromEntries(CONTACT_SCOPES.map((candidate) => [
-    candidate,
-    queryContacts(scopedContacts, { query, leadType, source, scope: candidate }).length,
-  ])) as Record<ContactScope, number>;
-  const [tasks, activityEvents, assignments] = await Promise.all([
-    activityRepository.listTasks(workspaceScope, { status: "all", limit: 500 }),
-    activityRepository.listEvents(workspaceScope, { limit: 500 }),
+  const listContactAggregates = activityRepository.listContactAggregates?.bind(activityRepository);
+  if (!listContactAggregates) {
+    throw new Error("Exact contact activity counts are unavailable.");
+  }
+  const [contactAggregates, assignments] = await Promise.all([
+    listContactAggregates(workspaceScope, visibleContacts.map((contact) => contact.id)),
     richContactRepository ? richContactRepository.listAssignments(workspaceScope) : Promise.resolve([]),
   ]);
-  const taskCounts = new Map<string, { open: number; completed: number }>();
-  for (const task of tasks) {
-    if (!task.contactId) continue;
-    const count = taskCounts.get(task.contactId) ?? { open: 0, completed: 0 };
-    if (task.status === "open") count.open += 1;
-    if (task.status === "completed") count.completed += 1;
-    taskCounts.set(task.contactId, count);
-  }
-  const activityCounts = new Map<string, number>();
-  for (const event of activityEvents) {
-    if (!event.contactId) continue;
-    activityCounts.set(event.contactId, (activityCounts.get(event.contactId) ?? 0) + 1);
-  }
   const assigneeByContact = new Map(assignments.filter((item) => !item.unassignedAt).map((item) => [item.contactId, item.assigneeMembershipId]));
   const searching = Boolean(query.trim() || leadType || source || (!archivedView && rawSmartListId));
   const clearSmartListHref = contactViewHref(viewState, { smartList: undefined });
@@ -216,6 +261,13 @@ export default async function ContactsPage({
     ? "/contacts?view=archived"
     : contactViewHref(viewState, { query: undefined, leadType: undefined, source: undefined });
   const scopeCopy = SCOPE_COPY[scope];
+  const archivedPageHref = (page: number) => `/contacts?${new URLSearchParams({
+    view: "archived",
+    ...(query ? { q: query } : {}),
+    ...(leadType ? { leadType } : {}),
+    ...(source ? { source } : {}),
+    ...(page > 1 ? { page: String(page) } : {}),
+  })}`;
 
   return (
     <div>
@@ -224,13 +276,13 @@ export default async function ContactsPage({
           <p className="eyebrow">{archivedView ? "Archived contacts" : scopeCopy.eyebrow}</p>
           <h1 className="mt-2 max-w-3xl font-display text-[2.5rem] leading-[1.04] text-ink sm:text-5xl md:text-[3.5rem]">
             {archivedView
-              ? `${contacts.length} archived ${contacts.length === 1 ? "record" : "records"}.`
+              ? `${contactPage.total} archived ${contactPage.total === 1 ? "record" : "records"}.`
               : scopeCopy.title}
           </h1>
           {!archivedView ? (
             <p className="mt-3 text-sm text-muted">
-              {contacts.length} {contacts.length === 1 ? "person" : "people"} in this view
-              {searching ? ` · ${allContacts.length} active records total` : " · hottest first"}.
+              {contactPage.total} {contactPage.total === 1 ? "person" : "people"} in this view
+              {searching ? ` · ${activeTotal} active records total` : " · hottest first"}.
             </p>
           ) : null}
         </div>
@@ -240,7 +292,7 @@ export default async function ContactsPage({
             {archivedView ? "Active contacts" : "Archived"}
           </Link>
           <Link href="/contacts/incomplete" className="sk-secondary-button px-3">
-            Review incomplete
+            Incomplete records
           </Link>
           <Link href="/contacts/import" className="sk-secondary-button px-3">
             <Upload className="size-4" /> Import
@@ -344,7 +396,7 @@ export default async function ContactsPage({
 
       {searching ? (
         <div role="status" className="mb-7 flex flex-wrap items-center gap-2 text-sm text-muted">
-          <span>{contacts.length === 1 ? "1 contact matches" : `${contacts.length} contacts match`} in {archivedView ? "Archived" : scopeCopy.title}.</span>
+          <span>{contactPage.total === 1 ? "1 contact matches" : `${contactPage.total} contacts match`} in {archivedView ? "Archived" : scopeCopy.title}.</span>
           {query.trim() ? (
             <Link href={clearQueryHref} className="sk-secondary-button min-h-9 px-3 text-xs">
               “{query.trim()}” <X className="size-3.5" aria-hidden />
@@ -369,17 +421,18 @@ export default async function ContactsPage({
         </div>
       ) : null}
 
-      {contacts.length ? (
+      {contactPage.total ? (
         <div className="space-y-12">
           {ORDER.map((leadType) => {
-            const group = contacts.filter((c) => c.leadType === leadType);
+            const group = visibleContacts.filter((c) => c.leadType === leadType);
+            const exactGroupCount = leadTypeCounts[leadType];
             if (group.length === 0) return null;
             return (
               <section key={leadType}>
                 <SectionHeader
                   title={LEAD_TYPE_LABEL[leadType]}
                   blurb={BLURB[leadType]}
-                  count={group.length}
+                  count={exactGroupCount}
                   tone={leadType}
                 />
 
@@ -409,7 +462,7 @@ export default async function ContactsPage({
                           ].join(" · ")}
                         </p>
                         <p className="mt-1 truncate text-[11px] text-subtle">
-                          {activityCounts.get(contact.id) ?? 0} activities · {taskCounts.get(contact.id)?.open ?? 0} open tasks · {taskCounts.get(contact.id)?.completed ?? 0} completed · {assigneeByContact.has(contact.id) ? `Assigned ${assigneeByContact.get(contact.id)}` : "Unassigned"}
+                          {contactAggregates.get(contact.id)?.activityCount ?? 0} activities · {contactAggregates.get(contact.id)?.openTaskCount ?? 0} open tasks · {contactAggregates.get(contact.id)?.completedTaskCount ?? 0} completed · {assigneeByContact.has(contact.id) ? `Assigned ${assigneeByContact.get(contact.id)}` : "Unassigned"}
                         </p>
                         {contact.birthdate ? (
                           <p className="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-muted">
@@ -451,6 +504,10 @@ export default async function ContactsPage({
               </section>
             );
           })}
+          <ContactPagination
+            page={contactPage}
+            hrefForPage={(page) => archivedView ? archivedPageHref(page) : contactViewHref(viewState, { page })}
+          />
         </div>
       ) : (
         <div className="sk-group bg-surface px-6 py-14 text-center">

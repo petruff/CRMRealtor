@@ -52,6 +52,22 @@ function standalone(contactId: string): ContactAliasGroup {
 
 export function supabaseContactIdentityMap(supabase: SupabaseClient): ContactIdentityMap {
   return {
+    async hasActiveAliases(input) {
+      const scope = live(input);
+      const { count, error } = await supabase
+        .from('contact_merge_aliases')
+        .select('donor_contact_id', { count: 'exact', head: true })
+        .eq('workspace_id', scope.workspaceId)
+        .is('inactive_at', null);
+      if (error && isMissingSchemaCapability(error, MERGE_CAPABILITIES)) {
+        reportMissingCapability('count-active-contact-aliases', error);
+        return false;
+      }
+      if (error) throw failure('Failed to count active contact aliases', error);
+      if (typeof count !== 'number') throw new Error('Active contact alias count was unavailable.');
+      return count > 0;
+    },
+
     async resolveCanonical(input, contactId) {
       const scope = live(input);
       const { data, error } = await supabase.rpc('resolve_canonical_contact_id', {

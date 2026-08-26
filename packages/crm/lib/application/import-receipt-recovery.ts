@@ -2,6 +2,7 @@ import type {
   ContactImportPreview,
   ContactImportResult,
 } from './contact-import-service.ts';
+import type { ContactImportPlanResult } from '../data/import-gateway.ts';
 
 type ReceiptOutcome = ContactImportResult['rowOutcomes'][number];
 
@@ -85,12 +86,16 @@ export function parseImportReceiptPreflight(value: unknown): ImportReceiptPrefli
 }
 
 export function importResultFromReceipt(
-  preview: ContactImportPreview,
+  source: Pick<ContactImportPreview, 'provider'> | string,
   receipt: Exclude<ImportReceiptPreflight, { state: 'ready' }>,
 ): ContactImportResult {
+  const qualificationReview = receipt.rowOutcomes.filter((row) => (
+    row.errorCode?.split(',').includes('qualification-review')
+  )).length;
   return {
-    ok: receipt.counts.rejected === 0 && receipt.counts.failed === 0,
-    provider: preview.provider,
+    ok: receipt.counts.rejected === 0 && receipt.counts.quarantined === 0
+      && receipt.counts.failed === 0,
+    provider: typeof source === 'string' ? source : source.provider,
     totalRows: receipt.counts.total,
     created: receipt.counts.created,
     updated: receipt.counts.updated,
@@ -99,6 +104,8 @@ export function importResultFromReceipt(
     archivedMatches: 0,
     ambiguousIdentities: 0,
     notesAdded: receipt.counts.notesAdded,
+    qualificationReview,
+    incomplete: receipt.counts.rejected + receipt.counts.quarantined,
     rejected: receipt.counts.rejected,
     quarantined: receipt.counts.quarantined,
     protected: 0,
@@ -106,5 +113,43 @@ export function importResultFromReceipt(
     errors: [],
     rowOutcomes: [...receipt.rowOutcomes],
     receiptState: receipt.state,
+  };
+}
+
+/** Projects only immutable aggregate evidence into the public import result. */
+export function importResultFromStoredPlan(
+  provider: string,
+  receipt: ContactImportPlanResult,
+): ContactImportResult {
+  const errors = receipt.rowOutcomes.flatMap((row) => row.errorCode
+    ? [{ rowNumber: row.rowNumber, message: row.errorCode.split(',').join(', ') }]
+    : []);
+  return {
+    ok: receipt.counts.rejected === 0 && receipt.counts.quarantined === 0,
+    provider,
+    totalRows: receipt.counts.total,
+    created: receipt.counts.created,
+    updated: receipt.counts.updated,
+    unchanged: receipt.counts.unchanged,
+    merged: 0,
+    archivedMatches: 0,
+    ambiguousIdentities: 0,
+    notesAdded: receipt.counts.notesAdded,
+    qualificationReview: receipt.rowOutcomes.filter((row) => (
+      row.errorCode?.split(',').includes('qualification-review')
+    )).length,
+    incomplete: receipt.counts.rejected + receipt.counts.quarantined,
+    rejected: receipt.counts.rejected,
+    quarantined: receipt.counts.quarantined,
+    protected: 0,
+    failed: 0,
+    errors,
+    rowOutcomes: receipt.rowOutcomes.map((row) => ({
+      rowNumber: row.rowNumber,
+      outcome: row.outcome,
+      ...(row.contactId ? { contactId: row.contactId } : {}),
+      ...(row.errorCode ? { errorCode: row.errorCode } : {}),
+    })),
+    receiptState: 'recorded',
   };
 }

@@ -1,4 +1,5 @@
 import { ConnectorError, sha256Hex } from '@/lib/domain/connector';
+import type { ConnectorLifecycleProjection } from '@/lib/domain/connector-lifecycle';
 
 export type MailchimpAudienceLoadIssueKind = 'reconnect' | 'temporary' | 'developer';
 export type MailchimpSetupNoticeCode = 'mailchimp-setup-failed' | 'mailchimp-setup-developer'
@@ -27,8 +28,8 @@ export function classifyMailchimpAudienceLoadIssue(error: unknown): MailchimpAud
   }
   return {
     kind: 'developer',
-    title: 'Mailchimp needs developer attention',
-    message: 'Your account remains saved. Judith does not need to change any settings while the secure connection is reviewed.',
+    title: 'Mailchimp status is temporarily unavailable',
+    message: 'Your saved setup is safe. Try again in a few minutes.',
   };
 }
 
@@ -41,42 +42,26 @@ export function mailchimpSetupNoticeCode(error: unknown): MailchimpSetupNoticeCo
   return 'mailchimp-setup-failed';
 }
 
-export function mailchimpConnectionStatusLabel(status: string): string {
-  switch (status) {
-    case 'active': return 'Connected';
-    case 'authorizing': return 'Waiting for Mailchimp authorization';
-    case 'degraded': return 'Connected, but syncing needs attention';
-    case 'reauthorization-required': return 'Reconnect required';
-    case 'revoking': return 'Disconnecting';
-    case 'disconnected': return 'Disconnected';
-    case 'disconnected-unconfirmed': return 'Disconnect needs confirmation';
-    default: return 'Connection status unavailable';
-  }
-}
-
 export function mailchimpConnectionNeedsAttention(
-  status: string,
-  loadIssue?: MailchimpAudienceLoadIssue,
+  lifecycle: ConnectorLifecycleProjection,
 ): boolean {
-  return ['degraded', 'reauthorization-required'].includes(status) || Boolean(loadIssue);
+  return !['ready', 'disconnected'].includes(lifecycle.state);
 }
 
 export function mailchimpConnectionRequiresReauthorization(
-  status: string,
-  loadIssue?: MailchimpAudienceLoadIssue,
+  lifecycle: ConnectorLifecycleProjection,
 ): boolean {
-  return status === 'reauthorization-required' || loadIssue?.kind === 'reconnect';
+  return lifecycle.state === 'reconnect-required';
 }
 
 export function mailchimpConnectionSummaryLabel(
-  status: string,
-  loadIssue?: MailchimpAudienceLoadIssue,
+  lifecycle: ConnectorLifecycleProjection,
 ): string {
-  return loadIssue?.title ?? mailchimpConnectionStatusLabel(status);
+  return lifecycle.safeSummary;
 }
 
 export function recordMailchimpReadFailure(input: {
-  readonly operation: 'binding' | 'reconciliation' | 'backfill' | 'audiences';
+  readonly operation: 'authorization' | 'owner-binding' | 'binding' | 'reconciliation' | 'backfill' | 'audiences';
   readonly connectionId: string;
   readonly error: unknown;
 }): MailchimpAudienceLoadIssue {

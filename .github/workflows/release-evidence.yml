@@ -1,0 +1,182 @@
+name: CRM release evidence gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_sha:
+        description: Full 40-character candidate commit SHA
+        required: true
+        type: string
+      manifest_path:
+        description: Repository-relative immutable manifest path
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release-evidence:
+    name: Validate exact-SHA release evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Validate inputs
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          [[ "${CANDIDATE_SHA}" =~ ^[a-f0-9]{40}$ ]]
+          [[ "${MANIFEST_PATH}" == "docs/qa/releases/${CANDIDATE_SHA}/release-manifest.json" ]]
+
+      - name: Checkout immutable evidence
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          path: evidence
+
+      - name: Checkout exact candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.candidate_sha }}
+          fetch-depth: 0
+          path: candidate
+
+      - name: Assert clean exact candidate and evidence trees
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+        run: |
+          test "$(git -C candidate rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          test -z "$(git -C candidate status --porcelain=v1 --untracked-files=all)"
+          test -z "$(git -C evidence status --porcelain=v1 --untracked-files=all)"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: candidate/packages/crm/package-lock.json
+
+      - name: Install candidate dependencies
+        working-directory: candidate/packages/crm
+        run: npm ci
+
+      - name: Dependency audit
+        working-directory: candidate/packages/crm
+        run: npm audit --audit-level=high
+
+      - name: Install pinned Gitleaks
+        shell: bash
+        env:
+          GITLEAKS_VERSION: 8.29.1
+          GITLEAKS_SHA256: e4eb209d04e20339d77122a3bdf9cd41351255cfb27ebcb75e85325e04f88924
+        run: |
+          archive="${RUNNER_TEMP}/gitleaks.tar.gz"
+          curl --fail --location --silent --show-error \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            --output "${archive}"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check
+          tar -xzf "${archive}" -C "${RUNNER_TEMP}" gitleaks
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+
+      - name: Secret scan exact candidate
+        shell: bash
+        run: |
+          snapshot="${RUNNER_TEMP}/candidate-source"
+          report="${RUNNER_TEMP}/gitleaks-report.json"
+          mkdir -p "${snapshot}"
+          git -C candidate archive HEAD | tar -x -C "${snapshot}"
+          set +e
+          gitleaks dir --no-banner --report-format json --report-path "${report}" "${snapshot}"
+          scan_status=$?
+          set -e
+          if [[ ${scan_status} -gt 1 ]]; then exit "${scan_status}"; fi
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types \
+            candidate/packages/crm/scripts/validate-gitleaks-report.ts \
+            --report "${report}" \
+            --snapshot-root "${snapshot}" \
+            --baseline candidate/packages/crm/scripts/gitleaks-baseline.json
+
+      - name: Lint exact candidate
+        working-directory: candidate/packages/crm
+        run: npm run lint
+
+      - name: Typecheck exact candidate
+        working-directory: candidate/packages/crm
+        run: npm run typecheck
+
+      - name: Full tests exact candidate
+        working-directory: candidate/packages/crm
+        run: npm test
+
+      - name: Preflight immutable evidence manifest
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types \
+            evidence/packages/crm/scripts/release-manifest.ts validate \
+            --repo evidence \
+            --manifest "${MANIFEST_PATH}" \
+            --expected-sha "${CANDIDATE_SHA}"
+
+      - name: Resolve candidate migration recovery base
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const { appendFileSync, readFileSync } = require('node:fs');
+          const manifest = JSON.parse(readFileSync(`evidence/${process.env.MANIFEST_PATH}`, 'utf8'));
+          const base = manifest?.rollback?.targetSha;
+          const targetDeploymentId = manifest?.rollback?.targetDeploymentId;
+          const knownGoodReference = manifest?.rollback?.knownGoodReceipt;
+          if (!/^[a-f0-9]{40}$/.test(base ?? '')) {
+            throw new Error('Manifest rollback.targetSha must be a full Git SHA for migration recovery rehearsal.');
+          }
+          execFileSync('git', ['-C', 'candidate', 'cat-file', '-e', `${base}^{commit}`]);
+          try {
+            execFileSync('git', ['-C', 'candidate', 'merge-base', '--is-ancestor', base, process.env.CANDIDATE_SHA]);
+            if (base === process.env.CANDIDATE_SHA) throw new Error('equal commits are not strict ancestors');
+          } catch {
+            throw new Error('Manifest rollback.targetSha must be a strict ancestor of the exact candidate; equal, descendant, and sibling commits are forbidden.');
+          }
+          const knownGood = JSON.parse(readFileSync(`evidence/${knownGoodReference.path}`, 'utf8'));
+          if (knownGood.kind !== 'known-good-deployment' || knownGood.result !== 'pass'
+            || knownGood.candidateSha !== base || knownGood.deploymentId !== targetDeploymentId) {
+            throw new Error('Migration recovery base must match the manifest declared known-good prior deployment evidence.');
+          }
+          appendFileSync(process.env.GITHUB_ENV, `MIGRATION_BASE_SHA=${base}\nMIGRATION_CANDIDATE_SHA=${process.env.CANDIDATE_SHA}\n`);
+          NODE
+
+      - name: Replay complete migration history and run database tests
+        working-directory: candidate/packages/crm
+        shell: bash
+        run: bash scripts/run-supabase-ci.sh
+
+      - name: Build exact candidate
+        working-directory: candidate/packages/crm
+        run: npm run build
+
+      - name: Validate immutable evidence manifest
+        shell: bash
+        env:
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+          MANIFEST_PATH: ${{ inputs.manifest_path }}
+        run: |
+          node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types \
+            evidence/packages/crm/scripts/release-manifest.ts validate \
+            --repo evidence \
+            --manifest "${MANIFEST_PATH}" \
+            --expected-sha "${CANDIDATE_SHA}"
+
+      - name: Assert checkouts remained clean
+        shell: bash
+        run: |
+          test -z "$(git -C candidate status --porcelain=v1 --untracked-files=all)"
+          test -z "$(git -C evidence status --porcelain=v1 --untracked-files=all)"

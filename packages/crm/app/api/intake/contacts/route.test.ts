@@ -8,7 +8,7 @@ const harness = vi.hoisted(() => {
   const incompleteRecords: Array<Record<string, unknown>> = [];
   const activities: Array<Record<string, unknown>> = [];
   const receipts = new Map<string, { idempotencyKey: string; requestHash: string; statusCode: number; response: unknown; createdAt: string }>();
-  const state = { failCreate: false };
+  const state = { failCreate: false, applyPlanCalls: 0 };
   const repository = {
     async list() { return [...contacts]; },
     async get(id: string) { return contacts.find((item) => item.id === id); },
@@ -56,15 +56,13 @@ const harness = vi.hoisted(() => {
     },
     async getReceipt(key: string) { return receipts.get(key); },
     async claimReceipt(receipt: { idempotencyKey: string; requestHash: string; statusCode: number; response: unknown; createdAt: string }) {
+      if (receipt.statusCode !== 102) throw new Error('pending status required');
       if (receipts.has(receipt.idempotencyKey)) return false;
       receipts.set(receipt.idempotencyKey, receipt);
       return true;
     },
     async completeReceipt(receipt: { idempotencyKey: string; requestHash: string; statusCode: number; response: unknown; createdAt: string }) {
       receipts.set(receipt.idempotencyKey, receipt);
-    },
-    async releaseReceipt(key: string, hash: string) {
-      if (receipts.get(key)?.requestHash === hash) receipts.delete(key);
     },
     async applyContactImportGroup(command: {
       groupIdempotencyKey: string; requestHash: string; occurredAt: string;
@@ -74,7 +72,18 @@ const harness = vi.hoisted(() => {
       const known = receipts.get(command.groupIdempotencyKey);
       if (known) {
         if (known.requestHash !== command.requestHash) throw new Error('group conflict');
-        return { ...(known.response as Record<string, unknown>), noOp: true };
+        const response = known.response as {
+          contactId: string;
+          action: 'create' | 'update' | 'unchanged';
+          notesAdded: boolean;
+        };
+        return {
+          ...response, noOp: true,
+          terminalReceipt: {
+            idempotencyKey: known.idempotencyKey, requestHash: known.requestHash,
+            statusCode: 200 as const, createdAt: known.createdAt,
+          },
+        };
       }
       const contactsBefore = structuredClone(contacts);
       const notesBefore = structuredClone(notes);
@@ -95,12 +104,102 @@ const harness = vi.hoisted(() => {
         const response = { contactId, action: command.plan.action, notesAdded, noOp: false };
         receipts.set(command.groupIdempotencyKey, { idempotencyKey: command.groupIdempotencyKey,
           requestHash: command.requestHash, statusCode: 200, response, createdAt: command.occurredAt });
-        return response;
+        return {
+          ...response,
+          terminalReceipt: {
+            idempotencyKey: command.groupIdempotencyKey, requestHash: command.requestHash,
+            statusCode: 200 as const, createdAt: command.occurredAt,
+          },
+        };
       } catch (error) {
         contacts.splice(0, contacts.length, ...contactsBefore);
         notes.splice(0, notes.length, ...notesBefore);
         links.splice(0, links.length, ...linksBefore);
         activities.splice(0, activities.length, ...activitiesBefore);
+        throw error;
+      }
+    },
+    async applyContactImportPlan(command: {
+      idempotencyKey: string; requestHash: string;
+      orderedPlan: Array<Record<string, unknown>>;
+    }) {
+      state.applyPlanCalls += 1;
+      const existing = receipts.get(command.idempotencyKey);
+      if (existing) {
+        if (existing.requestHash !== command.requestHash) throw new Error('aggregate conflict');
+        return { ...(existing.response as Record<string, unknown>), noOp: true };
+      }
+      const contactsBefore = structuredClone(contacts);
+      const notesBefore = structuredClone(notes);
+      const linksBefore = structuredClone(links);
+      const incompleteBefore = structuredClone(incompleteRecords);
+      const activitiesBefore = structuredClone(activities);
+      const receiptsBefore = structuredClone([...receipts.entries()]);
+      try {
+        const contactIds = new Map<number, string>();
+        const rowOutcomes: Array<Record<string, unknown>> = [];
+        let notesAdded = 0;
+        for (const row of command.orderedPlan) {
+          const rowNumber = Number(row.rowNumber);
+          if (row.kind === 'apply') {
+            const applied = await importGateway.applyContactImportGroup({
+              groupIdempotencyKey: String(row.groupIdempotencyKey),
+              requestHash: String(row.requestHash),
+              occurredAt: '2026-08-25T12:30:01.000Z',
+              plan: row.plan as Parameters<typeof importGateway.applyContactImportGroup>[0]['plan'],
+            });
+            contactIds.set(rowNumber, String(applied.contactId));
+            if (applied.notesAdded) notesAdded += 1;
+            rowOutcomes.push({
+              rowNumber,
+              outcome: applied.action === 'create' ? 'created' : applied.action === 'update' ? 'updated' : 'unchanged',
+              contactId: applied.contactId,
+              ...(row.errorCode ? { errorCode: row.errorCode } : {}),
+            });
+          } else if (row.kind === 'quarantine') {
+            const record = await incompleteRecordRepository.create(null, {
+              source: row.source,
+              ...(row.externalId ? { externalId: row.externalId } : {}),
+              candidate: row.candidate,
+              reasons: row.reasons,
+              intakeIdempotencyKey: row.intakeIdempotencyKey,
+            });
+            rowOutcomes.push({ rowNumber, outcome: 'quarantined', incompleteRecordId: record.id, errorCode: row.errorCode });
+          } else if (row.kind === 'reject') {
+            rowOutcomes.push({ rowNumber, outcome: 'rejected', errorCode: row.errorCode });
+          } else {
+            const contactId = contactIds.get(Number(row.targetRowNumber));
+            if (!contactId) throw new Error('alias target missing');
+            contactIds.set(rowNumber, contactId);
+            rowOutcomes.push({ rowNumber, outcome: 'unchanged', contactId, ...(row.errorCode ? { errorCode: row.errorCode } : {}) });
+          }
+        }
+        const count = (outcome: string) => rowOutcomes.filter((row) => row.outcome === outcome).length;
+        const response = {
+          state: 'recorded', runId: `run-${command.idempotencyKey}`, planHash: 'a'.repeat(64), noOp: false,
+          counts: {
+            total: rowOutcomes.length, created: count('created'), updated: count('updated'),
+            unchanged: count('unchanged'), rejected: count('rejected'), quarantined: count('quarantined'),
+            failed: 0, notesAdded,
+          },
+          rowOutcomes,
+        };
+        receipts.set(command.idempotencyKey, {
+          idempotencyKey: command.idempotencyKey,
+          requestHash: command.requestHash,
+          statusCode: 200,
+          response,
+          createdAt: '2026-08-25T12:30:01.000Z',
+        });
+        return response;
+      } catch (error) {
+        contacts.splice(0, contacts.length, ...contactsBefore);
+        notes.splice(0, notes.length, ...notesBefore);
+        links.splice(0, links.length, ...linksBefore);
+        incompleteRecords.splice(0, incompleteRecords.length, ...incompleteBefore);
+        activities.splice(0, activities.length, ...activitiesBefore);
+        receipts.clear();
+        for (const [key, receipt] of receiptsBefore) receipts.set(key, receipt);
         throw error;
       }
     },
@@ -152,6 +251,7 @@ const harness = vi.hoisted(() => {
       activities.length = 0;
       receipts.clear();
       state.failCreate = false;
+      state.applyPlanCalls = 0;
     },
   };
 });
@@ -214,16 +314,16 @@ describe('POST /api/intake/contacts', () => {
 
     const oversizedId = JSON.stringify({ source: 'website', contacts: [{ externalId: 'x'.repeat(256), firstName: 'Avery' }] });
     const oversizedResponse = await POST(intakeRequest(oversizedId, 'route:oversized-external'));
-    expect(oversizedResponse.status).toBe(422);
+    expect(oversizedResponse.status).toBe(207);
     await expect(oversizedResponse.json()).resolves.toMatchObject({
-      rejected: [{ rowNumber: 1, errors: ['External ID must be 255 characters or fewer.'] }],
+      rejected: 0,
       quarantined: 1,
     });
     expect(harness.incompleteRecords).toHaveLength(1);
     expect(harness.incompleteRecords[0]).not.toHaveProperty('externalId');
 
     const replay = await POST(intakeRequest(oversizedId, 'route:oversized-external'));
-    expect(replay.status).toBe(422);
+    expect(replay.status).toBe(207);
     expect(replay.headers.get('Idempotency-Replayed')).toBe('true');
     expect(harness.incompleteRecords).toHaveLength(1);
   });
@@ -232,41 +332,48 @@ describe('POST /api/intake/contacts', () => {
     const body = JSON.stringify({ source: 'website', contacts: [{ externalId: 'web-101', firstName: 'Avery', email: 'avery@example.com' }] });
     const first = await POST(intakeRequest(body, 'route:replay-101'));
     expect(first.status).toBe(200);
-    await expect(first.json()).resolves.toMatchObject({ ok: true, created: 1 });
+    const immutableResponse = await first.json();
+    expect(immutableResponse).toMatchObject({ ok: true, created: 1 });
+    harness.contacts[0] = { ...harness.contacts[0], pipelineStage: 'closed', leadType: 'hot' };
     const replay = await POST(intakeRequest(body, 'route:replay-101'));
     expect(replay.status).toBe(200);
     expect(replay.headers.get('Idempotency-Replayed')).toBe('true');
+    await expect(replay.json()).resolves.toEqual(immutableResponse);
     expect(harness.contacts).toHaveLength(1);
     expect(harness.activities.map((event) => event.type).sort()).toEqual([
       'contact-created',
       'contact-imported',
     ]);
+    expect(harness.state.applyPlanCalls).toBe(1);
 
     const conflictingBody = JSON.stringify({ source: 'website', contacts: [{ externalId: 'web-102', firstName: 'Morgan' }] });
     expect((await POST(intakeRequest(conflictingBody, 'route:replay-101'))).status).toBe(409);
   });
 
-  it('returns the in-progress receipt for a concurrent exact replay', async () => {
+  it('reports a concurrent exact replay without exposing the internal placeholder status', async () => {
     const body = JSON.stringify({ source: 'website', contacts: [{ externalId: 'web-201', firstName: 'River' }] });
     harness.receipts.set('route:processing-201', {
       idempotencyKey: 'route:processing-201',
       requestHash: requestHash(body),
-      statusCode: 202,
+      statusCode: 102,
       response: { ok: false, message: 'Intake request is processing.' },
       createdAt: '2026-08-10T00:00:00Z',
     });
     const response = await POST(intakeRequest(body, 'route:processing-201'));
-    expect(response.status).toBe(202);
-    expect(response.headers.get('Idempotency-Replayed')).toBe('true');
+    expect(response.status).toBe(409);
+    expect(response.headers.get('Idempotency-Replayed')).toBeNull();
   });
 
-  it('returns structured partial failure and completes its receipt on provider failure', async () => {
+  it('rolls back the complete intake and leaves no terminal receipt on an injected RPC failure', async () => {
     harness.state.failCreate = true;
     const body = JSON.stringify({ source: 'website', contacts: [{ externalId: 'web-fail-301', firstName: 'Fail' }] });
     const response = await POST(intakeRequest(body, 'route:provider-failure'));
-    expect(response.status).toBe(207);
-    await expect(response.json()).resolves.toMatchObject({ ok: false, created: 0, failed: 1 });
-    expect(harness.receipts.get('route:provider-failure')?.statusCode).toBe(207);
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({ ok: false, message: expect.stringContaining('failed safely') });
+    expect(harness.contacts).toHaveLength(0);
+    expect(harness.activities).toHaveLength(0);
+    expect(harness.receipts.has('route:provider-failure')).toBe(false);
+    expect(harness.state.applyPlanCalls).toBe(1);
   });
 
   it('rejects malformed JSON and oversized batches', async () => {

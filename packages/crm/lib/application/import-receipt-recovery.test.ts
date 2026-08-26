@@ -52,4 +52,22 @@ describe('import receipt recovery', () => {
       rowOutcomes: [{ rowNumber: 1, outcome: 'created' }],
     })).toThrow(/totals do not match/i);
   });
+
+  it('reconstructs qualification review separately from quarantined incomplete rows', () => {
+    const receipt = parseImportReceiptPreflight({
+      state: 'recorded', runId: 'run-review',
+      counts: {
+        total: 2, created: 1, updated: 0, unchanged: 0,
+        rejected: 0, quarantined: 1, failed: 0, notesAdded: 0,
+      },
+      rowOutcomes: [
+        { rowNumber: 1, outcome: 'created', contactId: 'contact-a', errorCode: 'qualification-review' },
+        { rowNumber: 2, outcome: 'quarantined', errorCode: 'validation-rejected' },
+      ],
+    });
+    if (receipt.state === 'ready') throw new Error('Expected a terminal receipt.');
+    expect(importResultFromReceipt(preview, receipt)).toMatchObject({
+      ok: false, qualificationReview: 1, incomplete: 1, rejected: 0, quarantined: 1,
+    });
+  });
 });

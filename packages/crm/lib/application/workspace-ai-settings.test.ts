@@ -42,7 +42,7 @@ describe('workspace AI settings', () => {
       now: new Date('2026-08-14T12:00:00.000Z'),
     });
     expect(status).toMatchObject({ configured: true, enabled: true, secretVersion: 1 });
-    expect(routeOmnixQuestionWithGemini).toHaveBeenCalledWith('Como está meu pipeline?', {
+    expect(routeOmnixQuestionWithGemini).toHaveBeenCalledWith('How is my pipeline?', {
       credential: { apiKey: rawKey, model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private' },
     });
     const rpcPayload = JSON.stringify(rpc.mock.calls[0]);
@@ -62,6 +62,25 @@ describe('workspace AI settings', () => {
     expect(routeOmnixQuestionWithGemini).not.toHaveBeenCalled();
   });
 
+  it('rejects support grants and forged owner roles before touching AI credentials', async () => {
+    const rpc = vi.fn();
+    await expect(validateAndSaveWorkspaceGeminiKey({
+      authenticated: { rpc } as never,
+      scope: {
+        ...liveScope,
+        authenticatedUserId: 'support-user',
+        membershipId: 'support-membership',
+        supportGrant: { active: true },
+      },
+      rawKey,
+      selectedModel: 'gemini-3.5-flash-lite',
+      enabled: true,
+      expectedSecretVersion: 0,
+    })).rejects.toThrow(/canonical workspace owner/i);
+    expect(routeOmnixQuestionWithGemini).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it('loads and decrypts an active workspace-bound credential only on the server', async () => {
     const envelope = encryptConnectorSecret(rawKey, {
       workspaceId: liveScope.workspaceId,
@@ -79,5 +98,16 @@ describe('workspace AI settings', () => {
     await expect(loadWorkspaceGeminiCredential(liveScope)).resolves.toEqual({
       apiKey: rawKey, model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
     });
+  });
+
+  it('does not load workspace AI credentials for support administrators', async () => {
+    await expect(loadWorkspaceGeminiCredential({
+      ...liveScope,
+      authenticatedUserId: 'support-user',
+      membershipId: 'support-membership',
+      role: 'assistant',
+      supportGrant: { active: true },
+    })).resolves.toBeUndefined();
+    expect(createClient).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { Contact, Note } from '@/lib/domain/contact';
 import type { ContactRepository } from '@/lib/data/repository';
 import { memoryImportGateway } from '@/lib/data/import-gateway';
@@ -6,7 +6,11 @@ import { createMemoryActivityRepository } from '@/lib/data/memory-activity-repos
 import { createMemoryIncompleteRecordRepository } from '@/lib/data/memory-incomplete-record-repository';
 import { createMemoryRichContactRepository } from '@/lib/data/memory-rich-contact-repository';
 import { SAMPLE_WORKSPACE_SCOPE } from '@/lib/domain/workspace';
-import { executeContactImport, previewContactImport } from './contact-import-service';
+import {
+  buildContactImportOrderedPlan,
+  executeContactImport,
+  previewContactImport,
+} from './contact-import-service';
 import { parseContactImport, parseJsonContactImport } from './contact-import';
 
 const NOW = new Date('2026-08-10T12:00:00.000Z');
@@ -86,6 +90,31 @@ describe('contact import service', () => {
     const result = await executeContactImport(state.repo, gateway, preview);
     expect(result).toMatchObject({ ok: true, updated: 1, created: 0 });
     expect(state.contacts[0]).toMatchObject({ firstName: 'Existing', city: 'Austin', tags: ['Client', 'VIP'], emailSubscribed: false });
+  });
+
+  it('creates missing-consent and DNC imports without inferring positive consent', async () => {
+    const state = repository();
+    const parsed = parseJsonContactImport({
+      source: 'website',
+      contacts: [
+        { externalId: 'missing-consent', firstName: 'Missing', email: 'missing@example.com' },
+        { externalId: 'dnc-consent', firstName: 'Suppressed', email: 'dnc@example.com', emailSubscribed: true, tags: 'DNC' },
+      ],
+    });
+    const gateway = memoryImportGateway({ repository: state.repo });
+    const preview = await previewContactImport(state.repo, gateway, parsed);
+    const result = await executeContactImport(state.repo, gateway, preview, NOW);
+
+    expect(result).toMatchObject({
+      ok: true, created: 2, qualificationReview: 1, incomplete: 0, quarantined: 0, failed: 0,
+    });
+    expect(state.contacts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ email: 'missing@example.com', emailSubscribed: false }),
+      expect.objectContaining({ email: 'dnc@example.com', emailSubscribed: false, pipelineStage: 'lost' }),
+    ]));
+    expect(result.rowOutcomes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ outcome: 'created', errorCode: 'qualification-review' }),
+    ]));
   });
 
   it('applies reviewed realtor organization fields to an existing matched contact', async () => {
@@ -542,7 +571,7 @@ describe('contact import service', () => {
     });
     const firstPreview = await previewContactImport(state.repo, gateway, parsed);
     const first = await executeContactImport(state.repo, gateway, firstPreview, NOW, context);
-    expect(first).toMatchObject({ created: 1, rejected: 2, quarantined: 1, failed: 0 });
+    expect(first).toMatchObject({ created: 1, incomplete: 2, rejected: 1, quarantined: 1, failed: 0 });
 
     const pending = await incompleteRecordRepository.list(SAMPLE_WORKSPACE_SCOPE, {
       status: 'pending',
@@ -553,7 +582,7 @@ describe('contact import service', () => {
 
     const secondPreview = await previewContactImport(state.repo, gateway, parsed);
     const second = await executeContactImport(state.repo, gateway, secondPreview, NOW, context);
-    expect(second).toMatchObject({ created: 0, rejected: 2, quarantined: 1, failed: 0 });
+    expect(second).toMatchObject({ created: 0, incomplete: 2, rejected: 1, quarantined: 1, failed: 0 });
     expect(await incompleteRecordRepository.list(SAMPLE_WORKSPACE_SCOPE, {
       status: 'pending',
       limit: 100,
@@ -762,5 +791,54 @@ describe('contact import service', () => {
     expect(state.contacts).toEqual([]);
     expect(state.notes).toEqual([]);
     expect(await activityRepository.listEvents(SAMPLE_WORKSPACE_SCOPE, { limit: 100 })).toEqual([]);
+  });
+
+  it('builds apply, alias, quarantine, and reject rows and preserves legacy summary parity', async () => {
+    const state = repository();
+    const base = memoryImportGateway({ repository: state.repo });
+    const parsed = parseJsonContactImport({
+      source: 'website',
+      contacts: [
+        { externalId: 'atomic-1', firstName: 'Avery', email: 'avery@example.com' },
+        { externalId: 'atomic-1', firstName: 'Avery', email: 'avery@example.com' },
+        { externalId: 'atomic-3', firstName: 'Invalid', email: 'not-an-email' },
+        {},
+      ],
+    });
+    const preview = await previewContactImport(state.repo, base, parsed);
+    const context = {
+      workspaceScope: SAMPLE_WORKSPACE_SCOPE,
+      incompleteRecordRepository: createMemoryIncompleteRecordRepository(),
+      activityRepository: createMemoryActivityRepository(),
+      idempotencyKeyBase: 'atomic-complete-plan',
+      atomic: {
+        requestHash: 'a'.repeat(64),
+        fileHash: 'b'.repeat(64),
+        correlationId: '59123000-0000-4000-8000-000000000001',
+        startedAt: '2026-08-10T11:59:59.000Z',
+      },
+    };
+    const orderedPlan = buildContactImportOrderedPlan(preview, NOW, context);
+    expect(orderedPlan.map((row) => row.kind)).toEqual(['apply', 'alias', 'quarantine', 'reject']);
+    const applyContactImportPlan = vi.fn(async () => ({
+      state: 'recorded' as const,
+      runId: 'run-atomic',
+      planHash: 'c'.repeat(64),
+      noOp: false,
+      counts: { total: 4, created: 1, updated: 0, unchanged: 1, rejected: 1, quarantined: 1, failed: 0 as const, notesAdded: 0 },
+      rowOutcomes: [
+        { rowNumber: 1, outcome: 'created' as const, contactId: 'contact-atomic' },
+        { rowNumber: 2, outcome: 'unchanged' as const, contactId: 'contact-atomic' },
+        { rowNumber: 3, outcome: 'quarantined' as const, incompleteRecordId: 'incomplete-atomic', errorCode: 'validation-rejected' },
+        { rowNumber: 4, outcome: 'rejected' as const, errorCode: 'validation-rejected' },
+      ],
+    }));
+    const result = await executeContactImport(state.repo, { ...base, applyContactImportPlan }, preview, NOW, context);
+    expect(applyContactImportPlan).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      ok: false, totalRows: 4, created: 1, unchanged: 0, merged: 1,
+      incomplete: 2, rejected: 1, quarantined: 1, failed: 0,
+    });
+    expect(state.contacts).toHaveLength(0);
   });
 });

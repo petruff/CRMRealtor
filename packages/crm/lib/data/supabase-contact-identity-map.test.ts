@@ -9,6 +9,21 @@ const scope: WorkspaceScope = {
 };
 
 describe('supabaseContactIdentityMap', () => {
+  it('reports whether bounded contact pages need canonical alias fallback', async () => {
+    const client = {
+      from: () => {
+        const query = {
+          select() { return query; }, eq() { return query; }, is() { return query; },
+          then(resolve: (value: unknown) => unknown) {
+            return Promise.resolve(resolve({ data: null, count: 2, error: null }));
+          },
+        };
+        return query;
+      },
+    } as unknown as SupabaseClient;
+    await expect(supabaseContactIdentityMap(client).hasActiveAliases?.(scope)).resolves.toBe(true);
+  });
+
   it('resolves a canonical group and one bounded page map', async () => {
     const calls: string[] = [];
     const client = {

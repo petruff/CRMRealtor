@@ -1,0 +1,15 @@
+{
+  "kind": "scheduler-plan-support",
+  "result": "pass",
+  "candidateSha": "0000000000000000000000000000000000000000",
+  "deploymentId": "deployment-id",
+  "observedAt": "2026-08-25T12:00:00.000Z",
+  "platform": "vercel",
+  "projectId": "prj_yRO5wtPmqAIMiQsLquShv0rXoeaP",
+  "teamId": "team_1NR9qkt0OKOKkYGuRciHrbMf",
+  "plan": "hobby",
+  "schedule": "0 6 * * *",
+  "supported": true,
+  "verifiedReadOnly": true,
+  "liveConnectorPromotionAllowed": false
+}

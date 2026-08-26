@@ -1,0 +1,19 @@
+{
+  "kind": "twilio-readiness",
+  "result": "pass",
+  "candidateSha": "0000000000000000000000000000000000000000",
+  "deploymentId": "deployment-id",
+  "provider": "twilio",
+  "actorClassification": "canonical-owner",
+  "observedAt": "2026-08-26T12:00:00.000Z",
+  "facts": {
+    "accountStatus": "unknown",
+    "messagingService": "unknown",
+    "a2pRegistration": "unknown",
+    "senderNumber": "unknown",
+    "inboundWebhook": "unknown",
+    "statusCallback": "unknown",
+    "consentStopHelpQuietHours": "unknown",
+    "realNumberUat": "not-run"
+  }
+}

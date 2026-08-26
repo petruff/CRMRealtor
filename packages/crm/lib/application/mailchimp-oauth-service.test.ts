@@ -111,5 +111,17 @@ describe('Mailchimp OAuth service', () => {
       repository, scope, actorUserId: 'user-b', sessionSecret: 'session',
       safeReturnPath: '/connections', configuration, resolver,
     })).rejects.toThrow(/actor/i);
+    await expect(beginMailchimpOAuth({
+      repository,
+      scope: {
+        ...scope,
+        authenticatedUserId: 'support-user',
+        membershipId: 'support-membership',
+        supportGrant: { active: true },
+      },
+      actorUserId: 'support-user', sessionSecret: 'session',
+      safeReturnPath: '/connections', configuration, resolver,
+    })).rejects.toThrow(/workspace owner/i);
+    expect(repository.begin).not.toHaveBeenCalled();
   });
 });

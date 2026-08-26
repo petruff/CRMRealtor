@@ -14,7 +14,13 @@ import {
 import type { Contact } from '@/lib/domain/contact';
 import type { ActivityRepository } from '@/lib/data/activity-repository';
 import type { IncompleteRecordRepository } from '@/lib/data/incomplete-record-repository';
-import type { ImportGateway } from '@/lib/data/import-gateway';
+import {
+  MAX_CONTACT_IMPORT_PLAN_ROWS,
+  type ContactImportGroupPlan,
+  type ContactImportOrderedPlanRow,
+  type ContactImportPlanResult,
+  type ImportGateway,
+} from '@/lib/data/import-gateway';
 import type { ContactRepository } from '@/lib/data/repository';
 import type { RichContactRepository } from '@/lib/data/rich-contact-repository';
 import { SAMPLE_WORKSPACE_SCOPE, type WorkspaceScope } from '@/lib/domain/workspace';
@@ -71,6 +77,10 @@ export interface ContactImportResult {
   archivedMatches: number;
   ambiguousIdentities: number;
   notesAdded: number;
+  /** Imported contacts whose CRM qualification still requires human review. */
+  qualificationReview: number;
+  /** Structurally incomplete rows, whether or not they were safe to quarantine. */
+  incomplete: number;
   rejected: number;
   quarantined: number;
   protected: number;
@@ -88,6 +98,15 @@ export interface ContactImportWorkQueueContext {
   readonly richContactRepository?: RichContactRepository;
   /** Stable request/file identity. It is hashed before becoming a persistence key. */
   readonly idempotencyKeyBase: string;
+  /** Present only when one live RPC owns the complete file/intake transaction. */
+  readonly atomic?: {
+    readonly requestHash: string;
+    readonly fileHash: string;
+    readonly correlationId: string;
+    readonly startedAt: string;
+    readonly mappingProfileId?: string;
+    readonly mappingVersion?: number;
+  };
 }
 
 function workQueueKey(
@@ -160,7 +179,7 @@ function contactForm(candidate: ContactImportCandidate, provider: string): FormD
   };
   for (const [key, value] of Object.entries(values)) if (value) form.set(key, value);
   // Vendor opt-in is preserved as evidence, but cannot grant Omnix messaging authority.
-  if (provider !== 'first-class-real-estate' && candidate.emailSubscribed !== false) {
+  if (provider !== 'first-class-real-estate' && candidate.emailSubscribed === true) {
     form.set('emailSubscribed', 'on');
   }
   return form;
@@ -266,6 +285,165 @@ function mergeCandidate(target: ContactImportCandidate, incoming: ContactImportC
 }
 
 const FIRST_CLASS_SOURCE_SCHEMA_VERSION = 'first-class-real-estate.contact-profile.v1';
+
+function planErrorCode(row: ContactImportPlanRow): string | undefined {
+  const dispositions = [
+    ...(row.classification.needsReview ? ['qualification-review'] : []),
+    ...((row.protectedFields?.length ?? 0) > 0 ? ['manual-pipeline-stage-protected'] : []),
+  ];
+  return dispositions.length ? dispositions.join(',') : undefined;
+}
+
+function contactImportGroupPlan(
+  row: ContactImportPlanRow,
+  preview: ContactImportPreview,
+  now: Date,
+  activityIdempotencyKey: string,
+  overrides?: { readonly action: 'create' | 'update' | 'unchanged'; readonly contactId?: string },
+): ContactImportGroupPlan {
+  if (!overrides && !['create', 'update', 'unchanged'].includes(row.action)) {
+    throw new Error('Only an applicable import row can become a mutation group.');
+  }
+  const action = overrides?.action ?? row.action as 'create' | 'update' | 'unchanged';
+  const contactId = overrides?.contactId ?? row.contactId;
+  const contact = action === 'create'
+    ? createContactInput(contactForm(row.candidate, preview.provider), now)
+    : action === 'update' ? row.patch ?? {} : {};
+  return {
+    action,
+    ...(contactId ? { contactId } : {}),
+    contact,
+    points: [],
+    householdIds: [],
+    assigneeMembershipIds: [],
+    customValues: [],
+    ...((row.candidate.sourceFacts?.length ?? 0) > 0 ? { sourceProfile: {
+      provider: preview.provider,
+      schemaVersion: FIRST_CLASS_SOURCE_SCHEMA_VERSION,
+      facts: row.candidate.sourceFacts ?? [],
+    } } : {}),
+    ...(row.candidate.externalId ? { externalLink: {
+      provider: preview.provider,
+      externalId: row.candidate.externalId,
+    } } : {}),
+    ...(row.candidate.note?.trim() ? { note: row.candidate.note.trim() } : {}),
+    activityIdempotencyKey,
+  };
+}
+
+export function buildContactImportOrderedPlan(
+  preview: ContactImportPreview,
+  now: Date,
+  workQueue: ContactImportWorkQueueContext,
+): readonly ContactImportOrderedPlanRow[] {
+  const importDigest = createHash('sha256').update(workQueue.idempotencyKeyBase).digest('hex');
+  const rows: ContactImportOrderedPlanRow[] = [];
+  for (const rejected of preview.rejected) {
+    if (rejected.incomplete) {
+      rows.push({
+        rowNumber: rejected.rowNumber,
+        kind: 'quarantine',
+        source: preview.provider,
+        ...(rejected.incomplete.externalId ? { externalId: rejected.incomplete.externalId } : {}),
+        candidate: { ...rejected.incomplete.candidate } as Record<string, unknown>,
+        reasons: rejected.incomplete.reasons.map((reason) => ({ ...reason })),
+        intakeIdempotencyKey: workQueueKey(workQueue, 'incomplete', rejected.rowNumber),
+        errorCode: 'validation-rejected',
+      });
+    } else {
+      rows.push({ rowNumber: rejected.rowNumber, kind: 'reject', errorCode: 'validation-rejected' });
+    }
+  }
+  for (const row of preview.rows) {
+    if (row.action === 'archived-match' || row.action === 'ambiguous-identity') {
+      rows.push({ rowNumber: row.rowNumber, kind: 'reject', errorCode: row.action });
+      continue;
+    }
+    if (row.action === 'merge') {
+      if (!row.targetRow) throw new Error('Merged import row is missing its earlier target.');
+      rows.push({
+        rowNumber: row.rowNumber,
+        kind: 'alias',
+        targetRowNumber: row.targetRow,
+        ...(planErrorCode(row) ? { errorCode: planErrorCode(row) } : {}),
+      });
+      continue;
+    }
+    const plan = contactImportGroupPlan(
+      row,
+      preview,
+      now,
+      workQueueKey(workQueue, 'imported', row.rowNumber),
+    );
+    const requestHash = createHash('sha256').update(JSON.stringify({
+      provider: preview.provider,
+      filename: preview.filename,
+      rowNumber: row.rowNumber,
+      plan,
+    })).digest('hex');
+    rows.push({
+      rowNumber: row.rowNumber,
+      kind: 'apply',
+      groupIdempotencyKey: `import-group:${importDigest}:${row.rowNumber}:${requestHash.slice(0, 16)}`,
+      requestHash,
+      plan,
+      ...(planErrorCode(row) ? { errorCode: planErrorCode(row) } : {}),
+    });
+  }
+  rows.sort((left, right) => left.rowNumber - right.rowNumber);
+  if (rows.length !== preview.totalRows || rows.length > MAX_CONTACT_IMPORT_PLAN_ROWS
+    || rows.some((row, index) => index > 0 && row.rowNumber <= rows[index - 1]!.rowNumber)) {
+    throw new Error('Complete contact import plan is incomplete, duplicated, or exceeds its bound.');
+  }
+  return rows;
+}
+
+export function contactImportResultFromPlan(
+  preview: ContactImportPreview,
+  receipt: ContactImportPlanResult,
+  orderedPlan?: readonly ContactImportOrderedPlanRow[],
+): ContactImportResult {
+  const aliasCount = orderedPlan?.filter((row) => row.kind === 'alias').length ?? 0;
+  const errors = [
+    ...preview.rejected.map((row) => ({ rowNumber: row.rowNumber, message: row.errors.join(' ') })),
+    ...preview.rows.flatMap((row) => row.action === 'archived-match' || row.action === 'ambiguous-identity'
+      ? [{
+          rowNumber: row.rowNumber,
+          message: row.action === 'archived-match'
+            ? 'An archived contact matches this row. Restore the same contact and rerun the import.'
+            : 'Identity signals match more than one contact. Resolve the ambiguity before importing.',
+        }]
+      : []),
+  ];
+  return {
+    ok: receipt.counts.rejected === 0 && receipt.counts.quarantined === 0,
+    provider: preview.provider,
+    totalRows: receipt.counts.total,
+    created: receipt.counts.created,
+    updated: receipt.counts.updated,
+    unchanged: receipt.counts.unchanged - aliasCount,
+    merged: orderedPlan ? aliasCount : preview.counts.merge,
+    archivedMatches: preview.counts['archived-match'],
+    ambiguousIdentities: preview.counts['ambiguous-identity'],
+    notesAdded: receipt.counts.notesAdded,
+    qualificationReview: receipt.rowOutcomes.filter((row) => (
+      row.errorCode?.split(',').includes('qualification-review')
+    )).length,
+    incomplete: receipt.counts.rejected + receipt.counts.quarantined,
+    rejected: receipt.counts.rejected,
+    quarantined: receipt.counts.quarantined,
+    protected: preview.counts.protected,
+    failed: 0,
+    errors,
+    rowOutcomes: receipt.rowOutcomes.map((row) => ({
+      rowNumber: row.rowNumber,
+      outcome: row.outcome,
+      ...(row.contactId ? { contactId: row.contactId } : {}),
+      ...(row.errorCode ? { errorCode: row.errorCode } : {}),
+    })),
+    receiptState: 'recorded',
+  };
+}
 
 export async function previewContactImport(
   repository: ContactRepository,
@@ -552,6 +730,27 @@ export async function executeContactImport(
   workQueue?: ContactImportWorkQueueContext,
 ): Promise<ContactImportResult> {
   void repository;
+  if (workQueue?.atomic && !gateway.applyContactImportPlan) {
+    throw new Error('Atomic contact import plan capability is unavailable. No contacts were changed.');
+  }
+  if (gateway.applyContactImportPlan && workQueue?.atomic) {
+    const orderedPlan = buildContactImportOrderedPlan(preview, now, workQueue);
+    const receipt = await gateway.applyContactImportPlan({
+      scope: workQueue.workspaceScope,
+      idempotencyKey: workQueue.idempotencyKeyBase,
+      requestHash: workQueue.atomic.requestHash,
+      source: preview.provider,
+      format: preview.format,
+      fileHash: workQueue.atomic.fileHash,
+      orderedPlan,
+      ...(workQueue.atomic.mappingProfileId ? { mappingProfileId: workQueue.atomic.mappingProfileId } : {}),
+      ...(workQueue.atomic.mappingVersion ? { mappingVersion: workQueue.atomic.mappingVersion } : {}),
+      startedAt: workQueue.atomic.startedAt,
+      completedAt: now.toISOString(),
+      correlationId: workQueue.atomic.correlationId,
+    });
+    return contactImportResultFromPlan(preview, receipt, orderedPlan);
+  }
   const quarantined = workQueue
     ? await quarantineContactImportRejections(workQueue, {
       source: preview.provider,
@@ -569,7 +768,9 @@ export async function executeContactImport(
     archivedMatches: preview.counts['archived-match'],
     ambiguousIdentities: preview.counts['ambiguous-identity'],
     notesAdded: 0,
-    rejected: preview.rejected.length,
+    qualificationReview: 0,
+    incomplete: preview.rejected.length,
+    rejected: preview.rejected.length - quarantined,
     quarantined,
     protected: preview.counts.protected,
     failed: 0,
@@ -611,31 +812,13 @@ export async function executeContactImport(
         if (!contactId) throw new Error('Matched contact is missing.');
       }
       const action = row.action === 'merge' ? 'unchanged' : row.action;
-      const contact = action === 'create'
-        ? createContactInput(contactForm(row.candidate, preview.provider), now)
-        : action === 'update' ? row.patch ?? {} : {};
       const activityIdempotencyKey = workQueue
         ? workQueueKey(workQueue, 'imported', row.rowNumber)
         : `import:${importDigest}:imported:${row.rowNumber}`;
-      const plan = {
+      const plan = contactImportGroupPlan(row, preview, now, activityIdempotencyKey, {
         action,
         ...(contactId ? { contactId } : {}),
-        contact,
-        points: [],
-        householdIds: [],
-        assigneeMembershipIds: [],
-        customValues: [],
-        ...((row.candidate.sourceFacts?.length ?? 0) > 0 ? { sourceProfile: {
-          provider: preview.provider,
-          schemaVersion: FIRST_CLASS_SOURCE_SCHEMA_VERSION,
-          facts: row.candidate.sourceFacts ?? [],
-        } } : {}),
-        ...(row.candidate.externalId ? { externalLink: {
-          provider: preview.provider, externalId: row.candidate.externalId,
-        } } : {}),
-        ...(row.candidate.note?.trim() ? { note: row.candidate.note.trim() } : {}),
-        activityIdempotencyKey,
-      } as const;
+      });
       const requestHash = createHash('sha256').update(JSON.stringify({
         provider: preview.provider,
         filename: preview.filename,
@@ -660,15 +843,20 @@ export async function executeContactImport(
         if (applied.notesAdded) result.notesAdded += 1;
       } else if (row.action === 'merge') result.merged += 1;
       else result.unchanged += 1;
+      if (row.action !== 'merge' && row.classification.needsReview) {
+        result.qualificationReview += 1;
+      }
+      const dispositions = [
+        ...(row.classification.needsReview ? ['qualification-review'] : []),
+        ...((row.protectedFields?.length ?? 0) > 0 ? ['manual-pipeline-stage-protected'] : []),
+      ];
       result.rowOutcomes.push({
         rowNumber: row.rowNumber,
         outcome: row.action === 'create' && !applied.noOp
           ? 'created'
           : row.action === 'update' && !applied.noOp ? 'updated' : 'unchanged',
         contactId,
-        ...((row.protectedFields?.length ?? 0) > 0
-          ? { errorCode: 'manual-pipeline-stage-protected' }
-          : {}),
+        ...(dispositions.length ? { errorCode: dispositions.join(',') } : {}),
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Import failed for this row.';

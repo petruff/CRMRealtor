@@ -20,6 +20,23 @@ function encrypted(value: string, type: string, version: number) {
 }
 
 describe('Google provider probe', () => {
+  it('rejects support authority before reading provider secrets', async () => {
+    const repository = { read: vi.fn() } as unknown as GoogleProbeRepository;
+    await expect(probeLiveGoogleConnection({
+      repository,
+      scope: {
+        ...scope,
+        authenticatedUserId: 'support-user',
+        membershipId: 'support-membership',
+        role: 'assistant',
+        supportGrant: { active: true },
+      },
+      connectionId,
+      correlationId: 'correlation-support',
+    })).rejects.toThrow(/workspace owner/i);
+    expect(repository.read).not.toHaveBeenCalled();
+  });
+
   it('calls OIDC and Gmail profile, verifies the bound identity, and persists only hashes', async () => {
     const record = vi.fn(async () => ({ noOp: false }));
     const repository = {

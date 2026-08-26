@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type PointerEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type PointerEvent as ReactPointerEvent } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, ChevronDown, CircleDot, Clock3, GripVertical, History, Search } from 'lucide-react';
 import { LeadBadge } from '@/components/ui';
@@ -18,7 +18,17 @@ import type { PipelineContactEvidence, PipelineEvidenceResult } from '@/lib/appl
 const STAGES = Object.keys(PIPELINE_LABEL) as PipelineStage[];
 const INITIAL_VISIBLE_CARDS = 8;
 const CARD_BATCH_SIZE = 12;
+const MOUSE_DRAG_THRESHOLD_PX = 8;
 type LeadFilter = 'all' | LeadType;
+
+interface PointerGesture {
+  readonly contactId: string;
+  readonly pointerId: number;
+  readonly startX: number;
+  readonly startY: number;
+  readonly target: HTMLElement;
+  active: boolean;
+}
 
 const STAGE_GUIDANCE: Record<PipelineStage, string> = {
   new: 'New relationships to qualify',
@@ -99,18 +109,25 @@ export function PipelineBoard({ initialContacts, evidence }: { initialContacts: 
   const [visibleCounts, setVisibleCounts] = useState(initialVisibleCounts);
   const [draggingId, setDraggingId] = useState<string>();
   const [overStage, setOverStage] = useState<PipelineStage>();
-  const pointerContactId = useRef<string | undefined>(undefined);
+  const pointerGesture = useRef<PointerGesture | undefined>(undefined);
   const [pending, startTransition] = useTransition();
 
-  const filteredContacts = useMemo(() => {
-    const query = normalized(search);
+  const filterContacts = useCallback((nextSearch: string, nextLeadFilter: LeadFilter) => {
+    const query = normalized(nextSearch);
     return contacts.filter((contact) => {
-      if (leadFilter !== 'all' && contact.leadType !== leadFilter) return false;
+      if (nextLeadFilter !== 'all' && contact.leadType !== nextLeadFilter) return false;
       if (!query) return true;
       return [displayName(contact), contact.email, contact.phone, contact.intent, contact.source]
         .filter(Boolean).some((value) => normalized(String(value)).includes(query));
     });
-  }, [contacts, leadFilter, search]);
+  }, [contacts]);
+
+  const filteredContacts = useMemo(() => filterContacts(search, leadFilter), [filterContacts, leadFilter, search]);
+
+  const announceFilterResults = useCallback((nextSearch: string, nextLeadFilter: LeadFilter) => {
+    const count = filterContacts(nextSearch, nextLeadFilter).length;
+    setMessage(`${count} of ${contacts.length} relationships shown.`);
+  }, [contacts.length, filterContacts]);
 
   const columns = useMemo(() => STAGES.map((stage) => {
     const matches = filteredContacts.filter((contact) => contact.pipelineStage === stage);
@@ -155,48 +172,75 @@ export function PipelineBoard({ initialContacts, evidence }: { initialContacts: 
     return STAGES.includes(stage as PipelineStage) ? stage as PipelineStage : undefined;
   }, []);
 
+  const clearPointerGesture = useCallback((gesture: PointerGesture) => {
+    if (pointerGesture.current === gesture) pointerGesture.current = undefined;
+  }, []);
+
+  const finishPointerGesture = useCallback((pointerId: number, clientX: number, clientY: number) => {
+    const gesture = pointerGesture.current;
+    if (!gesture || gesture.pointerId !== pointerId) return;
+    clearPointerGesture(gesture);
+    if (!gesture.active) return;
+    const destination = stageFromPoint(clientX, clientY);
+    setDraggingId(undefined);
+    setOverStage(undefined);
+    if (gesture.target.hasPointerCapture(pointerId)) gesture.target.releasePointerCapture(pointerId);
+    if (destination) move(gesture.contactId, destination);
+    else setMessage('Card stayed in place. Drop it inside a pipeline stage.');
+  }, [clearPointerGesture, move, stageFromPoint]);
+
+  const cancelPointerGesture = useCallback((pointerId: number) => {
+    const gesture = pointerGesture.current;
+    if (!gesture || gesture.pointerId !== pointerId) return;
+    clearPointerGesture(gesture);
+    setDraggingId(undefined);
+    setOverStage(undefined);
+    if (gesture.active) setMessage('Card stayed in place.');
+  }, [clearPointerGesture]);
+
   useEffect(() => {
-    if (!draggingId) return;
-    const updateDestination = (event: globalThis.PointerEvent | MouseEvent) => setOverStage(stageFromPoint(event.clientX, event.clientY));
-    const finish = (event: globalThis.PointerEvent | MouseEvent) => {
-      const contactId = pointerContactId.current;
-      if (!contactId) return;
-      const destination = stageFromPoint(event.clientX, event.clientY);
-      pointerContactId.current = undefined;
-      setDraggingId(undefined);
-      setOverStage(undefined);
-      if (destination) move(contactId, destination);
-      else setMessage('Card stayed in place. Drop it inside a pipeline stage.');
-    };
-    const cancel = () => {
-      if (!pointerContactId.current) return;
-      pointerContactId.current = undefined;
-      setDraggingId(undefined);
-      setOverStage(undefined);
-      setMessage('Card stayed in place.');
-    };
-    window.addEventListener('pointermove', updateDestination);
-    window.addEventListener('mousemove', updateDestination);
+    const finish = (event: globalThis.PointerEvent) => finishPointerGesture(event.pointerId, event.clientX, event.clientY);
+    const cancel = (event: globalThis.PointerEvent) => cancelPointerGesture(event.pointerId);
     window.addEventListener('pointerup', finish, true);
-    window.addEventListener('mouseup', finish, true);
     window.addEventListener('pointercancel', cancel, true);
     return () => {
-      window.removeEventListener('pointermove', updateDestination);
-      window.removeEventListener('mousemove', updateDestination);
       window.removeEventListener('pointerup', finish, true);
-      window.removeEventListener('mouseup', finish, true);
       window.removeEventListener('pointercancel', cancel, true);
+      const gesture = pointerGesture.current;
+      if (gesture) clearPointerGesture(gesture);
     };
-  }, [draggingId, move, stageFromPoint]);
+  }, [cancelPointerGesture, clearPointerGesture, finishPointerGesture]);
 
-  const startPointerDrag = (event: PointerEvent<HTMLButtonElement>, contactId: string) => {
-    if (event.button !== 0 || pending) return;
-    pointerContactId.current = contactId;
-    setDraggingId(contactId);
-    const contact = contacts.find((item) => item.id === contactId);
-    if (contact) setMessage(`Dragging ${displayName(contact)} — drop on another stage.`);
-    event.preventDefault();
+  const startPointerDrag = (event: ReactPointerEvent<HTMLElement>, contactId: string) => {
+    if (event.pointerType === 'touch' || event.button !== 0 || pending) return;
+    const gesture: PointerGesture = {
+      contactId,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      target: event.currentTarget,
+      active: false,
+    };
+    pointerGesture.current = gesture;
   };
+
+  const movePointerDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    const gesture = pointerGesture.current;
+    if (!gesture || gesture.pointerId !== event.pointerId) return;
+    const distance = Math.hypot(event.clientX - gesture.startX, event.clientY - gesture.startY);
+    if (!gesture.active && distance >= MOUSE_DRAG_THRESHOLD_PX) {
+      gesture.active = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+      setDraggingId(gesture.contactId);
+      const contact = contacts.find((item) => item.id === gesture.contactId);
+      if (contact) setMessage(`Dragging ${displayName(contact)} — drop on another stage.`);
+    }
+    if (gesture.active) {
+      event.preventDefault();
+      setOverStage(stageFromPoint(event.clientX, event.clientY));
+    }
+  };
+
   const filters: readonly { value: LeadFilter; label: string }[] = [
     { value: 'all', label: 'All leads' },
     ...(['hot', 'warm', 'nurture'] as const).map((value) => ({ value, label: LEAD_TYPE_LABEL[value] })),
@@ -212,15 +256,23 @@ export function PipelineBoard({ initialContacts, evidence }: { initialContacts: 
         </div>
         <label className="pipeline-search">
           <Search className="size-4" aria-hidden /><span className="sr-only">Search pipeline</span>
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email or phone" />
+          <input value={search} onChange={(event) => {
+            const nextSearch = event.target.value;
+            setSearch(nextSearch);
+            announceFilterResults(nextSearch, leadFilter);
+          }} placeholder="Search name, email or phone" />
         </label>
       </div>
 
+      <p className="pipeline-live-status" role="status" aria-live="polite" aria-atomic="true">{message}</p>
+
       <div className="pipeline-filter-row" aria-label="Filter pipeline by lead temperature">
         {filters.map((filter) => (
-          <button key={filter.value} type="button" aria-pressed={leadFilter === filter.value} onClick={() => setLeadFilter(filter.value)}>{filter.label}</button>
+          <button key={filter.value} type="button" aria-pressed={leadFilter === filter.value} onClick={() => {
+            setLeadFilter(filter.value);
+            announceFilterResults(search, filter.value);
+          }}>{filter.label}</button>
         ))}
-        <p aria-live="polite">{message}</p>
       </div>
 
       <ol className="pipeline-stage-rail" aria-label="Pipeline stage totals">
@@ -263,11 +315,13 @@ export function PipelineBoard({ initialContacts, evidence }: { initialContacts: 
                       <li key={contact.id}>
                         <article className="pipeline-contact-card" data-dragging={draggingId === contact.id || undefined}>
                           <div className="pipeline-card-heading">
-                            <button
-                              type="button" disabled={pending} className="pipeline-drag-handle"
-                              aria-label={`Drag ${displayName(contact)} to another stage`} title="Drag to another stage"
+                            <span
+                              className="pipeline-drag-handle" aria-hidden="true" title="Drag to another stage"
                               onPointerDown={(event) => startPointerDrag(event, contact.id)}
-                            ><GripVertical className="size-4" aria-hidden /></button>
+                              onPointerMove={movePointerDrag}
+                              onPointerUp={(event) => finishPointerGesture(event.pointerId, event.clientX, event.clientY)}
+                              onPointerCancel={(event) => cancelPointerGesture(event.pointerId)}
+                            ><GripVertical className="size-4" aria-hidden /></span>
                             <div className="min-w-0 flex-1">
                               <Link href={`/contacts/${encodeURIComponent(contact.id)}`} className="pipeline-card-name">{displayName(contact)}</Link>
                               <p>{contact.intent === 'unknown' ? 'Intent not set' : contact.intent.replace('-', ' ')}</p>

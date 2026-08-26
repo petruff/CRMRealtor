@@ -2260,6 +2260,7 @@
     box-shadow: 0 1px 2px rgb(24 29 38 / 0.035);
     animation: pipeline-card-arrive 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
     transition: border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, transform 160ms ease;
+    touch-action: pan-x pan-y;
   }
 
   .pipeline-contact-card:hover {
@@ -2289,7 +2290,17 @@
     border-radius: 0.4rem;
     color: var(--sk-subtle-text-color);
     cursor: grab;
-    touch-action: none;
+    touch-action: pan-x pan-y;
+  }
+
+  .pipeline-live-status {
+    min-height: 2.5rem;
+    border-top: 1px solid var(--sk-border-color);
+    background: var(--sk-card-background);
+    color: var(--sk-muted-text-color);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 0.7rem 1rem;
   }
 
   .pipeline-drag-handle:hover {
@@ -2298,6 +2309,10 @@
   }
 
   .pipeline-drag-handle:active { cursor: grabbing; }
+
+  @media (pointer: coarse) {
+    .pipeline-drag-handle { display: none; }
+  }
 
   .pipeline-card-name {
     display: block;
@@ -2442,7 +2457,6 @@
 
   @media (max-width: 47.99rem) {
     .pipeline-workspace { border-inline: 0; border-radius: 0; margin-inline: -1rem; }
-    .pipeline-filter-row > p { display: none; }
     .pipeline-stage-rail { padding-inline: 1rem; }
     .pipeline-board-grid { grid-auto-columns: minmax(17.5rem, calc(100vw - 3rem)); scroll-snap-type: x mandatory; }
     .pipeline-column-list { max-height: 58vh; }

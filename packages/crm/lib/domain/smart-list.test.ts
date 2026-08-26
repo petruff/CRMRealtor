@@ -6,6 +6,7 @@ import {
   parseSmartListDefinition,
   parseSmartListName,
   restoreSmartList,
+  SMART_LIST_EVALUATION_INPUT_MAX,
   SMART_LIST_SCHEMA_VERSION,
   type SmartList,
 } from './smart-list';
@@ -69,16 +70,25 @@ describe('Smart List domain', () => {
     expect(result.map((item) => item.id)).toEqual(['1']);
   });
 
-  it('orders deterministically Hot, Warm, Nurture and caps results at 500', () => {
+  it('orders every result beyond 500 deterministically without truncation', () => {
     const contacts = Array.from({ length: 510 }, (_, index) => contact(
       String(index + 1),
       index % 3 === 0 ? 'nurture' : index % 3 === 1 ? 'warm' : 'hot',
     ));
     const result = applySmartListDefinition(contacts.reverse(), definition());
-    expect(result).toHaveLength(500);
+    expect(result).toHaveLength(510);
     expect(result.slice(0, 3).every((item) => item.leadType === 'hot')).toBe(true);
     expect(applySmartListDefinition([...contacts].reverse(), definition()).map((item) => item.id))
       .toEqual(result.map((item) => item.id));
+  });
+
+  it('fails closed when an exhaustive evaluation exceeds its explicit memory bound', () => {
+    const contacts = Array.from(
+      { length: SMART_LIST_EVALUATION_INPUT_MAX + 1 },
+      (_, index) => contact(String(index + 1), 'warm'),
+    );
+    expect(() => applySmartListDefinition(contacts, definition()))
+      .toThrow(/at most 10,000 contacts.*bounded pagination/i);
   });
 
   it('supports explicit name sorting with a stable ID tie-breaker', () => {

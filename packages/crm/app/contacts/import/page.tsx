@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: 'Import contacts' };
 export const maxDuration = 60;
 
 type LatestImport = {
+  id: string;
   source: string;
   format: string;
   total_rows: number;
@@ -22,6 +23,7 @@ type LatestImport = {
   rejected_count: number;
   quarantined_count: number;
   failed_count: number;
+  qualification_review_count: number;
   completed_at: string;
 };
 
@@ -32,7 +34,7 @@ async function getLatestImport(): Promise<LatestImport | null> {
     const client = await createSupabaseServerClient();
     const { data, error } = await client
       .from('data_import_runs')
-      .select('source,format,total_rows,created_count,updated_count,unchanged_count,rejected_count,quarantined_count,failed_count,completed_at')
+      .select('id,source,format,total_rows,created_count,updated_count,unchanged_count,rejected_count,quarantined_count,failed_count,completed_at')
       .eq('workspace_id', workspaceScope.workspaceId)
       .order('completed_at', { ascending: false })
       .limit(1)
@@ -41,7 +43,20 @@ async function getLatestImport(): Promise<LatestImport | null> {
       console.error('[contact-import-summary] read-failed', error.code ?? 'database-error');
       return null;
     }
-    return data as LatestImport | null;
+    if (!data) return null;
+    const { count: qualificationReviewCount, error: reviewError } = await client
+      .from('data_import_row_outcomes')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceScope.workspaceId)
+      .eq('import_run_id', data.id)
+      .like('error_code', '%qualification-review%');
+    if (reviewError) {
+      console.error('[contact-import-summary] qualification-read-failed', reviewError.code ?? 'database-error');
+    }
+    return {
+      ...data,
+      qualification_review_count: reviewError ? 0 : qualificationReviewCount ?? 0,
+    } as LatestImport;
   } catch (error) {
     unstable_rethrow(error);
     console.error('[contact-import-summary] unavailable', error instanceof Error ? error.name : 'UnknownError');
@@ -82,14 +97,27 @@ export default async function ImportContactsPage() {
                   <span><strong className="text-ink">{latestImport.created_count}</strong> added</span>
                   <span><strong className="text-ink">{latestImport.updated_count}</strong> enriched</span>
                   <span><strong className="text-ink">{latestImport.unchanged_count}</strong> already current</span>
-                  <span><strong className="text-ink">{latestImport.rejected_count}</strong> sent to review</span>
+                  <span><strong className="text-ink">{latestImport.qualification_review_count}</strong> qualification review</span>
+                  <span>
+                    <strong className="text-ink">{latestImport.rejected_count + latestImport.quarantined_count}</strong> incomplete
+                    {' '}(<strong className="text-ink">{latestImport.quarantined_count}</strong> quarantined)
+                  </span>
                   <span><strong className="text-ink">{latestImport.failed_count}</strong> failed</span>
                 </div>
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
-              {latestImport.rejected_count > 0 || latestImport.quarantined_count > 0 ? (
-                <Link href="/contacts/incomplete" className="sk-secondary-button">Review imported records</Link>
+              {latestImport.qualification_review_count > 0 ? (
+                <Link href="/contacts?scope=needs-review" className="sk-secondary-button">Review qualification</Link>
+              ) : null}
+              {latestImport.quarantined_count > 0 ? (
+                <Link href="/contacts/incomplete" className="sk-secondary-button">Review quarantined records</Link>
+              ) : null}
+              {latestImport.rejected_count > 0 ? (
+                <Link href="#contact-import-workspace" className="sk-secondary-button">Import a corrected file</Link>
+              ) : null}
+              {latestImport.failed_count > 0 ? (
+                <Link href="#contact-import-workspace" className="sk-secondary-button">Select file and retry</Link>
               ) : null}
               <Link href="/data#import-history" className="sk-secondary-button">View import history</Link>
             </div>
@@ -101,7 +129,7 @@ export default async function ImportContactsPage() {
           <Link href="/data#import-history" className="font-semibold text-accent hover:underline">View import history</Link>
         </div>
       )}
-      <ContactImportWorkspace />
+      <div id="contact-import-workspace"><ContactImportWorkspace /></div>
     </div>
   );
 }

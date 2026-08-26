@@ -10,7 +10,10 @@
  */
 
 import type { Contact, Note } from '../domain/contact.ts';
+import { applySmartListDefinition } from '../domain/smart-list.ts';
+import { queryArchivedContacts, queryContacts } from '../application/contact-query.ts';
 import type { ContactRepository } from './repository.ts';
+import { CONTACT_PAGE_SCOPES, type ContactPageScope } from './repository.ts';
 import { seedContacts, seedNotes } from './seed.ts';
 
 interface Store {
@@ -39,12 +42,61 @@ export function memoryContactIsActive(id: string): boolean {
 }
 
 export function memoryRepository(): ContactRepository {
+  const listedContacts = (options?: Parameters<ContactRepository['list']>[0]) => (
+    store().contacts.filter((contact) => (
+      (options?.archivedOnly ? Boolean(contact.archivedAt)
+        : options?.includeArchived ? true : !contact.archivedAt)
+      && (!options?.relationships?.length || options.relationships.includes(contact.relationship))
+      && (!options?.qualificationStatus || contact.qualificationStatus === options.qualificationStatus)
+      && (!options?.leadType || contact.leadType === options.leadType)
+    ))
+  );
   return {
     async list(options) {
-      return store().contacts.filter((contact) => (
-        options?.archivedOnly ? Boolean(contact.archivedAt)
-          : options?.includeArchived ? true : !contact.archivedAt
-      ));
+      return listedContacts(options);
+    },
+
+    async listPage(request) {
+      const {
+        offset, limit, scope = 'all', query = '', source, smartListDefinition,
+      } = request;
+      const options = {
+        includeArchived: request.includeArchived,
+        archivedOnly: request.archivedOnly,
+        relationships: request.relationships,
+        qualificationStatus: request.qualificationStatus,
+        leadType: request.leadType,
+      };
+      if (!Number.isSafeInteger(offset) || offset < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+        throw new Error('Contact page requires an offset of 0 or greater and a limit from 1 to 100.');
+      }
+      const activeContacts = listedContacts();
+      let sourceContacts = listedContacts(options.archivedOnly ? { archivedOnly: true } : undefined);
+      if (smartListDefinition && !options.archivedOnly) {
+        sourceContacts = applySmartListDefinition(sourceContacts, smartListDefinition);
+      }
+      const filtered = options.archivedOnly
+        ? queryArchivedContacts(sourceContacts, { query, leadType: options.leadType, source })
+        : queryContacts(sourceContacts, { query, leadType: options.leadType, source, scope });
+      const scopeCounts = Object.fromEntries(CONTACT_PAGE_SCOPES.map((candidate) => [
+        candidate,
+        options.archivedOnly ? 0 : queryContacts(sourceContacts, {
+          query, leadType: options.leadType, source, scope: candidate,
+        }).length,
+      ])) as Record<ContactPageScope, number>;
+      const leadTypeCounts = Object.fromEntries((['hot', 'warm', 'nurture'] as const).map((leadType) => [
+        leadType, filtered.filter((contact) => contact.leadType === leadType).length,
+      ])) as Record<Contact['leadType'], number>;
+      return {
+        items: filtered.slice(offset, offset + limit),
+        total: filtered.length,
+        activeTotal: activeContacts.length,
+        scopeCounts,
+        leadTypeCounts,
+        offset,
+        limit,
+        aliasEpoch: 0,
+      };
     },
 
     async get(id) {

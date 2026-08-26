@@ -229,7 +229,7 @@ export function ContactImportWorkspace() {
   }
 
   if (result) {
-    const complete = result.ok && result.rejected === 0 && result.failed === 0;
+    const complete = result.ok && result.incomplete === 0 && result.failed === 0;
     return (
       <section className="sk-group bg-surface p-6 sm:p-8" aria-live="polite">
         <span
@@ -258,19 +258,33 @@ export function ContactImportWorkspace() {
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
           {result.created} created · {result.updated} enriched · {result.merged}{" "}
           duplicate rows merged · {result.notesAdded} notes added ·{" "}
-          {result.unchanged} clients already existed / already current.
+          {result.unchanged} already current.
         </p>
-        {(result.rejected > 0 || result.failed > 0) && (
+        {result.qualificationReview > 0 && (
+          <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-4 text-sm text-ink">
+            <p className="font-medium">
+              {result.qualificationReview} imported contacts need qualification review.
+            </p>
+            <Link
+              href="/contacts?scope=needs-review"
+              className="mt-2 inline-flex font-semibold text-accent underline underline-offset-4"
+            >
+              Review qualification
+            </Link>
+          </div>
+        )}
+        {(result.incomplete > 0 || result.failed > 0) && (
           <div className="mt-4 rounded-2xl border border-warm-border bg-warm-soft p-4 text-sm text-warm">
             <p className="font-medium">
-              {result.rejected} need review · {result.failed} failed. All other contacts were saved.
+              {result.incomplete} incomplete ({result.quarantined} safely quarantined) · {result.failed} failed.
+              {' '}All other contacts have terminal import receipts.
             </p>
             {result.quarantined > 0 && (
               <Link
                 href="/contacts/incomplete"
                 className="mt-2 inline-flex font-semibold underline underline-offset-4"
               >
-                Review incomplete contacts
+                Review quarantined records
               </Link>
             )}
             {result.errors.length > 0 && (
@@ -286,8 +300,17 @@ export function ContactImportWorkspace() {
         )}
         <div className="mt-6 flex flex-wrap gap-2">
           <Link href="/contacts?scope=all" className="sk-primary-button">View all contacts</Link>
-          {(result.rejected > 0 || result.quarantined > 0) ? (
-            <Link href="/contacts/incomplete" className="sk-secondary-button">Review imported records</Link>
+          {result.qualificationReview > 0 ? (
+            <Link href="/contacts?scope=needs-review" className="sk-secondary-button">Review qualification</Link>
+          ) : null}
+          {result.quarantined > 0 ? (
+            <Link href="/contacts/incomplete" className="sk-secondary-button">Review quarantined records</Link>
+          ) : null}
+          {result.rejected > 0 ? (
+            <button type="button" className="sk-secondary-button" onClick={clearPreview}>Fix and re-import</button>
+          ) : null}
+          {result.failed > 0 ? (
+            <button type="button" className="sk-secondary-button" disabled={pending} onClick={save}>Retry failed rows</button>
           ) : null}
           <Link href="/pipeline" className="sk-secondary-button">Open pipeline</Link>
           <Link href="/data#import-history" className="sk-secondary-button">View import history</Link>
@@ -455,7 +478,7 @@ export function ContactImportWorkspace() {
               <p className="mt-2 text-sm text-muted">
                 {preview.counts.create} new · {preview.counts.update} enriched ·{" "}
                 {preview.counts.merge} duplicate rows ·{" "}
-                {preview.counts.unchanged} clients already existing · {preview.counts.rejected}{" "}
+                {preview.counts.unchanged} Already current · {preview.counts.rejected}{" "}
                 rejected · {preview.counts["archived-match"]} archived matches ·{" "}
                 {preview.counts["ambiguous-identity"]} identity conflicts ·{" "}
                 {preview.counts.protected} manual stages protected

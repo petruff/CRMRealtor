@@ -35,6 +35,34 @@ describe('contact import parser', () => {
     });
   });
 
+  it.each([
+    ['Email Subscribed,Tags', 'subscribed,DNC'],
+    ['Email Subscribed,Notes', 'yes,Do not contact'],
+    ['Email Subscribed,Status', 'true,unsubscribed'],
+    ['Email Subscribed,Unsubscribe', 'true,yes'],
+    ['Email Subscribed,Email Opt Out', 'true,opted out'],
+  ])('lets negative consent evidence override positive source data in %s', (headers, values) => {
+    const parsed = parseContactImport({
+      filename: 'consent-safety.csv',
+      content: `First Name,Email,${headers}\nAvery,avery@example.com,${values}`,
+    });
+    expect(parsed.rejected).toEqual([]);
+    expect(parsed.candidates[0]?.emailSubscribed).toBe(false);
+  });
+
+  it('does not infer positive consent from a missing or negative automatic-intake field', () => {
+    const missing = parseJsonContactImport({
+      source: 'website', contacts: [{ externalId: 'web-missing', firstName: 'Missing' }],
+    });
+    const dnc = parseJsonContactImport({
+      source: 'website', contacts: [{
+        externalId: 'web-dnc', firstName: 'Suppressed', emailSubscribed: true, tags: 'DNC',
+      }],
+    });
+    expect(missing.candidates[0]?.emailSubscribed).toBeUndefined();
+    expect(dnc.candidates[0]?.emailSubscribed).toBe(false);
+  });
+
   it('maps Google Contacts phone aliases and reports unknown columns', () => {
     const parsed = parseContactImport({
       filename: 'google.csv',

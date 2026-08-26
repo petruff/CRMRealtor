@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   SAMPLE_WORKSPACE_SCOPE,
   WorkspaceAuthorityError,
+  assertCanonicalWorkspaceOwner,
   assertWorkspaceMembershipInvariants,
+  canPerformWorkspaceSupportOperation,
   canManageWorkspaceAuthority,
+  workspaceAuthority,
   validateWorkspaceScope,
   type WorkspaceMembership,
 } from './workspace';
@@ -43,6 +46,59 @@ describe('workspace domain', () => {
   it('allows only owners to manage workspace authority', () => {
     expect(canManageWorkspaceAuthority('owner')).toBe(true);
     expect(canManageWorkspaceAuthority('assistant')).toBe(false);
+    expect(canManageWorkspaceAuthority(SAMPLE_WORKSPACE_SCOPE)).toBe(true);
+    expect(canManageWorkspaceAuthority({
+      ...SAMPLE_WORKSPACE_SCOPE,
+      authenticatedUserId: SAMPLE_WORKSPACE_SCOPE.authenticatedUserId,
+      ownerUserId: 'different-owner',
+    })).toBe(false);
+  });
+
+  it('keeps canonical ownership separate from named support authority', () => {
+    const supportScope = {
+      ...SAMPLE_WORKSPACE_SCOPE,
+      authenticatedUserId: 'support-user',
+      membershipId: 'support-membership',
+      role: 'assistant' as const,
+      supportGrant: { grantId: 'grant-support-a', active: true as const },
+    };
+    expect(workspaceAuthority(supportScope)).toMatchObject({
+      actorUserId: 'support-user',
+      membershipRole: 'assistant',
+      canonicalOwnerUserId: SAMPLE_WORKSPACE_SCOPE.ownerUserId,
+      supportGrant: { grantId: 'grant-support-a', active: true },
+    });
+    expect(canPerformWorkspaceSupportOperation(
+      supportScope,
+      'workspace.authority-audit.read',
+    )).toBe(true);
+    expect(canPerformWorkspaceSupportOperation(supportScope, 'workspace.memberships.write')).toBe(false);
+    expect(() => assertCanonicalWorkspaceOwner(supportScope)).toThrow(/canonical workspace owner/i);
+  });
+
+  it('rejects a forged owner role when the actor is not the canonical owner', () => {
+    expect(() => assertCanonicalWorkspaceOwner({
+      ...SAMPLE_WORKSPACE_SCOPE,
+      authenticatedUserId: 'support-user',
+      membershipId: 'support-membership',
+      role: 'owner',
+      supportGrant: { grantId: 'grant-support-a', active: true },
+    })).toThrow(/canonical workspace owner/i);
+  });
+
+  it('fails closed when support authority has no auditable grant identity', () => {
+    const unresolvedScope = validateWorkspaceScope({
+      ...SAMPLE_WORKSPACE_SCOPE,
+      authenticatedUserId: 'support-user',
+      membershipId: 'support-membership',
+      role: 'assistant',
+      supportGrant: { active: true },
+    });
+    expect(unresolvedScope.supportGrant).toBeNull();
+    expect(canPerformWorkspaceSupportOperation(
+      unresolvedScope,
+      'workspace.authority-audit.read',
+    )).toBe(false);
   });
 
   it('accepts one owner and any number of distinct active assistants', () => {

@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { WorkspaceScope } from '../domain/workspace.ts';
+import { isCanonicalWorkspaceOwnerScope, type WorkspaceScope } from '../domain/workspace.ts';
 import { sha256Hex } from '../domain/connector.ts';
 import {
   createEnvironmentKekResolver,
@@ -84,6 +84,9 @@ export async function readWorkspaceAiStatus(
   authenticated: SupabaseClient,
   scope: WorkspaceScope,
 ): Promise<WorkspaceAiStatus> {
+  if (!isCanonicalWorkspaceOwnerScope(scope)) {
+    throw new Error('Canonical workspace owner authority is required.');
+  }
   const { data, error } = await authenticated.from('workspace_ai_configurations')
     .select('provider,model,enabled,secret_version,key_fingerprint,configured_at,updated_at')
     .eq('workspace_id', scope.workspaceId)
@@ -113,17 +116,17 @@ export async function validateAndSaveWorkspaceAiKey(input: {
   readonly expectedSecretVersion: number;
   readonly now?: Date;
 }): Promise<WorkspaceAiStatus> {
-  if (input.scope.role !== 'owner') throw new Error('Workspace owner authority is required.');
+  if (!isCanonicalWorkspaceOwnerScope(input.scope)) throw new Error('Canonical workspace owner authority is required.');
   const selectedModel = model(input.selectedModel);
   const selectedProvider = provider(input.selectedProvider);
   assertProviderModel(selectedProvider, selectedModel);
   const key = apiKey(input.rawKey);
   const credential = { apiKey: key, model: selectedModel, dataPolicy: 'paid-private' as const };
   const probe = selectedProvider === 'google-gemini'
-    ? await routeOmnixQuestionWithGemini('Como está meu pipeline?', {
+      ? await routeOmnixQuestionWithGemini('How is my pipeline?', {
       credential,
     })
-    : await routeOmnixQuestionWithClaude('Como está meu pipeline?', {
+      : await routeOmnixQuestionWithClaude('How is my pipeline?', {
       credential,
     });
   if (probe.state !== 'available' || probe.query !== 'pipeline') {
@@ -164,7 +167,7 @@ export async function removeWorkspaceGeminiKey(input: {
   readonly scope: WorkspaceScope;
   readonly expectedSecretVersion: number;
 }): Promise<void> {
-  if (input.scope.role !== 'owner') throw new Error('Workspace owner authority is required.');
+  if (!isCanonicalWorkspaceOwnerScope(input.scope)) throw new Error('Canonical workspace owner authority is required.');
   const { error } = await input.authenticated.rpc('remove_workspace_ai_configuration', {
     target_workspace_id: input.scope.workspaceId,
     target_expected_secret_version: input.expectedSecretVersion,
@@ -179,7 +182,7 @@ export async function setWorkspaceGeminiEnabled(input: {
   readonly expectedSecretVersion: number;
   readonly enabled: boolean;
 }): Promise<void> {
-  if (input.scope.role !== 'owner') throw new Error('Workspace owner authority is required.');
+  if (!isCanonicalWorkspaceOwnerScope(input.scope)) throw new Error('Canonical workspace owner authority is required.');
   const { error } = await input.authenticated.rpc('set_workspace_ai_enabled', {
     target_workspace_id: input.scope.workspaceId,
     target_expected_secret_version: input.expectedSecretVersion,
@@ -197,7 +200,7 @@ function serviceClient(): SupabaseClient {
 }
 
 export async function loadWorkspaceAiCredential(scope: WorkspaceScope): Promise<WorkspaceAiCredential | undefined> {
-  if (scope.mode !== 'live') return undefined;
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) return undefined;
   const { data, error } = await serviceClient().rpc('read_workspace_ai_secret_envelope', {
     target_workspace_id: scope.workspaceId,
     target_authenticated_user_id: scope.authenticatedUserId,

@@ -15,7 +15,7 @@ function scopeClient(options: {
   ownerMemberships?: MembershipRow[];
   rpcError?: { message: string } | null;
   rpcData?: unknown;
-  privileged?: boolean;
+  supportGrantId?: string | null;
 }) {
   const calls: Array<{ operation: string; value?: unknown }> = [];
   let userQuery = 0;
@@ -46,8 +46,8 @@ function scopeClient(options: {
     },
     rpc(name: string, args: unknown) {
       calls.push({ operation: `rpc:${name}`, value: args });
-      if (name === 'is_workspace_owner') {
-        return Promise.resolve({ data: options.privileged ?? false, error: null });
+      if (name === 'resolve_workspace_support_grant_id') {
+        return Promise.resolve({ data: options.supportGrantId ?? null, error: null });
       }
       return Promise.resolve({ data: options.rpcData ?? null, error: options.rpcError ?? null });
     },
@@ -83,8 +83,9 @@ describe('resolveSupabaseWorkspaceScope', () => {
       workspaceId: 'workspace-a',
       role: 'assistant',
       mode: 'live',
+      supportGrant: null,
     });
-    expect(calls.some((call) => call.operation === 'rpc:is_workspace_owner')).toBe(true);
+    expect(calls.some((call) => call.operation === 'rpc:resolve_workspace_support_grant_id')).toBe(true);
   });
 
   it('bootstraps only when there is no active membership and then re-resolves authority', async () => {
@@ -112,11 +113,11 @@ describe('resolveSupabaseWorkspaceScope', () => {
 
   it('selects an explicit workspace when multiple memberships are active', async () => {
     const second = { ...owner, id: 'membership-owner-b', workspace_id: 'workspace-b' };
-    const ownerB = { ...owner, id: 'membership-owner-b2', workspace_id: 'workspace-b' };
+    const ownerB = { ...owner, id: 'membership-owner-b', workspace_id: 'workspace-b' };
     const { client, calls } = scopeClient({
       userMembershipResponses: [[owner, second]],
       ownerMemberships: [ownerB],
-      privileged: true,
+      supportGrantId: 'grant-owner-unused',
     });
     await expect(resolveSupabaseWorkspaceScope(client, 'owner-a', {
       selectedWorkspaceId: 'workspace-b',
@@ -124,13 +125,40 @@ describe('resolveSupabaseWorkspaceScope', () => {
     expect(calls.some((call) => call.operation === 'rpc:bootstrap_personal_workspace')).toBe(false);
   });
 
-  it('elevates an audited administrator grant without changing the owner identity', async () => {
+  it('preserves the assistant role while resolving a separate support grant', async () => {
     const adminMembership = { ...owner, id: 'membership-admin-a', user_id: 'admin-a', role: 'assistant' as const };
     const { client } = scopeClient({
-      userMembershipResponses: [[adminMembership]], ownerMemberships: [owner], privileged: true,
+      userMembershipResponses: [[adminMembership]], ownerMemberships: [owner],
+      supportGrantId: 'grant-support-a',
     });
     await expect(resolveSupabaseWorkspaceScope(client, 'admin-a')).resolves.toMatchObject({
-      authenticatedUserId: 'admin-a', ownerUserId: 'owner-a', role: 'owner',
+      authenticatedUserId: 'admin-a', ownerUserId: 'owner-a', role: 'assistant',
+      supportGrant: { grantId: 'grant-support-a', active: true },
+    });
+  });
+
+  it('keeps a revoked or absent support grant fail-closed', async () => {
+    const adminMembership = { ...owner, id: 'membership-admin-a', user_id: 'admin-a', role: 'assistant' as const };
+    const { client } = scopeClient({
+      userMembershipResponses: [[adminMembership]], ownerMemberships: [owner], supportGrantId: null,
+    });
+    await expect(resolveSupabaseWorkspaceScope(client, 'admin-a')).resolves.toMatchObject({
+      role: 'assistant', supportGrant: null,
+    });
+  });
+
+  it('binds support authority to the exact grant ID returned by the database', async () => {
+    const adminMembership = { ...owner, id: 'membership-admin-a', user_id: 'admin-a', role: 'assistant' as const };
+    const { client, calls } = scopeClient({
+      userMembershipResponses: [[adminMembership]], ownerMemberships: [owner],
+      supportGrantId: 'grant-audit-42',
+    });
+    await expect(resolveSupabaseWorkspaceScope(client, 'admin-a')).resolves.toMatchObject({
+      role: 'assistant', supportGrant: { grantId: 'grant-audit-42', active: true },
+    });
+    expect(calls).toContainEqual({
+      operation: 'rpc:resolve_workspace_support_grant_id',
+      value: { target_workspace_id: 'workspace-a' },
     });
   });
 
@@ -148,6 +176,21 @@ describe('resolveSupabaseWorkspaceScope', () => {
     const { client } = scopeClient({ userMembershipResponses: [[], []] });
     await expect(resolveSupabaseWorkspaceScope(client, 'owner-a')).rejects.toThrow(
       /returned no active membership/i,
+    );
+  });
+
+  it('rejects a bootstrap response that does not bind the authenticated canonical owner', async () => {
+    const { client } = scopeClient({
+      userMembershipResponses: [[]],
+      rpcData: [{
+        workspace_id: owner.workspace_id,
+        membership_id: 'membership-assistant-a',
+        owner_user_id: owner.user_id,
+        role: 'assistant',
+      }],
+    });
+    await expect(resolveSupabaseWorkspaceScope(client, 'assistant-a')).rejects.toThrow(
+      /invalid canonical owner authority/i,
     );
   });
 });

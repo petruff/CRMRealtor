@@ -1,6 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
-import type { ContactExternalLink, ImportGateway, IntakeReceipt } from './import-gateway.ts';
+import {
+  CONTACT_INTAKE_PENDING_STATUS,
+  verifyContactImportPlanOutcome,
+  verifyContactImportGroupOutcome,
+  type ContactExternalLink,
+  type ImportGateway,
+  type IntakeReceipt,
+} from './import-gateway.ts';
 import type { ContactIdentityMap } from './contact-identity-map.ts';
 
 interface LinkRow {
@@ -17,6 +24,17 @@ interface ReceiptRow {
   created_at: string;
 }
 
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
+}
+
 export function supabaseImportGateway(
   supabase: SupabaseClient,
   untrustedScope: WorkspaceScope,
@@ -24,6 +42,25 @@ export function supabaseImportGateway(
 ): ImportGateway {
   const scope = validateWorkspaceScope(untrustedScope);
   if (scope.mode !== 'live') throw new Error('Supabase gateways require a live workspace scope.');
+
+  async function loadReceipt(idempotencyKey: string): Promise<IntakeReceipt | undefined> {
+    const { data, error } = await supabase
+      .from('contact_intake_receipts')
+      .select('idempotency_key, request_hash, status_code, response_json, created_at')
+      .eq('workspace_id', scope.workspaceId)
+      .eq('idempotency_key', idempotencyKey)
+      .maybeSingle();
+    if (error) throw new Error(`Failed to load intake receipt: ${error.message}`);
+    if (!data) return undefined;
+    const row = data as ReceiptRow;
+    return {
+      idempotencyKey: row.idempotency_key,
+      requestHash: row.request_hash,
+      statusCode: row.status_code,
+      response: row.response_json,
+      createdAt: row.created_at,
+    };
+  }
 
   return {
     async linksFor(provider, externalIds) {
@@ -69,57 +106,54 @@ export function supabaseImportGateway(
       }
     },
     async getReceipt(idempotencyKey) {
-      const { data, error } = await supabase
-        .from('contact_intake_receipts')
-        .select('idempotency_key, request_hash, status_code, response_json, created_at')
-        .eq('workspace_id', scope.workspaceId)
-        .eq('idempotency_key', idempotencyKey)
-        .maybeSingle();
-      if (error) throw new Error(`Failed to load intake receipt: ${error.message}`);
-      if (!data) return undefined;
-      const row = data as ReceiptRow;
-      return {
-        idempotencyKey: row.idempotency_key,
-        requestHash: row.request_hash,
-        statusCode: row.status_code,
-        response: row.response_json,
-        createdAt: row.created_at,
-      } satisfies IntakeReceipt;
+      return loadReceipt(idempotencyKey);
     },
-    async claimReceipt(receipt) {
-      const { error } = await supabase.from('contact_intake_receipts').insert({
-        workspace_id: scope.workspaceId,
-        owner_id: scope.ownerUserId,
-        idempotency_key: receipt.idempotencyKey,
-        request_hash: receipt.requestHash,
-        status_code: receipt.statusCode,
-        response_json: receipt.response,
-        created_at: receipt.createdAt,
+    async claimReceipt(receipt, correlationId) {
+      if (receipt.statusCode !== CONTACT_INTAKE_PENDING_STATUS) {
+        throw new Error('Intake receipt reservation must use the pending status.');
+      }
+      const { data, error } = await supabase.rpc('begin_contact_intake_receipt', {
+        target_workspace_id: scope.workspaceId,
+        target_actor_membership_id: scope.membershipId,
+        target_idempotency_key: receipt.idempotencyKey,
+        target_request_hash: receipt.requestHash,
+        target_correlation_id: correlationId,
+        target_occurred_at: receipt.createdAt,
       });
-      if (error?.code === '23505') return false;
       if (error) throw new Error(`Failed to reserve intake receipt: ${error.message}`);
-      return true;
+      if (!data || typeof data !== 'object' || Array.isArray(data)
+        || !['pending', 'terminal'].includes(String((data as Record<string, unknown>).state))
+        || typeof (data as Record<string, unknown>).noOp !== 'boolean') {
+        throw new Error('Intake receipt reservation returned an invalid outcome.');
+      }
+      return !(data as Record<string, unknown>).noOp;
     },
-    async completeReceipt(receipt) {
-      const { data, error } = await supabase
-        .from('contact_intake_receipts')
-        .update({ status_code: receipt.statusCode, response_json: receipt.response })
-        .eq('workspace_id', scope.workspaceId)
-        .eq('idempotency_key', receipt.idempotencyKey)
-        .eq('request_hash', receipt.requestHash)
-        .select('id')
-        .maybeSingle();
-      if (error || !data) throw new Error(`Failed to complete intake receipt: ${error?.message ?? 'reservation not found'}`);
-    },
-    async releaseReceipt(idempotencyKey, requestHash) {
-      const { error } = await supabase
-        .from('contact_intake_receipts')
-        .delete()
-        .eq('workspace_id', scope.workspaceId)
-        .eq('idempotency_key', idempotencyKey)
-        .eq('request_hash', requestHash)
-        .eq('status_code', 202);
-      if (error) throw new Error(`Failed to release intake receipt: ${error.message}`);
+    async completeReceipt(receipt, correlationId) {
+      if (receipt.statusCode < 200 || receipt.statusCode > 599
+        || !receipt.response || typeof receipt.response !== 'object' || Array.isArray(receipt.response)) {
+        throw new Error('Intake receipt finalization requires an object response and terminal status.');
+      }
+      const { data, error } = await supabase.rpc('finalize_contact_intake_receipt', {
+        target_workspace_id: scope.workspaceId,
+        target_actor_membership_id: scope.membershipId,
+        target_idempotency_key: receipt.idempotencyKey,
+        target_request_hash: receipt.requestHash,
+        target_status_code: receipt.statusCode,
+        target_response_json: receipt.response,
+        target_correlation_id: correlationId,
+        target_occurred_at: receipt.createdAt,
+      });
+      if (error) throw new Error(`Failed to finalize intake receipt: ${error.message}`);
+      if (!data || typeof data !== 'object' || Array.isArray(data)
+        || (data as Record<string, unknown>).state !== 'terminal') {
+        throw new Error('Intake receipt finalization returned an invalid outcome.');
+      }
+      const recorded = await loadReceipt(receipt.idempotencyKey);
+      if (!recorded || recorded.requestHash !== receipt.requestHash
+        || recorded.statusCode !== receipt.statusCode
+        || canonicalJson(recorded.response) !== canonicalJson(receipt.response)) {
+        throw new Error('Finalized intake receipt does not match durable evidence.');
+      }
     },
     async resolveContactImportIdentity(input) {
       if (input.scope.workspaceId !== scope.workspaceId) throw new Error('Import identity scope does not match authenticated workspace.');
@@ -168,18 +202,38 @@ export function supabaseImportGateway(
         target_occurred_at: command.occurredAt,
       });
       if (error) throw new Error(`Failed to apply atomic import group: ${error.message}`);
-      if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Atomic import returned an invalid receipt.');
-      const row = data as Record<string, unknown>;
-      if (typeof row.contactId !== 'string' || !['create', 'update', 'unchanged'].includes(String(row.action))
-        || typeof row.notesAdded !== 'boolean' || typeof row.noOp !== 'boolean') {
-        throw new Error('Atomic import returned an invalid receipt.');
+      return verifyContactImportGroupOutcome({
+        command,
+        mutation: data,
+        receipt: await loadReceipt(command.groupIdempotencyKey),
+      });
+    },
+    async applyContactImportPlan(command) {
+      if (command.scope.workspaceId !== scope.workspaceId
+        || command.scope.membershipId !== scope.membershipId) {
+        throw new Error('Import plan authority does not match authenticated workspace.');
       }
-      return {
-        contactId: row.contactId,
-        action: row.action as 'create' | 'update' | 'unchanged',
-        notesAdded: row.notesAdded,
-        noOp: row.noOp,
-      };
+      const { data, error } = await supabase.rpc('apply_contact_import_plan', {
+        target_workspace_id: scope.workspaceId,
+        target_actor_membership_id: scope.membershipId,
+        target_idempotency_key: command.idempotencyKey,
+        target_request_hash: command.requestHash,
+        target_source: command.source,
+        target_format: command.format,
+        target_file_hash: command.fileHash,
+        target_ordered_plan: command.orderedPlan,
+        target_mapping_profile_id: command.mappingProfileId ?? null,
+        target_mapping_version: command.mappingVersion ?? null,
+        target_started_at: command.startedAt,
+        target_completed_at: command.completedAt,
+        target_correlation_id: command.correlationId,
+      });
+      if (error) throw new Error(`Failed to apply atomic import plan: ${error.message}`);
+      return verifyContactImportPlanOutcome({
+        command,
+        mutation: data,
+        receipt: await loadReceipt(command.idempotencyKey),
+      });
     },
     async applyImportedContactOrganization(command) {
       if (command.scope.workspaceId !== scope.workspaceId

@@ -511,10 +511,41 @@ function leadSourceValue(value: string | undefined): ImportLeadSource | undefine
 
 function booleanValue(value: string | undefined): boolean | undefined {
   if (!value) return undefined;
-  const normalized = value.toLowerCase();
+  const normalized = value.toLowerCase().trim().replace(/[^a-z0-9]+/g, ' ');
   if (['true', 'yes', '1', 'subscribed', 'active'].includes(normalized)) return true;
-  if (['false', 'no', '0', 'unsubscribed', 'cleaned', 'non-subscribed'].includes(normalized)) return false;
+  if ([
+    'false', 'no', '0', 'unsubscribed', 'unsubscribe', 'cleaned', 'non subscribed',
+    'do not contact', 'dnc', 'opt out', 'opted out', 'suppressed', 'no email',
+  ].includes(normalized)) return false;
   return undefined;
+}
+
+const CONTACT_SUPPRESSION_PATTERN = /\b(?:dnc|do not contact|unsubscribe(?:d)?|opt(?:ed)? out|non subscribed|cleaned|suppressed|no email)\b/i;
+const SUPPRESSION_HEADER_PATTERN = /^(?:dnc|do not contact|unsubscribe(?:d)?|email opt out|opted out|suppressed)$/i;
+
+function suppressionFlagValue(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.toLowerCase().trim().replace(/[^a-z0-9]+/g, ' ');
+  if (['false', 'no', '0', 'off'].includes(normalized)) return false;
+  return true;
+}
+
+/** Negative source evidence always wins and missing evidence never grants consent. */
+export function hasImportedContactSuppression(input: Pick<
+  ContactImportCandidate,
+  'tags' | 'note' | 'sourceFacts'
+>): boolean {
+  if (CONTACT_SUPPRESSION_PATTERN.test(input.tags.join(' '))
+    || CONTACT_SUPPRESSION_PATTERN.test(input.note ?? '')) return true;
+  return (input.sourceFacts ?? []).some((fact) => {
+    const key = normalizeHeader(fact.key);
+    const label = normalizeHeader(fact.label);
+    if ((key === 'email optin' || label === 'email optin') && fact.value === false) return true;
+    if (SUPPRESSION_HEADER_PATTERN.test(key) || SUPPRESSION_HEADER_PATTERN.test(label)) {
+      return fact.value === true || (typeof fact.value === 'string' && suppressionFlagValue(fact.value));
+    }
+    return typeof fact.value === 'string' && CONTACT_SUPPRESSION_PATTERN.test(fact.value);
+  });
 }
 
 function tagsValue(value: string | undefined): string[] {
@@ -550,6 +581,7 @@ function candidateFromRecord(
   incomplete?: ContactImportRejection['incomplete'];
 } {
   const values = new Map<CandidateField, string>();
+  let sourceSuppression = false;
   for (const [header, raw] of Object.entries(record)) {
     const normalizedHeader = normalizeHeader(header);
     let field = fieldForHeader(header);
@@ -568,6 +600,11 @@ function candidateFromRecord(
       else if (normalizedHeader === 'primary zip') field = 'postalCode';
     }
     const text = clean(raw);
+    if (SUPPRESSION_HEADER_PATTERN.test(normalizedHeader) && suppressionFlagValue(text)) {
+      sourceSuppression = true;
+    } else if (text && CONTACT_SUPPRESSION_PATTERN.test(text)) {
+      sourceSuppression = true;
+    }
     if (field && text && !values.has(field)) values.set(field, text);
   }
 
@@ -603,7 +640,8 @@ function candidateFromRecord(
     ? firstClassSourceValue(values.get('source'))
     : leadSourceValue(values.get('source'));
   const pipelineStage = normalizeImportPipelineStage(values.get('pipelineStage'));
-  const emailSubscribed = booleanValue(values.get('emailSubscribed'));
+  const parsedEmailSubscribed = booleanValue(values.get('emailSubscribed'));
+  const emailSubscribed = sourceSuppression ? false : parsedEmailSubscribed;
   if (values.get('leadType') && !leadType) errors.push('Lead type must be Hot, Warm, or Nurture.');
   if (values.get('qualificationStatus') && !qualificationStatus) errors.push('Qualification status must be Qualified or Needs review.');
   if (values.get('relationship') && !relationship) errors.push('Relationship is invalid.');

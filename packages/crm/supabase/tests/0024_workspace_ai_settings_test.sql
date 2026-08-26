@@ -39,8 +39,8 @@ reset role;
 set local role service_role;
 select set_config('request.jwt.claim.role','service_role',true);
 select is((public.read_workspace_ai_secret_envelope(
-  '24000000-0000-4000-8000-000000000024','14000000-0000-4000-8000-000000000025','34000000-0000-4000-8000-000000000025'
-)#>>'{secretVersion}')::integer,1,'service read is bound to an active workspace member and current version');
+  '24000000-0000-4000-8000-000000000024','14000000-0000-4000-8000-000000000024','34000000-0000-4000-8000-000000000024'
+)#>>'{secretVersion}')::integer,1,'service read is bound to the active canonical owner and current version');
 
 reset role;
 set local role authenticated;

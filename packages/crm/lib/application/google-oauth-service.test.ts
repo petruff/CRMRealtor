@@ -17,6 +17,22 @@ const resolver = createEnvironmentKekResolver({
 });
 
 describe('Google incremental OAuth service', () => {
+  it('rejects a support administrator with a forged owner role before provider traffic', async () => {
+    const repository = { begin: vi.fn() } as unknown as GoogleOAuthRepository;
+    await expect(beginGoogleOAuth({
+      repository,
+      scope: {
+        ...scope,
+        authenticatedUserId: 'support-user',
+        membershipId: 'support-membership',
+        supportGrant: { active: true },
+      },
+      actorUserId: 'support-user', sessionSecret: 'session-secret',
+      safeReturnPath: '/connections', bundle: 'workspace-core', configuration, resolver,
+    })).rejects.toThrow(/workspace owner/i);
+    expect(repository.begin).not.toHaveBeenCalled();
+  });
+
   it('offers one guided workspace bundle while preserving exact scopes', async () => {
     const begin = vi.fn(async (_scope, input) => ({ connectionId: input.connectionId, transactionId: 'tx-guided' }));
     const result = await beginGoogleOAuth({

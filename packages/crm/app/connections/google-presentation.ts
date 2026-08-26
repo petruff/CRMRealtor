@@ -1,24 +1,28 @@
-export interface GoogleConnectionPresentationInput {
-  readonly status: string;
-  readonly grantedScopes: readonly string[];
-}
+import type { ConnectorLifecycleProjection } from '@/lib/domain/connector-lifecycle';
 
 export interface GoogleConnectionPresentation {
   readonly consentPending: boolean;
-  readonly shouldReadCapabilityHealth: boolean;
   readonly description: string;
 }
 
 export function googleConnectionPresentation(
-  connection: GoogleConnectionPresentationInput,
+  lifecycle: ConnectorLifecycleProjection,
 ): GoogleConnectionPresentation {
-  const consentPending = connection.status === 'authorizing'
-    && connection.grantedScopes.length === 0;
   return {
-    consentPending,
-    shouldReadCapabilityHealth: !consentPending,
-    description: consentPending
-      ? 'Google is waiting for the account owner to approve Gmail and Calendar access.'
-      : 'The features below reflect the permissions approved in Google.',
+    consentPending: lifecycle.state === 'owner-consent-pending',
+    description: lifecycle.safeSummary,
   };
+}
+
+export function googleSyncStreamLabel(stream: 'gmail-history' | 'calendar-events'): string {
+  return stream === 'gmail-history' ? 'Gmail activity' : 'Calendar updates';
+}
+
+export function googleSyncStateLabel(
+  state: 'idle' | 'syncing' | 'healthy' | 'full_resync_required' | 'degraded',
+): string {
+  if (state === 'healthy') return 'Up to date';
+  if (state === 'syncing') return 'Updating';
+  if (state === 'idle') return 'Waiting for the next update';
+  return 'Needs attention';
 }
