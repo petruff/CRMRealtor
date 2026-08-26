@@ -8,6 +8,7 @@ TEST_DIRECTORY="supabase/tests"
 MIGRATION_BASE_SHA="${MIGRATION_BASE_SHA:-}"
 MIGRATION_CANDIDATE_SHA="${MIGRATION_CANDIDATE_SHA:-HEAD}"
 stack_started=false
+local_database_url="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 
 cleanup() {
   if [[ "${stack_started}" == "true" ]]; then
@@ -15,6 +16,25 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
+
+ensure_local_database_ready() {
+  local attempt
+
+  # `supabase test db` runs pg_prove in a sibling container. On a cold hosted
+  # runner the local Postgres container can briefly stop when that container
+  # exits, so reassert the stack and wait before the recovery rehearsal.
+  npx --yes "supabase@${SUPABASE_CLI_VERSION}" start >/dev/null
+  for attempt in $(seq 1 30); do
+    if psql "${local_database_url}" --set ON_ERROR_STOP=1 --command 'select 1' >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 2
+  done
+
+  echo "Local Supabase database did not become ready for recovery rehearsal." >&2
+  npx --yes "supabase@${SUPABASE_CLI_VERSION}" status >&2 || true
+  return 1
+}
 
 if [[ -z "${MIGRATION_BASE_SHA}" ]]; then
   echo "MIGRATION_BASE_SHA is required so candidate rollback rehearsal cannot silently skip migrations." >&2
@@ -122,17 +142,18 @@ done < <(find "${MIGRATION_DIRECTORY}" -maxdepth 1 -type f -name '*.sql' -print 
 npx --yes "supabase@${SUPABASE_CLI_VERSION}" test db "${TEST_DIRECTORY}" --local
 
 if (( ${#candidate_migrations[@]} > 0 )); then
+  ensure_local_database_ready
   echo "Rehearsing containment rollback for ${#candidate_migrations[@]} candidate migration(s)."
   for (( index=${#candidate_migrations[@]}-1; index>=0; index-- )); do
     migration_name="$(basename "${candidate_migrations[index]}" .sql)"
-    psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+    psql "${local_database_url}" \
       --set ON_ERROR_STOP=1 --file "${ROLLBACK_DIRECTORY}/${migration_name}.rollback.sql"
   done
 
   echo "Rehearsing forward repair in migration order."
   for migration_path in "${candidate_migrations[@]}"; do
     migration_name="$(basename "${migration_path}" .sql)"
-    psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+    psql "${local_database_url}" \
       --set ON_ERROR_STOP=1 --file "${ROLLBACK_DIRECTORY}/${migration_name}.forward-repair.sql"
   done
 

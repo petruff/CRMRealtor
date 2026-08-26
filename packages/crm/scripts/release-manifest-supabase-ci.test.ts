@@ -63,6 +63,17 @@ afterEach(async () => {
 });
 
 describe('Supabase candidate recovery planning', () => {
+  it('reasserts local database readiness before recovery rehearsal', async () => {
+    const script = await readFile(sourceScript, 'utf8');
+    const initialDatabaseTests = script.indexOf('test db "${TEST_DIRECTORY}" --local');
+    const readinessCheck = script.indexOf('ensure_local_database_ready', initialDatabaseTests);
+    const rollbackRehearsal = script.indexOf('Rehearsing containment rollback', initialDatabaseTests);
+
+    expect(initialDatabaseTests).toBeGreaterThan(-1);
+    expect(readinessCheck).toBeGreaterThan(initialDatabaseTests);
+    expect(rollbackRehearsal).toBeGreaterThan(readinessCheck);
+  });
+
   it('selects candidate migrations and requires paired rollback plus forward repair', async () => {
     const { packageRoot, baseSha, candidateSha, migrationName } = await fixture(true);
     const result = recoveryPlan(packageRoot, baseSha, candidateSha);
