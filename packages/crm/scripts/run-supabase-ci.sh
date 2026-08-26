@@ -8,7 +8,7 @@ TEST_DIRECTORY="supabase/tests"
 MIGRATION_BASE_SHA="${MIGRATION_BASE_SHA:-}"
 MIGRATION_CANDIDATE_SHA="${MIGRATION_CANDIDATE_SHA:-HEAD}"
 stack_started=false
-local_database_url="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+local_database_url=""
 
 cleanup() {
   if [[ "${stack_started}" == "true" ]]; then
@@ -24,6 +24,22 @@ ensure_local_database_ready() {
   # runner the local Postgres container can briefly stop when that container
   # exits, so reassert the stack and wait before the recovery rehearsal.
   npx --yes "supabase@${SUPABASE_CLI_VERSION}" start >/dev/null
+  local_database_url="$(
+    npx --yes "supabase@${SUPABASE_CLI_VERSION}" status -o json |
+      node -e '
+        let input = "";
+        process.stdin.setEncoding("utf8");
+        process.stdin.on("data", (chunk) => { input += chunk; });
+        process.stdin.on("end", () => {
+          const status = JSON.parse(input);
+          const databaseUrl = status.DB_URL ?? status.db_url;
+          if (typeof databaseUrl !== "string" || !databaseUrl.startsWith("postgresql://")) {
+            process.exit(1);
+          }
+          process.stdout.write(databaseUrl);
+        });
+      '
+  )"
   for attempt in $(seq 1 30); do
     if psql "${local_database_url}" --set ON_ERROR_STOP=1 --command 'select 1' >/dev/null 2>&1; then
       return 0

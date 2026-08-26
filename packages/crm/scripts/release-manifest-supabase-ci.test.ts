@@ -77,6 +77,8 @@ describe('Supabase candidate recovery planning', () => {
     expect(initialDatabaseTests).toBeGreaterThan(-1);
     expect(readinessCheck).toBeGreaterThan(initialDatabaseTests);
     expect(rollbackRehearsal).toBeGreaterThan(readinessCheck);
+    expect(script).toContain('status -o json');
+    expect(script).not.toContain('127.0.0.1:54322');
   });
 
   it('selects candidate migrations and requires paired rollback plus forward repair', async () => {
