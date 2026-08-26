@@ -59,7 +59,12 @@ function recoveryPlan(packageRoot: string, baseSha: string, candidateSha: string
 }
 
 afterEach(async () => {
-  await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 100,
+  })));
 });
 
 describe('Supabase candidate recovery planning', () => {
