@@ -4,12 +4,6 @@ import type { WorkspaceScope } from '../domain/workspace.ts';
 import { createGoogleRawTextMessage } from '../domain/google-connector.ts';
 import { createEnvironmentKekResolver, encryptConnectorSecret } from '../security/connector-secret-envelope.ts';
 
-function bytea(base64: string): string {
-  const bytes = Buffer.from(base64, 'base64');
-  if (!bytes.length) throw new ConnectorError('invalid-input', 'Encrypted Google draft is invalid.');
-  return `\\x${bytes.toString('hex')}`;
-}
-
 function persistenceError(message: string, error: { code?: string }): Error {
   if (error.code === '42501') return new ConnectorError('forbidden', message);
   if (error.code === 'P0002') return new ConnectorError('not-found', message);
@@ -48,9 +42,9 @@ export async function createGoogleEmailDraft(input: {
     provider: 'google', secretType: 'gmail.send', recordVersion: 1,
   }, createEnvironmentKekResolver());
   const encrypted = {
-    ciphertext: bytea(envelope.ciphertext), nonce: bytea(envelope.iv), authTag: bytea(envelope.tag),
-    wrappedDek: bytea(envelope.encryptedDek), wrapNonce: bytea(envelope.encryptedDekIv),
-    wrapAuthTag: bytea(envelope.encryptedDekTag), kekVersion: envelope.kekVersion,
+    ciphertext: envelope.ciphertext, nonce: envelope.iv, authTag: envelope.tag,
+    wrappedDek: envelope.encryptedDek, wrapNonce: envelope.encryptedDekIv,
+    wrapAuthTag: envelope.encryptedDekTag, kekVersion: envelope.kekVersion,
     aadHash: envelope.aadHash,
   };
   const { data, error } = await input.database.rpc('create_google_email_draft', {
