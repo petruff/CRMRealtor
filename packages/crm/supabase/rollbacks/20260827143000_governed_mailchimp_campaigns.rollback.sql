@@ -1,0 +1,10 @@
+begin;
+drop function if exists public.record_mailchimp_campaign_provider_result(uuid,text,text,text,text,text,text,uuid,uuid,timestamptz);
+drop function if exists public.claim_mailchimp_campaign_execution(uuid,text,uuid,timestamptz);
+drop function if exists public.approve_mailchimp_campaign_action(uuid,integer,text,text,text,uuid,timestamptz);
+drop function if exists public.update_mailchimp_campaign_draft(uuid,integer,text,text,text,text,text,text,text,text,text,text,uuid,timestamptz);
+drop function if exists public.create_mailchimp_campaign_draft(uuid,text,text,text,text,text,text,text,text,text,text,uuid,timestamptz);
+drop table if exists public.mailchimp_campaign_receipts;
+drop table if exists public.mailchimp_campaign_approvals;
+drop table if exists public.mailchimp_campaigns;
+commit;

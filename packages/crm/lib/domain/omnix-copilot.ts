@@ -24,6 +24,7 @@ export const OMNIX_COPILOT_SUPPORTED_EXAMPLES = [
   'mailers m-dec',
   'activity contact-sample-1',
   'connections',
+  'email campaigns',
   'help',
 ] as const;
 
@@ -48,6 +49,9 @@ export const OMNIX_COPILOT_FIXED_ALIASES = [
   { phrase: 'show mailers', canonical: 'mailers' },
   { phrase: 'show recent activity for <contact-id>', canonical: 'activity <contact-id>' },
   { phrase: 'connection status', canonical: 'connections' },
+  { phrase: 'create a bulk email', canonical: 'email campaigns' },
+  { phrase: 'send an email to all contacts', canonical: 'email campaigns' },
+  { phrase: 'create an email campaign', canonical: 'email campaigns' },
 ] as const;
 
 export type OmnixCopilotDateReference = 'today' | string;
@@ -64,6 +68,7 @@ export type OmnixCopilotIntent =
   | Readonly<{ kind: 'mailers'; campaignId?: string }>
   | Readonly<{ kind: 'activity'; contactId: string }>
   | Readonly<{ kind: 'connections' }>
+  | Readonly<{ kind: 'campaigns' }>
   | Readonly<{ kind: 'help' }>;
 
 export interface OmnixCopilotRequest {
@@ -370,6 +375,7 @@ export function parseOmnixCopilotQuestion(value: unknown): OmnixCopilotIntent {
   const activity = /^activity ([a-z0-9_-]+)$/iu.exec(question);
   if (activity?.[1]) return { kind: 'activity', contactId: identifier(activity[1], 'contactId') };
   if (folded === 'connections') return { kind: 'connections' };
+  if (folded === 'email campaigns' || folded === 'campaigns') return { kind: 'campaigns' };
   if (folded === 'help') return { kind: 'help' };
 
   throw new OmnixCopilotError(

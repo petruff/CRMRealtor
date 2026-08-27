@@ -5,11 +5,14 @@ import { supabaseMailchimpWebhookRepository } from './supabase-mailchimp-webhook
 import type { MailchimpSetupRepository } from './mailchimp-operation-repository.ts';
 import { supabaseMailchimpReconciliationRepository } from './supabase-mailchimp-reconciliation-repository.ts';
 import { supabaseMailchimpOutboundBackfillRepository } from './supabase-mailchimp-outbound-backfill-repository.ts';
+import { supabaseMailchimpCampaignRepository } from './supabase-mailchimp-campaign-repository.ts';
+import type { MailchimpCampaignRepository } from './mailchimp-campaign-repository.ts';
 
 export interface MailchimpServerRepository {
   readonly operations: MailchimpSetupRepository;
   readonly reconciliations: ReturnType<typeof supabaseMailchimpReconciliationRepository>;
   readonly outboundBackfills: ReturnType<typeof supabaseMailchimpOutboundBackfillRepository>;
+  readonly campaigns: MailchimpCampaignRepository;
 }
 
 export function createMailchimpOperationServerRepository(input: {
@@ -52,5 +55,6 @@ export function createMailchimpServerRepository(input: {
     operations,
     reconciliations: supabaseMailchimpReconciliationRepository({ authenticated: input.authenticated, service }),
     outboundBackfills: supabaseMailchimpOutboundBackfillRepository({ authenticated: input.authenticated, service }),
+    campaigns: supabaseMailchimpCampaignRepository({ authenticated: input.authenticated, service }),
   };
 }

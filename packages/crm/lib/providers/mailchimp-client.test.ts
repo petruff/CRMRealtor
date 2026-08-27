@@ -163,4 +163,63 @@ describe('Mailchimp fixed-endpoint provider client', () => {
       expect.objectContaining({ redirect: 'error' }),
     );
   });
+
+  it('creates content, checks readiness and sends only an exact Mailchimp campaign', async () => {
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tags: [{ id: 73, name: 'Omnix: Hot' }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'campaign-a', web_id: 42 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const client = new MailchimpMarketingClient('us21', 'token-a', fetcher);
+    const content = { title: 'August update', subject: 'Market update', previewText: 'A useful update',
+      fromName: 'Judith Serna', replyTo: 'judith@example.com', html: '<p>Hello</p>', plainText: 'Hello' };
+    await expect(client.createCampaignDraft({ audienceId: 'audience-a', segment: { kind: 'lead-type', value: 'hot' }, content }))
+      .resolves.toEqual({ campaignId: 'campaign-a', webId: 42 });
+    expect(JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body))).toMatchObject({
+      recipients: { list_id: 'audience-a', segment_opts: { saved_segment_id: 73 } },
+      settings: { auto_footer: true },
+    });
+    await client.setCampaignContent({ campaignId: 'campaign-a', content });
+    await expect(client.readCampaignSendChecklist('campaign-a')).resolves.toEqual({ ready: true, issues: [] });
+    await client.sendCampaign('campaign-a');
+    expect(fetcher.mock.calls.map((call) => call[0])).toEqual([
+      'https://us21.api.mailchimp.com/3.0/lists/audience-a/tag-search?name=Omnix%3A%20Hot',
+      'https://us21.api.mailchimp.com/3.0/campaigns',
+      'https://us21.api.mailchimp.com/3.0/campaigns/campaign-a/content',
+      'https://us21.api.mailchimp.com/3.0/campaigns/campaign-a/send-checklist',
+      'https://us21.api.mailchimp.com/3.0/campaigns/campaign-a/actions/send',
+    ]);
+  });
+
+  it('finds one exact recoverable draft and reads provider status before retrying a send', async () => {
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ campaigns: [{
+        id: 'campaign-recovered', settings: { title: 'August [Omnix 12345678]' },
+        recipients: { list_id: 'audience-a' },
+      }], total_items: 1 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 'campaign-recovered', status: 'sent' }), { status: 200 }));
+    const client = new MailchimpMarketingClient('us21', 'token-a', fetcher);
+    await expect(client.findCampaignDraft({
+      audienceId: 'audience-a', providerTitle: 'August [Omnix 12345678]',
+      createdSince: '2026-08-27T12:00:00.000Z',
+    })).resolves.toEqual({ campaignId: 'campaign-recovered' });
+    await expect(client.readCampaignStatus('campaign-recovered')).resolves.toBe('sent');
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain('/campaigns?');
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain('status=save');
+    expect(fetcher.mock.calls[1]?.[0]).toBe(
+      'https://us21.api.mailchimp.com/3.0/campaigns/campaign-recovered?fields=id,status',
+    );
+  });
+
+  it('fails closed when recovery finds more than one exact provider draft', async () => {
+    const duplicate = { id: 'campaign-a', settings: { title: 'Duplicate [Omnix 12345678]' },
+      recipients: { list_id: 'audience-a' } };
+    const client = new MailchimpMarketingClient('us21', 'token-a', async () => new Response(JSON.stringify({
+      campaigns: [duplicate, { ...duplicate, id: 'campaign-b' }], total_items: 2,
+    }), { status: 200 }));
+    await expect(client.findCampaignDraft({ audienceId: 'audience-a',
+      providerTitle: 'Duplicate [Omnix 12345678]', createdSince: '2026-08-27T12:00:00.000Z' }))
+      .rejects.toMatchObject({ code: 'conflict' });
+  });
 });
