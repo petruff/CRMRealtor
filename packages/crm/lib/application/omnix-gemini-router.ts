@@ -1,8 +1,8 @@
 import { OMNIX_COPILOT_SUPPORTED_EXAMPLES, parseOmnixCopilotQuestion } from '../domain/omnix-copilot.ts';
+import { OMNIX_AI_POLICY } from './omnix-ai-policy';
 
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const ALLOWED_MODELS = new Set(['gemini-3.5-flash-lite', 'gemini-3.6-flash']);
-const TIMEOUT_MS = 8_000;
 
 export type OmnixGeminiState = 'available' | 'unconfigured' | 'failed';
 
@@ -10,13 +10,27 @@ export interface OmnixGeminiRouteResult {
   readonly state: OmnixGeminiState;
   readonly query?: string;
   readonly model?: string;
-  readonly reason?: 'disabled' | 'missing-key' | 'paid-policy-required' | 'invalid-model' | 'request-failed' | 'invalid-response';
+  readonly reason?:
+    | 'disabled'
+    | 'missing-key'
+    | 'paid-policy-required'
+    | 'invalid-model'
+    | 'budget-unavailable'
+    | 'budget-exhausted'
+    | 'request-failed'
+    | 'invalid-response';
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
 }
 
 interface GeminiResponse {
   readonly candidates?: readonly {
     readonly content?: { readonly parts?: readonly { readonly text?: string }[] };
   }[];
+  readonly usageMetadata?: {
+    readonly promptTokenCount?: number;
+    readonly candidatesTokenCount?: number;
+  };
 }
 
 export interface OmnixGeminiRouterOptions {
@@ -71,7 +85,7 @@ export async function routeOmnixQuestionWithGemini(
   if (configured.state !== 'available' || !configured.apiKey || !configured.model) return configured;
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), OMNIX_AI_POLICY.requestTimeoutMs);
   try {
     const response = await (options.fetchImpl ?? fetch)(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(configured.model)}:generateContent`,
@@ -103,9 +117,14 @@ export async function routeOmnixQuestionWithGemini(
       },
     );
     if (!response.ok) return { state: 'failed', model: configured.model, reason: 'request-failed' };
-    const query = parseModelText(await response.json() as GeminiResponse);
+    const payload = await response.json() as GeminiResponse;
+    const query = parseModelText(payload);
     return query
-      ? { state: 'available', model: configured.model, query }
+      ? {
+        state: 'available', model: configured.model, query,
+        ...(payload.usageMetadata?.promptTokenCount !== undefined ? { inputTokens: payload.usageMetadata.promptTokenCount } : {}),
+        ...(payload.usageMetadata?.candidatesTokenCount !== undefined ? { outputTokens: payload.usageMetadata.candidatesTokenCount } : {}),
+      }
       : { state: 'failed', model: configured.model, reason: 'invalid-response' };
   } catch {
     return { state: 'failed', model: configured.model, reason: 'request-failed' };

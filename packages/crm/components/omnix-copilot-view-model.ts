@@ -68,10 +68,12 @@ export interface OmnixCopilotUiResult {
   warnings: string[];
   message?: string;
   model?: {
-    state: 'available' | 'unconfigured' | 'failed';
+    state: 'available' | 'unconfigured' | 'limited' | 'failed';
     provider: 'google-gemini' | 'anthropic-claude';
     model?: string;
     routed: boolean;
+    narrated?: boolean;
+    policyVersion?: string;
   };
 }
 

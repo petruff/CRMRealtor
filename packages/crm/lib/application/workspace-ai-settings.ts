@@ -229,3 +229,33 @@ export async function loadWorkspaceGeminiCredential(scope: WorkspaceScope) {
   if (credential?.provider !== 'google-gemini') return undefined;
   return { apiKey: credential.apiKey, model: credential.model, dataPolicy: credential.dataPolicy };
 }
+
+/** Server-only runtime access for any active workspace member; configuration remains owner-managed. */
+export async function loadWorkspaceAiRuntimeCredential(scope: WorkspaceScope): Promise<WorkspaceAiCredential | undefined> {
+  if (scope.mode !== 'live') return undefined;
+  const { data, error } = await serviceClient().rpc('read_workspace_ai_runtime_envelope', {
+    target_workspace_id: scope.workspaceId,
+    target_authenticated_user_id: scope.authenticatedUserId,
+    target_membership_id: scope.membershipId,
+  });
+  if (error || !data) return undefined;
+  const record = data as {
+    enabled?: unknown; provider?: unknown; model?: unknown; dataPolicy?: unknown; secretVersion?: unknown; envelope?: unknown;
+  };
+  if (record.enabled !== true || record.dataPolicy !== 'paid-private'
+    || !Number.isInteger(record.secretVersion) || Number(record.secretVersion) < 1) return undefined;
+  const selectedModel = model(record.model);
+  const selectedProvider = provider(record.provider ?? 'google-gemini');
+  assertProviderModel(selectedProvider, selectedModel);
+  const version = Number(record.secretVersion);
+  return {
+    apiKey: decryptConnectorSecret(
+      record.envelope as ConnectorSecretEnvelope,
+      aad(scope, version, selectedProvider),
+      createEnvironmentKekResolver(),
+    ),
+    provider: selectedProvider,
+    model: selectedModel,
+    dataPolicy: 'paid-private',
+  };
+}

@@ -4,6 +4,7 @@ import { SAMPLE_WORKSPACE_SCOPE, type WorkspaceScope } from '@/lib/domain/worksp
 import { createEnvironmentKekResolver, encryptConnectorSecret } from '@/lib/security/connector-secret-envelope';
 import { routeOmnixQuestionWithGemini } from './omnix-gemini-router';
 import {
+  loadWorkspaceAiRuntimeCredential,
   loadWorkspaceGeminiCredential,
   validateAndSaveWorkspaceGeminiKey,
 } from './workspace-ai-settings';
@@ -97,6 +98,36 @@ describe('workspace AI settings', () => {
 
     await expect(loadWorkspaceGeminiCredential(liveScope)).resolves.toEqual({
       apiKey: rawKey, model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
+    });
+  });
+
+  it('allows an active assistant to use the server-side runtime credential without managing it', async () => {
+    const assistantScope: WorkspaceScope = {
+      ...liveScope,
+      authenticatedUserId: 'assistant-user',
+      membershipId: 'assistant-membership',
+      role: 'assistant',
+    };
+    const envelope = encryptConnectorSecret(rawKey, {
+      workspaceId: assistantScope.workspaceId,
+      connectionId: `workspace-ai-${assistantScope.workspaceId}`,
+      provider: 'google-gemini',
+      secretType: 'gemini-api-key',
+      recordVersion: 2,
+    }, createEnvironmentKekResolver());
+    const rpc = vi.fn(async () => ({ data: {
+      enabled: true, provider: 'google-gemini', model: 'gemini-3.5-flash-lite',
+      dataPolicy: 'paid-private', secretVersion: 2, envelope,
+    }, error: null }));
+    vi.mocked(createClient).mockReturnValue({ rpc } as never);
+
+    await expect(loadWorkspaceAiRuntimeCredential(assistantScope)).resolves.toEqual({
+      apiKey: rawKey, provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
+    });
+    expect(rpc).toHaveBeenCalledWith('read_workspace_ai_runtime_envelope', {
+      target_workspace_id: assistantScope.workspaceId,
+      target_authenticated_user_id: assistantScope.authenticatedUserId,
+      target_membership_id: assistantScope.membershipId,
     });
   });
 

@@ -118,6 +118,11 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                 {result.dataMode === 'live' ? 'Live CRM' : 'Sample data'}
               </span>
             ) : null}
+            {result.model?.narrated ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                <Sparkles className="size-3" aria-hidden /> AI grounded
+              </span>
+            ) : null}
           </div>
           {result.message ? (
             <p className={`mt-1 text-sm leading-relaxed ${isProblem ? 'text-hot' : 'text-ink'}`}>
@@ -322,7 +327,11 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
               CRM checked {new Date(result.asOf).toLocaleString()} · Read-only response
             </p>
           ) : null}
-          {result.model?.routed ? (
+          {result.model?.narrated ? (
+            <p className="mt-2 text-[11px] text-subtle" role="status">
+              Gemini organized the answer from the cited CRM records · {result.model.policyVersion}
+            </p>
+          ) : result.model?.routed ? (
             <p className="mt-2 text-[11px] text-subtle" role="status">
               I understood the question and checked the matching CRM records.
             </p>
