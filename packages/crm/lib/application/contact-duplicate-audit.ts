@@ -87,13 +87,15 @@ export async function loadContactDuplicateAudit(
   if (!context.richContactRepository) throw new Error('Canonical contact-point audit is unavailable.');
   const allContacts = await context.repository.list({ includeArchived: true });
   const contacts = allContacts.slice(0, CONTACT_DUPLICATE_AUDIT_LIMIT);
-  const nested = await Promise.all(contacts.map((contact) => (
-    context.richContactRepository!.listContactPoints(context.workspaceScope, contact.id, true)
-  )));
+  const points = await context.richContactRepository.listContactPointsForContacts(
+    context.workspaceScope,
+    contacts.map((contact) => contact.id),
+    false,
+  );
   return {
     audit: buildContactDuplicateAudit({
       contacts,
-      points: nested.flat(),
+      points,
       asOf: now.toISOString(),
       partial: allContacts.length > CONTACT_DUPLICATE_AUDIT_LIMIT,
     }),

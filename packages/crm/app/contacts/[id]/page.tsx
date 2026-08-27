@@ -27,7 +27,6 @@ import {
   daysUntilAnniversary,
   anniversaryOrdinal,
   formatHuman,
-  formatMonthDay,
   relativeDays,
   daysBetween,
   parseDateOnly,
@@ -60,6 +59,8 @@ import { RichContactWorkspace, type HouseholdView } from "@/components/rich-cont
 import { GoogleEmailComposer } from "@/components/google-email-composer";
 import { TextingComposer } from "@/components/texting-composer";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { supabaseGoogleOperationRepository } from "@/lib/data/supabase-google-operation-repository";
+import { googleEmailReadiness, type GoogleEmailReadiness } from "@/lib/application/google-email-readiness";
 import {
   supabaseTwilioOperationRepository,
   type TwilioReadinessState,
@@ -146,6 +147,21 @@ export default async function ContactDetailPage({
         && connection.grantedScopes.includes("https://www.googleapis.com/auth/gmail.send"))
     : undefined;
   const googleEmailPoint = richData?.[0].find((point) => point.type === "email" && !point.archivedAt);
+  let gmailReadiness: GoogleEmailReadiness | undefined;
+  if (googleConnection && googleEmailPoint) {
+    try {
+      const authenticated = await createSupabaseServerClient();
+      gmailReadiness = googleEmailReadiness(
+        await supabaseGoogleOperationRepository({ authenticated })
+          .readCapabilityState(workspaceScope, googleConnection.id),
+      );
+    } catch {
+      gmailReadiness = {
+        ready: false,
+        message: "Gmail readiness could not be verified. Open Connections and review the Google account.",
+      };
+    }
+  }
   const twilioConnection = repositoryContext.isLive
     ? (await repositoryContext.connectorRepository.listConnections(workspaceScope, { provider: "twilio", limit: 10 }))
       .find((connection) => ["active", "degraded", "authorizing", "reauthorization-required"].includes(connection.status))
@@ -260,10 +276,15 @@ export default async function ContactDetailPage({
         </Link>
       </div> : null}
 
-      {!archived && googleConnection?.remoteAccountLabel && googleEmailPoint ? (
+      {!archived && googleConnection?.remoteAccountLabel && googleEmailPoint && gmailReadiness?.ready ? (
         <GoogleEmailComposer contactId={id} connectionId={googleConnection.id}
           contactPointId={googleEmailPoint.id} from={googleConnection.remoteAccountLabel}
           to={googleEmailPoint.normalizedValue} />
+      ) : !archived && googleConnection && googleEmailPoint && gmailReadiness?.message ? (
+        <p role="status" className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-sm text-warm">
+          {gmailReadiness.message}{" "}
+          <Link href="/connections" className="font-semibold underline underline-offset-2">Review Google connection</Link>
+        </p>
       ) : null}
 
       {!archived && twilioConnection && twilioPhonePoint && textingReadiness?.enabled
@@ -278,8 +299,7 @@ export default async function ContactDetailPage({
           messages={textingSummary?.messages} />
       ) : !archived && twilioConnection && twilioPhonePoint ? (
         <p role="status" className="mt-6 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-sm text-warm">
-          Provider texting is blocked until the workspace owner completes carrier registration,
-          the compliance policy, signed callbacks, and real-number UAT. Device Messages remains available separately.
+          Business texting is not ready yet. The workspace owner still needs to finish carrier registration and one final delivery test. Device Messages remains available separately.
         </p>
       ) : null}
 
@@ -328,8 +348,8 @@ export default async function ContactDetailPage({
             <div className="flex items-center gap-3 bg-surface p-4 sm:p-5">
               <Cake className="size-[18px] shrink-0 text-nurture" />
               <div>
-                <p className="text-sm text-ink">
-                  {formatMonthDay(contact.birthdate)}
+                <p className="text-sm font-medium text-ink">
+                  {formatHuman(contact.birthdate)}
                 </p>
                 <p className="text-xs text-muted">
                   Birthday ·{" "}

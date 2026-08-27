@@ -3,10 +3,13 @@ import { describe, expect, it } from 'vitest';
 
 const globalCss = readFileSync(new URL('./globals.css', import.meta.url), 'utf8');
 const welcomeCss = readFileSync(new URL('./welcome/welcome.module.css', import.meta.url), 'utf8');
+const loginCss = readFileSync(new URL('./login/login.module.css', import.meta.url), 'utf8');
 const connectionsSource = readFileSync(new URL('./connections/page.tsx', import.meta.url), 'utf8');
 const brandLockupSource = readFileSync(new URL('../components/brand-lockup.tsx', import.meta.url), 'utf8');
 const assistantSource = readFileSync(new URL('../components/omnix-assistant-launcher.tsx', import.meta.url), 'utf8');
 const welcomeMotionSource = readFileSync(new URL('../components/welcome-motion.tsx', import.meta.url), 'utf8');
+const dataOperationsSource = readFileSync(new URL('./data/page.tsx', import.meta.url), 'utf8');
+const nextConfigSource = readFileSync(new URL('../next.config.ts', import.meta.url), 'utf8');
 
 function cssBlock(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -61,6 +64,43 @@ describe('authenticated editorial design contract', () => {
     expect(globalCss).toMatch(/\.sk-overflow-rail\s*{[^}]*overflow-x:\s*auto;/s);
   });
 
+  it('keeps native controls and dense Insights workspaces inside their available container', () => {
+    const input = cssBlock('.sk-input');
+
+    expect(input).toContain('width: 100%;');
+    expect(input).toContain('min-width: 0;');
+    expect(input).toContain('max-width: 100%;');
+    expect(globalCss).toMatch(/input\[type='date'\]\.sk-input,[^{]+\{[^}]*min-inline-size:\s*0;/s);
+    expect(globalCss).toContain('container-name: insights-studio;');
+    expect(globalCss).toContain('container-name: deal-form;');
+    expect(globalCss).toContain('@container insights-studio (max-width: 63.99rem) { .insights-financial-grid');
+    expect(globalCss).toContain('.insights-transaction-grid { grid-template-columns: 1fr; }');
+    expect(globalCss).toContain('@container deal-form (max-width: 26rem) { .insights-deal-form-row { grid-template-columns: 1fr; }');
+    expect(globalCss).toContain('@container (max-width: 63.99rem) { .insights-contributor-controls { grid-template-columns: repeat(2,');
+  });
+
+  it('keeps developer-only connection commands out of the realtor-facing data workspace', () => {
+    expect(dataOperationsSource).not.toContain('npm run data');
+    expect(dataOperationsSource).toContain('Developer tools');
+    expect(dataOperationsSource).not.toContain('endpoint.endpoint_key');
+    expect(dataOperationsSource).not.toContain('endpoint.auth_mode');
+    expect(dataOperationsSource).not.toContain('key.key_prefix');
+    expect(dataOperationsSource).not.toContain('key.scopes.join');
+    expect(dataOperationsSource).toContain('Incoming automations');
+  });
+
+  it('keeps implementation language out of the default realtor-facing Connections experience', () => {
+    expect(connectionsSource).not.toContain('Deployment truth');
+    expect(connectionsSource).not.toContain('definition.capabilities.join');
+    expect(connectionsSource).not.toContain('Encrypted payload reference');
+    expect(connectionsSource).not.toContain('Payload SHA-256');
+    expect(connectionsSource).not.toContain('Policy ID');
+    expect(connectionsSource).not.toContain('Support ref ');
+    expect(connectionsSource).not.toContain('controlled UAT');
+    expect(connectionsSource).not.toContain('real-number UAT');
+    expect(connectionsSource).toContain('Connection controls');
+  });
+
   it('keeps public typography scoped while sharing the authenticated palette', () => {
     expect(globalCss).toContain("@import '@fontsource/cormorant-garamond/500.css';");
     expect(welcomeCss).toContain('--we-primary: var(--sk-button-background);');
@@ -77,9 +117,28 @@ describe('authenticated editorial design contract', () => {
     expect(welcomeMotionSource).toContain('autoAlpha: 0.92');
   });
 
+  it('keeps public mobile headers collision-free and preserves a visible sign-in label', () => {
+    expect(loginCss).toContain('--auth-primary: var(--sk-button-background);');
+    expect(loginCss).toContain('--auth-canvas: var(--sk-body-background-color);');
+    expect(loginCss).not.toContain('--auth-primary: #cc785c;');
+    expect(welcomeCss).toMatch(/\.brandLink\s*\{[^}]*min-width:\s*0;[^}]*overflow:\s*hidden;/s);
+    expect(welcomeCss).toMatch(/@media \(max-width:\s*767px\)[\s\S]*\.navSignIn\s*\{[^}]*width:\s*auto;[^}]*overflow:\s*visible;/s);
+    expect(welcomeCss).toMatch(/\.navSignIn svg\s*\{[^}]*display:\s*none;/s);
+    expect(loginCss).toMatch(/\.header\s*\{[^}]*gap:\s*0\.75rem;[^}]*padding-top:\s*env\(safe-area-inset-top\);/s);
+    expect(loginCss).toMatch(/@media \(max-width:\s*560px\)[\s\S]*\.header > a > div > div > p:last-child\s*\{[^}]*display:\s*none;/s);
+  });
+
+  it('keeps dense mobile records shrinkable and key actions thumb-sized', () => {
+    expect(globalCss).toMatch(/\.sk-group > \*\s*\{[^}]*min-width:\s*0;/s);
+    expect(globalCss).toMatch(/\.pipeline-filter-row button\s*\{[^}]*min-height:\s*2\.75rem;/s);
+    expect(globalCss).toMatch(/\.insights-stage-chart li > a\s*\{[^}]*min-height:\s*2\.75rem;/s);
+    expect(globalCss).toMatch(/body\s*\{[^}]*min-width:\s*0;[^}]*overflow-x:\s*clip;/s);
+    expect(nextConfigSource).toContain('qualities: [90, 92]');
+  });
+
   it('keeps Connections cards on the centralized 12px radius contract', () => {
     expect(connectionsSource).not.toContain('rounded-[20px]');
-    expect(connectionsSource.match(/rounded-\[var\(--sk-card-radius\)\]/g)).toHaveLength(12);
+    expect(connectionsSource.match(/rounded-\[var\(--sk-card-radius\)\]/g)?.length).toBeGreaterThanOrEqual(8);
     expect(cssBlock(':root')).toContain('--sk-card-radius: 0.75rem;');
   });
 

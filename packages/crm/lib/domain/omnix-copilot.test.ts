@@ -46,11 +46,22 @@ describe('Omnix copilot fixed grammar', () => {
 
   it.each([
     ['what should I do today', { kind: 'brief', date: 'today' }],
+    ['what are my priorities today?', { kind: 'brief', date: 'today' }],
+    ['Show me my priorities today', { kind: 'brief', date: 'today' }],
+    ['what do I need to do today?', { kind: 'brief', date: 'today' }],
+    ['what needs my attention today?', { kind: 'brief', date: 'today' }],
     ['who needs attention', { kind: 'alerts', date: 'today' }],
+    ['who needs my attention?', { kind: 'alerts', date: 'today' }],
+    ['who needs my attention today?', { kind: 'alerts', date: 'today' }],
     ['show overdue follow-ups', { kind: 'tasks', window: 'overdue' }],
+    ['which tasks are overdue?', { kind: 'tasks', window: 'overdue' }],
+    ['what tasks are overdue?', { kind: 'tasks', window: 'overdue' }],
     ["show today's tasks", { kind: 'tasks', window: 'today' }],
     ['show upcoming dates', { kind: 'dates', window: 'upcoming' }],
     ['show pipeline', { kind: 'pipeline' }],
+    ['show me my pipeline', { kind: 'pipeline' }],
+    ['what does my pipeline look like?', { kind: 'pipeline' }],
+    ['what is my pipeline?', { kind: 'pipeline' }],
     ['show mailers', { kind: 'mailers' }],
     ['show recent activity for contact-1', { kind: 'activity', contactId: 'contact-1' }],
     ['connection status', { kind: 'connections' }],
@@ -59,7 +70,7 @@ describe('Omnix copilot fixed grammar', () => {
   });
 
   it('documents the exact fixed alias table', () => {
-    expect(OMNIX_COPILOT_FIXED_ALIASES).toHaveLength(9);
+    expect(OMNIX_COPILOT_FIXED_ALIASES).toHaveLength(20);
   });
 
   it('normalizes case, whitespace and terminal punctuation only', () => {
@@ -84,8 +95,8 @@ describe('Omnix copilot fixed grammar', () => {
   });
 
   it('rejects unsupported, ambiguous, empty, control and oversized input', () => {
-    expect(() => parseOmnixCopilotQuestion('show everything')).toThrow(/outside.*grammar/i);
-    expect(() => parseOmnixCopilotQuestion('show pipeline and mailers')).toThrow(/outside.*grammar/i);
+    expect(() => parseOmnixCopilotQuestion('show everything')).toThrow(/couldn't match/i);
+    expect(() => parseOmnixCopilotQuestion('show pipeline and mailers')).toThrow(/couldn't match/i);
     expect(() => parseOmnixCopilotQuestion('')).toThrow(/question is invalid/i);
     expect(() => parseOmnixCopilotQuestion('pipeline\nmailers')).toThrow(/control characters/i);
     expect(() => parseOmnixCopilotQuestion(`find contact ${'x'.repeat(190)}`)).toThrow(/question is invalid/i);

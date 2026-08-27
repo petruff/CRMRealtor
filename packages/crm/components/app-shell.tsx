@@ -28,6 +28,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { PRODUCT_NAME } from "@/lib/brand";
 import { CrmCommandPalette } from "@/components/crm-command-palette";
 import { OmnixAssistantLauncher } from "@/components/omnix-assistant-launcher";
+import { PwaInstallAction } from "@/components/pwa-provider";
 
 const CORE_NAV = [
   { href: "/", label: "Today", icon: CalendarCheck },
@@ -45,7 +46,7 @@ const BUSINESS_NAV = [
 const OPERATIONS_NAV = [
   { href: "/mailers", label: "Mailers", icon: Send },
   { href: "/connections", label: "Connections", icon: Plug },
-  { href: "/data", label: "Data & API", icon: Database },
+  { href: "/data", label: "Data tools", icon: Database },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
@@ -162,7 +163,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile header */}
         <header
-          className="sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-line px-4 backdrop-blur-xl lg:hidden"
+          className="safe-top sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-line px-4 backdrop-blur-xl lg:hidden"
           style={{ background: "var(--sk-nav-background)" }}
         >
           <div className="flex min-w-0 items-center gap-2.5">
@@ -196,7 +197,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ref={mobileUtilitiesRef}
               id="mobile-utilities"
               aria-label="Mobile utilities"
-              className="fixed inset-x-3 top-[4.5rem] z-30 grid gap-1 rounded-[var(--sk-card-radius)] border border-line bg-surface p-2 shadow-[var(--sk-shadow-md)]"
+              className="pwa-mobile-utilities fixed inset-x-3 z-30 grid gap-1 rounded-[var(--sk-card-radius)] border border-line bg-surface p-2 shadow-[var(--sk-shadow-md)]"
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   event.preventDefault();
@@ -213,6 +214,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link href="/workspace" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink">
                 <Grid2X2 className="size-[18px]" aria-hidden /> Workspaces
               </Link>
+              <PwaInstallAction />
               <div className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink">
                 <span>Theme</span><ThemeToggle />
               </div>
@@ -228,7 +230,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="min-w-0 flex-1 px-4 pb-28 pt-6 sm:px-6 md:px-10 lg:px-14 lg:pb-20 lg:pt-12"
+          className="min-w-0 flex-1 px-4 pb-32 pt-6 sm:px-6 md:px-10 lg:px-14 lg:pb-28 lg:pt-12"
         >
           <div className="mx-auto w-full max-w-6xl">
             {children}
@@ -251,7 +253,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`sk-mobile-tab flex min-h-11 flex-col items-center justify-center gap-1 rounded-[var(--sk-control-radius)] px-1 text-[11px] transition-colors ${
+                className={`sk-mobile-tab flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-[var(--sk-control-radius)] px-0.5 text-[10px] transition-colors sm:px-1 sm:text-[11px] ${
                   active ? "bg-accent-soft font-semibold text-accent" : "text-subtle hover:bg-surface-2 hover:text-ink"
                 }`}
               >

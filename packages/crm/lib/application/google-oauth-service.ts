@@ -2,10 +2,16 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { ConnectorError, sha256Hex } from '../domain/connector.ts';
 import {
   googleRequestedScopes,
+  isGoogleScopeGranted,
+  normalizeGoogleGrantedScopes,
   parseGoogleFeatureBundle,
   type GoogleFeatureBundle,
 } from '../domain/google-connector.ts';
-import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
+import {
+  isCanonicalWorkspaceOwnerScope,
+  validateWorkspaceScope,
+  type WorkspaceScope,
+} from '../domain/workspace.ts';
 import type { GoogleOAuthRepository } from '../data/google-oauth-repository.ts';
 import {
   createGoogleAuthorizationUrl,
@@ -30,7 +36,7 @@ const REFRESH_TOKEN_SECRET_TYPE = 'google-refresh-token';
 
 function owner(scopeInput: WorkspaceScope): WorkspaceScope {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.mode !== 'live' || scope.role !== 'owner') {
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) {
     throw new ConnectorError('forbidden', 'A signed-in workspace owner is required.');
   }
   return scope;
@@ -143,6 +149,7 @@ export async function completeGoogleOAuth(input: {
     configuration: input.configuration, code: input.code,
     codeVerifier: verifier, requestedBundle: bundle, fetcher: input.fetcher,
   });
+  const grantedScopes = normalizeGoogleGrantedScopes(exchange.grantedScopes);
   const accessTokenEnvelope = encryptConnectorSecret(exchange.accessToken, {
     workspaceId: scope.workspaceId, connectionId: transaction.connectionId,
     provider: 'google', secretType: ACCESS_TOKEN_SECRET_TYPE,
@@ -158,7 +165,7 @@ export async function completeGoogleOAuth(input: {
   const completed = await input.repository.complete(scope, {
     transactionId: transaction.transactionId, connectionId: transaction.connectionId,
     correlationId: randomUUID(), bundle,
-    identity: exchange.identity, grantedScopes: exchange.grantedScopes,
+    identity: exchange.identity, grantedScopes,
     accessTokenEnvelope, ...(refreshTokenEnvelope ? { refreshTokenEnvelope } : {}),
     ...(transaction.expectedAccessSecretVersion !== undefined
       ? { expectedAccessSecretVersion: transaction.expectedAccessSecretVersion } : {}),
@@ -170,6 +177,9 @@ export async function completeGoogleOAuth(input: {
   return {
     connectionId: completed.connectionId, accountEmail: exchange.identity.email,
     grantedScopes: completed.grantedScopes, bundle,
+    missingScopes: googleRequestedScopes(bundle).filter((scope) => (
+      !isGoogleScopeGranted(completed.grantedScopes, scope)
+    )),
     safeReturnPath: returnPath(transaction.safeReturnPath),
   };
 }

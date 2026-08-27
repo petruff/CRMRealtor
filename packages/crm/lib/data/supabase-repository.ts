@@ -25,7 +25,12 @@ import type {
 } from '../domain/contact.ts';
 import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
 import type { ContactIdentityMap } from './contact-identity-map.ts';
-import type { ContactRepository } from './repository.ts';
+import type {
+  ContactPage,
+  ContactPageRequest,
+  ContactPageScope,
+  ContactRepository,
+} from './repository.ts';
 
 export interface ContactRow {
   id: string;
@@ -161,6 +166,64 @@ function toRow(patch: Partial<Contact>): Record<string, unknown> {
 }
 
 export const CONTACT_COLUMNS = '*';
+const CONTACT_READ_PAGE_SIZE = 500;
+
+function exactNonNegativeInteger(value: unknown, label: string): number {
+  if (!Number.isSafeInteger(value) || (value as number) < 0) {
+    throw new Error(`Failed to load contact page: ${label} is invalid.`);
+  }
+  return value as number;
+}
+
+function objectValue(value: unknown, label: string): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`Failed to load contact page: ${label} is invalid.`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function legacyPageScope(request: ContactPageRequest): ContactPageScope {
+  if (request.scope) return request.scope;
+  if (request.qualificationStatus === 'needs-qualification') return 'needs-review';
+  const relationships = request.relationships ?? [];
+  if (relationships.length === 0) return 'all';
+  const key = [...relationships].sort().join(',');
+  if (key === 'lead,sphere') return 'leads';
+  if (key === 'active-client,past-client') return 'clients';
+  if (key === 'active-client') return 'active-clients';
+  if (key === 'past-client') return 'past-clients';
+  throw new Error('Failed to load contact page: relationship scope is unsupported.');
+}
+
+function contactPageFromRpc(data: unknown): ContactPage {
+  const result = objectValue(data, 'RPC response');
+  if (!Array.isArray(result.items)) {
+    throw new Error('Failed to load contact page: items are invalid.');
+  }
+  const scopeCounts = objectValue(result.scopeCounts, 'scope counts');
+  const leadTypeCounts = objectValue(result.leadTypeCounts, 'lead type counts');
+  return {
+    items: result.items.map((row) => contactFromRow(objectValue(row, 'contact row') as unknown as ContactRow)),
+    total: exactNonNegativeInteger(result.total, 'total'),
+    activeTotal: exactNonNegativeInteger(result.activeTotal, 'active total'),
+    scopeCounts: {
+      leads: exactNonNegativeInteger(scopeCounts.leads, 'leads count'),
+      clients: exactNonNegativeInteger(scopeCounts.clients, 'clients count'),
+      'active-clients': exactNonNegativeInteger(scopeCounts['active-clients'], 'active clients count'),
+      'past-clients': exactNonNegativeInteger(scopeCounts['past-clients'], 'past clients count'),
+      'needs-review': exactNonNegativeInteger(scopeCounts['needs-review'], 'needs review count'),
+      all: exactNonNegativeInteger(scopeCounts.all, 'all contacts count'),
+    },
+    leadTypeCounts: {
+      hot: exactNonNegativeInteger(leadTypeCounts.hot, 'hot count'),
+      warm: exactNonNegativeInteger(leadTypeCounts.warm, 'warm count'),
+      nurture: exactNonNegativeInteger(leadTypeCounts.nurture, 'nurture count'),
+    },
+    offset: exactNonNegativeInteger(result.offset, 'offset'),
+    limit: exactNonNegativeInteger(result.limit, 'limit'),
+    aliasEpoch: exactNonNegativeInteger(result.aliasEpoch, 'alias epoch'),
+  };
+}
 
 export function supabaseRepository(
   supabase: SupabaseClient,
@@ -170,23 +233,75 @@ export function supabaseRepository(
   const scope = validateWorkspaceScope(untrustedScope);
   if (scope.mode !== 'live') throw new Error('Supabase repositories require a live workspace scope.');
 
-  return {
-    async list(options) {
+  async function listAll(options?: Parameters<ContactRepository['list']>[0]): Promise<Contact[]> {
+    const rows: ContactRow[] = [];
+    let offset = 0;
+    let exactRowCount: number | undefined;
+    while (exactRowCount === undefined || rows.length < exactRowCount) {
       let query = supabase
         .from('contacts')
-        .select(CONTACT_COLUMNS)
+        .select(CONTACT_COLUMNS, { count: 'exact' })
         .eq('workspace_id', scope.workspaceId);
       if (options?.archivedOnly) query = query.not('archived_at', 'is', null);
       else if (!options?.includeArchived) query = query.is('archived_at', null);
-      const { data, error } = await query
+      if (options?.relationships?.length) query = query.in('relationship', [...options.relationships]);
+      if (options?.qualificationStatus) query = query.eq('qualification_status', options.qualificationStatus);
+      if (options?.leadType) query = query.eq('lead_type', options.leadType);
+      const { data, error, count } = await query
         .order('next_touch_at', { ascending: true, nullsFirst: true })
-        .limit(500);
+        .order('id', { ascending: true })
+        .range(offset, offset + CONTACT_READ_PAGE_SIZE - 1);
 
       if (error) throw new Error(`Failed to load contacts: ${error.message}`);
-      const contacts = (data as ContactRow[]).map(contactFromRow);
-      if (!identityMap || contacts.length === 0) return contacts;
-      const aliases = await identityMap.resolvePage(scope, contacts.map((contact) => contact.id));
-      return contacts.filter((contact) => aliases.get(contact.id) === contact.id);
+      if (typeof count !== 'number') throw new Error('Failed to load contacts: exact count was unavailable.');
+      if (exactRowCount !== undefined && count !== exactRowCount) {
+        throw new Error('Failed to load contacts: the exact count changed during pagination.');
+      }
+      exactRowCount = count;
+      const page = (data ?? []) as ContactRow[];
+      if (page.length === 0 && rows.length < exactRowCount) {
+        throw new Error('Failed to load contacts: the paginated read ended before the exact count.');
+      }
+      rows.push(...page);
+      offset += page.length;
+    }
+    if (new Set(rows.map((row) => row.id)).size !== rows.length) {
+      throw new Error('Failed to load contacts: pagination returned duplicate records.');
+    }
+    const contacts = rows.map(contactFromRow);
+    if (!identityMap || contacts.length === 0) return contacts;
+    const aliases = await identityMap.resolvePage(scope, contacts.map((contact) => contact.id));
+    return contacts.filter((contact) => aliases.get(contact.id) === contact.id);
+  }
+
+  return {
+    list: listAll,
+
+    async listPage(request) {
+      const { offset, limit } = request;
+      if (!Number.isSafeInteger(offset) || offset < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > 100) {
+        throw new Error('Contact page requires an offset of 0 or greater and a limit from 1 to 100.');
+      }
+      if (request.includeArchived && !request.archivedOnly) {
+        throw new Error('Contact pages cannot combine active and archived records.');
+      }
+      const { data, error } = await supabase.rpc('list_canonical_contact_page', {
+        target_workspace_id: scope.workspaceId,
+        target_scope: legacyPageScope(request),
+        target_query: request.query ?? '',
+        target_lead_type: request.leadType ?? null,
+        target_source: request.source ?? null,
+        target_smart_list_id: request.smartListId ?? null,
+        target_archived_only: request.archivedOnly === true,
+        target_offset: offset,
+        target_limit: limit,
+      });
+      if (error) throw new Error(`Failed to load contact page: ${error.message}`);
+      const page = contactPageFromRpc(data);
+      if (page.offset !== offset || page.limit !== limit) {
+        throw new Error('Failed to load contact page: RPC bounds do not match the request.');
+      }
+      return page;
     },
 
     async get(id) {

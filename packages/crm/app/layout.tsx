@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { RouteChrome } from '@/components/route-chrome';
+import { PwaProvider } from '@/components/pwa-provider';
 import { PRODUCT_DESCRIPTION, PRODUCT_NAME } from '@/lib/brand';
 import './globals.css';
 
@@ -11,12 +12,26 @@ export const metadata: Metadata = {
   },
   applicationName: PRODUCT_NAME,
   description: PRODUCT_DESCRIPTION,
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: PRODUCT_NAME,
+  },
+  icons: {
+    icon: [
+      { url: '/pwa/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/pwa/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/pwa/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
   robots: { index: false, follow: false },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
   // Let her zoom. Locking scale on a tool used one-handed in a car is hostile.
   maximumScale: 5,
   themeColor: [
@@ -44,7 +59,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body>
-        <RouteChrome>{children}</RouteChrome>
+        <PwaProvider>
+          <RouteChrome>{children}</RouteChrome>
+        </PwaProvider>
       </body>
     </html>
   );

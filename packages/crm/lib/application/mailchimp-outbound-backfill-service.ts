@@ -5,7 +5,11 @@ import type {
   MailchimpOutboundBackfillRepository,
 } from '../data/mailchimp-outbound-backfill-repository.ts';
 import { ConnectorError, sha256Hex } from '../domain/connector.ts';
-import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
+import {
+  isCanonicalWorkspaceOwnerScope,
+  validateWorkspaceScope,
+  type WorkspaceScope,
+} from '../domain/workspace.ts';
 import {
   createEnvironmentKekResolver,
   encryptConnectorSecret,
@@ -21,7 +25,7 @@ function enabled(configuration: ConnectorRuntimeConfiguration) {
 
 function owner(scopeInput: WorkspaceScope) {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.mode !== 'live' || scope.role !== 'owner') {
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) {
     throw new ConnectorError('forbidden', 'A signed-in workspace owner is required.');
   }
   return scope;

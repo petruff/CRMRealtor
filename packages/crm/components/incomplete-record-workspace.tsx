@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { Archive, CheckCircle2, RefreshCcw, ShieldCheck } from "lucide-react";
+import { Archive, CheckCircle2, Mail, Phone, RefreshCcw, ShieldCheck, UserRound } from "lucide-react";
 import type {
   IncompleteContactConversionPlan,
   IncompleteRecord,
@@ -39,6 +39,37 @@ function State({ status, message }: { status: string; message?: string }) {
   ) : null;
 }
 
+function inferredPhone(email?: string): string | undefined {
+  const match = /^(\d{10})@kvleads\.com$/i.exec(email ?? "");
+  if (!match?.[1]) return undefined;
+  const digits = match[1];
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function contactLabel(record: IncompleteRecord): string {
+  const candidate = record.candidate;
+  const name = [candidate.preferredName ?? candidate.firstName, candidate.lastName]
+    .filter(Boolean)
+    .join(" ");
+  if (name) return name;
+  const phone = candidate.phone ?? inferredPhone(candidate.email);
+  if (phone) return `New lead · ${phone}`;
+  return candidate.email ?? "New contact needs a name";
+}
+
+function sourceLabel(source: string): string {
+  if (source === "mailchimp-live") return "Mailchimp audience";
+  if (source === "meta-live") return "Facebook or Instagram";
+  return source.replaceAll("-", " ");
+}
+
+function friendlyReason(record: IncompleteRecord, message: string): string {
+  if (record.source === "mailchimp-live" && /no canonical CRM contact/i.test(message)) {
+    return "This person is in Mailchimp but is not yet matched to an Omnix contact.";
+  }
+  return message;
+}
+
 export function IncompleteRecordWorkspace({
   records,
   previews,
@@ -66,49 +97,81 @@ export function IncompleteRecordWorkspace({
           Nothing needs review
         </h2>
         <p className="mt-2 text-sm text-muted">
-          New incomplete intake records will appear here with only their safe,
-          allowlisted details.
+          New contacts that need information will appear here with the details
+          available for review.
         </p>
       </div>
     );
 
+  const previewReady = records.filter((record) => previews[record.id]).length;
+  const needsName = records.filter((record) => (
+    !record.candidate.preferredName
+    && !record.candidate.firstName
+    && !record.candidate.lastName
+  )).length;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <State {...convertState} />
       <State {...statusState} />
+      <section className="overflow-hidden rounded-[var(--sk-card-radius)] border border-line bg-surface">
+        <div className="grid gap-px bg-line sm:grid-cols-3">
+          {[
+            ["Needs review", records.length],
+            ["Ready to add", previewReady],
+            ["Missing a name", needsName],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="bg-surface px-5 py-4">
+              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-subtle">{label}</p>
+              <p className="mt-1 font-display text-3xl text-ink">{value}</p>
+            </div>
+          ))}
+        </div>
+        <p className="border-t border-line px-5 py-3 text-xs leading-relaxed text-muted">
+          Omnix keeps unmatched provider records here so no lead is lost. Open only the contact you want to review; existing CRM contacts remain unchanged.
+        </p>
+      </section>
+      <div className="grid items-start gap-4 xl:grid-cols-2">
       {records.map((record) => {
         const preview = previews[record.id];
         const candidate = record.candidate;
+        const detectedPhone = candidate.phone ?? inferredPhone(candidate.email);
         return (
-          <article key={record.id} className="sk-group bg-surface p-4 sm:p-5">
+          <article key={record.id} className="sk-group min-w-0 bg-surface p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="font-display text-xl text-ink">
-                  {[
-                    candidate.preferredName ?? candidate.firstName,
-                    candidate.lastName,
-                  ]
-                    .filter(Boolean)
-                    .join(" ") || "Unnamed intake"}
+              <div className="min-w-0">
+                <h2 className="break-words font-display text-xl text-ink">
+                  {contactLabel(record)}
                 </h2>
-                <p className="mt-1 text-xs text-muted">
-                  Source: {record.source} · {record.status}
+                <p className="mt-1 text-xs font-medium text-muted">
+                  {sourceLabel(record.source)} · {record.status === "pending" ? "Needs review" : record.status}
                 </p>
               </div>
-              <span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-muted">
-                {record.reasons.length} validation note
-                {record.reasons.length === 1 ? "" : "s"}
+              <span className="rounded-full border border-warm-border bg-warm-soft px-2.5 py-1 text-xs font-medium text-warm">
+                {preview ? "Ready to add" : "Information needed"}
               </span>
             </div>
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="mt-4 flex flex-wrap gap-2">
+              {candidate.email ? (
+                <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-muted">
+                  <Mail className="size-3.5 shrink-0" aria-hidden /><span className="truncate">{candidate.email}</span>
+                </span>
+              ) : null}
+              {detectedPhone ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-xs text-muted">
+                  <Phone className="size-3.5" aria-hidden />{detectedPhone}
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div>
-                <h3 className="text-sm font-semibold text-ink">
-                  Why it paused
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  <UserRound className="size-4 text-warm" aria-hidden />What Omnix needs
                 </h3>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
                   {record.reasons.map((reason) => (
                     <li key={`${reason.field}-${reason.code}`}>
-                      {reason.message}
+                      {friendlyReason(record, reason.message)}
                     </li>
                   ))}
                 </ul>
@@ -120,7 +183,7 @@ export function IncompleteRecordWorkspace({
                 <p className="mt-1 text-sm text-muted">
                   {preview
                     ? `${preview.action === "create" ? "Create a new contact" : preview.action === "update" ? "Update the conservative match" : "No changes to the existing match"}${preview.matchedBy ? ` · matched by ${preview.matchedBy}` : ""}.`
-                    : "Preview is unavailable until this record can be reviewed."}
+                    : "Add the missing name below to preview and create this contact safely."}
                 </p>
                 {preview?.changes.length ? (
                   <p className="mt-1 text-xs text-muted">
@@ -130,9 +193,13 @@ export function IncompleteRecordWorkspace({
               </div>
             </div>
             {record.status === "pending" || (metaEventId && record.status === "converted") ? (
+              <details className="mt-5 border-t border-line pt-4">
+                <summary className="cursor-pointer list-none text-sm font-semibold text-ink">
+                  <span className="inline-flex items-center gap-2"><CheckCircle2 className="size-4 text-nurture" aria-hidden />Review and add to CRM</span>
+                </summary>
               <form
                 action={convertAction}
-                className="mt-5 border-t border-line pt-4"
+                className="mt-4"
               >
                 <input type="hidden" name="id" value={record.id} />
                 {metaEventId ? (
@@ -163,7 +230,7 @@ export function IncompleteRecordWorkspace({
                     <input
                       name="phone"
                       inputMode="tel"
-                      defaultValue={candidate.phone}
+                      defaultValue={detectedPhone}
                       className="sk-input"
                     />
                   </label>
@@ -193,6 +260,7 @@ export function IncompleteRecordWorkspace({
                   </p>
                 </div>
               </form>
+              </details>
             ) : (
               <form action={statusAction} className="mt-5 flex justify-end">
                 <input type="hidden" name="id" value={record.id} />
@@ -220,6 +288,7 @@ export function IncompleteRecordWorkspace({
           </article>
         );
       })}
+      </div>
     </div>
   );
 }

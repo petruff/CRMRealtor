@@ -18,7 +18,11 @@ import {
   type ConnectorJobState,
   type ConnectorProvider,
 } from '../domain/connector.ts';
-import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
+import {
+  isCanonicalWorkspaceOwnerScope,
+  validateWorkspaceScope,
+  type WorkspaceScope,
+} from '../domain/workspace.ts';
 import { googleRequiredScopeForAction } from '../domain/google-connector.ts';
 
 function sha256(value: unknown, field: string): string | undefined {
@@ -101,7 +105,7 @@ export async function disconnectConnectorCommand(
   now = new Date(),
 ) {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner access is required.');
+  if (!isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   return repository.disconnectConnection(scope, {
     connectionId: parseConnectorIdentifier(input.connectionId, 'connectionId'),
     actorMembershipId: scope.membershipId,
@@ -272,7 +276,7 @@ export async function approveConnectorIntentCommand(
   now = new Date(),
 ) {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner approval is required.');
+  if (!isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner approval is required.');
   return repository.approveIntent(scope, {
     intentId: parseConnectorIdentifier(input.intentId, 'intentId'),
     expectedVersion: requiredPositiveInteger(input.expectedVersion, 'expectedVersion', 10_000),
@@ -290,7 +294,7 @@ export async function rejectConnectorIntentCommand(
   now = new Date(),
 ) {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner approval is required.');
+  if (!isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner approval is required.');
   return repository.rejectIntent(scope, {
     intentId: parseConnectorIdentifier(input.intentId, 'intentId'),
     expectedVersion: requiredPositiveInteger(input.expectedVersion, 'expectedVersion', 10_000),
@@ -339,7 +343,7 @@ export async function retryConnectorJobCommand(
   now = new Date(),
 ) {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner access is required.');
+  if (!isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   return repository.retryJob(scope, {
     jobId: parseConnectorIdentifier(jobId, 'jobId'),
     actorMembershipId: scope.membershipId,
@@ -354,7 +358,7 @@ export async function cancelConnectorJobCommand(
   now = new Date(),
 ) {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner access is required.');
+  if (!isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   return repository.cancelJob(scope, {
     jobId: parseConnectorIdentifier(jobId, 'jobId'),
     actorMembershipId: scope.membershipId,

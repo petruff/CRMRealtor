@@ -5,6 +5,7 @@ import {
   isMailchimpOutboundEcho,
   mailchimpSubscriberHash,
   parseMailchimpAudience,
+  parseMailchimpAudienceMember,
   parseMailchimpWebhookEvent,
 } from './mailchimp';
 
@@ -38,6 +39,18 @@ describe('Mailchimp provider contract', () => {
     });
     expect(event).toMatchObject({
       normalizedEmail: 'buyer@example.com', subscriptionStatus: 'unsubscribed', origin: 'mailchimp-webhook',
+    });
+  });
+
+  it('keeps bounded identity evidence from provider merge fields', () => {
+    expect(parseMailchimpAudienceMember({
+      memberId: 'member-a', subscriberHash: mailchimpSubscriberHash('ada@example.com'),
+      normalizedEmail: 'ADA@example.com', subscriptionStatus: 'subscribed',
+      firstName: ' Ada ', lastName: ' Lovelace ', phone: ' +1 305 555 0100 ',
+      lastChangedAt: '2026-08-11T12:00:00Z',
+    })).toMatchObject({
+      normalizedEmail: 'ada@example.com', firstName: 'Ada', lastName: 'Lovelace',
+      phone: '+1 305 555 0100',
     });
   });
 

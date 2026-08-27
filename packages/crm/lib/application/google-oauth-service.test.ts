@@ -17,6 +17,22 @@ const resolver = createEnvironmentKekResolver({
 });
 
 describe('Google incremental OAuth service', () => {
+  it('rejects a support administrator with a forged owner role before provider traffic', async () => {
+    const repository = { begin: vi.fn() } as unknown as GoogleOAuthRepository;
+    await expect(beginGoogleOAuth({
+      repository,
+      scope: {
+        ...scope,
+        authenticatedUserId: 'support-user',
+        membershipId: 'support-membership',
+        supportGrant: { active: true },
+      },
+      actorUserId: 'support-user', sessionSecret: 'session-secret',
+      safeReturnPath: '/connections', bundle: 'workspace-core', configuration, resolver,
+    })).rejects.toThrow(/workspace owner/i);
+    expect(repository.begin).not.toHaveBeenCalled();
+  });
+
   it('offers one guided workspace bundle while preserving exact scopes', async () => {
     const begin = vi.fn(async (_scope, input) => ({ connectionId: input.connectionId, transactionId: 'tx-guided' }));
     const result = await beginGoogleOAuth({
@@ -73,7 +89,7 @@ describe('Google incremental OAuth service', () => {
     const fetcher = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({
         access_token: 'access-token', refresh_token: 'refresh-token', expires_in: 3600,
-        scope: 'openid email https://www.googleapis.com/auth/gmail.metadata',
+        scope: 'openid https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.metadata',
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({
         sub: 'subject-a', email: 'owner@example.com', email_verified: true,
@@ -82,11 +98,14 @@ describe('Google incremental OAuth service', () => {
       repository, scope, actorUserId: 'user-a', sessionSecret: 'session-secret',
       state, code: 'provider-code', configuration, resolver, fetcher,
       now: new Date('2026-08-12T12:00:01Z'),
-    })).resolves.toMatchObject({ accountEmail: 'owner@example.com', bundle: 'gmail-metadata' });
+    })).resolves.toMatchObject({
+      accountEmail: 'owner@example.com', bundle: 'gmail-metadata', missingScopes: [],
+    });
     expect(repository.complete).toHaveBeenCalledWith(scope, expect.objectContaining({
       bundle: 'gmail-metadata', accessTokenEnvelope: expect.objectContaining({ ciphertext: expect.any(String) }),
       refreshTokenEnvelope: expect.objectContaining({ ciphertext: expect.any(String) }),
       expectedAccessSecretVersion: 2, expectedRefreshSecretVersion: 4,
+      grantedScopes: ['email', 'https://www.googleapis.com/auth/gmail.metadata', 'openid'],
     }));
   });
 });

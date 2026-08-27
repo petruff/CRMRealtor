@@ -47,7 +47,7 @@ export default async function OmnixPage() {
           <span className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Explainable preview</span>
         </div>
         <h1 className="mt-2 max-w-4xl font-display text-[2.5rem] leading-[1.04] text-ink sm:text-5xl md:text-[3.5rem]">
-          Your business,<br /><span className="text-muted">already organized.</span>
+          Your business, <br /><span className="text-muted">already organized.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-muted">
           Omnix turns stored CRM facts into a prioritized brief. No generative model is connected, and nothing is sent, changed or scheduled autonomously.
@@ -96,17 +96,17 @@ export default async function OmnixPage() {
         <div className="flex items-start gap-3">
           <BrainCircuit className="mt-0.5 size-6 shrink-0 text-accent" aria-hidden />
           <div>
-            <h2 id="contract-title" className="font-display text-2xl text-ink">The AI operating contract</h2>
+            <h2 id="contract-title" className="font-display text-2xl text-ink">How Omnix keeps you in control</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
-              Future summaries and drafts must cite CRM facts. Client-facing messages, calendar changes and stage updates require review before execution. Provider receipts and failures remain visible afterward.
+              Omnix bases recommendations on your CRM records. You review client messages, calendar changes, and pipeline updates before anything is sent or changed.
             </p>
           </div>
         </div>
         <ul className="mt-5 grid gap-px overflow-hidden rounded-[var(--sk-control-radius)] bg-line sm:grid-cols-3">
           {[
-            ['Read first', 'Use only authorized workspace data.'],
-            ['Ask before acting', 'Draft and preview consequential changes.'],
-            ['Show the receipt', 'Record provider result and reconciliation.'],
+            ['Use your CRM', 'Base answers on the records available to your account.'],
+            ['Ask before acting', 'Preview important changes before they happen.'],
+            ['Keep a history', 'Show what changed and whether it completed.'],
           ].map(([title, detail]) => (
             <li key={title} className="bg-surface p-4">
               <p className="text-sm font-medium text-ink">{title}</p>

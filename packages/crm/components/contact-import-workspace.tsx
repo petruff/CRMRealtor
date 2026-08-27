@@ -229,7 +229,7 @@ export function ContactImportWorkspace() {
   }
 
   if (result) {
-    const complete = result.ok && result.rejected === 0 && result.failed === 0;
+    const complete = result.ok && result.incomplete === 0 && result.failed === 0;
     return (
       <section className="sk-group bg-surface p-6 sm:p-8" aria-live="polite">
         <span
@@ -242,25 +242,49 @@ export function ContactImportWorkspace() {
           )}
         </span>
         <h2 className="mt-5 text-2xl">
-          {complete ? "Import complete." : "Import finished with issues."}
+          {result.receiptState === 'recovered'
+            ? 'Import record recovered.'
+            : complete ? "Import complete." : "Import finished with issues."}
         </h2>
+        {result.receiptState === 'recovered' ? (
+          <p className="mt-2 max-w-2xl rounded-2xl border border-nurture-border bg-nurture-soft px-4 py-3 text-sm leading-relaxed text-nurture">
+            Omnix recognized the exact file, kept every existing contact unchanged, and rebuilt the missing audit record from the original row receipts.
+          </p>
+        ) : result.receiptState === 'recorded' ? (
+          <p className="mt-2 max-w-2xl rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm leading-relaxed text-muted">
+            This exact file was already imported. No contacts, notes, or activities were added again.
+          </p>
+        ) : null}
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
           {result.created} created · {result.updated} enriched · {result.merged}{" "}
           duplicate rows merged · {result.notesAdded} notes added ·{" "}
-          {result.unchanged} clients already existed / already current.
+          {result.unchanged} already current.
         </p>
-        {(result.rejected > 0 || result.failed > 0) && (
+        {result.qualificationReview > 0 && (
+          <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-4 text-sm text-ink">
+            <p className="font-medium">
+              {result.qualificationReview} imported contacts need qualification review.
+            </p>
+            <Link
+              href="/contacts?scope=needs-review"
+              className="mt-2 inline-flex font-semibold text-accent underline underline-offset-4"
+            >
+              Review qualification
+            </Link>
+          </div>
+        )}
+        {(result.incomplete > 0 || result.failed > 0) && (
           <div className="mt-4 rounded-2xl border border-warm-border bg-warm-soft p-4 text-sm text-warm">
             <p className="font-medium">
-              {result.rejected} rejected · {result.quarantined} saved for review
-              · {result.failed} failed. Valid rows were kept.
+              {result.incomplete} incomplete ({result.quarantined} safely quarantined) · {result.failed} failed.
+              {' '}All other contacts have terminal import receipts.
             </p>
             {result.quarantined > 0 && (
               <Link
                 href="/contacts/incomplete"
                 className="mt-2 inline-flex font-semibold underline underline-offset-4"
               >
-                Review incomplete contacts
+                Review quarantined records
               </Link>
             )}
             {result.errors.length > 0 && (
@@ -274,17 +298,34 @@ export function ContactImportWorkspace() {
             )}
           </div>
         )}
-        <button
-          type="button"
-          className="sk-primary-button mt-6"
-          onClick={() => {
-            setInput(undefined);
-            setPreview(undefined);
-            setResult(undefined);
-          }}
-        >
-          Import another file
-        </button>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Link href="/contacts?scope=all" className="sk-primary-button">View all contacts</Link>
+          {result.qualificationReview > 0 ? (
+            <Link href="/contacts?scope=needs-review" className="sk-secondary-button">Review qualification</Link>
+          ) : null}
+          {result.quarantined > 0 ? (
+            <Link href="/contacts/incomplete" className="sk-secondary-button">Review quarantined records</Link>
+          ) : null}
+          {result.rejected > 0 ? (
+            <button type="button" className="sk-secondary-button" onClick={clearPreview}>Fix and re-import</button>
+          ) : null}
+          {result.failed > 0 ? (
+            <button type="button" className="sk-secondary-button" disabled={pending} onClick={save}>Retry failed rows</button>
+          ) : null}
+          <Link href="/pipeline" className="sk-secondary-button">Open pipeline</Link>
+          <Link href="/data#import-history" className="sk-secondary-button">View import history</Link>
+          <button
+            type="button"
+            className="sk-text-action min-h-11 px-3"
+            onClick={() => {
+              setInput(undefined);
+              setPreview(undefined);
+              setResult(undefined);
+            }}
+          >
+            Import another file
+          </button>
+        </div>
       </section>
     );
   }
@@ -404,6 +445,7 @@ export function ContactImportWorkspace() {
           <input
             ref={inputRef}
             type="file"
+            aria-label="Choose a contact import file"
             accept=".csv,.vcf,.xls,.xlsx,.numbers,text/csv,text/vcard,text/x-vcard,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.apple.numbers"
             className="sr-only"
             onChange={(event) => void chooseFile(event.target.files?.[0])}
@@ -436,9 +478,10 @@ export function ContactImportWorkspace() {
               <p className="mt-2 text-sm text-muted">
                 {preview.counts.create} new · {preview.counts.update} enriched ·{" "}
                 {preview.counts.merge} duplicate rows ·{" "}
-                {preview.counts.unchanged} clients already existing · {preview.counts.rejected}{" "}
+                {preview.counts.unchanged} Already current · {preview.counts.rejected}{" "}
                 rejected · {preview.counts["archived-match"]} archived matches ·{" "}
-                {preview.counts["ambiguous-identity"]} identity conflicts
+                {preview.counts["ambiguous-identity"]} identity conflicts ·{" "}
+                {preview.counts.protected} manual stages protected
               </p>
               <p className="mt-2 text-sm font-medium text-ink">
                 {preview.classificationCounts.automatic} organized automatically ·{" "}
@@ -506,10 +549,10 @@ export function ContactImportWorkspace() {
 
           <details className="sk-group bg-surface p-5">
             <summary className="cursor-pointer font-medium text-ink">Edit column mapping</summary>
-            <p className="mt-2 text-xs text-muted">Choose an allowlisted Omnix field or ignore a source column. Re-preview runs immediately; no schema or formula is created.</p>
+            <p className="mt-2 text-xs text-muted">Choose the matching Omnix field or ignore a source column. The preview updates immediately and nothing is saved until you confirm.</p>
             {preview.headers.some((header) => /^(status|rating)$/i.test(header.trim())) ? (
               <p className="mt-3 rounded-xl border border-warm-border bg-warm-soft p-3 text-xs leading-relaxed text-warm">
-                KvCore Status and Rating remain in Imported profile as source evidence. Omnix also uses them to propose a deterministic CRM classification, shown in the preview below.
+                KvCore Status and Rating remain in the imported profile. Omnix uses them to classify each contact automatically, as shown in the preview below.
               </p>
             ) : null}
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{preview.headers.map((header)=><label key={header} className="sk-field"><span className="sk-label">{header}</span><select className="sk-input" value={mapping[header]??""} onChange={(event)=>remap(header,event.target.value as ContactImportMappingTarget|"ignore")}><option value="">Auto-map</option><option value="ignore">Ignore</option>{CONTACT_IMPORT_MAPPING_TARGETS.map((target)=><option key={target} value={target}>{target}</option>)}</select></label>)}</div>
@@ -549,6 +592,11 @@ export function ContactImportWorkspace() {
                     </td>
                     <td className="px-4 py-3 text-ink">
                       {actionLabel(row)}
+                      {row.protectedFields?.includes("pipelineStage") ? (
+                        <span className="mt-1 block text-xs font-medium text-warm">
+                          Manual pipeline stage kept
+                        </span>
+                      ) : null}
                     </td>
                     <td className="max-w-72 px-4 py-3 text-muted">
                       <span className="font-medium text-ink">
@@ -559,7 +607,7 @@ export function ContactImportWorkspace() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-muted">
-                      {row.changes.join(", ") || "—"}
+                      {row.changes.join(", ") || (row.protectedFields?.length ? "No automatic overwrite" : "—")}
                     </td>
                   </tr>
                 ))}

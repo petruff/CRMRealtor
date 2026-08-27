@@ -5,8 +5,8 @@ import { getRepository } from '@/lib/data';
 import type { RichContactRepository } from '@/lib/data/rich-contact-repository';
 import { listAssignmentsCommand } from '@/lib/application/rich-contact-commands';
 import { WorkspaceAssignmentPanel } from '@/components/workspace-assignment-panel';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { selectWorkspaceAction } from './actions';
+import { listAvailableWorkspaceMemberships } from './workspace-memberships';
 
 export const metadata: Metadata = { title: 'Workspaces' };
 
@@ -22,13 +22,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function WorkspacePage() {
   const repositoryContext = await getRepository();
-  const supabase = await createSupabaseServerClient();
-  const { data: auth } = await supabase.auth.getUser();
-  const { data: availableMemberships } = auth.user ? await supabase
-    .from('workspace_members')
-    .select('workspace_id, role, workspaces(name)')
-    .eq('user_id', auth.user.id)
-    .eq('status', 'active') : { data: [] };
+  const availableMemberships = await listAvailableWorkspaceMemberships(repositoryContext.isLive);
   const richContactRepository = 'richContactRepository' in repositoryContext
     ? repositoryContext.richContactRepository as RichContactRepository | undefined
     : undefined;
@@ -47,13 +41,13 @@ export default async function WorkspacePage() {
           Choose the job.<br /><span className="text-muted">Keep the day simple.</span>
         </h1>
       </header>
-      {(availableMemberships?.length ?? 0) > 1 ? (
+      {availableMemberships.length > 1 ? (
         <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5" aria-labelledby="workspace-switch-title">
           <p className="eyebrow">Account scope</p>
           <h2 id="workspace-switch-title" className="mt-1 font-display text-2xl text-ink">Choose which CRM you are viewing</h2>
           <p className="mt-2 text-sm text-muted">Each workspace remains isolated. Switching never copies or moves contacts.</p>
           <div className="mt-4 flex flex-wrap gap-3">
-            {availableMemberships?.map((membership) => {
+            {availableMemberships.map((membership) => {
               const related = Array.isArray(membership.workspaces) ? membership.workspaces[0] : membership.workspaces;
               const name = related && typeof related === 'object' && 'name' in related ? String(related.name) : 'Omnix workspace';
               const active = membership.workspace_id === repositoryContext.workspaceScope.workspaceId;
@@ -79,7 +73,7 @@ export default async function WorkspacePage() {
           </Link>
         ))}
       </div>
-      {richContactRepository ? <WorkspaceAssignmentPanel contacts={contacts} assignments={assignments} members={members} /> : null}
+      {richContactRepository ? <WorkspaceAssignmentPanel contacts={contacts} assignments={assignments} members={members} currentMembershipId={repositoryContext.workspaceScope.membershipId} /> : null}
     </div>
   );
 }

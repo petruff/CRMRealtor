@@ -67,9 +67,20 @@ export interface TransitionTasksResult {
   readonly noOpTaskIds: readonly string[];
 }
 
+export interface ContactActivityAggregate {
+  readonly activityCount: number;
+  readonly openTaskCount: number;
+  readonly completedTaskCount: number;
+}
+
 /** Append-only events and transactional task/event mutations. No event update/delete seam exists. */
 export interface ActivityRepository {
   listEvents(scope: WorkspaceScope, query: ActivityEventQuery): Promise<readonly ActivityEvent[]>;
+  /** Exact task/activity totals for one bounded visible-contact window. */
+  listContactAggregates?(
+    scope: WorkspaceScope,
+    contactIds: readonly string[],
+  ): Promise<ReadonlyMap<string, ContactActivityAggregate>>;
   appendEvent(
     scope: WorkspaceScope,
     input: AppendActivityEventInput,

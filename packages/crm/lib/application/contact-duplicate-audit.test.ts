@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { buildContactDuplicateAudit } from './contact-duplicate-audit';
+import { buildContactDuplicateAudit, loadContactDuplicateAudit } from './contact-duplicate-audit';
 import type { Contact } from '@/lib/domain/contact';
 import type { ContactPoint } from '@/lib/domain/rich-contact';
+import type { WorkspaceScope } from '@/lib/domain/workspace';
 
 const base: Omit<Contact, 'id' | 'firstName'> = {
   lastName: 'Client', leadType: 'warm', relationship: 'lead', intent: 'unknown',
@@ -58,5 +59,32 @@ describe('buildContactDuplicateAudit', () => {
     });
 
     expect(audit.duplicateGroups).toEqual([]);
+  });
+
+  it('loads one bounded point batch instead of one request per contact', async () => {
+    const contacts: Contact[] = [
+      { ...base, id: 'contact-a', firstName: 'A' },
+      { ...base, id: 'contact-b', firstName: 'B' },
+    ];
+    const batches: Array<{ contactIds: string[]; includeArchived: boolean | undefined }> = [];
+    const result = await loadContactDuplicateAudit({
+      repository: { list: async () => contacts },
+      richContactRepository: {
+        listContactPointsForContacts: async (_scope: WorkspaceScope, contactIds: readonly string[], includeArchived?: boolean) => {
+          batches.push({ contactIds: [...contactIds], includeArchived });
+          return [
+            point('point-a', 'contact-a', 'email', 'same@example.com'),
+            point('point-b', 'contact-b', 'email', 'same@example.com'),
+          ];
+        },
+      },
+      workspaceScope: {
+        authenticatedUserId: 'owner-a', ownerUserId: 'owner-a', membershipId: 'member-a',
+        workspaceId: 'workspace-a', role: 'owner', mode: 'live',
+      },
+    } as unknown as Parameters<typeof loadContactDuplicateAudit>[0], new Date('2026-08-14T12:00:00.000Z'));
+
+    expect(batches).toEqual([{ contactIds: ['contact-a', 'contact-b'], includeArchived: false }]);
+    expect(result.audit.duplicateGroups).toHaveLength(1);
   });
 });

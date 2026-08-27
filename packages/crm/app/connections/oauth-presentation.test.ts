@@ -7,6 +7,22 @@ describe('connection OAuth presentation', () => {
       tone: 'success', title: 'Google is connected',
     });
     expect(connectionNotice({ error: 'mailchimp-oauth-failed' })?.message).not.toContain('oauth');
+    expect(connectionNotice({ success: 'google-workspace-core-partial' })).toMatchObject({
+      tone: 'success', title: 'Google saved the permissions you approved',
+    });
+    expect(connectionNotice({ error: 'google-oauth-denied' })?.message).toContain('Nothing was changed');
+    expect(connectionNotice({ error: [' google-oauth-failed '], ref: '0471ecbd' })).toMatchObject({
+      title: 'Google was not connected', supportReference: '0471ECBD',
+    });
+    expect(connectionNotice({ error: 'mailchimp-setup-reconnect' })).toMatchObject({
+      tone: 'warning', title: 'Reconnect Mailchimp to finish setup',
+    });
+    expect(connectionNotice({ success: 'mailchimp-setup-complete' })).toMatchObject({
+      tone: 'success', title: 'Mailchimp is ready',
+    });
+    expect(connectionNotice({ error: 'mailchimp-setup-review' })).toMatchObject({
+      tone: 'warning', title: 'Mailchimp is connected, but some contacts need review',
+    });
   });
 
   it('creates one guided Google URL and a connection-bound Mailchimp reauthorization URL', () => {

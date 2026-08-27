@@ -1,0 +1,22 @@
+{
+  "kind": "authenticated-uat-route",
+  "result": "pass",
+  "candidateSha": "0000000000000000000000000000000000000000",
+  "deploymentId": "deployment-id",
+  "authenticated": true,
+  "testerRole": "canonical-owner",
+  "workspaceIdHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "route": "contacts",
+  "width": 390,
+  "device": "Responsive mobile viewport",
+  "browser": "Mobile Safari",
+  "browserVersion": "18.6",
+  "displayMode": "browser",
+  "orientation": "portrait",
+  "safeArea": { "top": 0, "right": 0, "bottom": 0, "left": 0, "respected": true },
+  "overflow": { "horizontal": "none", "clippedControls": false },
+  "outcome": "pass",
+  "health": "healthy",
+  "readiness": "ready",
+  "observedAt": "2026-08-26T12:00:00.000Z"
+}

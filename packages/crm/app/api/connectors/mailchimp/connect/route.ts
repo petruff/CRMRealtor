@@ -6,13 +6,15 @@ import { createMailchimpOAuthServerRepository } from '@/lib/data/mailchimp-oauth
 import { beginMailchimpOAuth, createMailchimpOAuthSessionSecret } from '@/lib/application/mailchimp-oauth-service';
 import { loadMailchimpOAuthConfiguration } from '@/lib/providers/mailchimp-client';
 import { loadMailchimpConfiguredRuntimeConfiguration } from '@/lib/config/connector-runtime';
-import { ConnectorError } from '@/lib/domain/connector';
+import { randomUUID } from 'node:crypto';
+import { recordConnectorOAuthRouteEvent } from '@/lib/observability/connector-oauth-route-telemetry';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const origin = requestUrl.origin;
+  const correlationId = randomUUID();
   let stage = 'runtime-configuration';
   try {
     loadMailchimpConfiguredRuntimeConfiguration();
@@ -44,15 +46,16 @@ export async function GET(request: Request) {
       path: '/api/connectors/mailchimp',
       maxAge: 15 * 60,
     });
+    recordConnectorOAuthRouteEvent({
+      provider: 'mailchimp', operation: 'oauth-begin', stage,
+      outcome: 'succeeded', correlationId,
+    });
     return response;
   } catch (error) {
-    console.error(JSON.stringify({
-      schemaVersion: 'connector-route-error.v1',
-      provider: 'mailchimp',
-      operation: 'oauth-begin',
-      stage,
-      category: error instanceof ConnectorError ? error.code : 'internal-error',
-    }));
+    recordConnectorOAuthRouteEvent({
+      provider: 'mailchimp', operation: 'oauth-begin', stage,
+      outcome: 'failed', correlationId, error,
+    });
     return NextResponse.redirect(`${origin}/connections?error=mailchimp-configuration-required`);
   }
 }

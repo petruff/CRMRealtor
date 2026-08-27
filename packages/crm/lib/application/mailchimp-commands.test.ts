@@ -94,6 +94,25 @@ describe('Mailchimp CLI-first application commands', () => {
     expect(client.listAudiences).toHaveBeenCalledWith(20);
   });
 
+  it('does not let support authority select or inspect a Mailchimp audience', async () => {
+    const client = { listAudiences: vi.fn() };
+    const supportScope: WorkspaceScope = {
+      ...liveScope,
+      authenticatedUserId: 'support-user',
+      membershipId: 'support-membership',
+      role: 'assistant',
+      supportGrant: { active: true },
+    };
+    await expect(listMailchimpAudiencesCommand(
+      repository, client, enabledConfiguration, supportScope, { connectionId: 'mailchimp-a' },
+    )).rejects.toMatchObject({ code: 'forbidden' });
+    expect(() => selectMailchimpAudienceCommand(supportScope, {
+      connectionId: 'mailchimp-a', accountIdHash: 'a'.repeat(64), dataCenter: 'us21',
+      audience: { id: 'audience-a', name: 'Primary clients', memberCount: 200 },
+    })).toThrow(/owner/i);
+    expect(client.listAudiences).not.toHaveBeenCalled();
+  });
+
   it('selects one audience and creates a count-only, email-free preview', () => {
     const binding = selectMailchimpAudienceCommand(SAMPLE_WORKSPACE_SCOPE, {
       connectionId: 'mailchimp-a', accountIdHash: 'a'.repeat(64), dataCenter: 'us21',

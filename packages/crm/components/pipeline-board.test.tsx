@@ -2,6 +2,8 @@
 
 import React from 'react';
 import '@testing-library/jest-dom/vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -39,6 +41,12 @@ function pipeline(contacts: readonly Contact[] = [contact], value: PipelineEvide
   return render(<PipelineBoard initialContacts={contacts} evidence={value} />);
 }
 
+function dragHandle(container: HTMLElement): HTMLElement {
+  const handle = container.querySelector<HTMLElement>('.pipeline-drag-handle');
+  if (!handle) throw new Error('Expected the pointer drag handle.');
+  return handle;
+}
+
 describe('PipelineBoard', () => {
   afterEach(cleanup);
 
@@ -71,6 +79,18 @@ describe('PipelineBoard', () => {
     expect(within(screen.getByRole('region', { name: 'Contacted' })).getByText('Judith Client')).toBeVisible();
   });
 
+  it('keeps the drag affordance pointer-only and the Move selector as the keyboard method', async () => {
+    const user = userEvent.setup();
+    const { container } = pipeline();
+    const handle = dragHandle(container);
+
+    expect(handle).toHaveAttribute('aria-hidden', 'true');
+    expect(handle).not.toHaveAttribute('tabindex');
+    await user.tab();
+    expect(handle).not.toHaveFocus();
+    expect(screen.getByLabelText('Move to')).toBeEnabled();
+  });
+
   it('restores the prior column when persistence fails', async () => {
     const user = userEvent.setup();
     movePipelineStageAction.mockResolvedValueOnce({ ok: false, message: 'The contact changed.' });
@@ -81,15 +101,46 @@ describe('PipelineBoard', () => {
   });
 
   it('supports pointer drag and drop through the same persisted move path', async () => {
-    pipeline();
-    const handle = screen.getByRole('button', { name: 'Drag Judith Client to another stage' });
+    const { container } = pipeline();
+    const handle = dragHandle(container);
     const destination = screen.getByRole('region', { name: 'Contacted' });
     document.elementFromPoint = vi.fn(() => destination);
-    fireEvent.pointerDown(handle, { pointerId: 1, button: 0, clientX: 10, clientY: 10 });
-    fireEvent.pointerMove(handle, { pointerId: 1, button: 0, clientX: 50, clientY: 50 });
-    fireEvent.pointerUp(handle, { pointerId: 1, button: 0, clientX: 50, clientY: 50 });
+    fireEvent.pointerDown(handle, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 10, clientY: 10 });
+    expect(movePipelineStageAction).not.toHaveBeenCalled();
+    fireEvent.pointerMove(handle, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 20, clientY: 20 });
+    fireEvent.pointerUp(handle, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 50, clientY: 50 });
     await waitFor(() => expect(movePipelineStageAction).toHaveBeenCalledWith(expect.objectContaining({ toStage: 'contacted' })));
     expect(await screen.findByText('Judith Client moved to Contacted.')).toBeVisible();
+  });
+
+  it('never turns a touch gesture into drag while keeping Move to available', () => {
+    const { container } = pipeline();
+    const handle = dragHandle(container);
+    const destination = screen.getByRole('region', { name: 'Contacted' });
+    document.elementFromPoint = vi.fn(() => destination);
+
+    fireEvent.pointerDown(handle, { pointerId: 2, pointerType: 'touch', button: 0, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(handle, { pointerId: 2, pointerType: 'touch', clientX: 50, clientY: 50 });
+    fireEvent.pointerUp(handle, { pointerId: 2, pointerType: 'touch', clientX: 50, clientY: 50 });
+
+    expect(movePipelineStageAction).not.toHaveBeenCalled();
+    expect(screen.getByRole('status')).not.toHaveTextContent('Dragging Judith Client');
+    expect(screen.getByLabelText('Move to')).toBeEnabled();
+  });
+
+  it('uses a browser-stable touch-action split between card scrolling and the dedicated handle', () => {
+    const css = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8');
+
+    expect(css).toMatch(/\.pipeline-contact-card\s*\{[\s\S]*?touch-action:\s*pan-x pan-y;/);
+    expect(css).toMatch(/\.pipeline-drag-handle\s*\{[\s\S]*?touch-action:\s*pan-x pan-y;/);
+    expect(css).toMatch(/@media \(pointer: coarse\)\s*\{[\s\S]*?\.pipeline-drag-handle\s*\{\s*display:\s*none;/);
+    expect(css).not.toContain(".pipeline-contact-card[data-dragging='true'] .pipeline-drag-handle");
+  });
+
+  it('keeps the live-region feedback visible in the rendered interface', () => {
+    pipeline();
+    expect(screen.getByRole('status')).toHaveClass('pipeline-live-status');
+    expect(screen.getByRole('status')).toHaveTextContent('Pipeline ready');
   });
 
   it('filters authorized contacts and progressively reveals a large stage', async () => {
@@ -109,6 +160,7 @@ describe('PipelineBoard', () => {
     expect(within(newStage).getAllByRole('article')).toHaveLength(10);
     await user.click(screen.getByRole('button', { name: 'Warm' }));
     expect(screen.getByText('1 of 10 relationships shown')).toBeVisible();
+    expect(screen.getByRole('status')).toHaveTextContent('1 of 10 relationships shown.');
     expect(screen.getByText('Warm Client 9')).toBeVisible();
     expect(screen.queryByText('Nurture Client 0')).not.toBeInTheDocument();
   });

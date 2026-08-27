@@ -12,7 +12,9 @@ import {
   probeLiveMailchimpConnectionCommand,
   setupMailchimpSignedWebhookCommand,
 } from '@/lib/application/mailchimp-commands';
-import { requestMailchimpReconciliationCommand } from '@/lib/application/mailchimp-reconciliation-service';
+import {
+  requestAndDrainMailchimpReconciliationCommand,
+} from '@/lib/application/mailchimp-reconciliation-service';
 import {
   approveMailchimpOutboundBackfillCommand,
   previewMailchimpOutboundBackfillCommand,
@@ -20,6 +22,8 @@ import {
 import { MailchimpMarketingClient } from '@/lib/providers/mailchimp-client';
 import { loadMailchimpConfiguredRuntimeConfiguration } from '@/lib/config/connector-runtime';
 import { ConnectorError } from '@/lib/domain/connector';
+import { isCanonicalWorkspaceOwnerScope } from '@/lib/domain/workspace';
+import { mailchimpSetupNoticeCode } from './mailchimp-presentation';
 
 function field(formData: FormData, name: string): string | undefined {
   const raw = formData.get(name);
@@ -34,7 +38,7 @@ function notice(kind: 'success' | 'error', value: string): never {
 export async function selectMailchimpAudienceAction(formData: FormData) {
   try {
     const context = await getRepository();
-    if (!context.isLive || context.workspaceScope.role !== 'owner') {
+    if (!context.isLive || !isCanonicalWorkspaceOwnerScope(context.workspaceScope)) {
       throw new ConnectorError('forbidden', 'Sign in as the workspace owner.');
     }
     const connectionId = field(formData, 'connectionId');
@@ -64,7 +68,7 @@ export async function selectMailchimpAudienceAction(formData: FormData) {
 export async function setupMailchimpWebhookAction(formData: FormData) {
   try {
     const context = await getRepository();
-    if (!context.isLive || context.workspaceScope.role !== 'owner') {
+    if (!context.isLive || !isCanonicalWorkspaceOwnerScope(context.workspaceScope)) {
       throw new ConnectorError('forbidden', 'Sign in as the workspace owner.');
     }
     const connectionId = field(formData, 'connectionId');
@@ -88,43 +92,60 @@ export async function setupMailchimpWebhookAction(formData: FormData) {
 }
 
 export async function reconcileMailchimpBaselineAction(formData: FormData) {
+  let completed = false;
+  let needsReview = false;
   try {
     const context = await getRepository();
-    if (!context.isLive || context.workspaceScope.role !== 'owner') {
+    if (!context.isLive || !isCanonicalWorkspaceOwnerScope(context.workspaceScope)) {
       throw new ConnectorError('forbidden', 'Sign in as the workspace owner.');
     }
     const connectionId = field(formData, 'connectionId');
     if (!connectionId) throw new ConnectorError('invalid-input', 'Mailchimp connection is required.');
     const authenticated = await createSupabaseServerClient();
     const server = createMailchimpServerRepository({ authenticated });
-    await requestMailchimpReconciliationCommand(
+    const configuration = loadMailchimpConfiguredRuntimeConfiguration();
+    const progress = await requestAndDrainMailchimpReconciliationCommand(
       server.operations,
       server.reconciliations,
+      configuration,
       context.workspaceScope,
       { connectionId, pageSize: 100, correlationId: randomUUID() },
     );
+    completed = progress.targetRun.state === 'succeeded';
+    needsReview = progress.targetRun.state === 'review';
   } catch (error) {
     const message = error instanceof ConnectorError ? error.message : 'Mailchimp baseline reconciliation failed safely.';
     notice('error', message.slice(0, 160));
   }
-  notice('success', 'Mailchimp reconciliation queued. Progress and review outcomes remain visible.');
+  if (needsReview) {
+    notice('error', 'Mailchimp contact sync paused for safe review. Open the latest reconciliation details before retrying.');
+  }
+  notice('success', completed
+    ? 'Mailchimp contact sync completed. Subscription status and contact matches are now up to date.'
+    : 'Mailchimp contact sync started. Omnix saved its progress and will resume safely if more time is needed.');
 }
 
 export async function finishMailchimpSetupAction(formData: FormData) {
+  const supportReference = randomUUID().replaceAll('-', '').slice(0, 8).toUpperCase();
+  let baselineCompleted = false;
+  let baselineStarted = false;
+  let baselineNeedsReview = false;
+  let webhookCompleted = false;
   try {
     const context = await getRepository();
-    if (!context.isLive || context.workspaceScope.role !== 'owner') {
+    if (!context.isLive || !isCanonicalWorkspaceOwnerScope(context.workspaceScope)) {
       throw new ConnectorError('forbidden', 'Sign in as the workspace owner.');
     }
     const connectionId = field(formData, 'connectionId');
     if (!connectionId) throw new ConnectorError('invalid-input', 'Mailchimp connection is required.');
     const authenticated = await createSupabaseServerClient();
     const server = createMailchimpServerRepository({ authenticated });
+    const configuration = loadMailchimpConfiguredRuntimeConfiguration();
     const binding = await server.operations.getSelectedAudience(context.workspaceScope, connectionId);
     if (!binding) throw new ConnectorError('not-found', 'Choose a Mailchimp audience first.');
     if (binding.webhookRegistrationRequired) {
       await setupMailchimpSignedWebhookCommand(
-        server.operations, loadMailchimpConfiguredRuntimeConfiguration(), context.workspaceScope,
+        server.operations, configuration, context.workspaceScope,
         {
           connectionId,
           webhookBaseUrl: process.env.MAILCHIMP_WEBHOOK_BASE_URL ?? '',
@@ -132,26 +153,46 @@ export async function finishMailchimpSetupAction(formData: FormData) {
         },
         { createClient: (dataCenter, token) => new MailchimpMarketingClient(dataCenter, token) },
       );
+      webhookCompleted = true;
     }
     if (binding.baselineRequired) {
-      await requestMailchimpReconciliationCommand(
+      baselineStarted = true;
+      const progress = await requestAndDrainMailchimpReconciliationCommand(
         server.operations,
         server.reconciliations,
+        configuration,
         context.workspaceScope,
         { connectionId, pageSize: 100, correlationId: randomUUID() },
       );
+      baselineCompleted = progress.targetRun.state === 'succeeded';
+      baselineNeedsReview = progress.targetRun.state === 'review';
     }
   } catch (error) {
-    const message = error instanceof ConnectorError ? error.message : 'Mailchimp setup could not be completed safely.';
-    notice('error', message.slice(0, 160));
+    console.error(JSON.stringify({
+      schemaVersion: 'mailchimp-guided-setup.v1',
+      operation: 'finish-setup',
+      outcome: 'failed',
+      category: error instanceof ConnectorError ? error.code : 'internal-error',
+      supportReference,
+    }));
+    notice('error', mailchimpSetupNoticeCode(error));
   }
-  notice('success', 'Mailchimp setup is finishing. Contact matching and subscription updates are being prepared.');
+  if (baselineNeedsReview) {
+    notice('error', 'Mailchimp updates are active, but the initial contact sync paused for safe review. Open the latest reconciliation details before retrying.');
+  }
+  notice('success', baselineCompleted
+    ? 'Mailchimp setup completed. Contact matching and subscribe/unsubscribe updates are active.'
+    : baselineStarted
+      ? 'Mailchimp updates are active and contact sync has started. Omnix saved its progress and will resume safely if needed.'
+      : webhookCompleted
+        ? 'Mailchimp subscribe and unsubscribe updates are now active.'
+        : 'Mailchimp setup is already complete.');
 }
 
 export async function probeMailchimpConnectionAction(formData: FormData) {
   try {
     const context = await getRepository();
-    if (!context.isLive || context.workspaceScope.role !== 'owner') {
+    if (!context.isLive || !isCanonicalWorkspaceOwnerScope(context.workspaceScope)) {
       throw new ConnectorError('forbidden', 'Sign in as the workspace owner.');
     }
     const connectionId = field(formData, 'connectionId');
@@ -165,7 +206,7 @@ export async function probeMailchimpConnectionAction(formData: FormData) {
       { connectionId, correlationId: randomUUID() },
       { createClient: (dataCenter, token) => new MailchimpMarketingClient(dataCenter, token) },
     );
-    if (!result.healthy) notice('error', `Mailchimp probe completed: ${result.status}.`);
+    if (!result.healthy) notice('error', 'Mailchimp still needs attention. Reconnect the account to continue.');
   } catch (error) {
     const message = error instanceof ConnectorError ? error.message : 'Mailchimp probe failed safely.';
     notice('error', message.slice(0, 160));
@@ -176,7 +217,7 @@ export async function probeMailchimpConnectionAction(formData: FormData) {
 export async function previewMailchimpBackfillAction(formData: FormData) {
   try {
     const context = await getRepository();
-    if (!context.isLive || context.workspaceScope.role !== 'owner') {
+    if (!context.isLive || !isCanonicalWorkspaceOwnerScope(context.workspaceScope)) {
       throw new ConnectorError('forbidden', 'Sign in as the workspace owner.');
     }
     const connectionId = field(formData, 'connectionId');
@@ -202,7 +243,7 @@ export async function previewMailchimpBackfillAction(formData: FormData) {
 export async function approveMailchimpBackfillAction(formData: FormData) {
   try {
     const context = await getRepository();
-    if (!context.isLive || context.workspaceScope.role !== 'owner') {
+    if (!context.isLive || !isCanonicalWorkspaceOwnerScope(context.workspaceScope)) {
       throw new ConnectorError('forbidden', 'Sign in as the workspace owner.');
     }
     const runId = field(formData, 'runId');

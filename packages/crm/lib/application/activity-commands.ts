@@ -144,6 +144,7 @@ export async function appendActivityEventCommand(
     actorMembershipId: scope.membershipId,
     occurredAt: input.occurredAt === undefined ? timestamp(now) : parseInstant(input.occurredAt, 'occurredAt'),
     idempotencyKey: idempotencyKey(input.idempotencyKey),
+    ...(input.metadata ? { metadata: input.metadata } : {}),
   });
 }
 

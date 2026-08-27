@@ -52,13 +52,12 @@ export default async function IncompleteContactsPage({
         <ArrowLeft className="size-4" aria-hidden /> Contacts
       </Link>
       <header className="mb-8">
-        <p className="eyebrow">Intake safety net</p>
+        <p className="eyebrow">New contact review</p>
         <h1 className="mt-2 font-display text-[2.5rem] leading-[1.04] text-ink sm:text-5xl">
-          Review incomplete contacts.
+          Make every new lead usable.
         </h1>
         <p className="mt-3 max-w-2xl text-[17px] leading-relaxed text-muted">
-          Only safe, allowlisted identity details are shown here. Nothing is
-          deleted; archival is reversible.
+          Omnix collects unmatched contacts from connected services here. Review only what needs attention; matched contacts are handled automatically and archival remains reversible.
         </p>
       </header>
       <form
@@ -83,16 +82,19 @@ export default async function IncompleteContactsPage({
             placeholder="Name, source, or external ID"
           />
         </label>
-        <select
-          className="sk-input min-h-14 rounded-none border-0 bg-surface"
-          name="status"
-          defaultValue={status}
-        >
-          <option value="pending">Needs review</option>
-          <option value="archived">Archived</option>
-          <option value="converted">Converted</option>
-          <option value="all">All records</option>
-        </select>
+        <label className="bg-surface">
+          <span className="sr-only">Filter incomplete contacts by status</span>
+          <select
+            className="sk-input min-h-14 rounded-none border-0 bg-surface"
+            name="status"
+            defaultValue={status}
+          >
+            <option value="pending">Needs review</option>
+            <option value="archived">Archived</option>
+            <option value="converted">Converted</option>
+            <option value="all">All records</option>
+          </select>
+        </label>
         <button className="sk-primary-button m-2" type="submit">
           Refresh
         </button>

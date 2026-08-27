@@ -92,6 +92,9 @@ Every new story produced from this epic must trace its acceptance criteria to on
 | ROS-FR-13 | Past-client, anniversary, referral and post-closing workflows preserve relationship continuity without duplicating the contact source of truth. | RQ-17; audit P2 |
 | ROS-FR-14 | Omnix AI can retrieve and draft from authorized operating-system facts, but any external write requires explicit approval, policy validation and immutable receipt. | Story 5.1; product expansion AI controls |
 | ROS-FR-15 | Critical routes provide contextual failure recovery that states what failed, what was not changed and what safe action is available. | audit P1 recovery |
+| ROS-FR-16 | Omnix can present a verified workspace-specific brand, product identity and custom-domain binding without changing tenant authority, provider ownership, consent or audit behavior. | Approved 2026-08-24 white-label commercial direction; architecture decision |
+| ROS-FR-17 | Workspace capability access is governed by explicit entitlements that support early-access, manual and future billing grants. Judith's workspace remains active early access with no payment requirement, trial countdown, billing navigation or automatic paid conversion. | Approved 2026-08-24 commercial plan and Judith exception |
+| ROS-FR-18 | A later commercial release may offer monthly and annual subscriptions through a separately governed billing adapter with signed, idempotent and reconcilable provider events. Pricing, limits, discounts and provider selection require a later approved commercial story. | Approved 2026-08-24 monthly/annual intent; commercial details intentionally open |
 
 ### Non-functional requirements
 
@@ -107,6 +110,8 @@ Every new story produced from this epic must trace its acceptance criteria to on
 | ROS-NFR-08 | Schema evolution is additive/backward-compatible, supports rollback or forward repair, and preserves existing contact and activity histories. |
 | ROS-NFR-09 | Background work has bounded concurrency, retry policy, dead-letter/review handling, reconciliation and observable receipts. |
 | ROS-NFR-10 | Production readiness includes monitoring, sanitized support references, backup and restore rehearsal, and a documented rollback path. |
+| ROS-NFR-11 | Branding, entitlement, usage and future billing data remain workspace-scoped and pass cross-workspace cache, host-resolution, RLS and repository isolation tests. Billing-provider state is never tenant authority. |
+| ROS-NFR-12 | Judith's early-access grant is regression-tested independently from paid plans and cannot surface checkout, invoices, pricing or upgrade pressure unless the product owner later approves an explicit migration. |
 
 ## Non-objectives
 
@@ -122,6 +127,8 @@ The following are explicitly outside this program unless a later approved requir
 - copying proprietary reference code, assets, prompts, trade dress or branding;
 - claiming “best-in-class” before comparative benchmark and observed user-outcome evidence;
 - making Meta, SMS, MLS, e-sign or provider verification a hidden prerequisite for safe use of the core CRM.
+- selecting a billing provider, price, trial period, plan limits or annual discount before a separately approved commercial-requirements story;
+- charging, requesting payment details from or automatically converting Judith's early-access workspace.
 
 ## Story-driven execution roadmap
 
@@ -210,6 +217,21 @@ Discovery and Architecture must define authoritative calculations before SM crea
 
 **Exit gate:** governed AI evaluation, approval, provider receipt, audit and rollback/recovery behavior pass with authorized data. Relationship automation has opt-out and pause controls.
 
+### Wave 6 — White-label commercialization
+
+**Outcome:** onboard additional independent realtors into isolated branded workspaces and govern paid access without coupling product authorization to a billing provider.
+
+This wave begins only after the core Judith workflow and commercial support model are operational. PM must obtain explicit decisions for pricing, plan limits, trial policy, taxes, refunds, failed-payment handling, support expectations and legal documents before billing implementation becomes Ready.
+
+1. Implement constrained workspace brand profiles, verified asset handling and server-side host resolution — ROS-FR-16.
+2. Implement the entitlement registry and seed Judith's non-expiring early-access grant without exposing billing UI — ROS-FR-17 and ROS-NFR-12.
+3. Validate provisioning, owner invitation, assistant permissions, data export, retention, closure and support-access workflows for at least two independent realtor workspaces.
+4. Select and integrate a billing provider only after commercial requirements are approved; support monthly and annual products behind an adapter — ROS-FR-18.
+5. Add signed webhook handling, replay protection, reconciliation, grace-state policy and owner-facing billing surfaces for paid workspaces only.
+6. Run adversarial host/cache/RLS/provider isolation, checkout, renewal, cancellation, failed-payment and Judith early-access regression matrices.
+
+**Exit gate:** multiple realtor workspaces pass tenant and branding isolation; paid entitlement transitions reconcile to provider receipts; Judith retains uninterrupted early access with no billing surface; support, legal and recovery procedures are approved. Only then may Omnix be described as commercially ready.
+
 ## Dependencies and external gates
 
 | Dependency | Owner / authority | Blocks | Safe behavior while blocked |
@@ -224,6 +246,7 @@ Discovery and Architecture must define authoritative calculations before SM crea
 | Architecture decisions for new bounded contexts | @architect | Wave 3 implementation stories | Stories remain Draft |
 | Independent quality verdicts | @qa | Every wave exit | No production-ready claim |
 | Push, release and deployment | @devops | Production publication | Local/tested state remains separate |
+| Commercial pricing, plan limits, tax/refund and legal decisions | Product owner / commercial counsel | Wave 6 paid launch | Keep entitlement and branding foundations provider-neutral; Judith remains early access |
 
 ## Cross-wave compatibility requirements
 
@@ -234,6 +257,7 @@ Discovery and Architecture must define authoritative calculations before SM crea
 - Provider activity never becomes transaction truth unless an explicit confirmed business command records it.
 - Every new UI capability has a CLI/application-service operation first, observability second and UI third.
 - High-risk schema/provider/financial changes require feature flags or fail-closed activation where feasible and documented rollback/forward repair.
+- Branding is presentation data, entitlements are product authorization, and billing is external commercial evidence; these concerns remain separate in code, persistence and operations.
 
 ## Program risks and mitigations
 

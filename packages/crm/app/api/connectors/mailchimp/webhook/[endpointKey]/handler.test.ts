@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import type { SupabaseMailchimpWebhookRepository } from '@/lib/data/supabase-mailchimp-webhook-repository';
 import { encryptConnectorSecret } from '@/lib/security/connector-secret-envelope';
-import { handleMailchimpWebhookPost } from './handler';
+import { handleMailchimpWebhookPost, handleMailchimpWebhookValidation } from './handler';
 
 const now = new Date('2026-08-11T12:00:00.000Z');
 const timestamp = Math.floor(now.getTime() / 1_000);
@@ -27,6 +27,15 @@ function repository(): SupabaseMailchimpWebhookRepository {
 }
 
 describe('Mailchimp webhook route handler', () => {
+  it('accepts only the generated callback key shape during provider provisioning', async () => {
+    const valid = await handleMailchimpWebhookValidation('a'.repeat(64));
+    const malformed = await handleMailchimpWebhookValidation('a'.repeat(63));
+
+    expect(valid.status).toBe(200);
+    expect(await valid.text()).toBe('ok');
+    expect(malformed.status).toBe(404);
+  });
+
   it('returns a bounded 202 receipt with no email or job identifier', async () => {
     const request = new Request('https://crm.example.com/webhook', {
       method: 'POST', headers: {

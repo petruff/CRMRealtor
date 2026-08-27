@@ -12,6 +12,7 @@ const actions = vi.hoisted(() => ({
   applyOrganization: vi.fn(),
   rollbackOrganization: vi.fn(),
   previewImport: vi.fn(),
+  commitImport: vi.fn(),
 }));
 
 vi.mock('@/app/import-actions', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/app/import-actions', () => ({
   applyExistingImportOrganizationAction: actions.applyOrganization,
   rollbackExistingImportOrganizationAction: actions.rollbackOrganization,
   previewImportAction: actions.previewImport,
-  commitImportAction: vi.fn(),
+  commitImportAction: actions.commitImport,
   saveImportMappingProfileAction: vi.fn(),
 }));
 
@@ -100,7 +101,7 @@ describe('ContactImportWorkspace automatic organization', () => {
         provider: 'spreadsheet', filename: 'contacts.numbers', format: 'numbers', totalRows: 3,
         headers: ['First Name', 'Lead Type', 'Pipeline Stage'], recognizedFields: ['firstName', 'leadType', 'pipelineStage'],
         unknownFields: [], preservedFields: [], rejected: [],
-        counts: { create: 3, update: 0, unchanged: 0, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 0 },
+        counts: { create: 3, update: 0, unchanged: 0, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 0, protected: 0 },
         classificationCounts: { automatic: 3, explicit: 0, needsReview: 0 },
         rows: [
           { rowNumber: 2, action: 'create', candidate: { firstName: 'Hot', lastName: 'Contact', tags: [], leadType: 'hot', pipelineStage: 'active' }, classification: { summary: 'Active lead.' }, changes: [] },
@@ -111,6 +112,7 @@ describe('ContactImportWorkspace automatic organization', () => {
     });
     const { container } = render(<ContactImportWorkspace />);
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(input).toHaveAccessibleName('Choose a contact import file');
     const file = new File([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], 'contacts.numbers', {
       type: 'application/vnd.apple.numbers',
     });
@@ -126,5 +128,135 @@ describe('ContactImportWorkspace automatic organization', () => {
     expect(screen.getByText('1 Warm')).toBeInTheDocument();
     expect(screen.getByText('1 Nurture')).toBeInTheDocument();
     expect(screen.getByText('1 Active')).toBeInTheDocument();
+  });
+
+  it('separates qualification review, quarantine, incomplete rows, failures, and current contacts', async () => {
+    const user = userEvent.setup();
+    actions.previewImport.mockResolvedValueOnce({
+      ok: true, isLive: true,
+      preview: {
+        provider: 'spreadsheet', filename: 'contacts.csv', format: 'csv', totalRows: 1,
+        headers: ['First Name'], recognizedFields: ['firstName'], unknownFields: [], preservedFields: [], rejected: [],
+        counts: { create: 1, update: 0, unchanged: 0, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 0, protected: 0 },
+        classificationCounts: { automatic: 0, explicit: 0, needsReview: 1 },
+        rows: [{
+          rowNumber: 2, action: 'create', candidate: { firstName: 'Avery', lastName: '', tags: [], leadType: 'nurture', pipelineStage: 'new' },
+          classification: { summary: 'Qualification review.', needsReview: true }, changes: ['firstName'],
+        }],
+      },
+    });
+    actions.commitImport.mockResolvedValueOnce({
+      ok: true,
+      result: {
+        ok: false, provider: 'spreadsheet', totalRows: 6, created: 1, updated: 1, unchanged: 1,
+        merged: 0, archivedMatches: 0, ambiguousIdentities: 0, notesAdded: 0,
+        qualificationReview: 1, incomplete: 2, rejected: 1, quarantined: 1, protected: 0, failed: 1,
+        errors: [], rowOutcomes: [],
+      },
+    });
+    const { container } = render(<ContactImportWorkspace />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    await user.upload(input, new File(['First Name\nAvery'], 'contacts.csv', { type: 'text/csv' }));
+    await user.click(await screen.findByRole('button', { name: /confirm import/i }));
+
+    expect(await screen.findByText(/1 imported contacts need qualification review/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 incomplete \(1 safely quarantined\) · 1 failed/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 already current/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Review qualification' })[0]).toHaveAttribute('href', '/contacts?scope=needs-review');
+    expect(screen.getAllByRole('link', { name: 'Review quarantined records' })[0]).toHaveAttribute('href', '/contacts/incomplete');
+    expect(screen.getByRole('button', { name: 'Fix and re-import' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry failed rows' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View import history' })).toHaveAttribute('href', '/data#import-history');
+  });
+
+  it('keeps failed-only recovery focused on retry and history', async () => {
+    const user = userEvent.setup();
+    actions.previewImport.mockResolvedValueOnce({
+      ok: true, isLive: true,
+      preview: {
+        provider: 'spreadsheet', filename: 'contacts.csv', format: 'csv', totalRows: 1,
+        headers: ['Email'], recognizedFields: ['email'], unknownFields: [], preservedFields: [], rejected: [],
+        counts: { create: 1, update: 0, unchanged: 0, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 0, protected: 0 },
+        classificationCounts: { automatic: 1, explicit: 0, needsReview: 0 },
+        rows: [{
+          rowNumber: 2, action: 'create', candidate: { email: 'avery@example.com', tags: [], leadType: 'warm', pipelineStage: 'new' },
+          classification: { summary: 'Warm prospect.' }, changes: ['email'],
+        }],
+      },
+    });
+    actions.commitImport.mockResolvedValue({
+      ok: true,
+      result: {
+        ok: false, provider: 'spreadsheet', totalRows: 1, created: 0, updated: 0, unchanged: 0,
+        merged: 0, archivedMatches: 0, ambiguousIdentities: 0, notesAdded: 0,
+        qualificationReview: 0, incomplete: 0, rejected: 0, quarantined: 0, protected: 0, failed: 1,
+        errors: [{ rowNumber: 2, message: 'Temporary provider failure.' }], rowOutcomes: [],
+      },
+    });
+    const { container } = render(<ContactImportWorkspace />);
+    await user.upload(
+      container.querySelector('input[type="file"]') as HTMLInputElement,
+      new File(['Email\navery@example.com'], 'contacts.csv', { type: 'text/csv' }),
+    );
+    await user.click(await screen.findByRole('button', { name: /confirm import/i }));
+
+    expect(await screen.findByRole('button', { name: 'Retry failed rows' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View import history' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Fix and re-import' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Review quarantined records' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Retry failed rows' }));
+    expect(actions.commitImport).toHaveBeenCalledTimes(2);
+  });
+
+  it('directs a rejected-only result back to correction without a quarantine CTA', async () => {
+    const user = userEvent.setup();
+    actions.previewImport.mockResolvedValueOnce({
+      ok: true, isLive: true,
+      preview: {
+        provider: 'spreadsheet', filename: 'contacts.csv', format: 'csv', totalRows: 2,
+        headers: ['First Name'], recognizedFields: ['firstName'], unknownFields: [], preservedFields: [], rejected: [],
+        counts: { create: 1, update: 0, unchanged: 0, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 1, protected: 0 },
+        classificationCounts: { automatic: 1, explicit: 0, needsReview: 0 },
+        rows: [{
+          rowNumber: 2, action: 'create', candidate: { firstName: 'Avery', lastName: '', tags: [], leadType: 'nurture', pipelineStage: 'new' },
+          classification: { summary: 'New relationship.' }, changes: ['firstName'],
+        }],
+      },
+    });
+    actions.commitImport.mockResolvedValueOnce({
+      ok: true,
+      result: {
+        ok: false, provider: 'spreadsheet', totalRows: 2, created: 1, updated: 0, unchanged: 0,
+        merged: 0, archivedMatches: 0, ambiguousIdentities: 0, notesAdded: 0,
+        qualificationReview: 0, incomplete: 1, rejected: 1, quarantined: 0, protected: 0, failed: 0,
+        errors: [{ rowNumber: 2, message: 'Add a name, email, or phone.' }], rowOutcomes: [],
+      },
+    });
+    const { container } = render(<ContactImportWorkspace />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    await user.upload(input, new File(['First Name\n'], 'contacts.csv', { type: 'text/csv' }));
+    await user.click(await screen.findByRole('button', { name: /confirm import/i }));
+
+    expect(await screen.findByRole('button', { name: 'Fix and re-import' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Review quarantined records' })).not.toBeInTheDocument();
+  });
+
+  it('uses Already current in preview copy', async () => {
+    const user = userEvent.setup();
+    actions.previewImport.mockResolvedValueOnce({
+      ok: true, isLive: true,
+      preview: {
+        provider: 'spreadsheet', filename: 'contacts.csv', format: 'csv', totalRows: 1,
+        headers: ['Email'], recognizedFields: ['email'], unknownFields: [], preservedFields: [], rejected: [],
+        counts: { create: 0, update: 0, unchanged: 1, merge: 0, 'archived-match': 0, 'ambiguous-identity': 0, rejected: 0, protected: 0 },
+        classificationCounts: { automatic: 0, explicit: 1, needsReview: 0 }, rows: [],
+      },
+    });
+    const { container } = render(<ContactImportWorkspace />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    await user.upload(input, new File(['Email\na@example.com'], 'contacts.csv', { type: 'text/csv' }));
+
+    expect(await screen.findByText(/1 Already current/)).toBeInTheDocument();
+    expect(screen.queryByText(/clients already existing/i)).not.toBeInTheDocument();
   });
 });

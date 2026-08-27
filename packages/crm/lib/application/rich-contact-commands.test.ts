@@ -15,6 +15,7 @@ import {
   removeHouseholdMemberCommand,
   restoreContactCommand,
   setContactCustomFieldValueCommand,
+  updateContactPointCommand,
 } from './rich-contact-commands';
 
 const NOW = new Date('2026-08-11T00:00:00.000Z');
@@ -69,6 +70,24 @@ describe('rich contact commands', () => {
     await expect(addContactPointCommand(repository, SAMPLE_WORKSPACE_SCOPE, {
       contactId: 'contact-a', type: 'phone', label: 'Office', displayValue: '614-555-0101', isPrimary: true,
     })).rejects.toMatchObject({ code: 'conflict' });
+  });
+
+  it('never infers positive email consent in rich-contact commands', async () => {
+    const { repository } = harness();
+    const missing = await addContactPointCommand(repository, SAMPLE_WORKSPACE_SCOPE, {
+      contactId: 'contact-a', type: 'email', label: 'Personal', displayValue: 'missing@example.com',
+    });
+    const dnc = await addContactPointCommand(repository, SAMPLE_WORKSPACE_SCOPE, {
+      contactId: 'contact-a', type: 'email', label: 'DNC', displayValue: 'dnc@example.com',
+      emailSubscribed: true,
+    });
+    expect(missing.emailSubscribed).toBe(false);
+    expect(dnc.emailSubscribed).toBe(false);
+
+    const updated = await updateContactPointCommand(repository, SAMPLE_WORKSPACE_SCOPE, {
+      pointId: missing.id, type: 'email', label: 'Personal', displayValue: 'missing@example.com',
+    });
+    expect(updated.emailSubscribed).toBe(false);
   });
 
   it('rejects reverse relationship duplicates and revoked assignees', async () => {

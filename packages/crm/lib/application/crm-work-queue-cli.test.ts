@@ -30,8 +30,9 @@ describe('CRM work queue CLI', () => {
       durable: false,
       resource: 'smart-lists',
       command: 'apply',
-      result: { contactIds: ['contact-hot'], resultLimit: 500 },
+      result: { contactIds: ['contact-hot'] },
     });
+    expect(JSON.parse(harness.stdout()).result).not.toHaveProperty('resultLimit');
     expect(harness.stderr()).toBe('');
   });
 

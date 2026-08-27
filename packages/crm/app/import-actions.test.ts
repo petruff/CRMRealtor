@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/data', () => ({ getRepository: vi.fn() }));
 vi.mock('@/lib/supabase/env', () => ({ isSupabaseConfigured: vi.fn() }));
 vi.mock('@/lib/application/contact-import', () => ({ parseContactImport: vi.fn() }));
@@ -10,14 +12,17 @@ vi.mock('@/lib/application/contact-import-service', () => ({
 vi.mock('@/lib/application/imported-contact-organization', () => ({
   organizeExistingImportedContacts: vi.fn(),
 }));
+vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: vi.fn() }));
 
 import { getRepository } from '@/lib/data';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { parsePortableContactImport } from '@/lib/application/workbook-portability';
-import { previewContactImport } from '@/lib/application/contact-import-service';
+import { executeContactImport, previewContactImport } from '@/lib/application/contact-import-service';
 import { organizeExistingImportedContacts } from '@/lib/application/imported-contact-organization';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 import {
   applyExistingImportOrganizationAction,
+  commitImportAction,
   previewExistingImportOrganizationAction,
   previewImportAction,
   rollbackExistingImportOrganizationAction,
@@ -109,5 +114,104 @@ describe('contact import actions', () => {
       ok: false, message: 'The rollback receipt is invalid.',
     });
     expect(getRepository).not.toHaveBeenCalled();
+  });
+
+  it('fails receipt preflight before applying the first contact mutation', async () => {
+    vi.mocked(getRepository).mockResolvedValue({
+      isLive: true,
+      workspaceScope: { workspaceId: 'workspace-owner', membershipId: 'owner-1', role: 'owner' },
+      repository: {}, importGateway: { getReceipt: vi.fn(async () => undefined) }, activityRepository: {}, incompleteRecordRepository: {},
+    } as unknown as Awaited<ReturnType<typeof getRepository>>);
+    vi.mocked(parsePortableContactImport).mockResolvedValue({
+      filename: 'contacts.numbers', format: 'numbers', provider: 'spreadsheet', totalRows: 1,
+    } as Awaited<ReturnType<typeof parsePortableContactImport>>);
+    vi.mocked(previewContactImport).mockResolvedValue({
+      filename: 'contacts.numbers', format: 'numbers', provider: 'spreadsheet', totalRows: 1,
+    } as Awaited<ReturnType<typeof previewContactImport>>);
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      rpc: vi.fn(async () => ({ data: null, error: { code: '42883' } })),
+    } as never);
+
+    const response = await commitImportAction({
+      filename: 'contacts.numbers', source: 'auto', contentBase64: 'UEs=',
+    });
+
+    expect(response).toMatchObject({
+      ok: false,
+      message: expect.stringContaining('No contacts were changed'),
+    });
+    expect(executeContactImport).not.toHaveBeenCalled();
+  });
+
+  it('returns a durable aggregate replay before parsing or previewing mutable contact state', async () => {
+    const contentBase64 = 'UEs=';
+    const fileHash = createHash('sha256').update(Buffer.from(contentBase64, 'base64')).digest('hex');
+    vi.mocked(getRepository).mockResolvedValue({
+      isLive: true,
+      workspaceScope: { workspaceId: 'workspace-owner', membershipId: 'owner-1', role: 'owner' },
+      repository: {}, activityRepository: {}, incompleteRecordRepository: {},
+      importGateway: {
+        getReceipt: vi.fn(async () => ({
+          idempotencyKey: `ui:${fileHash}`,
+          requestHash: fileHash,
+          statusCode: 200,
+          createdAt: '2026-08-25T12:30:00.000Z',
+          response: {
+            state: 'recorded', runId: 'run-immutable', planHash: 'a'.repeat(64), noOp: false,
+            counts: { total: 1, created: 1, updated: 0, unchanged: 0, rejected: 0, quarantined: 0, failed: 0, notesAdded: 0 },
+            rowOutcomes: [{ rowNumber: 1, outcome: 'created', contactId: 'contact-original' }],
+          },
+        })),
+      },
+    } as unknown as Awaited<ReturnType<typeof getRepository>>);
+
+    const response = await commitImportAction({
+      filename: 'contacts.xlsx', source: 'spreadsheet', contentBase64,
+    });
+
+    expect(response).toMatchObject({
+      ok: true,
+      result: { created: 1, updated: 0, receiptState: 'recorded' },
+    });
+    expect(parsePortableContactImport).not.toHaveBeenCalled();
+    expect(previewContactImport).not.toHaveBeenCalled();
+    expect(createSupabaseServerClient).not.toHaveBeenCalled();
+  });
+
+  it('recovers an exact prior import without replaying contact mutations', async () => {
+    vi.mocked(getRepository).mockResolvedValue({
+      isLive: true,
+      workspaceScope: { workspaceId: 'workspace-owner', membershipId: 'owner-1', role: 'owner' },
+      repository: {}, importGateway: { getReceipt: vi.fn(async () => undefined) }, activityRepository: {}, incompleteRecordRepository: {},
+    } as unknown as Awaited<ReturnType<typeof getRepository>>);
+    vi.mocked(parsePortableContactImport).mockResolvedValue({
+      filename: 'contacts.numbers', format: 'numbers', provider: 'spreadsheet', totalRows: 2,
+    } as Awaited<ReturnType<typeof parsePortableContactImport>>);
+    vi.mocked(previewContactImport).mockResolvedValue({
+      filename: 'contacts.numbers', format: 'numbers', provider: 'spreadsheet', totalRows: 2,
+    } as Awaited<ReturnType<typeof previewContactImport>>);
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({
+      rpc: vi.fn(async () => ({ data: {
+        state: 'recovered', runId: 'run-a',
+        counts: {
+          total: 2, created: 1, updated: 1, unchanged: 0,
+          rejected: 0, quarantined: 0, failed: 0, notesAdded: 0,
+        },
+        rowOutcomes: [
+          { rowNumber: 1, outcome: 'created', contactId: 'contact-a' },
+          { rowNumber: 2, outcome: 'updated', contactId: 'contact-b' },
+        ],
+      }, error: null })),
+    } as never);
+
+    const response = await commitImportAction({
+      filename: 'contacts.numbers', source: 'auto', contentBase64: 'UEs=',
+    });
+
+    expect(response).toMatchObject({
+      ok: true,
+      result: { created: 1, updated: 1, receiptState: 'recovered' },
+    });
+    expect(executeContactImport).not.toHaveBeenCalled();
   });
 });

@@ -4,7 +4,6 @@ import { ConnectorError } from '@/lib/domain/connector';
 import type { ConnectorKekResolver } from '@/lib/security/connector-secret-envelope';
 import {
   ingestMailchimpWebhook,
-  resolveMailchimpWebhookEndpoint,
 } from '@/lib/application/mailchimp-webhook-service';
 
 export interface MailchimpWebhookRouteDependencies {
@@ -22,17 +21,16 @@ function response(body: unknown, status: number) {
 
 export async function handleMailchimpWebhookValidation(
   endpointKey: string,
-  dependencies: MailchimpWebhookRouteDependencies,
 ) {
-  try {
-    await resolveMailchimpWebhookEndpoint(dependencies.repository, endpointKey, {
-      now: dependencies.now,
-      resolver: dependencies.resolver,
-    });
-    return new NextResponse('ok', { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } });
-  } catch {
+  // Mailchimp probes the callback before its create-webhook response returns
+  // the one-time signing secret. At that point there cannot be persisted
+  // signing authority yet. Accept only the exact high-entropy key shape that
+  // Omnix generates; POST delivery still requires persisted authority and a
+  // valid provider signature before any payload is processed.
+  if (!/^[a-f0-9]{64}$/i.test(endpointKey)) {
     return new NextResponse('not found', { status: 404, headers: { 'Cache-Control': 'no-store, max-age=0' } });
   }
+  return new NextResponse('ok', { status: 200, headers: { 'Cache-Control': 'no-store, max-age=0' } });
 }
 
 export async function handleMailchimpWebhookPost(

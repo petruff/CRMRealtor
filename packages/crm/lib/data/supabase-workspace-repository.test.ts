@@ -40,6 +40,7 @@ function workspaceClient(options: {
   currentMembership?: typeof ownerRow | typeof assistantRow | null;
   activeOwner?: typeof ownerRow | null;
   rpcData?: unknown;
+  supportGrantId?: string | null;
   rpcError?: { code?: string; message: string } | null;
   healthErrorTable?: string;
 } = {}) {
@@ -137,6 +138,9 @@ function workspaceClient(options: {
     from(table: string) { calls.push({ table, operation: 'from' }); return chain(table); },
     rpc(name: string, args: unknown) {
       calls.push({ operation: `rpc:${name}`, value: args });
+      if (name === 'resolve_workspace_support_grant_id') {
+        return Promise.resolve({ data: options.supportGrantId ?? null, error: options.rpcError ?? null });
+      }
       return Promise.resolve({ data: options.rpcData ?? null, error: options.rpcError ?? null });
     },
   };
@@ -178,24 +182,46 @@ describe('supabaseWorkspaceRepository', () => {
       .rejects.toMatchObject({ code: 'forbidden' });
   });
 
-  it('accepts an audited administrator elevation without changing the stored assistant role', async () => {
+  it('allows only named support reads without rewriting the assistant role', async () => {
     const administratorScope: WorkspaceScope = {
       ...ownerScope,
       authenticatedUserId: 'assistant-a',
       membershipId: 'membership-assistant-a',
-      role: 'owner',
+      role: 'assistant',
+      supportGrant: { grantId: 'grant-support-a', active: true },
     };
-    const granted = workspaceClient({ currentMembership: assistantRow, rpcData: true });
+    const granted = workspaceClient({ currentMembership: assistantRow, supportGrantId: 'grant-support-a' });
     await expect(supabaseWorkspaceRepository(granted.client).listMemberships(administratorScope))
       .resolves.toHaveLength(2);
     expect(granted.calls).toContainEqual({
-      operation: 'rpc:is_workspace_owner',
+      operation: 'rpc:resolve_workspace_support_grant_id',
       value: { target_workspace_id: 'workspace-a' },
     });
 
-    const denied = workspaceClient({ currentMembership: assistantRow, rpcData: false });
+    const denied = workspaceClient({ currentMembership: assistantRow, supportGrantId: null });
     await expect(supabaseWorkspaceRepository(denied.client).listMemberships(administratorScope))
-      .rejects.toMatchObject({ code: 'scope-mismatch' });
+      .rejects.toMatchObject({ code: 'forbidden' });
+
+    await expect(supabaseWorkspaceRepository(granted.client).addMembership(
+      administratorScope,
+      { userId: 'assistant-b', role: 'assistant' },
+    )).rejects.toMatchObject({ code: 'forbidden' });
+  });
+
+  it('rejects a forged owner scope before any support predicate can elevate it', async () => {
+    const forgedScope: WorkspaceScope = {
+      ...ownerScope,
+      authenticatedUserId: 'assistant-a',
+      membershipId: 'membership-assistant-a',
+      role: 'owner',
+      supportGrant: { grantId: 'forged-grant', active: true },
+    };
+    const harness = workspaceClient({ currentMembership: assistantRow, rpcData: true });
+    await expect(supabaseWorkspaceRepository(harness.client).addMembership(
+      forgedScope,
+      { userId: 'assistant-b', role: 'assistant' },
+    )).rejects.toMatchObject({ code: 'scope-mismatch' });
+    expect(harness.calls.some((call) => call.operation === 'rpc:resolve_workspace_support_grant_id')).toBe(false);
   });
 
   it('uses owner-only RPCs and preserves command correlation IDs', async () => {

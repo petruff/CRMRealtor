@@ -1,12 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   WorkspaceAuthorityError,
+  assertCanonicalWorkspaceOwner,
   canManageWorkspaceAuthority,
+  canPerformWorkspaceSupportOperation,
   isWorkspaceRole,
   validateWorkspaceScope,
   type Workspace,
   type WorkspaceMembership,
   type WorkspaceScope,
+  type WorkspaceSupportOperation,
 } from '../domain/workspace.ts';
 import type {
   AddWorkspaceMembershipInput,
@@ -124,8 +127,12 @@ function auditAction(value: string): WorkspaceAuthorityAuditAction | undefined {
 }
 
 export function supabaseWorkspaceRepository(supabase: SupabaseClient): WorkspaceRepository {
-  async function authorize(untrustedScope: WorkspaceScope, ownerOnly = false) {
+  async function authorize(
+    untrustedScope: WorkspaceScope,
+    requirement: 'membership' | 'canonical-owner' | WorkspaceSupportOperation = 'membership',
+  ) {
     const scope = validateWorkspaceScope(untrustedScope);
+    let authorizedScope = scope;
     if (scope.mode !== 'live') {
       throw authorityError('scope-mismatch', 'Supabase workspace repositories require live mode.');
     }
@@ -147,22 +154,8 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
     if (membership.status !== 'active') {
       throw authorityError('revoked-membership', 'Workspace membership has been revoked.');
     }
-    let hasEffectiveOwnerAuthority = membership.role === 'owner';
     if (membership.role !== scope.role) {
-      const eligibleForAdminElevation = membership.role === 'assistant' && scope.role === 'owner';
-      if (!eligibleForAdminElevation) {
-        throw authorityError('scope-mismatch', 'Workspace role does not match active membership.');
-      }
-      const { data: privileged, error: privilegeError } = await supabase.rpc('is_workspace_owner', {
-        target_workspace_id: scope.workspaceId,
-      });
-      if (privilegeError) {
-        throw mapSupabaseError('Failed to verify workspace administrator', privilegeError);
-      }
-      if (privileged !== true) {
-        throw authorityError('scope-mismatch', 'Workspace administrator grant is not active.');
-      }
-      hasEffectiveOwnerAuthority = true;
+      throw authorityError('scope-mismatch', 'Workspace role does not match active membership.');
     }
 
     const { data: ownerData, error: ownerError } = await supabase
@@ -176,8 +169,27 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
     if (!ownerData || (ownerData as WorkspaceMembershipRow).user_id !== scope.ownerUserId) {
       throw authorityError('scope-mismatch', 'Workspace owner does not match compatibility authority.');
     }
-    if (ownerOnly && !hasEffectiveOwnerAuthority && !canManageWorkspaceAuthority(membership.role)) {
-      throw authorityError('forbidden', 'Owner authority is required.');
+    if (requirement === 'canonical-owner') {
+      assertCanonicalWorkspaceOwner(scope);
+    } else if (requirement !== 'membership') {
+      if (!canManageWorkspaceAuthority(scope)) {
+        const { data: supportGrantId, error: supportError } = await supabase.rpc(
+          'resolve_workspace_support_grant_id',
+          { target_workspace_id: scope.workspaceId },
+        );
+        if (supportError) {
+          throw mapSupabaseError('Failed to verify workspace support grant', supportError);
+        }
+        authorizedScope = validateWorkspaceScope({
+          ...scope,
+          supportGrant: typeof supportGrantId === 'string'
+            ? { grantId: supportGrantId, active: true }
+            : null,
+        });
+        if (!canPerformWorkspaceSupportOperation(authorizedScope, requirement)) {
+          throw authorityError('forbidden', 'Named workspace support authority is required.');
+        }
+      }
     }
 
     const { data: workspaceData, error: workspaceError } = await supabase
@@ -189,7 +201,7 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
     if (!workspaceData) throw authorityError('not-found', 'Workspace was not found.');
 
     return {
-      scope,
+      scope: authorizedScope,
       membership,
       workspace: toWorkspace(workspaceData as WorkspaceRow),
     };
@@ -215,7 +227,7 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
       if (scope.role !== 'owner') {
         throw authorityError('conflict', 'Authenticated user already belongs to a workspace as assistant.');
       }
-      return snapshot(await authorize(scope, true));
+      return snapshot(await authorize(scope, 'canonical-owner'));
     },
 
     async show(scope) {
@@ -223,7 +235,7 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
     },
 
     async listMemberships(scope) {
-      const authority = await authorize(scope, true);
+      const authority = await authorize(scope, 'workspace.memberships.read');
       const { data, error } = await supabase
         .from('workspace_members')
         .select('id, workspace_id, user_id, role, status, revoked_at, created_at, updated_at')
@@ -234,7 +246,7 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
     },
 
     async addMembership(scope, input: AddWorkspaceMembershipInput) {
-      await authorize(scope, true);
+      await authorize(scope, 'canonical-owner');
       if (input.role !== 'assistant') {
         throw authorityError(
           'invalid-input',
@@ -256,7 +268,7 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
     },
 
     async revokeMembership(scope, input: RevokeWorkspaceMembershipInput) {
-      await authorize(scope, true);
+      await authorize(scope, 'canonical-owner');
       const correlationId = uuid(input.correlationId, 'Correlation ID');
       const { data, error } = await supabase.rpc('revoke_workspace_assistant', {
         target_membership_id: input.membershipId,
@@ -276,7 +288,7 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
     },
 
     async health(scope): Promise<WorkspaceHealthReport> {
-      const authority = await authorize(scope, true);
+      const authority = await authorize(scope, 'workspace.health.read');
       const workspaceTableProbes = [
         { table: 'contacts', column: 'id' },
         { table: 'notes', column: 'id' },
@@ -338,7 +350,7 @@ export function supabaseWorkspaceRepository(supabase: SupabaseClient): Workspace
     },
 
     async listAuthorityAuditEvents(scope) {
-      const authority = await authorize(scope, true);
+      const authority = await authorize(scope, 'workspace.authority-audit.read');
       const { data, error } = await supabase
         .from('workspace_authority_audit_events')
         .select('id, workspace_id, actor_user_id, action, result, reason, correlation_id, created_at')

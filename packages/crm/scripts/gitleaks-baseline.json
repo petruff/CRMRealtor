@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "findings": [
+    {
+      "rule": "generic-api-key",
+      "path": "docs/stories/3.21.airtable-editorial-product-system.story.md",
+      "line": 54,
+      "secretSha256Parts": ["a21e043b", "acd6f183", "fabe7a1d", "2a9c22d6", "6d62a67c", "c92dd6ef", "7250c349", "2d95c2a2"],
+      "reason": "Natural-language story text; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "docs/stories/3.5.connector-security-jobs-approvals.story.md",
+      "line": 46,
+      "secretSha256Parts": ["1439b395", "6e4beca5", "7c35b31c", "0e3808bf", "fe15f34c", "a1bb2de2", "138c53c4", "c27b23fe"],
+      "reason": "Natural-language story text; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "packages/crm/components/ai-settings-form.test.tsx",
+      "line": 19,
+      "secretSha256Parts": ["da4ec335", "8a10c9b0", "872eb877", "953cc7b0", "7af5f4d7", "5e4c1cb0", "597cbbf4", "1e5dbe35"],
+      "reason": "Deterministic test-only fingerprint; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "packages/crm/lib/security/operational-api.ts",
+      "line": 3,
+      "secretSha256Parts": ["b1baca3f", "94e3d719", "c2707b0e", "da29a9f2", "52564415", "2ea1e614", "7bdf5784", "9dbb7003"],
+      "reason": "Public schema-version constant; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "packages/crm/supabase/docs/CONNECTOR_FOUNDATION_RUNBOOK.md",
+      "line": 5,
+      "secretSha256Parts": ["fe64b460", "eb858edb", "830a8eb8", "dab55427", "314bda37", "df4f7d36", "96822545", "49501c75"],
+      "reason": "Natural-language runbook text; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "packages/crm/supabase/docs/SCHEMA.md",
+      "line": 398,
+      "secretSha256Parts": ["9f8eef82", "ed668e6d", "d8359eb2", "7342e671", "a3d3730d", "7a987829", "dfe8e248", "0bc70d38"],
+      "reason": "Natural-language schema documentation; reviewed false positive."
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import {
   parseOperatingInsightPeriod,
 } from '../domain/operating-insights.ts';
 import type { ActivityEvent } from '../domain/activity.ts';
+import { displayName } from '../domain/contact.ts';
 
 const OPERATING_INSIGHTS_BOUND = 500;
 
@@ -27,27 +28,37 @@ export async function getOperatingInsights(
 ) {
   const periodDays = input.period === undefined ? 90 : parseOperatingInsightPeriod(input.period);
   const windows = operatingInsightWindows(periodDays, now);
-  const [contacts, transitionEvents, periodEvents, tasks, memberships] = await Promise.all([
+  const [contacts, transitionEvents, taskCreatedEvents, taskCompletedEvents, tasks, memberships] = await Promise.all([
     context.repository.list(),
     listActivityEventsCommand(context.activityRepository, context.workspaceScope, {
       type: 'pipeline-stage-changed', to: windows.current.to, limit: OPERATING_INSIGHTS_BOUND,
     }),
     listActivityEventsCommand(context.activityRepository, context.workspaceScope, {
-      from: windows.previous.from, to: windows.current.to, limit: OPERATING_INSIGHTS_BOUND,
+      type: 'task-created', from: windows.previous.from, to: windows.current.to, limit: OPERATING_INSIGHTS_BOUND,
+    }),
+    listActivityEventsCommand(context.activityRepository, context.workspaceScope, {
+      type: 'task-completed', from: windows.previous.from, to: windows.current.to, limit: OPERATING_INSIGHTS_BOUND,
     }),
     listTasksCommand(context.activityRepository, context.workspaceScope, { status: 'all', limit: OPERATING_INSIGHTS_BOUND }),
     context.workspaceRepository.listMemberships(context.workspaceScope),
   ]);
-  const events = mergeEvents(transitionEvents, periodEvents);
-  return buildOperatingInsights({
+  const events = mergeEvents(transitionEvents, [...taskCreatedEvents, ...taskCompletedEvents]);
+  const report = buildOperatingInsights({
     periodDays, mode: context.workspaceScope.mode, currentWindow: windows.current, previousWindow: windows.previous,
     contacts, events, tasks, memberships,
     contactBoundedAt: OPERATING_INSIGHTS_BOUND,
     transitionEventBoundedAt: OPERATING_INSIGHTS_BOUND,
-    eventBoundedAt: OPERATING_INSIGHTS_BOUND * 2,
+    eventBoundedAt: OPERATING_INSIGHTS_BOUND * 3,
     taskBoundedAt: OPERATING_INSIGHTS_BOUND,
     contactsTruncated: contacts.length === OPERATING_INSIGHTS_BOUND,
-    eventsTruncated: transitionEvents.length === OPERATING_INSIGHTS_BOUND || periodEvents.length === OPERATING_INSIGHTS_BOUND,
+    eventsTruncated: transitionEvents.length === OPERATING_INSIGHTS_BOUND
+      || taskCreatedEvents.length === OPERATING_INSIGHTS_BOUND
+      || taskCompletedEvents.length === OPERATING_INSIGHTS_BOUND,
     tasksTruncated: tasks.length === OPERATING_INSIGHTS_BOUND,
   });
+  return {
+    ...report,
+    contactDisplayNames: new Map(contacts.map((contact) => [contact.id, displayName(contact)] as const)),
+    taskDisplayNames: new Map(tasks.map((task) => [task.id, task.title] as const)),
+  };
 }

@@ -26,6 +26,7 @@ vi.mock('@/components/omnix-assistant-launcher', () => ({
     <div data-testid="assistant-launcher-contract" data-suppressed={String(suppressed)} />
   ),
 }));
+vi.mock('@/components/pwa-provider', () => ({ PwaInstallAction: () => <button type="button">Install Omnix</button> }));
 
 import { AppShell } from '@/components/app-shell';
 
@@ -69,6 +70,7 @@ describe('AppShell account controls', () => {
     expect(utilities.querySelector('a[href="/alerts"]')).toHaveFocus();
     expect(utilities.querySelector('a[href="/settings"]')).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/workspace"]')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Install Omnix' })).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Theme' })).toHaveLength(2);
 
     const signOut = utilities.querySelector<HTMLButtonElement>('button[type="submit"]');

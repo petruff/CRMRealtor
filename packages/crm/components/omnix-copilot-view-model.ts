@@ -116,9 +116,14 @@ export function mapOmnixCopilotEnvelope(
       answerBlocks: envelope.code === 'unsupported-intent' ? [{
         id: 'supported-examples',
         kind: 'list',
-        title: 'Supported questions',
-        detail: 'Omnix matches only this documented question set.',
-        items: envelope.supportedExamples.map((example) => ({
+        title: 'Try asking in one of these ways',
+        detail: 'I can help with today’s priorities, follow-ups, people who need attention, and your pipeline.',
+        items: [
+          'What are my priorities today?',
+          'Who needs my attention?',
+          'Which tasks are overdue?',
+          'Show me my pipeline',
+        ].map((example) => ({
           id: `example-${example}`,
           label: example,
           citationIds: [],
@@ -129,7 +134,9 @@ export function mapOmnixCopilotEnvelope(
       suggestions: [],
       alerts: [],
       warnings: envelope.warnings.map((warning) => warning.message),
-      message: envelope.message,
+      message: envelope.code === 'unsupported-intent'
+        ? "I couldn't match that wording yet. Nothing was changed."
+        : envelope.message,
     };
   }
 

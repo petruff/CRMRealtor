@@ -12,7 +12,7 @@ export const SMART_LIST_SCHEMA_VERSION = 'smart-list-filter.v1' as const;
 export const SMART_LIST_NAME_MAX = 80;
 export const SMART_LIST_QUERY_MAX = 200;
 export const SMART_LIST_CRITERIA_MAX = 20;
-export const SMART_LIST_RESULT_MAX = 500;
+export const SMART_LIST_EVALUATION_INPUT_MAX = 10_000;
 
 export const SMART_LIST_STATUSES = ['active', 'archived'] as const;
 export type SmartListStatus = (typeof SMART_LIST_STATUSES)[number];
@@ -449,17 +449,22 @@ function compareContacts(
   return result || left.id.localeCompare(right.id);
 }
 
-/** Validates again at execution time, evaluates all criteria, and returns at most 500 contacts. */
+/** Validates again at execution time and returns every match without silently truncating results. */
 export function applySmartListDefinition(
   contacts: readonly Contact[],
   untrustedDefinition: unknown,
 ): Contact[] {
+  if (contacts.length > SMART_LIST_EVALUATION_INPUT_MAX) {
+    throw new SmartListValidationError(
+      `Smart List evaluation supports at most ${SMART_LIST_EVALUATION_INPUT_MAX.toLocaleString('en-US')} contacts per exhaustive request. Use bounded pagination for larger workspaces.`,
+      { contacts: 'Use bounded pagination for this workspace.' },
+    );
+  }
   const definition = parseSmartListDefinition(untrustedDefinition);
   const sort = definition.sort ?? { field: 'priority', direction: 'asc' };
   return contacts
     .filter((contact) => definition.criteria.every((criterion) => matchesCriterion(contact, criterion)))
-    .sort((left, right) => compareContacts(left, right, sort))
-    .slice(0, SMART_LIST_RESULT_MAX);
+    .sort((left, right) => compareContacts(left, right, sort));
 }
 
 export function archiveSmartList(

@@ -322,13 +322,9 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
               CRM checked {new Date(result.asOf).toLocaleString()} · Read-only response
             </p>
           ) : null}
-          {result.model ? (
+          {result.model?.routed ? (
             <p className="mt-2 text-[11px] text-subtle" role="status">
-              {result.model.routed
-                ? `Google Gemini translated this question into a governed Omnix query${result.model.model ? ` · ${result.model.model}` : ''}. CRM data stayed in Omnix.`
-                : result.model.state === 'unconfigured'
-                  ? 'Conversational routing is not configured. Deterministic Omnix remains available.'
-                  : 'Conversational routing was unavailable. No CRM data was sent.'}
+              I understood the question and checked the matching CRM records.
             </p>
           ) : null}
         </div>

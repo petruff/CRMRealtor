@@ -1,4 +1,8 @@
-import type { ContactImportCandidate, ContactImportSourceFact } from '@/lib/application/contact-import';
+import {
+  hasImportedContactSuppression,
+  type ContactImportCandidate,
+  type ContactImportSourceFact,
+} from '@/lib/application/contact-import';
 
 export const CONTACT_IMPORT_CLASSIFICATION_POLICY_VERSION = 'omnix.import-classification.v1';
 
@@ -83,6 +87,7 @@ function lifecycleFromCanonical(input: ContactImportCandidate): Lifecycle | unde
   if (input.relationship === 'sphere') return 'sphere';
   if (input.relationship === 'active-client') return 'active-client';
   if (input.pipelineStage === 'active') return 'active-lead';
+  if (input.pipelineStage === 'contacted') return 'new-lead';
   if (input.pipelineStage === 'new') return 'new-lead';
   return undefined;
 }
@@ -159,6 +164,7 @@ export function classifyContactImportCandidate(
     : signal || hasClosedDate ? 'medium' : 'review';
   const needsReview = !hasBusinessEvidence;
   const candidate: ContactImportCandidate = { ...input, tags: [...input.tags] };
+  if (hasImportedContactSuppression(candidate)) candidate.emailSubscribed = false;
   const decisions: ImportClassificationDecision[] = [];
 
   function fill(

@@ -276,6 +276,11 @@ $$;
 
 select 'ok 4 - composite membership and RLS reject cross-workspace Smart Lists';
 
+-- Intake rows are now created only through guarded SECURITY DEFINER workflows.
+-- Use the test owner role here to exercise the table constraints themselves;
+-- the least-privilege suite separately proves authenticated direct INSERT is denied.
+reset role;
+
 insert into incomplete_records (
   id, workspace_id, source, external_id, candidate, validation_reasons,
   intake_idempotency_key, intake_request_hash
@@ -388,6 +393,8 @@ begin
 end;
 $$;
 
+set local role authenticated;
+
 select 'ok 5 - quarantine enforces allowlists, identity, field shapes and application bounds';
 
 update incomplete_records
@@ -412,8 +419,13 @@ begin
     raise exception 'incomplete archive/restore state is inconsistent';
   end if;
 
-  delete from incomplete_records
-  where id = '61000000-0000-4000-8000-000000000001';
+  begin
+    delete from incomplete_records
+    where id = '61000000-0000-4000-8000-000000000001';
+    raise exception 'hard delete unexpectedly received table authority';
+  exception when insufficient_privilege then
+    null;
+  end;
 
   if not exists (
     select 1 from incomplete_records
@@ -852,7 +864,7 @@ declare
       "firstName":"Ada","lastName":"Lovelace","email":"ada@example.test",
       "leadType":"warm","relationship":"lead","intent":"unknown",
       "source":"other","pipelineStage":"new","tags":["buyer"],
-      "emailSubscribed":true,"touchDateOverridden":false
+      "emailSubscribed":false,"touchDateOverridden":false
     },
     "changes":[
       "firstName","lastName","email","leadType","relationship","intent",
@@ -942,6 +954,8 @@ begin
          where id = (first_conversion->>'contactId')::uuid
            and workspace_id = (first_conversion#>>'{record,workspace_id}')::uuid
            and owner_id = '11000000-0000-4000-8000-000000000001') <> 1
+     or (select email_subscribed from contacts
+         where id = (first_conversion->>'contactId')::uuid) is distinct from false
      or (select count(*) from activity_events
          where type = 'incomplete-record-converted'
            and incomplete_record_id = (first_conversion#>>'{record,id}')::uuid
@@ -976,6 +990,8 @@ update contacts
    set email = 'grace@example.test'
  where id = '41000000-0000-4000-8000-000000000001';
 
+reset role;
+
 insert into incomplete_records (
   id, workspace_id, source, external_id, candidate, validation_reasons
 ) values (
@@ -985,6 +1001,8 @@ insert into incomplete_records (
   '{"firstName":"Grace","email":"grace@example.test"}'::jsonb,
   '[{"field":"lastName","code":"required","message":"Last name is required"}]'::jsonb
 );
+
+set local role authenticated;
 
 do $$
 declare

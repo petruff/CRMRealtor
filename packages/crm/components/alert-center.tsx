@@ -27,6 +27,8 @@ import {
   evidenceFactSummary,
   evidenceTimestamp,
 } from '@/lib/presentation/crm-evidence';
+import type { AttentionItem } from '@/lib/domain/attention';
+import { AttentionControls } from '@/components/attention-controls';
 
 const BATCH_SIZE = 12;
 
@@ -117,6 +119,7 @@ function toggleValue<T>(values: ReadonlySet<T>, value: T): Set<T> {
 
 export interface AlertCenterProps {
   alerts: readonly OmnixCopilotAlert[];
+  attentionItems?: readonly AttentionItem[];
   citations: readonly OmnixCopilotCitation[];
   warnings: readonly string[];
   asOf: string;
@@ -129,6 +132,7 @@ export interface AlertCenterProps {
 
 export function AlertCenter({
   alerts,
+  attentionItems = [],
   citations,
   warnings,
   asOf,
@@ -139,6 +143,7 @@ export function AlertCenter({
   title = 'Alert Center',
 }: AlertCenterProps) {
   const canonicalAlerts = limit === undefined ? alerts : alerts.slice(0, limit);
+  const attentionByOccurrence = new Map(attentionItems.map((item) => [item.occurrenceKey, item]));
   const [query, setQuery] = useState('');
   const [groupFilters, setGroupFilters] = useState<Set<AlertGroupId>>(() => new Set());
   const [categoryFilters, setCategoryFilters] = useState<Set<OmnixCopilotAlertCategory>>(() => new Set());
@@ -366,6 +371,7 @@ export function AlertCenter({
                               {visibleAlerts.map((alert) => {
                                 const sources = alert.citations.map((citation) => citations.find((item) => item.id === citation.id) ?? citation);
                                 const CategoryIcon = CATEGORY_ICON[alert.category];
+                                const attentionItem = attentionByOccurrence.get(alert.occurrenceKey ?? `${alert.rule}:${alert.recordId}`);
                                 return (
                                   <li key={alert.id} data-alert-id={alert.id} className={`rounded-[var(--sk-card-radius)] border p-4 ${PRIORITY_TONE[alert.priority]}`}>
                                     <article aria-labelledby={`${alert.id}-reason`}>
@@ -397,6 +403,7 @@ export function AlertCenter({
                                           </ul>
                                         </details>
                                       </div>
+                                      {attentionItem ? <AttentionControls item={attentionItem} /> : null}
                                     </article>
                                   </li>
                                 );

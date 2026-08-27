@@ -124,7 +124,6 @@ export interface AppliedSmartList {
   readonly list: SmartList;
   readonly activeCriteria: SmartList['definition'];
   readonly contactIds: readonly string[];
-  readonly resultLimit: 500;
   readonly clear: Readonly<{ criteria: readonly []; sort: null }>;
 }
 
@@ -144,7 +143,6 @@ export async function applySmartListCommand(
     list,
     activeCriteria: list.definition,
     contactIds: matches.map((contact) => contact.id),
-    resultLimit: 500,
     clear: { criteria: [], sort: null },
   };
 }

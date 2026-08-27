@@ -30,6 +30,17 @@ const MERGE_CAPABILITIES = [
   'list_contact_alias_group_ids',
 ] as const;
 
+const reportedMissingCapabilities = new Set<string>();
+
+function reportMissingCapability(operation: string, error: { code?: string }): void {
+  if (reportedMissingCapabilities.has(operation)) return;
+  reportedMissingCapabilities.add(operation);
+  console.warn('Contact merge capability is not installed; Omnix is using standalone contact reads.', {
+    operation,
+    code: error.code ?? 'schema-capability-missing',
+  });
+}
+
 function standalone(contactId: string): ContactAliasGroup {
   return {
     requestedContactId: contactId,
@@ -41,13 +52,32 @@ function standalone(contactId: string): ContactAliasGroup {
 
 export function supabaseContactIdentityMap(supabase: SupabaseClient): ContactIdentityMap {
   return {
+    async hasActiveAliases(input) {
+      const scope = live(input);
+      const { count, error } = await supabase
+        .from('contact_merge_aliases')
+        .select('donor_contact_id', { count: 'exact', head: true })
+        .eq('workspace_id', scope.workspaceId)
+        .is('inactive_at', null);
+      if (error && isMissingSchemaCapability(error, MERGE_CAPABILITIES)) {
+        reportMissingCapability('count-active-contact-aliases', error);
+        return false;
+      }
+      if (error) throw failure('Failed to count active contact aliases', error);
+      if (typeof count !== 'number') throw new Error('Active contact alias count was unavailable.');
+      return count > 0;
+    },
+
     async resolveCanonical(input, contactId) {
       const scope = live(input);
       const { data, error } = await supabase.rpc('resolve_canonical_contact_id', {
         target_workspace_id: scope.workspaceId,
         target_contact_id: contactId,
       });
-      if (error && isMissingSchemaCapability(error, MERGE_CAPABILITIES)) return contactId;
+      if (error && isMissingSchemaCapability(error, MERGE_CAPABILITIES)) {
+        reportMissingCapability('resolve-canonical-contact', error);
+        return contactId;
+      }
       if (error) throw failure('Failed to resolve canonical contact', error);
       if (typeof data !== 'string') throw new Error('Canonical contact resolver returned an invalid identifier.');
       return data;
@@ -59,7 +89,10 @@ export function supabaseContactIdentityMap(supabase: SupabaseClient): ContactIde
         target_workspace_id: scope.workspaceId,
         target_contact_id: contactId,
       });
-      if (error && isMissingSchemaCapability(error, MERGE_CAPABILITIES)) return standalone(contactId);
+      if (error && isMissingSchemaCapability(error, MERGE_CAPABILITIES)) {
+        reportMissingCapability('list-contact-alias-group', error);
+        return standalone(contactId);
+      }
       if (error) throw failure('Failed to resolve contact alias group', error);
       if (!Array.isArray(data) || data.length === 0) {
         throw new Error('Contact alias group resolver returned an invalid group.');
@@ -91,7 +124,10 @@ export function supabaseContactIdentityMap(supabase: SupabaseClient): ContactIde
         .select('donor_contact_id, survivor_contact_id')
         .eq('workspace_id', scope.workspaceId)
         .is('inactive_at', null);
-      if (error && isMissingSchemaCapability(error, MERGE_CAPABILITIES)) return resolved;
+      if (error && isMissingSchemaCapability(error, MERGE_CAPABILITIES)) {
+        reportMissingCapability('resolve-contact-page-aliases', error);
+        return resolved;
+      }
       if (error) throw failure('Failed to resolve contact page aliases', error);
       for (const row of (data ?? []) as AliasRow[]) {
         if (resolved.has(row.donor_contact_id)) resolved.set(row.donor_contact_id, row.survivor_contact_id);

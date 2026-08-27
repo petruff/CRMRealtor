@@ -65,6 +65,38 @@ function activityClient() {
   return { client, calls };
 }
 
+function aggregateClient(taskRows: readonly typeof taskRow[], eventRows: readonly typeof eventRow[]) {
+  const calls: Array<{ operation: string; value?: unknown }> = [];
+  function query(table: 'tasks' | 'activity_events') {
+    const rows = table === 'tasks' ? taskRows : eventRows;
+    let selected = [...rows];
+    return {
+      select(value?: unknown) { calls.push({ operation: `${table}:select`, value }); return this; },
+      eq(field: string, value: unknown) {
+        calls.push({ operation: `${table}:eq:${field}`, value });
+        if (field === 'workspace_id') selected = selected.filter((row) => row.workspace_id === value);
+        return this;
+      },
+      in(field: string, value: unknown) {
+        calls.push({ operation: `${table}:in:${field}`, value });
+        const allowed = new Set(value as readonly string[]);
+        if (field === 'contact_id') selected = selected.filter((row) => row.contact_id && allowed.has(row.contact_id));
+        return this;
+      },
+      order(field: string) { calls.push({ operation: `${table}:order:${field}` }); return this; },
+      range(from: number, to: number) {
+        calls.push({ operation: `${table}:range`, value: [from, to] });
+        const providerEnd = Math.min(to + 1, from + 100);
+        return Promise.resolve({ data: selected.slice(from, providerEnd), error: null, count: selected.length });
+      },
+    };
+  }
+  return {
+    client: { from: (table: 'tasks' | 'activity_events') => query(table) } as unknown as SupabaseClient,
+    calls,
+  };
+}
+
 describe('supabaseActivityRepository', () => {
   it('maps and bounds workspace-scoped task and event reads', async () => {
     const harness = activityClient();
@@ -76,6 +108,47 @@ describe('supabaseActivityRepository', () => {
     expect(harness.calls).toContainEqual({ operation: 'tasks:eq:workspace_id', value: 'workspace-a' });
     expect(harness.calls).toContainEqual({ operation: 'tasks:limit', value: 500 });
     expect(harness.calls).toContainEqual({ operation: 'activity_events:limit', value: 10 });
+  });
+
+  it('exhausts provider-capped rows for exact visible-contact aggregates beyond 1,000 records', async () => {
+    const tasks = Array.from({ length: 1201 }, (_, index) => ({
+      ...taskRow,
+      id: `task-${index}`,
+      contact_id: index % 3 === 0 ? 'donor-a' : 'contact-a',
+      status: index % 2 === 0 ? 'open' : 'completed',
+    }));
+    const events = Array.from({ length: 1201 }, (_, index) => ({
+      ...eventRow,
+      id: `event-${index}`,
+      contact_id: index % 3 === 0 ? 'donor-a' : 'contact-a',
+      idempotency_key: `event-${index}`,
+    }));
+    const harness = aggregateClient(tasks, events);
+    const identityMap = {
+      async resolveCanonical(_scope: WorkspaceScope, contactId: string) { return contactId; },
+      async listGroupMembers(_scope: WorkspaceScope, contactId: string) {
+        return {
+          requestedContactId: contactId,
+          canonicalContactId: contactId,
+          memberContactIds: [contactId, 'donor-a'],
+          aliasEpoch: 1,
+        };
+      },
+      async resolvePage(_scope: WorkspaceScope, contactIds: readonly string[]) {
+        return new Map(contactIds.map((contactId) => [contactId, contactId]));
+      },
+    };
+
+    await expect(supabaseActivityRepository(harness.client, identityMap).listContactAggregates!(
+      scope,
+      ['contact-a'],
+    )).resolves.toEqual(new Map([['contact-a', {
+      activityCount: 1201,
+      openTaskCount: 601,
+      completedTaskCount: 600,
+    }]]));
+    expect(harness.calls).toContainEqual({ operation: 'tasks:range', value: [1200, 1699] });
+    expect(harness.calls).toContainEqual({ operation: 'activity_events:range', value: [1200, 1699] });
   });
 
   it.each([

@@ -31,6 +31,7 @@ async function appendContactActivity(
     type: 'contact-created' | 'contact-updated' | 'note-added' | 'touch-recorded';
     contactId: string;
     idempotencyKey: string;
+    metadata?: Readonly<Record<string, string | number | boolean | null>>;
   },
   now: Date,
 ): Promise<void> {
@@ -387,10 +388,14 @@ export async function updateContactCommand(
     touchDateOverridden: next.touchDateOverridden,
   };
   const updated = await repository.update(id, patch);
+  const changedFields = Object.keys(patch)
+    .filter((field) => JSON.stringify(existing[field as keyof Contact]) !== JSON.stringify(updated[field as keyof Contact]))
+    .sort();
   await appendContactActivity(activity, {
     type: 'contact-updated',
     contactId: updated.id,
     idempotencyKey: `contact-updated:${updated.id}:${now.getTime()}`,
+    metadata: { changedFields: changedFields.join(',') },
   }, now);
   return updated;
 }

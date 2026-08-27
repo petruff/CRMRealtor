@@ -29,7 +29,9 @@ npm run connectors -- receipts --live --job-id <job-id>
 
 `enqueue` is the owner-only atomic approve-and-enqueue operation. Editing creates a new version and requires a new approval. Rejecting never queues or calls a provider. `probe` never invents health: the foundation returns an honest unsupported/configuration state until the provider story supplies a receipt-backed probe. `drain`, `reconcile`, and `rewrap` use a separate `live-server-only` authority backed by `SUPABASE_SERVICE_ROLE_KEY`; they never reuse the realtor's end-user session. The production drain invocation remains restricted to the cron-authenticated server route.
 
-The repository declares a two-minute wake-up in `packages/crm/vercel.json`. Vercel Cron calls the route with `Authorization: Bearer $CRON_SECRET`; the handler refuses missing, short, or mismatched secrets and returns only aggregate counts. Confirm the selected Vercel plan supports this cadence before production deployment. Postgres—not the cron schedule—remains the durable queue authority.
+As verified read-only on 2026-08-25, the linked Vercel project is on the Hobby plan, which supports only one cron invocation per day and may invoke it at any point within the selected hour. The repository therefore declares the supported `0 6 * * *` schedule in `packages/crm/vercel.json` as a maintenance/recovery sweep only. It does **not** meet the interactive connector worker SLO and cannot authorize a `ready` or live-provider release claim. A release manifest must record a fresh read-only plan verification, exact deployed schedule, and `liveConnectorPromotionAllowed: false` until the project is verified on Pro or Enterprise with the intended two-minute cadence.
+
+Vercel Cron calls the route with `Authorization: Bearer $CRON_SECRET`; the handler refuses missing, short, or mismatched secrets and returns only aggregate counts. Postgres—not the cron schedule—remains the durable queue authority. Upgrading the Vercel plan or changing the cron cadence is an external configuration decision and is not performed by repository release tooling.
 
 ## Failure and recovery
 

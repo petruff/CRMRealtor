@@ -55,6 +55,25 @@ describe('Smart List commands', () => {
     expect((await restoreSmartListCommand(repository, SAMPLE_WORKSPACE_SCOPE, created.id, now)).noOp).toBe(false);
   });
 
+  it('returns every contact ID when a caller requests exhaustive evaluation beyond 500', async () => {
+    const repository = createMemorySmartListRepository();
+    const created = await createSmartListCommand(repository, SAMPLE_WORKSPACE_SCOPE, {
+      name: 'Complete audience', definition,
+    }, now);
+    const source = Array.from({ length: 501 }, (_, index) => contact(`contact-${index}`, 'warm'));
+
+    const applied = await applySmartListCommand(
+      repository,
+      { list: async () => source },
+      SAMPLE_WORKSPACE_SCOPE,
+      created.id,
+    );
+
+    expect(applied.contactIds).toHaveLength(501);
+    expect(applied.contactIds).toContain('contact-500');
+    expect(applied).not.toHaveProperty('resultLimit');
+  });
+
   it('keeps records isolated by workspace scope', async () => {
     const repository = createMemorySmartListRepository();
     const created = await createSmartListCommand(repository, SAMPLE_WORKSPACE_SCOPE, {

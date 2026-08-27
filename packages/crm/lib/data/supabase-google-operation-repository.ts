@@ -116,6 +116,15 @@ export function supabaseGoogleOperationRepository(input: {
       return state(data);
     },
 
+    async repairCapabilityState(_scope, connectionId, occurredAt) {
+      const { data, error } = await input.authenticated.rpc('repair_google_connection_capabilities', {
+        target_connection_id: connectionId,
+        target_occurred_at: occurredAt,
+      });
+      if (error) throw persistenceError('Failed to repair Google capability state', error);
+      return state(data);
+    },
+
     async storeEncryptedPayload(scope, value) {
       if (!input.service) throw new ConnectorError('configuration-required', 'Google payload authority is not configured.');
       const envelope = value.envelope;

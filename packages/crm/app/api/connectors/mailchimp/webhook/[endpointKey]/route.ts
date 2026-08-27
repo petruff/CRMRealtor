@@ -16,7 +16,8 @@ function dependencies() {
 
 export async function GET(_request: Request, context: Context) {
   try {
-    return handleMailchimpWebhookValidation((await context.params).endpointKey, dependencies());
+    loadMailchimpConfiguredRuntimeConfiguration();
+    return handleMailchimpWebhookValidation((await context.params).endpointKey);
   } catch {
     return new Response('not found', { status: 404, headers: { 'Cache-Control': 'no-store, max-age=0' } });
   }

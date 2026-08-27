@@ -95,10 +95,16 @@ describe('mapOmnixCopilotEnvelope', () => {
     });
 
     expect(result.status).toBe('unsupported');
-    expect(result.answerBlocks[0]?.items.map((item) => item.label)).toEqual([
-      'brief today',
-      'pipeline',
-    ]);
+    expect(result.message).toBe("I couldn't match that wording yet. Nothing was changed.");
+    expect(result.answerBlocks[0]).toMatchObject({
+      title: 'Try asking in one of these ways',
+      items: [
+        { label: 'What are my priorities today?' },
+        { label: 'Who needs my attention?' },
+        { label: 'Which tasks are overdue?' },
+        { label: 'Show me my pipeline' },
+      ],
+    });
   });
 
   it('distinguishes honest empty and capability-unavailable results', () => {

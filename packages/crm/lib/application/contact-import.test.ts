@@ -35,6 +35,34 @@ describe('contact import parser', () => {
     });
   });
 
+  it.each([
+    ['Email Subscribed,Tags', 'subscribed,DNC'],
+    ['Email Subscribed,Notes', 'yes,Do not contact'],
+    ['Email Subscribed,Status', 'true,unsubscribed'],
+    ['Email Subscribed,Unsubscribe', 'true,yes'],
+    ['Email Subscribed,Email Opt Out', 'true,opted out'],
+  ])('lets negative consent evidence override positive source data in %s', (headers, values) => {
+    const parsed = parseContactImport({
+      filename: 'consent-safety.csv',
+      content: `First Name,Email,${headers}\nAvery,avery@example.com,${values}`,
+    });
+    expect(parsed.rejected).toEqual([]);
+    expect(parsed.candidates[0]?.emailSubscribed).toBe(false);
+  });
+
+  it('does not infer positive consent from a missing or negative automatic-intake field', () => {
+    const missing = parseJsonContactImport({
+      source: 'website', contacts: [{ externalId: 'web-missing', firstName: 'Missing' }],
+    });
+    const dnc = parseJsonContactImport({
+      source: 'website', contacts: [{
+        externalId: 'web-dnc', firstName: 'Suppressed', emailSubscribed: true, tags: 'DNC',
+      }],
+    });
+    expect(missing.candidates[0]?.emailSubscribed).toBeUndefined();
+    expect(dnc.candidates[0]?.emailSubscribed).toBe(false);
+  });
+
   it('maps Google Contacts phone aliases and reports unknown columns', () => {
     const parsed = parseContactImport({
       filename: 'google.csv',
@@ -135,11 +163,26 @@ describe('contact import parser', () => {
 
     expect(parsed.rejected).toEqual([]);
     expect(parsed.candidates).toEqual([
-      expect.objectContaining({ leadType: 'hot', relationship: 'active-client', intent: 'seller', source: 'other', pipelineStage: 'active' }),
+      expect.objectContaining({ leadType: 'hot', relationship: 'active-client', intent: 'seller', source: 'other', pipelineStage: 'closed' }),
       expect.objectContaining({ leadType: 'warm', relationship: 'lead', intent: 'buyer', source: 'cold-call', pipelineStage: 'lost' }),
       expect.objectContaining({ leadType: 'nurture', relationship: 'lead', intent: 'buyer', source: 'website', pipelineStage: 'new' }),
-      expect.objectContaining({ relationship: 'lead', intent: 'seller', source: 'other', pipelineStage: 'new' }),
+      expect.objectContaining({ relationship: 'lead', intent: 'seller', source: 'other', pipelineStage: 'contacted' }),
     ]);
+  });
+
+  it.each([
+    [' new lead ', 'new'],
+    ['PROSPECT', 'contacted'],
+    [' Active   Lead ', 'active'],
+    ['client', 'closed'],
+    ['ARCHIVED', 'lost'],
+  ] as const)('maps imported pipeline status %s to %s', (sourceStage, expectedStage) => {
+    const parsed = parseContactImport({
+      filename: 'status-fidelity.csv',
+      content: `First Name,Pipeline Stage\nSynthetic,${sourceStage}`,
+    });
+    expect(parsed.rejected).toEqual([]);
+    expect(parsed.candidates[0]?.pipelineStage).toBe(expectedStage);
   });
 
   it('uses a KvCore filename hint when source columns were renamed and retains original provenance', () => {

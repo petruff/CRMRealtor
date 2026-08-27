@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { Contact } from '../domain/contact';
 import {
   CONTACT_QUERY_MAX,
+  CONTACT_PAGE_SIZE,
+  contactPageMetadata,
   normalizeContactQuery,
+  paginateContacts,
+  parseContactPage,
   parseContactScope,
   parseLeadSource,
   parseLeadType,
@@ -115,5 +119,28 @@ describe('contact query', () => {
     });
     expect(queryContacts([archived], { scope: 'all' })).toEqual([]);
     expect(queryArchivedContacts([archived]).map((item) => item.id)).toEqual(['archived']);
+  });
+
+  it.each([0, 1, 99, 100, 501, 1001])('paginates %i contacts with an exact bounded window', (total) => {
+    const items = Array.from({ length: total }, (_, index) => index);
+    const result = paginateContacts(items, 2);
+    expect(result.total).toBe(total);
+    expect(result.items.length).toBe(Math.min(CONTACT_PAGE_SIZE, total > CONTACT_PAGE_SIZE ? total - CONTACT_PAGE_SIZE : total));
+    expect(result.items.length).toBeLessThanOrEqual(100);
+  });
+
+  it('normalizes malformed pages and clamps pages beyond the exact result set', () => {
+    expect(parseContactPage(undefined)).toBe(1);
+    expect(parseContactPage('0')).toBe(1);
+    expect(parseContactPage('2.5')).toBe(1);
+    expect(paginateContacts(Array.from({ length: 501 }, (_, index) => index), 99)).toMatchObject({
+      total: 501, page: 11, pageCount: 11, from: 501, to: 501, items: [500],
+    });
+  });
+
+  it('builds page metadata without allocating or loading the full result set', () => {
+    expect(contactPageMetadata(1001, 11)).toEqual({
+      total: 1001, page: 11, pageCount: 21, offset: 500, from: 501, to: 550,
+    });
   });
 });

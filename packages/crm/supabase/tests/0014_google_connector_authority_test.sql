@@ -1,6 +1,6 @@
 -- Story 4.2 Google OAuth/capability/draft/cursor/resource authority matrix.
 begin;
-select '1..29';
+select '1..30';
 
 do $$ declare target_table text; begin
  foreach target_table in array array['google_connection_capabilities','google_oauth_completions',
@@ -459,5 +459,61 @@ do $$ begin
    where capability.workspace_id<>connection.workspace_id) then raise exception 'cross-workspace capability'; end if;
 end $$;
 select 'ok 29 - version/resource evidence is append-only and workspace-contained';
+
+reset role;
+select set_config('omnix.actor_user_id','51000000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+select set_config('request.jwt.claim.role','authenticated',true);
+select set_config('request.jwt.claim.sub','51000000-0000-4000-8000-000000000001',true);
+do $$ declare started jsonb; begin
+ started:=public.begin_google_oauth(
+  '54000000-0000-4000-8000-000000000031','52000000-0000-4000-8000-000000000001',
+  'workspace-core','55000000-0000-4000-8000-000000000031',repeat('7',64),repeat('8',64),
+  'https://omnix.test/api/connectors/google/callback','/connections',
+  decode(repeat('aa',32),'hex'),decode(repeat('01',12),'hex'),decode(repeat('02',16),'hex'),
+  decode(repeat('bb',32),'hex'),decode(repeat('03',12),'hex'),decode(repeat('04',16),'hex'),
+  'v1',repeat('3',64),'2026-08-12T14:10:00Z','2026-08-12T14:00:00Z'
+ );
+ perform set_config('omnix.google_partial_tx',started#>>'{transaction,transactionId}',true);
+end $$;
+
+reset role;
+set local role service_role;
+select set_config('request.jwt.claim.role','service_role',true);
+do $$ declare consumed jsonb; completed jsonb; env_access jsonb; env_refresh jsonb; begin
+ consumed:=public.consume_google_oauth_transaction(
+  repeat('7',64),'52000000-0000-4000-8000-000000000001',
+  '51000000-0000-4000-8000-000000000001','53000000-0000-4000-8000-000000000001',
+  repeat('8',64),'https://omnix.test/api/connectors/google/callback','2026-08-12T14:01:00Z'
+ );
+ env_access:=jsonb_build_object(
+  'ciphertext',encode(decode(repeat('aa',32),'hex'),'base64'),
+  'nonce',encode(decode(repeat('01',12),'hex'),'base64'),
+  'authTag',encode(decode(repeat('02',16),'hex'),'base64'),
+  'wrappedDek',encode(decode(repeat('bb',32),'hex'),'base64'),
+  'wrapNonce',encode(decode(repeat('03',12),'hex'),'base64'),
+  'wrapAuthTag',encode(decode(repeat('04',16),'hex'),'base64'),
+  'kekVersion','v1','aadHash',repeat('a',64),'expiresAt','2026-08-12T15:02:00Z'
+ );
+ env_refresh:=env_access||jsonb_build_object('aadHash',repeat('b',64),'expiresAt',null);
+ completed:=public.finalize_google_oauth(
+  current_setting('omnix.google_partial_tx')::uuid,
+  '52000000-0000-4000-8000-000000000001',
+  '51000000-0000-4000-8000-000000000001',
+  '53000000-0000-4000-8000-000000000001',repeat('9',64),
+  'partial.google@example.com',
+  array['openid','email','https://www.googleapis.com/auth/gmail.send'],
+  null,env_access,null,env_refresh,
+  '55000000-0000-4000-8000-000000000032','2026-08-12T14:02:00Z'
+ );
+ if completed#>>'{connection,status}'<>'active'
+    or (select count(*) from public.google_connection_capabilities
+        where connection_id='54000000-0000-4000-8000-000000000031' and state='active')<>1
+    or (select count(*) from public.google_connection_capabilities
+        where connection_id='54000000-0000-4000-8000-000000000031' and state='missing')<>2 then
+  raise exception 'partial workspace consent was not persisted independently';
+ end if;
+end $$;
+select 'ok 30 - workspace consent preserves granted capability and leaves denied capabilities missing';
 
 rollback;

@@ -6,6 +6,7 @@ import { supabaseRepository } from './supabase-repository.ts';
 import { supabaseSmartListRepository } from './supabase-smart-list-repository.ts';
 import { supabaseIncompleteRecordRepository } from './supabase-incomplete-record-repository.ts';
 import { supabaseActivityRepository } from './supabase-activity-repository.ts';
+import { supabaseAttentionRepository } from './supabase-attention-repository.ts';
 
 interface ActiveOwnerMembershipRow {
   id: string;
@@ -91,6 +92,7 @@ export function createAutomationRepositories(client: SupabaseClient, workspaceSc
     smartListRepository: supabaseSmartListRepository(client),
     incompleteRecordRepository: supabaseIncompleteRecordRepository(client),
     activityRepository: supabaseActivityRepository(client),
+    attentionRepository: supabaseAttentionRepository(client),
   };
 }
 

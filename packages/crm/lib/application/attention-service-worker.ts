@@ -1,0 +1,69 @@
+import { createHash } from 'node:crypto';
+import { createClient } from '@supabase/supabase-js';
+import { attentionMaterializationsFromAlerts } from './attention-commands.ts';
+import { buildOmnixAlertResult } from './omnix-copilot-service.ts';
+import { resolveServerWorkspaceScope } from '../data/automation-context.ts';
+import { supabaseActivityRepository } from '../data/supabase-activity-repository.ts';
+import { supabaseAttentionRepository } from '../data/supabase-attention-repository.ts';
+import { supabaseRepository } from '../data/supabase-repository.ts';
+
+function calendarDate(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(date);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
+export async function reconcileConfiguredAttention(
+  environment: Record<string, string | undefined> = process.env,
+  now = new Date(),
+) {
+  const url = environment.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = environment.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const workspaceId = (environment.OMNIX_INTAKE_WORKSPACE_ID ?? environment.CRM_INTAKE_WORKSPACE_ID)?.trim();
+  const ownerId = (environment.OMNIX_INTAKE_OWNER_ID ?? environment.CRM_INTAKE_OWNER_ID)?.trim();
+  if (!url || !key || (!key.startsWith('ey') && !key.startsWith('sb_secret_')) || (!workspaceId && !ownerId)) {
+    throw new Error('Attention worker authority is not configured.');
+  }
+  const client = createClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+  });
+  const scope = await resolveServerWorkspaceScope(client, { workspaceId, ownerId });
+  const contacts = await supabaseRepository(client, scope).list();
+  const activities = supabaseActivityRepository(client);
+  const [tasks, importedEvents] = await Promise.all([
+    activities.listTasks(scope, { status: 'open', limit: 500 }),
+    activities.listEvents(scope, { type: 'contact-imported', limit: 500 }),
+  ]);
+  const timeZone = environment.OMNIX_TIME_ZONE?.trim() || 'America/New_York';
+  const result = buildOmnixAlertResult({
+    contacts,
+    tasks,
+    today: calendarDate(now, timeZone),
+    asOf: now.toISOString(),
+    timeZone,
+    historicalImportContactIds: new Set(importedEvents.flatMap((event) => event.contactId ? [event.contactId] : [])),
+  });
+  const materializations = attentionMaterializationsFromAlerts(result.alerts);
+  const fingerprint = createHash('sha256').update(JSON.stringify(materializations.map((item) => [
+    item.occurrenceKey, item.sourceFingerprint,
+  ]).sort(([left], [right]) => String(left).localeCompare(String(right))))).digest('hex');
+  const receipt = await supabaseAttentionRepository(client).reconcile(
+    scope,
+    materializations,
+    now.toISOString(),
+    `scheduled-attention:${fingerprint}`,
+  );
+  return {
+    workspaceId: scope.workspaceId,
+    sourceCount: result.alerts.length,
+    availability: result.availability,
+    runId: receipt.runId,
+    noOp: receipt.noOp,
+    materialized: receipt.materialized,
+    refreshed: receipt.refreshed,
+    reopened: receipt.reopened,
+    resolved: receipt.resolved,
+  };
+}

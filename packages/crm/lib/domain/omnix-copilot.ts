@@ -29,11 +29,22 @@ export const OMNIX_COPILOT_SUPPORTED_EXAMPLES = [
 
 export const OMNIX_COPILOT_FIXED_ALIASES = [
   { phrase: 'what should I do today', canonical: 'brief today' },
+  { phrase: 'what are my priorities today', canonical: 'brief today' },
+  { phrase: 'show me my priorities today', canonical: 'brief today' },
+  { phrase: 'what do I need to do today', canonical: 'brief today' },
+  { phrase: 'what needs my attention today', canonical: 'brief today' },
   { phrase: 'who needs attention', canonical: 'alerts today' },
+  { phrase: 'who needs my attention', canonical: 'alerts today' },
+  { phrase: 'who needs my attention today', canonical: 'alerts today' },
   { phrase: 'show overdue follow-ups', canonical: 'tasks overdue' },
+  { phrase: 'which tasks are overdue', canonical: 'tasks overdue' },
+  { phrase: 'what tasks are overdue', canonical: 'tasks overdue' },
   { phrase: "show today's tasks", canonical: 'tasks today' },
   { phrase: 'show upcoming dates', canonical: 'dates upcoming' },
   { phrase: 'show pipeline', canonical: 'pipeline' },
+  { phrase: 'show me my pipeline', canonical: 'pipeline' },
+  { phrase: 'what does my pipeline look like', canonical: 'pipeline' },
+  { phrase: 'what is my pipeline', canonical: 'pipeline' },
   { phrase: 'show mailers', canonical: 'mailers' },
   { phrase: 'show recent activity for <contact-id>', canonical: 'activity <contact-id>' },
   { phrase: 'connection status', canonical: 'connections' },
@@ -130,6 +141,12 @@ export interface OmnixCopilotAlert {
   readonly recordId: string;
   readonly href: string;
   readonly citations: readonly OmnixCopilotCitation[];
+  /** Stable operational identity; absent only on legacy fixtures/readers. */
+  readonly occurrenceKey?: string;
+  /** SHA-256 of the authoritative facts that define this occurrence. */
+  readonly sourceFingerprint?: string;
+  readonly dueAt?: string;
+  readonly dismissAllowed?: boolean;
 }
 
 export interface OmnixCopilotSuggestion {
@@ -300,7 +317,7 @@ function normalizedQuestion(value: unknown): string {
     .trim();
 }
 
-/** Parse the documented grammar only; unmatched text is inert and unsupported. */
+/** Parse the documented grammar and a bounded set of common user phrasings. */
 export function parseOmnixCopilotQuestion(value: unknown): OmnixCopilotIntent {
   let question = normalizedQuestion(value);
   let folded = question.toLocaleLowerCase('en-US');
@@ -357,7 +374,7 @@ export function parseOmnixCopilotQuestion(value: unknown): OmnixCopilotIntent {
 
   throw new OmnixCopilotError(
     'unsupported-intent',
-    'That request is outside the deterministic Omnix copilot grammar.',
+    "I couldn't match that wording yet.",
   );
 }
 
@@ -479,6 +496,10 @@ export interface CreateOmnixCopilotAlertInput {
   readonly recordId: unknown;
   readonly href: unknown;
   readonly citations: readonly OmnixCopilotCitation[];
+  readonly occurrenceKey?: unknown;
+  readonly sourceFingerprint?: unknown;
+  readonly dueAt?: unknown;
+  readonly dismissAllowed?: unknown;
 }
 
 export function createOmnixCopilotAlert(input: CreateOmnixCopilotAlertInput): OmnixCopilotAlert {
@@ -499,6 +520,19 @@ export function createOmnixCopilotAlert(input: CreateOmnixCopilotAlertInput): Om
   }
   const asOf = instant(input.asOf, 'asOf');
   const recordId = identifier(input.recordId, 'recordId');
+  const occurrenceKey = input.occurrenceKey === undefined
+    ? undefined
+    : printable(input.occurrenceKey, 'occurrenceKey', 200);
+  if (occurrenceKey && !/^[A-Za-z0-9._:-]{1,200}$/.test(occurrenceKey)) {
+    throw new OmnixCopilotError('invalid-input', 'Alert occurrence key is invalid.');
+  }
+  if (input.sourceFingerprint !== undefined
+    && (typeof input.sourceFingerprint !== 'string' || !/^[a-f0-9]{64}$/.test(input.sourceFingerprint))) {
+    throw new OmnixCopilotError('invalid-input', 'Alert source fingerprint is invalid.');
+  }
+  if (input.dismissAllowed !== undefined && typeof input.dismissAllowed !== 'boolean') {
+    throw new OmnixCopilotError('invalid-input', 'Alert dismissal policy is invalid.');
+  }
   return Object.freeze({
     id: `alert:${input.rule}:${recordId}:${asOf.slice(0, 10)}`,
     rule: input.rule,
@@ -510,6 +544,12 @@ export function createOmnixCopilotAlert(input: CreateOmnixCopilotAlertInput): Om
     recordId,
     href: safeTarget(input.href, 'href'),
     citations: dedupeOmnixCopilotCitations(input.citations),
+    ...(occurrenceKey ? { occurrenceKey } : {}),
+    ...(typeof input.sourceFingerprint === 'string'
+      ? { sourceFingerprint: input.sourceFingerprint }
+      : {}),
+    ...(input.dueAt === undefined ? {} : { dueAt: instant(input.dueAt, 'dueAt') }),
+    ...(typeof input.dismissAllowed === 'boolean' ? { dismissAllowed: input.dismissAllowed } : {}),
   });
 }
 

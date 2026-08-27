@@ -71,4 +71,41 @@ describe('Supabase Mailchimp reconciliation repository', () => {
       workerId: 'worker-a', batchSize: 10, leaseSeconds: 90, now: '2026-08-11T12:00:00Z',
     })).rejects.toMatchObject({ code: 'lease-lost' });
   });
+
+  it('applies the page first and then enriches its stable provider identities', async () => {
+    const executingRow = { ...row, state: 'executing', fencing_token: 2, lease_owner: 'worker-a' };
+    const rpc = vi.fn()
+      .mockResolvedValueOnce({ data: { run: { ...executingRow, next_offset: 1 }, finalPage: true, noOp: false }, error: null })
+      .mockResolvedValueOnce({ data: { recordsEnriched: 1 }, error: null });
+    const repository = supabaseMailchimpReconciliationRepository({
+      authenticated: { rpc: vi.fn() } as never,
+      service: { rpc } as never,
+    });
+    await repository.applyPage({
+      run: {
+        id: 'run-a', workspaceId: 'workspace-a', connectionId: 'connection-a', bindingId: 'binding-a',
+        mode: 'baseline', state: 'executing', snapshotHash: 'a'.repeat(64), pageSize: 100,
+        nextOffset: 0, pagesApplied: 0, itemsSeen: 0, itemsApplied: 0, itemsReviewed: 0,
+        itemsBlocked: 0, attemptCount: 1, maxAttempts: 5, fencingToken: 2,
+        leaseOwner: 'worker-a', correlationId: 'correlation-a',
+      },
+      workerId: 'worker-a', nextOffset: 1, providerTotal: 1, pageHash: 'd'.repeat(64),
+      appliedAt: '2026-08-11T12:00:00Z',
+      members: [{
+        memberId: 'member-a', subscriberHash: '4b9bb80620f03eb3719e0a061c14283d',
+        normalizedEmail: 'buyer@example.com', subscriptionStatus: 'subscribed',
+        firstName: 'Ada', lastName: 'Lovelace', phone: '3055550100',
+        lastChangedAt: '2026-08-11T11:00:00Z', sourceHash: 'e'.repeat(64),
+      }],
+    });
+    expect(rpc.mock.calls.map(([name]) => name)).toEqual([
+      'apply_mailchimp_reconciliation_page', 'enrich_mailchimp_reconciliation_members',
+    ]);
+    expect(rpc).toHaveBeenLastCalledWith('enrich_mailchimp_reconciliation_members', expect.objectContaining({
+      target_members: [{
+        memberId: 'member-a', normalizedEmail: 'buyer@example.com', sourceHash: 'e'.repeat(64),
+        firstName: 'Ada', lastName: 'Lovelace', phone: '3055550100',
+      }],
+    }));
+  });
 });

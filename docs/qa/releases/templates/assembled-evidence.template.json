@@ -1,0 +1,1031 @@
+{
+  "artifact": {
+    "digest": "0000000000000000000000000000000000000000000000000000000000000000",
+    "deployment": {
+      "id": "deployment-id",
+      "digest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "candidateSha": "0000000000000000000000000000000000000000",
+      "environment": "production",
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/deployment.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  },
+  "scheduler": {
+    "platform": "vercel",
+    "projectId": "prj_yRO5wtPmqAIMiQsLquShv0rXoeaP",
+    "teamId": "team_1NR9qkt0OKOKkYGuRciHrbMf",
+    "plan": "hobby",
+    "schedule": "0 6 * * *",
+    "supported": true,
+    "operationalMode": "daily-maintenance-only",
+    "interactiveConnectorSloMet": false,
+    "liveConnectorPromotionAllowed": false,
+    "receipt": {
+      "path": "docs/qa/releases/<candidate-sha>/receipts/scheduler-plan-support.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "migrations": {
+    "historyReceipt": {
+      "path": "docs/qa/releases/<candidate-sha>/receipts/migration-history.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "replayReceipt": {
+      "path": "docs/qa/releases/<candidate-sha>/receipts/migration-replay.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "postApplyReceipt": {
+      "path": "docs/qa/releases/<candidate-sha>/receipts/post-apply.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "rollback": {
+    "targetDeploymentId": "known-good-deployment-id",
+    "targetSha": "1111111111111111111111111111111111111111",
+    "applicationReceipt": {
+      "path": "docs/qa/releases/<candidate-sha>/receipts/application-rollback.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "databaseReceipt": {
+      "path": "docs/qa/releases/<candidate-sha>/receipts/database-recovery.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "authorityRegressionReceipt": {
+      "path": "docs/qa/releases/<candidate-sha>/receipts/rollback-authority-regression.json",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  },
+  "providerInventory": [
+    "google",
+    "mailchimp",
+    "twilio",
+    "meta"
+  ],
+  "providers": [
+    {
+      "provider": "google",
+      "lifecycle": "blocked-external",
+      "actorClassification": "canonical-owner",
+      "observedAt": "2026-08-25T12:00:00.000Z",
+      "facts": {
+        "requiredScopes": [
+          "https://www.googleapis.com/auth/gmail.send",
+          "https://www.googleapis.com/auth/gmail.metadata",
+          "https://www.googleapis.com/auth/calendar.app.created"
+        ],
+        "grantedScopes": [],
+        "missingScopes": [
+          "https://www.googleapis.com/auth/gmail.send",
+          "https://www.googleapis.com/auth/gmail.metadata",
+          "https://www.googleapis.com/auth/calendar.app.created"
+        ],
+        "scopeReview": "pending",
+        "realAccountUat": "not-run",
+        "capabilityHealth": "unknown"
+      },
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/google-provider.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "provider": "mailchimp",
+      "lifecycle": "blocked-external",
+      "actorClassification": "canonical-owner",
+      "observedAt": "2026-08-25T12:00:00.000Z",
+      "facts": {
+        "audienceBinding": "unknown",
+        "webhook": "unknown",
+        "baseline": "unknown",
+        "reconciliation": "unknown",
+        "realAccountUat": "not-run"
+      },
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/mailchimp-provider.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "provider": "twilio",
+      "lifecycle": "disabled",
+      "actorClassification": "canonical-owner",
+      "observedAt": "2026-08-25T12:00:00.000Z",
+      "facts": {
+        "accountStatus": "unknown",
+        "messagingService": "unknown",
+        "a2pRegistration": "unknown",
+        "senderNumber": "unknown",
+        "inboundWebhook": "unknown",
+        "statusCallback": "unknown",
+        "consentStopHelpQuietHours": "unknown",
+        "realNumberUat": "not-run"
+      },
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/twilio-provider.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "provider": "meta",
+      "lifecycle": "disabled",
+      "actorClassification": "canonical-owner",
+      "observedAt": "2026-08-25T12:00:00.000Z",
+      "facts": {
+        "businessVerification": "unknown",
+        "appReview": "unknown",
+        "requiredPermissions": [
+          "pages_manage_metadata",
+          "pages_messaging",
+        "pages_show_list",
+        "instagram_business_basic",
+        "instagram_business_manage_messages"
+        ],
+        "grantedPermissions": [],
+        "missingPermissions": [
+          "pages_manage_metadata",
+          "pages_messaging",
+        "pages_show_list",
+        "instagram_business_basic",
+        "instagram_business_manage_messages"
+        ],
+        "assetBinding": "unknown",
+        "signedWebhook": "unknown",
+        "tokenHealth": "unknown",
+        "realAccountUat": "not-run"
+      },
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/meta-provider.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ],
+  "uat": {
+    "authenticated": true,
+    "testerRole": "canonical-owner",
+    "workspaceIdHash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "results": [
+      {
+        "route": "contacts",
+        "width": 390,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-contacts-390.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Responsive mobile viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "contacts",
+        "width": 414,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-contacts-414.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "contacts",
+        "width": 768,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-contacts-768.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Tablet viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "contacts",
+        "width": 1440,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-contacts-1440.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Desktop viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "import",
+        "width": 390,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-import-390.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Responsive mobile viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "import",
+        "width": 414,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-import-414.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "import",
+        "width": 768,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-import-768.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Tablet viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "import",
+        "width": 1440,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-import-1440.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Desktop viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "pipeline",
+        "width": 390,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-pipeline-390.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Responsive mobile viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "pipeline",
+        "width": 414,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-pipeline-414.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "pipeline",
+        "width": 768,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-pipeline-768.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Tablet viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "pipeline",
+        "width": 1440,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-pipeline-1440.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Desktop viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "omnix",
+        "width": 390,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-omnix-390.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Responsive mobile viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "omnix",
+        "width": 414,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-omnix-414.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "omnix",
+        "width": 768,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-omnix-768.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Tablet viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "omnix",
+        "width": 1440,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-omnix-1440.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Desktop viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "connections",
+        "width": 390,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-connections-390.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Responsive mobile viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "connections",
+        "width": 414,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-connections-414.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "connections",
+        "width": 768,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-connections-768.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Tablet viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "connections",
+        "width": 1440,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-connections-1440.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Desktop viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "insights",
+        "width": 390,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-insights-390.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Responsive mobile viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "insights",
+        "width": 414,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-insights-414.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "insights",
+        "width": 768,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-insights-768.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Tablet viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "insights",
+        "width": 1440,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-insights-1440.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Desktop viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "sign-in-theme",
+        "width": 390,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-sign-in-theme-390.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Responsive mobile viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "sign-in-theme",
+        "width": 414,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-sign-in-theme-414.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "displayMode": "browser",
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "sign-in-theme",
+        "width": 768,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-sign-in-theme-768.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Tablet viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      },
+      {
+        "route": "sign-in-theme",
+        "width": 1440,
+        "outcome": "pass",
+        "health": "healthy",
+        "readiness": "ready",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-sign-in-theme-1440.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "device": "Desktop viewport",
+        "browser": "Chromium",
+        "browserVersion": "128.0",
+        "displayMode": "browser",
+        "orientation": "landscape",
+        "safeArea": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        }
+      }
+    ],
+    "iphone11": {
+      "safariBrowser": {
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "viewportWidth": 414,
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        },
+        "displayMode": "browser",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-iphone11-safari.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      },
+      "installedPwa": {
+        "device": "iPhone 11",
+        "browser": "Mobile Safari",
+        "browserVersion": "18.6",
+        "viewportWidth": 414,
+        "orientation": "portrait",
+        "safeArea": {
+          "top": 47,
+          "right": 0,
+          "bottom": 34,
+          "left": 0,
+          "respected": true
+        },
+        "overflow": {
+          "horizontal": "none",
+          "clippedControls": false
+        },
+        "displayMode": "standalone",
+        "evidence": {
+          "path": "docs/qa/releases/<candidate-sha>/receipts/uat-iphone11-installed-pwa.json",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      }
+    }
+  },
+  "gates": [
+    {
+      "name": "dependency-audit",
+      "result": "pass",
+      "candidateSha": "0000000000000000000000000000000000000000",
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/gate-dependency-audit.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "name": "secret-scan",
+      "result": "pass",
+      "candidateSha": "0000000000000000000000000000000000000000",
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/gate-secret-scan.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "name": "lint",
+      "result": "pass",
+      "candidateSha": "0000000000000000000000000000000000000000",
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/gate-lint.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "name": "typecheck",
+      "result": "pass",
+      "candidateSha": "0000000000000000000000000000000000000000",
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/gate-typecheck.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "name": "test",
+      "result": "pass",
+      "candidateSha": "0000000000000000000000000000000000000000",
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/gate-test.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "name": "build",
+      "result": "pass",
+      "candidateSha": "0000000000000000000000000000000000000000",
+      "receipt": {
+        "path": "docs/qa/releases/<candidate-sha>/receipts/gate-build.json",
+        "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    }
+  ]
+}

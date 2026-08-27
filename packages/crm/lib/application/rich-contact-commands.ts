@@ -13,6 +13,7 @@ import {
   type ContactPointType,
   type CustomFieldType,
 } from '../domain/rich-contact.ts';
+import { hasImportedContactSuppression } from './contact-import.ts';
 import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
 
 function timestamp(now: Date): string {
@@ -87,13 +88,18 @@ export async function addContactPointCommand(
   const scope = validateWorkspaceScope(scopeInput);
   const type = typeValue(input.type);
   const normalized = normalizeContactPointValue(type, input.displayValue);
+  const label = parseRichContactText(input.label, 'label', 80) ?? '';
   return repository.addContactPoint(scope, {
     contactId: parseRichContactIdentifier(input.contactId, 'contactId'),
     type,
-    label: parseRichContactText(input.label, 'label', 80) ?? '',
+    label,
     ...normalized,
     isPrimary: boolean(input.isPrimary, 'isPrimary'),
-    ...(type === 'email' ? { emailSubscribed: boolean(input.emailSubscribed, 'emailSubscribed', true) } : {}),
+    ...(type === 'email' ? {
+      emailSubscribed: hasImportedContactSuppression({ tags: [label] })
+        ? false
+        : boolean(input.emailSubscribed, 'emailSubscribed'),
+    } : {}),
     displayOrder: integer(input.displayOrder, 'displayOrder'),
     actorMembershipId: scope.membershipId,
     occurredAt: timestamp(now),
@@ -117,14 +123,18 @@ export async function updateContactPointCommand(
   const scope = validateWorkspaceScope(scopeInput);
   const type = typeValue(input.type);
   const normalized = normalizeContactPointValue(type, input.displayValue);
+  const label = parseRichContactText(input.label, 'label', 80) ?? '';
+  const suppressEmail = type === 'email' && hasImportedContactSuppression({ tags: [label] });
   return repository.updateContactPoint(
     scope,
     parseRichContactIdentifier(input.pointId, 'pointId'),
     {
-      label: parseRichContactText(input.label, 'label', 80) ?? '',
+      label,
       ...normalized,
       isPrimary: boolean(input.isPrimary, 'isPrimary'),
-      ...(type === 'email' ? { emailSubscribed: boolean(input.emailSubscribed, 'emailSubscribed', true) } : {}),
+      ...(type === 'email' && (input.emailSubscribed !== undefined || suppressEmail)
+        ? { emailSubscribed: suppressEmail ? false : boolean(input.emailSubscribed, 'emailSubscribed') }
+        : {}),
       displayOrder: integer(input.displayOrder, 'displayOrder'),
       actorMembershipId: scope.membershipId,
       occurredAt: timestamp(now),

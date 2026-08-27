@@ -1,27 +1,21 @@
+import { randomUUID } from 'node:crypto';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import {
   ArrowUpRight, BriefcaseBusiness, CalendarClock, CheckCircle2, CircleDollarSign,
   Database, Gauge, HeartHandshake, ShieldCheck, Sparkles, UsersRound,
 } from 'lucide-react';
+import { createTransactionAction } from '@/app/insights/actions';
+import type { RealEstateTransaction, TransactionMetrics } from '@/lib/domain/transaction';
+import {
+  InsightsContributorExplorer,
+  type InsightsDrilldownView,
+} from '@/components/insights-contributor-explorer';
+
+export type { InsightsContributorView, InsightsDrilldownView } from '@/components/insights-contributor-explorer';
 
 type VisualStyle = CSSProperties & Record<`--${string}`, string | number>;
 type DisplayStatus = 'available' | 'possibly-truncated' | 'insufficient-evidence';
-
-export interface InsightsContributorView {
-  entityType: 'contact' | 'task';
-  recordId: string;
-  href?: string;
-  detail?: string;
-}
-
-export interface InsightsDrilldownView {
-  id: string;
-  label: string;
-  status: DisplayStatus;
-  scope: 'snapshot' | 'current-period';
-  contributors: readonly InsightsContributorView[];
-}
 
 export interface InsightsStageView {
   stage: string; label: string; count: number; averageDaysInStage: number | null;
@@ -73,9 +67,15 @@ export interface InsightsDashboardModel {
   readiness: readonly { label: string; value: number | null; detailId: string }[];
   drilldowns: readonly InsightsDrilldownView[];
   selectedDrilldownId: string;
+  transactionStatus: DisplayStatus;
+  transactionMessage?: string;
+  transactionMetrics: TransactionMetrics | null;
+  transactions: readonly RealEstateTransaction[];
+  transactionContacts: readonly { id: string; label: string }[];
   coverage: {
     contactBoundedAt: number; contactPossiblyTruncated: boolean;
     transitionBoundedAt: number; transitionPossiblyTruncated: boolean;
+    eventBoundedAt: number;
     taskBoundedAt: number; taskPossiblyTruncated: boolean;
     schemaVersion: string; currentFrom: string; currentTo: string;
     previousFrom: string; previousTo: string;
@@ -110,6 +110,15 @@ function displayed(value: number | null): string {
   return value === null ? '—' : String(value);
 }
 
+function currency(cents: number | null): string {
+  if (cents === null) return '—';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(cents / 100);
+}
+
+function titleCase(value: string): string {
+  return value.replaceAll('-', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function StatusNote({ status }: { status: DisplayStatus }) {
   if (status === 'available') return null;
   return <p className="insights-definition" role="status">{status === 'possibly-truncated'
@@ -118,6 +127,7 @@ function StatusNote({ status }: { status: DisplayStatus }) {
 }
 
 export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) {
+  const transactionIdempotencyKey = randomUUID();
   const maxStage = Math.max(1, ...model.pipeline.map((stage) => stage.count));
   const leadValues = [model.portfolio.hot, model.portfolio.warm, model.portfolio.nurture];
   const totalLeadTypes = leadValues.every((value) => value !== null)
@@ -125,10 +135,9 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
     : null;
   const hotEnd = percent(model.portfolio.hot, totalLeadTypes) ?? 0;
   const warmEnd = hotEnd + (percent(model.portfolio.warm, totalLeadTypes) ?? 0);
-  const selected = model.drilldowns.find((item) => item.id === model.selectedDrilldownId) ?? model.drilldowns[0];
   const dataWarnings = [
     model.coverage.contactPossiblyTruncated ? `Contact view reached its ${model.coverage.contactBoundedAt}-record read boundary.` : null,
-    model.coverage.transitionPossiblyTruncated ? `Pipeline history reached its ${model.coverage.transitionBoundedAt}-event read boundary.` : null,
+    model.coverage.transitionPossiblyTruncated ? `Relevant activity history reached a ${model.coverage.transitionBoundedAt}-record per-type read boundary.` : null,
     model.coverage.taskPossiblyTruncated ? `Task history reached its ${model.coverage.taskBoundedAt}-task read boundary.` : null,
   ].filter((warning): warning is string => Boolean(warning));
 
@@ -141,7 +150,7 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
       </div>
     </header>
 
-    {!model.isLive ? <p className="insights-mode-note" role="status"><ShieldCheck className="size-4" aria-hidden /> Sample workspace — figures are process-local, not Judith’s live database.</p> : null}
+    {!model.isLive ? <p className="insights-mode-note" role="status"><ShieldCheck className="size-4" aria-hidden /> Preview data — these figures do not come from Judith’s account.</p> : null}
 
     <section className="insights-command-strip" aria-label="Business command metrics">
       <Link href={detailHref(model, 'portfolio-all')} className="insights-command-metric"><span><UsersRound className="size-4" aria-hidden /> Relationship book</span><strong>{displayed(model.totalContacts)}</strong><small>exact stored contributors</small><ArrowUpRight className="insights-command-arrow size-4" aria-hidden /></Link>
@@ -199,21 +208,55 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
 
     <section id="contributor-details" className="insights-foundation scroll-mt-24" aria-labelledby="contributor-details-title">
       <div className="insights-foundation-heading"><span><Database className="size-5" aria-hidden /></span><div><p className="eyebrow">Exact contributors</p><h2 id="contributor-details-title">Inspect the records behind one metric</h2></div></div>
-      <form method="get" action="/insights#contributor-details" className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end"><input type="hidden" name="period" value={model.periodDays} /><label className="min-w-0 flex-1 text-sm text-muted"><span className="mb-2 block font-medium text-ink">Metric detail</span><select name="detail" defaultValue={selected?.id} className="sk-input">{model.drilldowns.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label><button type="submit" className="sk-primary-button min-h-11 px-4">Show contributors</button></form>
-      {selected ? <div className="mt-5 rounded-[var(--sk-control-radius)] border border-line bg-surface p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold text-ink">{selected.label}</h3><p className="mt-1 text-sm text-muted">{selected.scope === 'snapshot' ? `Current snapshot as of ${model.coverage.currentTo.slice(0, 10)}` : `${model.periodDays}-day cohort · ${model.coverage.currentFrom.slice(0, 10)} to ${model.coverage.currentTo.slice(0, 10)}`}</p></div><span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-muted">{selected.contributors.length} records shown</span></div>
-        <StatusNote status={selected.status} />
-        {selected.status === 'insufficient-evidence' ? <p className="mt-4 text-sm text-muted">No contributor list is available because the source evidence was not loaded.</p> : selected.contributors.length ? <ul className="mt-4 grid gap-px overflow-hidden rounded-[var(--sk-control-radius)] bg-line">{selected.contributors.map((contributor) => <li key={`${contributor.entityType}:${contributor.recordId}`} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 bg-surface px-4 py-2"><span className="rounded-full bg-surface-2 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-subtle">{contributor.entityType}</span>{contributor.href ? <Link href={contributor.href} className="font-medium text-ink underline-offset-2 hover:underline">{contributor.recordId}</Link> : <strong className="font-medium text-ink">{contributor.recordId}</strong>}{contributor.detail ? <span className="min-w-0 flex-1 text-sm text-muted">{contributor.detail}</span> : null}</li>)}</ul> : <p className="mt-4 text-sm text-muted">No records contributed to this metric in the selected scope.</p>}
-      </div> : null}
+      <InsightsContributorExplorer
+        periodDays={model.periodDays}
+        currentFrom={model.coverage.currentFrom}
+        currentTo={model.coverage.currentTo}
+        drilldowns={model.drilldowns}
+        selectedDrilldownId={model.selectedDrilldownId}
+      />
     </section>
 
     <section className="insights-foundation" aria-labelledby="data-foundation-title">
       <div className="insights-foundation-heading"><span><Database className="size-5" aria-hidden /></span><div><p className="eyebrow">Data foundation</p><h2 id="data-foundation-title">What the CRM can act on safely</h2></div></div>
       <div className="insights-readiness-grid">{model.readiness.map((item) => { const readinessPercentage = percent(item.value, model.totalContacts); return <Link key={item.label} href={detailHref(model, item.detailId)}><span>{item.label}</span><strong>{readinessPercentage === null ? '—' : `${readinessPercentage}%`}</strong>{item.value === null || model.totalContacts === null ? <span className="text-xs text-muted">Insufficient evidence</span> : <><progress value={item.value} max={Math.max(1, model.totalContacts)} aria-label={`${item.label}: ${item.value} of ${model.totalContacts}`} /><small>{item.value} of {model.totalContacts}</small></>}</Link>; })}</div>
       {dataWarnings.length ? <div className="insights-coverage-warning" role="status"><ShieldCheck className="size-5" aria-hidden /><div><strong>Coverage boundary reached — affected metrics are incomplete</strong><ul>{dataWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div></div> : <p className="insights-coverage-ok"><ShieldCheck className="size-4" aria-hidden /> This view remained inside every current read boundary.</p>}
-      <details className="insights-evidence-details"><summary>View evidence and coverage</summary><dl><div><dt>Contract</dt><dd>{model.coverage.schemaVersion} · {model.coverage.mode === 'live' ? 'live authenticated' : 'sample process-local'}</dd></div><div><dt>Current period</dt><dd>{model.coverage.currentFrom.slice(0, 10)} to {model.coverage.currentTo.slice(0, 10)}</dd></div><div><dt>Previous period</dt><dd>{model.coverage.previousFrom.slice(0, 10)} to {model.coverage.previousTo.slice(0, 10)}</dd></div><div><dt>Rows read</dt><dd>{displayed(model.coverage.contactRows)}/{model.coverage.contactBoundedAt} contacts · {displayed(model.coverage.transitionRows)}/{model.coverage.transitionBoundedAt * 2} events · {displayed(model.coverage.taskRows)}/{model.coverage.taskBoundedAt} tasks · {displayed(model.coverage.membershipRows)} members</dd></div><div><dt>Scope</dt><dd>Active workspace contacts; archived contacts excluded. Stored events and tasks remain workspace-scoped.</dd></div></dl></details>
+      <details className="insights-evidence-details"><summary>How this report was calculated</summary><dl><div><dt>Data source</dt><dd>{model.coverage.mode === 'live' ? 'Judith’s current CRM records' : 'Preview data'}</dd></div><div><dt>Current period</dt><dd>{model.coverage.currentFrom.slice(0, 10)} to {model.coverage.currentTo.slice(0, 10)}</dd></div><div><dt>Comparison period</dt><dd>{model.coverage.previousFrom.slice(0, 10)} to {model.coverage.previousTo.slice(0, 10)}</dd></div><div><dt>Records included</dt><dd>{displayed(model.coverage.contactRows)} contacts · {displayed(model.coverage.transitionRows)} relevant updates · {displayed(model.coverage.taskRows)} tasks</dd></div><div><dt>Included activity</dt><dd>Active contacts, pipeline changes, and created or completed tasks. Archived contacts are excluded.</dd></div></dl></details>
     </section>
 
-    <section className="insights-future" aria-labelledby="transaction-intelligence-title"><span><CircleDollarSign className="size-6" aria-hidden /></span><div><p className="eyebrow">Transaction intelligence</p><h2 id="transaction-intelligence-title">Financial metrics are intentionally unavailable.</h2><p>Volume, GCI, commission, expenses, forecast, and source ROI will appear only after deals and transactions have a verified source of truth.</p></div><span className="insights-future-badge">Evidence protected</span></section>
+    <section id="transaction-intelligence" className="insights-transactions" aria-labelledby="transaction-intelligence-title">
+      <div className="insights-section-heading"><div><p className="eyebrow">Transaction intelligence</p><h2 id="transaction-intelligence-title">The financial pulse of the business.</h2></div><p><CircleDollarSign className="size-4" aria-hidden /> Live workspace ledger · selected {model.periodDays}-day close period</p></div>
+      {model.transactionMessage ? <p className={model.transactionStatus === 'available' ? 'insights-transaction-message' : 'insights-coverage-warning'} role="status">{model.transactionMessage}</p> : null}
+      {model.transactionStatus === 'insufficient-evidence' || !model.transactionMetrics ? <div className="insights-coverage-warning" role="status"><ShieldCheck className="size-5" aria-hidden /><div><strong>Financial ledger needs its database update</strong><p>Metrics remain withheld until the verified transaction schema is available in this workspace.</p></div></div> : <>
+        <div className="insights-financial-grid" aria-label="Verified financial metrics">
+          <article className="is-primary"><span>Closed volume</span><strong>{currency(model.transactionMetrics.closedVolumeCents)}</strong><small>{model.transactionMetrics.closedDeals} closed {model.transactionMetrics.closedDeals === 1 ? 'deal' : 'deals'}</small></article>
+          <article><span>Gross commission</span><strong>{currency(model.transactionMetrics.grossCommissionCents)}</strong><small>GCI from closed deals</small></article>
+          <article><span>Net commission</span><strong>{currency(model.transactionMetrics.netCommissionCents)}</strong><small>Explicitly recorded net</small></article>
+          <article><span>Tracked expenses</span><strong>{currency(model.transactionMetrics.trackedExpensesCents)}</strong><small>Marketing + deal costs</small></article>
+          <article className={model.transactionMetrics.netIncomeCents < 0 ? 'is-negative' : 'is-positive'}><span>Net income</span><strong>{currency(model.transactionMetrics.netIncomeCents)}</strong><small>Net commission − tracked costs</small></article>
+          <article><span>Active GCI forecast</span><strong>{currency(model.transactionMetrics.activeForecastGciCents)}</strong><small>Pending + under contract, unweighted</small></article>
+        </div>
+        <div className="insights-transaction-grid">
+          <div className="insights-transaction-ledger">
+            <div className="insights-panel-heading"><span><BriefcaseBusiness className="size-5" aria-hidden /></span><div><p className="eyebrow">Deal ledger</p><h3>Recent transactions</h3></div></div>
+            {model.transactions.length ? <div className="insights-deal-list">{model.transactions.map((transaction) => <article key={transaction.id}><div><strong>{transaction.contactName}</strong><span>{transaction.propertyAddress}</span></div><div><span className={`insights-deal-status is-${transaction.status}`}>{titleCase(transaction.status)}</span><strong>{currency(transaction.salePriceCents)}</strong><small>{titleCase(transaction.side)} · {titleCase(transaction.source)}</small></div></article>)}</div> : <div className="insights-empty-deals"><CircleDollarSign className="size-7" aria-hidden /><strong>No deals recorded yet</strong><p>Add the first transaction. Verified zeroes are already live; every saved deal updates this view immediately.</p></div>}
+            {model.transactionMetrics.sourceMetrics.length ? <div className="insights-source-roi"><h3>Source return</h3>{model.transactionMetrics.sourceMetrics.map((source) => <article key={source.source}><div><strong>{titleCase(source.source)}</strong><span>{source.deals} closed · {currency(source.volumeCents)} volume</span></div><div><strong>{source.roiPercentage === null ? 'ROI —' : `${source.roiPercentage}% ROI`}</strong><span>{source.roiPercentage === null ? 'Add marketing cost to calculate' : `${currency(source.netIncomeCents)} net income`}</span></div></article>)}</div> : null}
+          </div>
+          <form action={createTransactionAction} className="insights-deal-form">
+            <div><p className="eyebrow">Verified entry</p><h3>Add a deal</h3><p>Amounts are stored as exact USD cents. Under-contract and closed deals also move the linked contact in Pipeline.</p></div>
+            <input type="hidden" name="period" value={model.periodDays} />
+            <input type="hidden" name="idempotencyKey" value={transactionIdempotencyKey} />
+            <label>Contact<select className="sk-input" name="contactId" required defaultValue=""><option value="" disabled>Select a contact</option>{model.transactionContacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.label}</option>)}</select></label>
+            <div className="insights-deal-form-row"><label>Status<select className="sk-input" name="status" defaultValue="under-contract"><option value="pending">Pending</option><option value="under-contract">Under contract</option><option value="closed">Closed</option><option value="lost">Lost</option><option value="cancelled">Cancelled</option></select></label><label>Side<select className="sk-input" name="side" defaultValue="buyer"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="dual">Dual</option><option value="referral">Referral</option></select></label></div>
+            <label>Property address<input className="sk-input" name="propertyAddress" maxLength={240} required placeholder="123 Main Street, City, State" /></label>
+            <div className="insights-deal-form-row"><label>Expected close<input className="sk-input" type="date" name="expectedCloseDate" /></label><label>Closed date<input className="sk-input" type="date" name="closedAt" /></label></div>
+            <div className="insights-deal-form-row"><label>Sale price<input className="sk-input" inputMode="decimal" name="salePrice" placeholder="$0" /></label><label>Gross commission (GCI)<input className="sk-input" inputMode="decimal" name="grossCommission" placeholder="$0" /></label></div>
+            <div className="insights-deal-form-row"><label>Net commission<input className="sk-input" inputMode="decimal" name="netCommission" placeholder="$0" /></label><label>Marketing cost<input className="sk-input" inputMode="decimal" name="marketingCost" placeholder="$0" /></label></div>
+            <label>Other deal expenses<input className="sk-input" inputMode="decimal" name="expenses" placeholder="$0" /></label>
+            <button className="sk-primary-button min-h-11" type="submit" disabled={!model.transactionContacts.length}>Save verified deal</button>
+          </form>
+        </div>
+      </>}
+    </section>
   </div>;
 }

@@ -155,6 +155,16 @@ export function createMemoryRichContactRepository(input: {
         .sort((left, right) => left.displayOrder - right.displayOrder || left.id.localeCompare(right.id));
     },
 
+    async listContactPointsForContacts(scope, contactIds, includeArchived) {
+      const unique = [...new Set(contactIds)];
+      await Promise.all(unique.map((contactId) => ensureLegacyPoints(scope, contactId)));
+      const included = new Set(unique);
+      return active(state.points.filter((point) => point.workspaceId === scope.workspaceId
+        && included.has(point.contactId)), includeArchived)
+        .sort((left, right) => left.contactId.localeCompare(right.contactId)
+          || left.displayOrder - right.displayOrder || left.id.localeCompare(right.id));
+    },
+
     async addContactPoint(scope, pointInput) {
       await requireContact(pointInput.contactId);
       await ensureLegacyPoints(scope, pointInput.contactId);

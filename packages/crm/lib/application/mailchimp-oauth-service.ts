@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { WorkspaceScope } from '../domain/workspace.ts';
-import { validateWorkspaceScope } from '../domain/workspace.ts';
+import { isCanonicalWorkspaceOwnerScope, validateWorkspaceScope } from '../domain/workspace.ts';
 import { ConnectorError, sha256Hex } from '../domain/connector.ts';
 import type { MailchimpOAuthRepository } from '../data/mailchimp-oauth-repository.ts';
 import {
@@ -26,7 +26,7 @@ const ACCESS_TOKEN_SECRET_TYPE = 'mailchimp-access-token';
 
 function owner(scopeInput: WorkspaceScope): WorkspaceScope {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.mode !== 'live' || scope.role !== 'owner') {
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) {
     throw new ConnectorError('forbidden', 'A signed-in workspace owner is required.');
   }
   return scope;

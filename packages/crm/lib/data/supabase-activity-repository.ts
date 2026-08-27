@@ -4,6 +4,7 @@ import {
   ActivityError,
   createActivityEvent,
   parseInstant,
+  parseOptionalIdentifier,
   parseTaskDescription,
   parseTaskTitle,
   sortTasksForWorkQueue,
@@ -83,6 +84,8 @@ const TASK_COLUMNS = [
 ].join(', ');
 const LIVE_LIST_MAX = 500;
 const SEARCH_MAX = 200;
+const CONTACT_AGGREGATE_MAX_CONTACTS = 50;
+const CONTACT_AGGREGATE_ID_BATCH = 100;
 
 function liveScope(untrustedScope: WorkspaceScope): WorkspaceScope {
   const scope = validateWorkspaceScope(untrustedScope);
@@ -228,6 +231,52 @@ export function supabaseActivityRepository(
       : task);
   }
 
+  async function aggregateRows(
+    scope: WorkspaceScope,
+    table: 'tasks' | 'activity_events',
+    columns: string,
+    contactIds: readonly string[],
+  ): Promise<readonly Record<string, unknown>[]> {
+    const rows: Record<string, unknown>[] = [];
+    for (let batchStart = 0; batchStart < contactIds.length; batchStart += CONTACT_AGGREGATE_ID_BATCH) {
+      const batch = contactIds.slice(batchStart, batchStart + CONTACT_AGGREGATE_ID_BATCH);
+      let offset = 0;
+      let exactCount: number | undefined;
+      const seenIds = new Set<string>();
+      while (exactCount === undefined || offset < exactCount) {
+        const { data, error, count } = await supabase
+          .from(table)
+          .select(columns, { count: 'exact' })
+          .eq('workspace_id', scope.workspaceId)
+          .in('contact_id', [...batch])
+          .order('id', { ascending: true })
+          .range(offset, offset + LIVE_LIST_MAX - 1);
+        if (error) throw persistenceError('Failed to count contact activity', error);
+        if (typeof count !== 'number') {
+          throw new ActivityError('conflict', 'Contact activity count was not exact.');
+        }
+        if (exactCount !== undefined && count !== exactCount) {
+          throw new ActivityError('conflict', 'Contact activity changed while counts were loading.');
+        }
+        exactCount = count;
+        const page = (data ?? []) as unknown as Record<string, unknown>[];
+        if (!page.length && offset < exactCount) {
+          throw new ActivityError('conflict', 'Contact activity ended before its exact count.');
+        }
+        for (const row of page) {
+          const id = row.id;
+          if (typeof id !== 'string' || seenIds.has(id)) {
+            throw new ActivityError('conflict', 'Contact activity pagination returned duplicate rows.');
+          }
+          seenIds.add(id);
+          rows.push(row);
+        }
+        offset += page.length;
+      }
+    }
+    return rows;
+  }
+
   return {
     async listEvents(untrustedScope, query) {
       const scope = liveScope(untrustedScope);
@@ -254,6 +303,60 @@ export function supabaseActivityRepository(
         .limit(limit);
       if (error) throw persistenceError('Failed to list activity events', error);
       return canonicalEvents(scope, ((data ?? []) as unknown as ActivityEventRow[]).map(activityEventFromRow));
+    },
+
+    async listContactAggregates(untrustedScope, contactIds) {
+      const scope = liveScope(untrustedScope);
+      const targets = [...new Set(contactIds.map((contactId) => (
+        parseOptionalIdentifier(contactId, 'contactId')
+      )).filter((contactId): contactId is string => Boolean(contactId)))];
+      if (targets.length > CONTACT_AGGREGATE_MAX_CONTACTS) {
+        throw new ActivityError('invalid-input', 'Contact activity counts support at most 50 visible contacts.');
+      }
+      const aggregates = new Map(targets.map((contactId) => [contactId, {
+        activityCount: 0,
+        openTaskCount: 0,
+        completedTaskCount: 0,
+      }]));
+      if (!targets.length) return aggregates;
+
+      const memberToTarget = new Map<string, string>();
+      if (identityMap) {
+        const groups = await Promise.all(targets.map(async (target) => ({
+          target,
+          group: await identityMap.listGroupMembers(scope, target),
+        })));
+        for (const { target, group } of groups) {
+          for (const memberId of group.memberContactIds) {
+            const existing = memberToTarget.get(memberId);
+            if (existing && existing !== target) {
+              throw new ActivityError('conflict', 'Contact identity groups overlap.');
+            }
+            memberToTarget.set(memberId, target);
+          }
+        }
+      } else {
+        for (const target of targets) memberToTarget.set(target, target);
+      }
+
+      const memberIds = [...memberToTarget.keys()];
+      const [taskRows, eventRows] = await Promise.all([
+        aggregateRows(scope, 'tasks', 'id, contact_id, status', memberIds),
+        aggregateRows(scope, 'activity_events', 'id, contact_id', memberIds),
+      ]);
+      for (const row of eventRows) {
+        const target = typeof row.contact_id === 'string' ? memberToTarget.get(row.contact_id) : undefined;
+        const aggregate = target ? aggregates.get(target) : undefined;
+        if (aggregate) aggregate.activityCount += 1;
+      }
+      for (const row of taskRows) {
+        const target = typeof row.contact_id === 'string' ? memberToTarget.get(row.contact_id) : undefined;
+        const aggregate = target ? aggregates.get(target) : undefined;
+        if (!aggregate) continue;
+        if (row.status === 'open') aggregate.openTaskCount += 1;
+        if (row.status === 'completed') aggregate.completedTaskCount += 1;
+      }
+      return aggregates;
     },
 
     async appendEvent(untrustedScope, input) {

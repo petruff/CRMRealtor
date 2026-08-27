@@ -130,6 +130,29 @@ export function createMemoryActivityRepository(
         .map(cloneEvent);
     },
 
+    async listContactAggregates(workspaceScope, contactIds) {
+      const authorized = scope(workspaceScope);
+      const visibleIds = new Set(contactIds);
+      const aggregates = new Map([...visibleIds].map((contactId) => [contactId, {
+        activityCount: 0,
+        openTaskCount: 0,
+        completedTaskCount: 0,
+      }]));
+      for (const event of events) {
+        if (event.workspaceId !== authorized.workspaceId || !event.contactId) continue;
+        const aggregate = aggregates.get(event.contactId);
+        if (aggregate) aggregate.activityCount += 1;
+      }
+      for (const task of tasks) {
+        if (task.workspaceId !== authorized.workspaceId || !task.contactId) continue;
+        const aggregate = aggregates.get(task.contactId);
+        if (!aggregate) continue;
+        if (task.status === 'open') aggregate.openTaskCount += 1;
+        if (task.status === 'completed') aggregate.completedTaskCount += 1;
+      }
+      return aggregates;
+    },
+
     async appendEvent(workspaceScope, input) {
       const authorized = actor(workspaceScope, input.actorMembershipId);
       return eventResult(authorized, input);

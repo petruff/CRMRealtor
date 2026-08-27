@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { ConnectorRuntimeConfiguration } from '../config/connector-runtime.ts';
 import type {
   MailchimpReconciliationRepository,
@@ -5,7 +6,7 @@ import type {
 } from '../data/supabase-mailchimp-reconciliation-repository.ts';
 import { ConnectorError, stablePayloadHash } from '../domain/connector.ts';
 import type { WorkspaceScope } from '../domain/workspace.ts';
-import { validateWorkspaceScope } from '../domain/workspace.ts';
+import { isCanonicalWorkspaceOwnerScope, validateWorkspaceScope } from '../domain/workspace.ts';
 import { createEnvironmentKekResolver, decryptConnectorSecret, type ConnectorKekResolver } from '../security/connector-secret-envelope.ts';
 import { MailchimpMarketingClient, type MailchimpFetch } from '../providers/mailchimp-client.ts';
 import type { MailchimpSetupRepository } from '../data/mailchimp-operation-repository.ts';
@@ -23,7 +24,7 @@ export async function requestMailchimpReconciliationCommand(
   now = new Date(),
 ) {
   const scope = validateWorkspaceScope(scopeInput);
-  if (scope.mode !== 'live' || scope.role !== 'owner') throw new ConnectorError('forbidden', 'Workspace owner access is required.');
+  if (scope.mode !== 'live' || !isCanonicalWorkspaceOwnerScope(scope)) throw new ConnectorError('forbidden', 'Workspace owner access is required.');
   if (!Number.isFinite(now.getTime())) throw new ConnectorError('invalid-input', 'Timestamp is invalid.');
   const connectionId = input.connectionId.trim();
   const pageSize = input.pageSize ?? 100;
@@ -52,6 +53,62 @@ export async function requestMailchimpReconciliationCommand(
     correlationId: input.correlationId,
     requestedAt: now.toISOString(),
   });
+}
+
+/**
+ * Starts the durable baseline and gives the owner-triggered request a bounded
+ * opportunity to finish immediately. The persisted run remains the source of
+ * truth, so a timeout or provider retry is safely resumed by the cron worker.
+ */
+export async function requestAndDrainMailchimpReconciliationCommand(
+  operations: MailchimpSetupRepository,
+  repository: MailchimpReconciliationRepository,
+  configuration: ConnectorRuntimeConfiguration,
+  scope: WorkspaceScope,
+  input: {
+    readonly connectionId: string;
+    readonly mode?: 'baseline' | 'reconcile';
+    readonly pageSize?: number;
+    readonly correlationId: string;
+  },
+  options: {
+    readonly workerId?: string;
+    readonly runtimeBudgetMs?: number;
+    readonly now?: () => Date;
+    readonly resolver?: ConnectorKekResolver;
+    readonly fetcher?: MailchimpFetch;
+    readonly createClient?: (dataCenter: string, token: string) => Pick<MailchimpMarketingClient, 'listAudienceMembers'>;
+  } = {},
+) {
+  const clock = options.now ?? (() => new Date());
+  const runtimeBudgetMs = options.runtimeBudgetMs ?? Math.min(
+    configuration.worker.maxRuntimeSeconds * 1_000,
+    8_000,
+  );
+  if (!Number.isInteger(runtimeBudgetMs) || runtimeBudgetMs < 1_000 || runtimeBudgetMs > 30_000) {
+    throw new ConnectorError('invalid-input', 'Mailchimp reconciliation runtime budget is invalid.');
+  }
+  const requested = await requestMailchimpReconciliationCommand(
+    operations,
+    repository,
+    scope,
+    input,
+    clock(),
+  );
+  const startedAt = clock().getTime();
+  const drained = await drainMailchimpReconciliationRuns({
+    repository,
+    configuration,
+    workerId: options.workerId ?? randomUUID(),
+    deadlineMs: startedAt + runtimeBudgetMs,
+    now: clock,
+    resolver: options.resolver,
+    fetcher: options.fetcher,
+    createClient: options.createClient,
+  });
+  const targetRun = (await repository.list(scope, input.connectionId, 100))
+    .find((run) => run.id === requested.run.id) ?? requested.run;
+  return { requested, drained, targetRun };
 }
 
 export interface MailchimpReconciliationDrainResult {
@@ -120,6 +177,9 @@ export async function drainMailchimpReconciliationRuns(input: {
             memberId: member.memberId,
             subscriberHash: member.subscriberHash,
             status: member.subscriptionStatus,
+            firstName: member.firstName,
+            lastName: member.lastName,
+            phone: member.phone,
             lastChangedAt: member.lastChangedAt,
           }),
         }));

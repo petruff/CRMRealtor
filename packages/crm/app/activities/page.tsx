@@ -8,6 +8,7 @@ import { getRepository } from "@/lib/data";
 import { ActivityWorkspace } from "@/components/activity-workspace";
 import { ActivityError, type TaskStatus } from "@/lib/domain/activity";
 import { CadenceFollowUpQueue } from "@/components/cadence-follow-up-queue";
+import { RecentActivityFeed } from "@/components/recent-activity-feed";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Activities" };
@@ -103,7 +104,7 @@ export default async function ActivitiesPage({
       <form
         method="get"
         role="search"
-        className="sk-group mb-6 grid gap-px bg-line md:grid-cols-2 xl:grid-cols-6"
+        className="activity-filter-grid sk-group mb-6 grid gap-px bg-line md:grid-cols-2"
       >
         <label className="bg-surface p-2">
           <span className="sr-only">Search tasks</span>
@@ -177,29 +178,7 @@ export default async function ActivitiesPage({
         renderedAt={renderedAt.toISOString()}
         timeZone={timeZone}
       />
-      {events.length ? (
-        <section className="mt-10">
-          <h2 className="font-display text-2xl text-ink">Recent activity</h2>
-          <ol className="mt-4 sk-group grid gap-px">
-            {events.map((event) => (
-              <li key={event.id} className="bg-surface p-4 text-sm text-muted">
-                <span className="font-medium text-ink">
-                  {event.type.replaceAll("-", " ")}
-                </span>{" "}
-                ·{" "}
-                <time dateTime={event.occurredAt}>
-                  {new Intl.DateTimeFormat("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  }).format(new Date(event.occurredAt))}
-                </time>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ) : null}
+      <RecentActivityFeed events={events} contacts={contacts} timeZone={timeZone} />
     </div>
   );
 }

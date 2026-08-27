@@ -10,12 +10,18 @@ describe("route policy", () => {
   it("keeps public pages exact and session-public endpoints segment bounded", () => {
     expect(isPublicPagePath("/welcome")).toBe(true);
     expect(isPublicPagePath("/login")).toBe(true);
+    expect(isPublicPagePath("/offline")).toBe(true);
     expect(isPublicPagePath("/welcome-more")).toBe(false);
+    expect(isSessionPublicPath("/manifest.webmanifest")).toBe(true);
+    expect(isSessionPublicPath("/sw.js")).toBe(true);
     expect(isSessionPublicPath("/auth/callback")).toBe(true);
     expect(isSessionPublicPath("/api/health")).toBe(true);
     expect(isSessionPublicPath("/api/readiness")).toBe(true);
     expect(isSessionPublicPath("/api/health/private")).toBe(true);
     expect(isSessionPublicPath("/api/intake/contacts")).toBe(true);
+    expect(isSessionPublicPath("/api/v1/status")).toBe(true);
+    expect(isSessionPublicPath("/api/v1/contacts/contact-a")).toBe(true);
+    expect(isSessionPublicPath("/api/v10/status")).toBe(false);
     expect(isSessionPublicPath("/api/internal/connectors/drain")).toBe(true);
     expect(isSessionPublicPath("/api/connectors/google/gmail/push/key")).toBe(true);
     expect(isSessionPublicPath("/api/connectors/mailchimp/webhook/key")).toBe(true);

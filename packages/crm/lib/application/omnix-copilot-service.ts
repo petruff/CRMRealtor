@@ -53,6 +53,8 @@ import {
 import { buildTriage } from '../domain/triage.ts';
 import { buildWorkspaceSnapshot } from '../domain/workspace-intelligence.ts';
 import type { ConnectorConnection, ConnectorDefinition } from '../domain/connector.ts';
+import type { ConnectorLifecycleProjection } from '../domain/connector-lifecycle.ts';
+import { readConnectorLifecycleSnapshot } from './connector-lifecycle-orchestrator.ts';
 import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
 import {
   defaultOmnixCopilotTelemetrySink,
@@ -60,9 +62,18 @@ import {
   omnixCopilotTelemetryErrorCategory,
   type OmnixCopilotTelemetrySink,
 } from '../observability/omnix-copilot-telemetry.ts';
+import { activityEventLabel } from '../presentation/activity-feed.ts';
 
 export const OMNIX_COPILOT_RESULT_MAX = 500;
 const UPCOMING_DAYS = 7;
+
+function attentionFingerprint(value: unknown): string {
+  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+function attentionDateInstant(value: string | undefined): string | undefined {
+  return value ? new Date(`${value}T12:00:00.000Z`).toISOString() : undefined;
+}
 
 type ContactFactKey = Extract<keyof Contact, string>;
 type TaskFactKey = Extract<keyof CrmTask, string>;
@@ -295,7 +306,7 @@ function connectorCitation(connection: ConnectorConnection, asOf: string): Omnix
   return makeCitation({
     entityType: 'connector',
     recordId: connection.id,
-    factKeys: ['provider', 'status', 'grantedScopes', 'connectedAt', 'updatedAt', 'tokenExpiresAt'],
+    factKeys: ['provider', 'status', 'connectedAt', 'updatedAt'],
     sourceTimestamp: connection.updatedAt,
     responseAsOf: asOf,
     target: '/connections',
@@ -462,6 +473,17 @@ function buildAlerts(
         recordId: entry.contact.id,
         href: identifierTarget('contact', entry.contact.id),
         citations: [citation],
+        occurrenceKey: `follow-up:${entry.contact.id}`,
+        sourceFingerprint: attentionFingerprint({
+          kind: 'follow-up', contactId: entry.contact.id,
+          createdAt: storedContact.createdAt,
+          lastContactedAt: storedContact.lastContactedAt ?? null,
+          nextTouchAt: entry.contact.nextTouchAt ?? null,
+          leadType: storedContact.leadType,
+          pipelineStage: storedContact.pipelineStage,
+        }),
+        ...(entry.contact.nextTouchAt ? { dueAt: attentionDateInstant(entry.contact.nextTouchAt) } : {}),
+        dismissAllowed: false,
       });
     }
   }
@@ -483,6 +505,13 @@ function buildAlerts(
       recordId: entry.contact.id,
       href: identifierTarget('contact', entry.contact.id),
       citations: [citation],
+      occurrenceKey: `${rule}:${entry.contact.id}`,
+      sourceFingerprint: attentionFingerprint({
+        rule, contactId: entry.contact.id,
+        anniversaryYear: today.slice(0, 4),
+        date: birthday ? entry.contact.birthdate : entry.contact.homePurchaseDate,
+      }),
+      dismissAllowed: true,
     });
   }
 
@@ -497,6 +526,12 @@ function buildAlerts(
         recordId: contact.id,
         href: identifierTarget('contact', contact.id),
         citations: [contactCitation(contact, ['pipelineStage', 'nextTouchAt'], asOf, rule)],
+        occurrenceKey: `${rule}:${contact.id}`,
+        sourceFingerprint: attentionFingerprint({
+          rule, contactId: contact.id, pipelineStage: contact.pipelineStage,
+          nextTouchAt: contact.nextTouchAt ?? null,
+        }),
+        dismissAllowed: false,
       });
     }
     if (!isMailingReady(contact)) {
@@ -510,6 +545,13 @@ function buildAlerts(
         recordId: contact.id,
         href: `${identifierTarget('contact', contact.id)}/edit`,
         citations: [contactCitation(contact, addressFields, asOf, rule)],
+        occurrenceKey: `${rule}:${contact.id}`,
+        sourceFingerprint: attentionFingerprint({
+          rule, contactId: contact.id, mailingAddress: contact.mailingAddress ?? null,
+          city: contact.city ?? null, state: contact.state ?? null,
+          postalCode: contact.postalCode ?? null,
+        }),
+        dismissAllowed: true,
       });
     }
   }
@@ -525,6 +567,13 @@ function buildAlerts(
       recordId: task.id,
       href: identifierTarget('task', task.id),
       citations: [taskCitation(task, TASK_SCHEDULE_FACT_KEYS, asOf, rule)],
+      occurrenceKey: `task-due:${task.id}`,
+      sourceFingerprint: attentionFingerprint({
+        kind: 'task-due', taskId: task.id, dueAt: task.dueAt, status: task.status,
+        taskVersion: task.taskVersion ?? null,
+      }),
+      dueAt: task.dueAt,
+      dismissAllowed: false,
     });
   }
   for (const task of grouped.today) {
@@ -537,6 +586,13 @@ function buildAlerts(
       recordId: task.id,
       href: identifierTarget('task', task.id),
       citations: [taskCitation(task, TASK_SCHEDULE_FACT_KEYS, asOf, rule)],
+      occurrenceKey: `task-due:${task.id}`,
+      sourceFingerprint: attentionFingerprint({
+        kind: 'task-due', taskId: task.id, dueAt: task.dueAt, status: task.status,
+        taskVersion: task.taskVersion ?? null,
+      }),
+      dueAt: task.dueAt,
+      dismissAllowed: false,
     });
   }
   return alerts;
@@ -1072,22 +1128,36 @@ function mailersResult(campaigns: readonly MailerCampaign[], campaignId: string 
   };
 }
 
-function connectionsResult(
+export function connectionsResult(
   definitions: readonly ConnectorDefinition[],
   connections: readonly ConnectorConnection[],
+  lifecycles: readonly ConnectorLifecycleProjection[],
   asOf: string,
 ): ReadResult {
+  const lifecycleLabel = (lifecycle: ConnectorLifecycleProjection | undefined): string | undefined => {
+    if (!lifecycle) return undefined;
+    if (lifecycle.state === 'ready') return 'Ready';
+    if (lifecycle.state === 'disconnected') return 'Not connected';
+    if (lifecycle.state === 'not-configured') return 'Unavailable';
+    if (lifecycle.state === 'reconnect-required') return 'Reconnect needed';
+    if (lifecycle.state === 'disconnect-pending') return 'Disconnecting';
+    if (['owner-consent-pending', 'scope-pending', 'webhook-pending', 'baseline-pending'].includes(lifecycle.state)) {
+      return 'Setup needed';
+    }
+    if (lifecycle.state === 'baseline-running') return 'Updating';
+    return 'Needs attention';
+  };
   const byProvider = new Map(connections.map((connection) => [connection.provider, connection]));
+  const lifecycleByProvider = new Map(lifecycles.map((lifecycle) => [lifecycle.provider, lifecycle]));
   const items = definitions.map((definition) => {
     const connection = byProvider.get(definition.provider);
+    const lifecycle = lifecycleByProvider.get(definition.provider as ConnectorLifecycleProjection['provider']);
     const citation = connection ? connectorCitation(connection, asOf) : undefined;
     return {
       id: `connector-${definition.provider}`,
       label: definition.label,
-      detail: connection
-        ? `${connection.status} · ${connection.grantedScopes.length} granted scopes`
-        : definition.enabled ? `${definition.mode} · not connected` : 'provider disabled',
-      value: connection?.status ?? definition.mode,
+      detail: lifecycle?.safeSummary ?? (connection ? 'This connection needs review.' : 'This service is not connected.'),
+      value: lifecycleLabel(lifecycle) ?? (connection ? 'Needs attention' : 'Not connected'),
       href: '/connections',
       citations: citation ? [citation] : [],
     };
@@ -1096,8 +1166,8 @@ function connectionsResult(
     answerBlocks: [block(
       'connections',
       'list',
-      'Connection health',
-      'Redacted workspace connection state. Credentials and provider payloads are never returned.',
+      'Connections',
+      'A safe summary of the services available to this workspace.',
       items,
     )],
     suggestions: [reviewSuggestion(
@@ -1129,7 +1199,7 @@ async function activityResult(
     const citation = activityCitation(event, asOf);
     return {
       id: event.id,
-      label: event.type,
+      label: activityEventLabel(event.type),
       detail: event.occurredAt,
       href: identifierTarget('contact', contactId),
       citations: [citation],
@@ -1192,11 +1262,13 @@ async function dispatch(
     if (!context.connectorRepository) {
       return unavailable('Connections', 'Workspace connection data is unavailable in this context.', '/connections');
     }
-    const [definitions, connections] = await Promise.all([
-      context.connectorRepository.listDefinitions(scope),
-      context.connectorRepository.listConnections(scope, { limit: 100 }),
-    ]);
-    return connectionsResult(definitions, connections, request.asOf);
+    const snapshot = await readConnectorLifecycleSnapshot({
+      connectorRepository: context.connectorRepository,
+      workspaceScope: scope,
+      isLive: context.isLive,
+      observedAt: asOfDate,
+    });
+    return connectionsResult(snapshot.definitions, snapshot.connections, snapshot.lifecycles, request.asOf);
   }
   if (intent.kind === 'mailers') {
     if (!context.mailerRepository) return unavailable('Physical mailers', 'Physical-mailer data is unavailable in this workspace context.', '/mailers');

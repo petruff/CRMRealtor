@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WorkspaceScope } from '../domain/workspace.ts';
 import { supabaseContactIdentityMap } from './supabase-contact-identity-map.ts';
@@ -9,6 +9,21 @@ const scope: WorkspaceScope = {
 };
 
 describe('supabaseContactIdentityMap', () => {
+  it('reports whether bounded contact pages need canonical alias fallback', async () => {
+    const client = {
+      from: () => {
+        const query = {
+          select() { return query; }, eq() { return query; }, is() { return query; },
+          then(resolve: (value: unknown) => unknown) {
+            return Promise.resolve(resolve({ data: null, count: 2, error: null }));
+          },
+        };
+        return query;
+      },
+    } as unknown as SupabaseClient;
+    await expect(supabaseContactIdentityMap(client).hasActiveAliases?.(scope)).resolves.toBe(true);
+  });
+
   it('resolves a canonical group and one bounded page map', async () => {
     const calls: string[] = [];
     const client = {
@@ -51,6 +66,7 @@ describe('supabaseContactIdentityMap', () => {
   });
 
   it('treats the exact not-yet-promoted merge read model as no aliases', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const missing = {
       code: 'PGRST202',
       message: "Could not find the function public.resolve_canonical_contact_id in the schema cache",
@@ -81,6 +97,11 @@ describe('supabaseContactIdentityMap', () => {
     await expect(identity.resolvePage(scope, ['contact-a'])).resolves.toEqual(new Map([
       ['contact-a', 'contact-a'],
     ]));
+    expect(warning).toHaveBeenCalledWith(
+      expect.stringMatching(/not installed/i),
+      expect.objectContaining({ code: expect.stringMatching(/^PGRST/) }),
+    );
+    warning.mockRestore();
   });
 
   it('does not hide unrelated resolver failures', async () => {

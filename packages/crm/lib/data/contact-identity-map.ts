@@ -16,6 +16,8 @@ export interface ContactIdentityMap {
   listGroupMembers(scope: WorkspaceScope, contactId: string): Promise<ContactAliasGroup>;
   /** One bounded lookup for list/search pages; never one RPC per contact. */
   resolvePage(scope: WorkspaceScope, contactIds: readonly string[]): Promise<ReadonlyMap<string, string>>;
+  /** Allows bounded list reads to use direct ranges when no active donor aliases exist. */
+  hasActiveAliases?(scope: WorkspaceScope): Promise<boolean>;
 }
 
 export function passthroughContactIdentityMap(): ContactIdentityMap {
@@ -32,5 +34,6 @@ export function passthroughContactIdentityMap(): ContactIdentityMap {
     async resolvePage(_scope, contactIds) {
       return new Map(contactIds.map((contactId) => [contactId, contactId]));
     },
+    async hasActiveAliases() { return false; },
   };
 }
