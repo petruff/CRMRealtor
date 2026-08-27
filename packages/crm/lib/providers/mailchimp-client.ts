@@ -10,6 +10,8 @@ import {
   type MailchimpAudienceMember,
   parseMailchimpAudienceMember,
 } from '../domain/mailchimp.ts';
+import { mailchimpSegmentOptions, parseMailchimpCampaignContent, parseMailchimpCampaignSegment,
+  type MailchimpCampaignContent, type MailchimpCampaignSegment } from '../domain/mailchimp-campaign.ts';
 
 const AUTHORIZE_ENDPOINT = 'https://login.mailchimp.com/oauth2/authorize';
 const TOKEN_ENDPOINT = 'https://login.mailchimp.com/oauth2/token';
@@ -187,6 +189,126 @@ export class MailchimpMarketingClient {
       || payload.health_status.length > 160) {
       throw new ConnectorError('provider-disabled', 'Mailchimp health response is invalid.');
     }
+  }
+
+  async createCampaignDraft(input: {
+    readonly audienceId: string;
+    readonly segment: MailchimpCampaignSegment;
+    readonly content: MailchimpCampaignContent;
+  }): Promise<{ readonly campaignId: string; readonly webId?: number }> {
+    const audienceId = parseMailchimpAudience({ id: input.audienceId, name: 'Selected audience' }).id;
+    const segment = parseMailchimpCampaignSegment(input.segment);
+    const content = parseMailchimpCampaignContent(input.content);
+    let savedSegmentId: number | undefined;
+    const segmentTarget = mailchimpSegmentOptions(segment);
+    if (segmentTarget) {
+      const tagName = String(segmentTarget.tagName);
+      const tags = await this.request(`/lists/${encodeURIComponent(audienceId)}/tag-search?name=${encodeURIComponent(tagName)}`);
+      const exact = Array.isArray(tags.tags) ? tags.tags.find((candidate) => candidate && typeof candidate === 'object'
+        && !Array.isArray(candidate) && (candidate as Record<string, unknown>).name === tagName) : undefined;
+      const id = exact && typeof exact === 'object' ? Number((exact as Record<string, unknown>).id) : NaN;
+      if (!Number.isSafeInteger(id) || id < 1) {
+        throw new ConnectorError('conflict', `Mailchimp tag ${tagName} is not ready. Run contact tag sync first.`);
+      }
+      savedSegmentId = id;
+    }
+    const payload = await this.request('/campaigns', {
+      method: 'POST',
+      body: JSON.stringify({
+        type: 'regular',
+        recipients: { list_id: audienceId, ...(savedSegmentId ? { segment_opts: { saved_segment_id: savedSegmentId } } : {}) },
+        settings: { title: content.title, subject_line: content.subject, preview_text: content.previewText,
+          from_name: content.fromName, reply_to: content.replyTo, auto_footer: true },
+      }),
+    });
+    if (typeof payload.id !== 'string' || !payload.id || payload.id.length > 128) {
+      throw new ConnectorError('provider-disabled', 'Mailchimp campaign draft response is invalid.');
+    }
+    const webId = Number(payload.web_id);
+    return { campaignId: payload.id, ...(Number.isSafeInteger(webId) && webId > 0 ? { webId } : {}) };
+  }
+
+  async setCampaignContent(input: { readonly campaignId: string; readonly content: MailchimpCampaignContent }): Promise<void> {
+    const campaignId = parseMailchimpAudience({ id: input.campaignId, name: 'Campaign' }).id;
+    const content = parseMailchimpCampaignContent(input.content);
+    await this.request(`/campaigns/${encodeURIComponent(campaignId)}/content`, {
+      method: 'PUT', body: JSON.stringify({ html: content.html, plain_text: content.plainText }),
+    });
+  }
+
+  async findCampaignDraft(input: {
+    readonly audienceId: string;
+    readonly providerTitle: string;
+    readonly createdSince: string;
+  }): Promise<{ readonly campaignId: string } | undefined> {
+    const audienceId = parseMailchimpAudience({ id: input.audienceId, name: 'Selected audience' }).id;
+    const providerTitle = parseMailchimpCampaignContent({
+      title: input.providerTitle,
+      subject: 'Recovery lookup',
+      previewText: 'Recovery lookup',
+      fromName: 'Omnix',
+      replyTo: 'recovery@example.com',
+      html: 'Recovery lookup',
+      plainText: 'Recovery lookup',
+    }).title;
+    const since = new Date(input.createdSince);
+    if (!Number.isFinite(since.getTime())) throw new ConnectorError('invalid-input', 'Campaign recovery timestamp is invalid.');
+    const query = new URLSearchParams({
+      count: '100',
+      status: 'save',
+      list_id: audienceId,
+      since_create_time: since.toISOString(),
+      sort_field: 'create_time',
+      sort_dir: 'DESC',
+      fields: 'campaigns.id,campaigns.settings.title,campaigns.recipients.list_id,total_items',
+    });
+    const payload = await this.request(`/campaigns?${query.toString()}`);
+    if (!Array.isArray(payload.campaigns)) {
+      throw new ConnectorError('provider-disabled', 'Mailchimp campaign recovery response is invalid.');
+    }
+    const matches = payload.campaigns.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return [];
+      const row = entry as Record<string, unknown>;
+      const settings = row.settings && typeof row.settings === 'object' && !Array.isArray(row.settings)
+        ? row.settings as Record<string, unknown> : {};
+      const recipients = row.recipients && typeof row.recipients === 'object' && !Array.isArray(row.recipients)
+        ? row.recipients as Record<string, unknown> : {};
+      return settings.title === providerTitle && recipients.list_id === audienceId
+        && typeof row.id === 'string' && row.id.length <= 128 ? [{ campaignId: row.id }] : [];
+    });
+    if (matches.length > 1) {
+      throw new ConnectorError('conflict', 'Multiple matching Mailchimp drafts require manual review.');
+    }
+    return matches[0];
+  }
+
+  async readCampaignStatus(campaignIdValue: string): Promise<'save' | 'paused' | 'schedule' | 'sending' | 'sent'> {
+    const campaignId = parseMailchimpAudience({ id: campaignIdValue, name: 'Campaign' }).id;
+    const payload = await this.request(`/campaigns/${encodeURIComponent(campaignId)}?fields=id,status`);
+    if (!['save', 'paused', 'schedule', 'sending', 'sent'].includes(String(payload.status))) {
+      throw new ConnectorError('provider-disabled', 'Mailchimp campaign status is invalid.');
+    }
+    return payload.status as 'save' | 'paused' | 'schedule' | 'sending' | 'sent';
+  }
+
+  async readCampaignSendChecklist(campaignIdValue: string): Promise<{
+    readonly ready: boolean;
+    readonly issues: readonly string[];
+  }> {
+    const campaignId = parseMailchimpAudience({ id: campaignIdValue, name: 'Campaign' }).id;
+    const payload = await this.request(`/campaigns/${encodeURIComponent(campaignId)}/send-checklist`);
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    const issues = items.flatMap((entry) => {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return ['Mailchimp returned an invalid checklist item.'];
+      const item = entry as Record<string, unknown>;
+      return item.type === 'error' && typeof item.heading === 'string' ? [item.heading.slice(0, 200)] : [];
+    });
+    return { ready: issues.length === 0, issues };
+  }
+
+  async sendCampaign(campaignIdValue: string): Promise<void> {
+    const campaignId = parseMailchimpAudience({ id: campaignIdValue, name: 'Campaign' }).id;
+    await this.request(`/campaigns/${encodeURIComponent(campaignId)}/actions/send`, { method: 'POST' }, true);
   }
 
   async createSignedAudienceWebhook(input: {

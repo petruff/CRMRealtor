@@ -28,6 +28,7 @@ describe('Omnix copilot fixed grammar', () => {
     ['find contact Alicia Monroe', { kind: 'find-contact', query: 'Alicia Monroe' }],
     ['pipeline', { kind: 'pipeline' }],
     ['tasks overdue', { kind: 'tasks', window: 'overdue' }],
+    ['send an email to all contacts', { kind: 'campaigns' }],
     ['tasks today', { kind: 'tasks', window: 'today' }],
     ['tasks upcoming', { kind: 'tasks', window: 'upcoming' }],
     ['tasks from 2026-08-12 to 2026-08-19', {
@@ -70,7 +71,7 @@ describe('Omnix copilot fixed grammar', () => {
   });
 
   it('documents the exact fixed alias table', () => {
-    expect(OMNIX_COPILOT_FIXED_ALIASES).toHaveLength(20);
+    expect(OMNIX_COPILOT_FIXED_ALIASES).toHaveLength(23);
   });
 
   it('normalizes case, whitespace and terminal punctuation only', () => {

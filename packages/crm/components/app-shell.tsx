@@ -11,6 +11,7 @@ import {
   KanbanSquare,
   Plug,
   Database,
+  Mail,
   Send,
   Sparkles,
   Settings,
@@ -44,13 +45,14 @@ const BUSINESS_NAV = [
 ] as const;
 
 const OPERATIONS_NAV = [
+  { href: "/campaigns", label: "Campaigns", icon: Mail },
   { href: "/mailers", label: "Mailers", icon: Send },
   { href: "/connections", label: "Connections", icon: Plug },
   { href: "/data", label: "Data tools", icon: Database },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-const MOBILE_NAV = [...CORE_NAV, ...OPERATIONS_NAV.slice(0, 2)] as const;
+const MOBILE_NAV = [...CORE_NAV, OPERATIONS_NAV[0], OPERATIONS_NAV[2]] as const;
 const ALL_NAV = [...CORE_NAV, ...BUSINESS_NAV, ...OPERATIONS_NAV] as const;
 
 function isActive(pathname: string, href: string): boolean {

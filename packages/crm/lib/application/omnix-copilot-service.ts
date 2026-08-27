@@ -1233,6 +1233,7 @@ function helpResult(): ReadResult {
     'mailers [<campaign-id>]',
     'activity <contact-id>',
     'connections',
+    'email campaigns',
     'help',
   ];
   return {
@@ -1258,6 +1259,17 @@ async function dispatch(
   const intent = request.intent;
 
   if (intent.kind === 'help') return helpResult();
+  if (intent.kind === 'campaigns') {
+    return {
+      answerBlocks: [block(
+        'email-campaigns', 'capability', 'Email campaigns',
+        'Prepare a message for all subscribed contacts or one Hot, Warm, or Nurture segment. Omnix excludes unsubscribed contacts, and only the workspace owner can approve the final send.',
+        [{ id: 'open-email-campaigns', label: 'Create or review a campaign', href: '/campaigns', citations: [] }],
+      )],
+      suggestions: [{ id: 'review-email-campaigns', kind: 'review-link', title: 'Open email campaigns',
+        detail: 'Review the audience count and prepare a governed Mailchimp campaign.', href: '/campaigns', readOnly: true, citations: [] }],
+    };
+  }
   if (intent.kind === 'connections') {
     if (!context.connectorRepository) {
       return unavailable('Connections', 'Workspace connection data is unavailable in this context.', '/connections');
