@@ -279,7 +279,7 @@ export default async function ContactDetailPage({
       {!archived && googleConnection?.remoteAccountLabel && googleEmailPoint && gmailReadiness?.ready ? (
         <GoogleEmailComposer contactId={id} connectionId={googleConnection.id}
           contactPointId={googleEmailPoint.id} from={googleConnection.remoteAccountLabel}
-          to={googleEmailPoint.normalizedValue} />
+          to={googleEmailPoint.normalizedValue} isOwner={workspaceScope.role === "owner"} />
       ) : !archived && googleConnection && googleEmailPoint && gmailReadiness?.message ? (
         <p role="status" className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-sm text-warm">
           {gmailReadiness.message}{" "}

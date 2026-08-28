@@ -66,12 +66,18 @@ export async function prepareGoogleEmailDraftIntent(input: {
   readonly summary: string;
   readonly correlationId: string;
   readonly occurredAt: string;
-}) {
+}): Promise<{
+  readonly intent: { readonly id: string; readonly current_version: number };
+  readonly noOp: boolean;
+}> {
   const { data, error } = await input.database.rpc('prepare_google_gmail_send_intent', {
     target_draft_id: input.draftId, target_expected_draft_version: input.expectedVersion,
     target_summary: input.summary, target_correlation_id: input.correlationId,
     target_occurred_at: input.occurredAt,
   });
   if (error) throw persistenceError('Failed to prepare Google email for approval', error);
-  return data;
+  return data as {
+    readonly intent: { readonly id: string; readonly current_version: number };
+    readonly noOp: boolean;
+  };
 }

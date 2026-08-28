@@ -852,7 +852,7 @@ export default async function ConnectionsPage({
       )}
 
       {isLive && canonicalOwner && (realConnections.length > 0 || intents.length > 0 || jobs.length > 0) && (
-        <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="connector-operations">
+        <section id="pending-approvals" className="mb-8 scroll-mt-6 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="connector-operations">
           <h2 id="connector-operations" className="font-display text-2xl text-ink">Connection controls</h2>
           <p className="mt-1 text-sm text-muted">Review connected accounts, approve pending actions, and resolve anything that needs attention.</p>
 
