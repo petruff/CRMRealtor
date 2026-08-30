@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { WorkspaceScope } from '@/lib/domain/workspace';
-import type { OmnixAiBudgetAuthority } from './omnix-generative-narrator';
+import type { WorkspaceScope } from '../domain/workspace.ts';
+import type { OmnixAiBudgetAuthority } from './omnix-generative-narrator.ts';
 
 interface ReservationRow {
   allowed?: boolean;

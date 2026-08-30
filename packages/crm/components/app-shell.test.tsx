@@ -68,6 +68,11 @@ describe('AppShell account controls', () => {
     const utilities = screen.getByRole('navigation', { name: 'Mobile utilities' });
     expect(utilities).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/alerts"]')).toHaveFocus();
+    expect(utilities.querySelector('a[href="/pipeline"]')).toBeInTheDocument();
+    expect(utilities.querySelector('a[href="/insights"]')).toBeInTheDocument();
+    expect(utilities.querySelector('a[href="/campaigns"]')).toBeInTheDocument();
+    expect(utilities.querySelector('a[href="/mailers"]')).toBeInTheDocument();
+    expect(utilities.querySelector('a[href="/data"]')).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/settings"]')).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/workspace"]')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Install Omnix' })).toBeInTheDocument();
@@ -82,6 +87,14 @@ describe('AppShell account controls', () => {
     expect(screen.queryByRole('navigation', { name: 'Mobile utilities' })).not.toBeInTheDocument();
     await waitFor(() => expect(more).toHaveFocus());
     expect(screen.getByTestId('assistant-launcher-contract')).toHaveAttribute('data-suppressed', 'false');
+  });
+
+  it('keeps Omnix thumb-reachable and leaves campaigns available under More on mobile', () => {
+    const html = renderToStaticMarkup(<AppShell><p>Content</p></AppShell>);
+
+    expect(html).toContain('href="/omnix"');
+    expect(html).toContain('>Omnix AI<');
+    expect(html).toContain('href="/campaigns"');
   });
 
   it('closes transient mobile utilities when the route changes', async () => {

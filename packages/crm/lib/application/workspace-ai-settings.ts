@@ -1,5 +1,3 @@
-import 'server-only';
-
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isCanonicalWorkspaceOwnerScope, type WorkspaceScope } from '../domain/workspace.ts';
@@ -34,6 +32,22 @@ export interface WorkspaceAiCredential {
   readonly provider: WorkspaceAiProvider;
   readonly model: WorkspaceAiModel;
   readonly dataPolicy: 'paid-private';
+}
+
+export interface WorkspaceAiCapabilityStatus {
+  readonly state: 'available' | 'unconfigured';
+  readonly provider?: WorkspaceAiProvider;
+  readonly model?: WorkspaceAiModel;
+}
+
+export interface WorkspaceAiUsageStatus {
+  readonly usageDay: string;
+  readonly committedMicrousd: number;
+  readonly runCount: number;
+  readonly succeeded: number;
+  readonly failed: number;
+  readonly reserved: number;
+  readonly lastRunAt?: string;
 }
 
 type ConfigurationRow = {
@@ -257,5 +271,74 @@ export async function loadWorkspaceAiRuntimeCredential(scope: WorkspaceScope): P
     provider: selectedProvider,
     model: selectedModel,
     dataPolicy: 'paid-private',
+  };
+}
+
+/** Safe member-facing capability projection. It never returns or fingerprints the workspace secret. */
+export async function readWorkspaceAiCapabilityStatus(scope: WorkspaceScope): Promise<WorkspaceAiCapabilityStatus> {
+  if (scope.mode !== 'live' || scope.supportGrant) return { state: 'unconfigured' };
+  const client = serviceClient();
+  const { data: membership, error: membershipError } = await client
+    .from('workspace_members')
+    .select('role,status')
+    .eq('id', scope.membershipId)
+    .eq('workspace_id', scope.workspaceId)
+    .eq('user_id', scope.authenticatedUserId)
+    .eq('status', 'active')
+    .maybeSingle();
+  if (membershipError) throw new Error('Workspace AI capability is unavailable.');
+  if (!membership || membership.status !== 'active' || membership.role !== scope.role) return { state: 'unconfigured' };
+
+  const { data, error } = await client
+    .from('workspace_ai_configurations')
+    .select('enabled,provider,model,secret_version')
+    .eq('workspace_id', scope.workspaceId)
+    .maybeSingle();
+  if (error) throw new Error('Workspace AI capability is unavailable.');
+  if (!data || data.enabled !== true || !Number.isInteger(data.secret_version) || Number(data.secret_version) < 1) {
+    return { state: 'unconfigured' };
+  }
+  const selectedProvider = provider(data.provider);
+  const selectedModel = model(data.model);
+  assertProviderModel(selectedProvider, selectedModel);
+  return { state: 'available', provider: selectedProvider, model: selectedModel };
+}
+
+/** Redacted operational projection. Prompts, responses, contact data and credentials are never queried. */
+export async function readWorkspaceAiUsageStatus(
+  client: SupabaseClient,
+  scope: WorkspaceScope,
+  now = new Date(),
+): Promise<WorkspaceAiUsageStatus | undefined> {
+  if (scope.mode !== 'live' || scope.supportGrant) return undefined;
+  const usageDay = now.toISOString().slice(0, 10);
+  const [usageResult, runsResult] = await Promise.all([
+    client.from('omnix_ai_usage_windows')
+      .select('usage_day,committed_microusd,run_count')
+      .eq('workspace_id', scope.workspaceId)
+      .eq('usage_day', usageDay)
+      .maybeSingle(),
+    client.from('omnix_ai_runs')
+      .select('state,created_at')
+      .eq('workspace_id', scope.workspaceId)
+      .gte('created_at', `${usageDay}T00:00:00.000Z`)
+      .order('created_at', { ascending: false })
+      .limit(100),
+  ]);
+  if (usageResult.error || runsResult.error) return undefined;
+  const usage = usageResult.data as { usage_day?: unknown; committed_microusd?: unknown; run_count?: unknown } | null;
+  const runs = (runsResult.data ?? []) as { state?: unknown; created_at?: unknown }[];
+  const numeric = (value: unknown) => {
+    const parsed = typeof value === 'number' ? value : Number(value ?? 0);
+    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
+  };
+  return {
+    usageDay: typeof usage?.usage_day === 'string' ? usage.usage_day : usageDay,
+    committedMicrousd: numeric(usage?.committed_microusd),
+    runCount: numeric(usage?.run_count),
+    succeeded: runs.filter((run) => run.state === 'succeeded').length,
+    failed: runs.filter((run) => run.state === 'failed').length,
+    reserved: runs.filter((run) => run.state === 'reserved').length,
+    ...(typeof runs[0]?.created_at === 'string' ? { lastRunAt: runs[0].created_at } : {}),
   };
 }

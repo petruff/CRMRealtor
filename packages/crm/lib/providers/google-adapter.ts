@@ -75,11 +75,16 @@ function providerError(error: unknown): ConnectorAdapterResult {
 
 export class GoogleConnectorAdapter implements ConnectorAdapter {
   readonly provider = 'google' as const;
+  private readonly authority: GoogleJobAuthorityLoader;
+  private readonly revokeGrant: typeof revokeGoogleOAuthGrant;
 
   constructor(
-    private readonly authority: GoogleJobAuthorityLoader,
-    private readonly revokeGrant: typeof revokeGoogleOAuthGrant = revokeGoogleOAuthGrant,
-  ) {}
+    authority: GoogleJobAuthorityLoader,
+    revokeGrant: typeof revokeGoogleOAuthGrant = revokeGoogleOAuthGrant,
+  ) {
+    this.authority = authority;
+    this.revokeGrant = revokeGrant;
+  }
 
   async execute(job: ConnectorJob): Promise<ConnectorAdapterResult> {
     if (job.provider !== 'google' || ![

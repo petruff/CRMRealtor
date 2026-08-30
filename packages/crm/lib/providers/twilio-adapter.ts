@@ -85,12 +85,19 @@ function validateOperation(operation: TwilioApprovedSendOperation, now: Date): v
 
 export class TwilioConnectorAdapter implements ConnectorAdapter {
   readonly provider = 'twilio' as const;
+  private readonly authority: TwilioJobAuthorityLoader;
+  private readonly now: () => Date;
+  private readonly outboundGuard?: ContactOutboundGuard;
 
   constructor(
-    private readonly authority: TwilioJobAuthorityLoader,
-    private readonly now: () => Date = () => new Date(),
-    private readonly outboundGuard?: ContactOutboundGuard,
-  ) {}
+    authority: TwilioJobAuthorityLoader,
+    now: () => Date = () => new Date(),
+    outboundGuard?: ContactOutboundGuard,
+  ) {
+    this.authority = authority;
+    this.now = now;
+    this.outboundGuard = outboundGuard;
+  }
 
   async execute(job: ConnectorJob): Promise<ConnectorAdapterResult> {
     if (job.provider !== 'twilio' || job.actionType !== 'message.send') {

@@ -1,11 +1,11 @@
-import type { OmnixCopilotCitation, OmnixCopilotSuccessResponse } from '@/lib/domain/omnix-copilot';
+import type { OmnixCopilotCitation, OmnixCopilotSuccessResponse } from '../domain/omnix-copilot.ts';
 import {
   estimateOmnixCostMicrousd,
   estimateOmnixTokens,
   OMNIX_AI_POLICY,
   OMNIX_AI_POLICY_VERSION,
-} from './omnix-ai-policy';
-import { scanOmnixPromptContent } from './omnix-prompt-guard';
+} from './omnix-ai-policy.ts';
+import { scanOmnixPromptContent } from './omnix-prompt-guard.ts';
 
 export type OmnixGenerativeState = 'available' | 'unconfigured' | 'limited' | 'failed';
 export type OmnixProposalKind = 'follow-up' | 'email-draft' | 'campaign-draft';

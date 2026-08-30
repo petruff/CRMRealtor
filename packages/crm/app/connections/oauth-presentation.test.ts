@@ -11,6 +11,9 @@ describe('connection OAuth presentation', () => {
       tone: 'success', title: 'Google saved the permissions you approved',
     });
     expect(connectionNotice({ error: 'google-oauth-denied' })?.message).toContain('Nothing was changed');
+    expect(connectionNotice({ error: 'google-probe-failed' })).toMatchObject({
+      tone: 'warning', title: 'Google permissions were saved',
+    });
     expect(connectionNotice({ error: [' google-oauth-failed '], ref: '0471ecbd' })).toMatchObject({
       title: 'Google was not connected', supportReference: '0471ECBD',
     });

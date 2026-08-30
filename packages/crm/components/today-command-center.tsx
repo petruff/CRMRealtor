@@ -178,7 +178,7 @@ export function TodayCommandCenter({
         <CircleDot className="size-5 text-nurture" aria-hidden />
         <div className="min-w-0 flex-1">
           <h2 id="today-status-title" className="text-sm font-medium text-ink">Today is based on authorized CRM evidence</h2>
-          <p className="mt-1 text-xs leading-relaxed text-muted">{alerts.alerts.length} current {alerts.alerts.length === 1 ? 'alert' : 'alerts'} · {alerts.dataMode === 'live' ? 'Live workspace' : 'Sample workspace'} · No prediction or inferred deadline</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted">{alerts.alerts.length} tracked {alerts.alerts.length === 1 ? 'alert' : 'alerts'} across the current planning horizon · {alerts.dataMode === 'live' ? 'Live workspace' : 'Sample workspace'} · No prediction or inferred deadline</p>
         </div>
         <nav aria-label="Today quick actions" className="flex flex-wrap gap-2">
           <ActionLink href="/activities">Tasks</ActionLink>

@@ -1,5 +1,5 @@
 import { OMNIX_COPILOT_SUPPORTED_EXAMPLES, parseOmnixCopilotQuestion } from '../domain/omnix-copilot.ts';
-import { OMNIX_AI_POLICY } from './omnix-ai-policy';
+import { OMNIX_AI_POLICY } from './omnix-ai-policy.ts';
 
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const ALLOWED_MODELS = new Set(['gemini-3.5-flash-lite', 'gemini-3.6-flash']);

@@ -154,7 +154,7 @@ export function TodayFocusTimeline({
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <ActionLink href={active.href} variant="primary">{ACTION_LABEL[active.category]} <ArrowUpRight className="size-4" aria-hidden /></ActionLink>
-            <ActionLink href="/alerts">Review all {alerts.length} {alerts.length === 1 ? 'alert' : 'alerts'}</ActionLink>
+            <ActionLink href="/alerts">Review the full alert horizon</ActionLink>
           </div>
         </div>
         <div className="today-focus-counter" aria-label={`Priority ${activeIndex + 1} of ${priorities.length}`}>

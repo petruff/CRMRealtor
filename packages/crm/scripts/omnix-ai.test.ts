@@ -27,6 +27,20 @@ const response: OmnixCopilotSuccessResponse = {
 };
 
 describe('runOmnixAiCli', () => {
+  it('prints usage without loading workspace authority', async () => {
+    const stdout = vi.fn();
+    const liveContext = vi.fn();
+
+    await expect(runOmnixAiCli(['--help'], {
+      liveContext,
+      execute: vi.fn(),
+      stdout,
+    })).resolves.toBe(0);
+
+    expect(stdout).toHaveBeenCalledWith(expect.stringContaining('Usage: npm run omnix:ai'));
+    expect(liveContext).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.resetAllMocks();
     reserve.mockResolvedValue({ allowed: true, reservationId: '62000000-0000-4000-8000-000000000001' });

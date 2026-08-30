@@ -8,7 +8,7 @@ export interface ConnectionNotice {
 const SUCCESS_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = {
   'google-workspace-core-connected': {
     title: 'Google is connected',
-    message: 'Gmail and Google Calendar permissions were saved. Omnix can now finish the guided setup.',
+    message: 'Gmail and Google Calendar permissions were saved and the account check passed.',
   },
   'google-workspace-core-partial': {
     title: 'Google saved the permissions you approved',
@@ -60,6 +60,10 @@ const ERROR_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = 
   'google-oauth-failed': {
     title: 'Google was not connected',
     message: 'The authorization was cancelled or could not be verified. Your existing data is safe; try again.',
+  },
+  'google-probe-failed': {
+    title: 'Google permissions were saved',
+    message: 'Omnix could not complete the account check. Return to Connections and click Check Google connection; reconnect only if the check still fails.',
   },
   'mailchimp-configuration-required': {
     title: 'Mailchimp connection needs developer attention',

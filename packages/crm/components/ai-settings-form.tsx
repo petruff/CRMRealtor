@@ -8,15 +8,19 @@ import {
   saveGeminiSettingsAction,
   toggleGeminiSettingsAction,
 } from '@/app/settings/actions';
-import type { WorkspaceAiStatus } from '@/lib/application/workspace-ai-settings';
+import type { WorkspaceAiStatus, WorkspaceAiUsageStatus } from '@/lib/application/workspace-ai-settings';
 
-export function AiSettingsForm({ status }: { status: WorkspaceAiStatus }) {
+function usdFromMicrousd(value: number): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 4 }).format(value / 1_000_000);
+}
+
+export function AiSettingsForm({ status, usage }: { status: WorkspaceAiStatus; usage?: WorkspaceAiUsageStatus }) {
   const [saveState, saveAction, saving] = useActionState(saveGeminiSettingsAction, INITIAL_AI_SETTINGS_ACTION_STATE);
   const [removeState, removeAction, removing] = useActionState(removeGeminiSettingsAction, INITIAL_AI_SETTINGS_ACTION_STATE);
   const [toggleState, toggleAction, toggling] = useActionState(toggleGeminiSettingsAction, INITIAL_AI_SETTINGS_ACTION_STATE);
   const feedback = saveState.status !== 'idle' ? saveState : removeState.status !== 'idle' ? removeState : toggleState;
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
+    <div id="ai" className="scroll-mt-24 grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
       <form action={saveAction} className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
         <input type="hidden" name="expectedSecretVersion" value={status.secretVersion} />
         <div className="flex items-start gap-3">
@@ -44,7 +48,7 @@ export function AiSettingsForm({ status }: { status: WorkspaceAiStatus }) {
             <input name="enabled" type="checkbox" defaultChecked={status.enabled || !status.configured} className="size-4 accent-[var(--sk-accent)]" />
             Enable conversational routing after validation
           </label>
-          <div className="rounded-xl border border-line bg-surface-2 p-4 text-xs leading-relaxed text-muted"><strong className="text-ink">Paid API confirmation.</strong> Claude.ai subscriptions do not include Anthropic API usage. Omnix sends only the question for routing; CRM records and responses remain inside Omnix.</div>
+          <div className="rounded-xl border border-line bg-surface-2 p-4 text-xs leading-relaxed text-muted"><strong className="text-ink">Paid API confirmation.</strong> Omnix sends the question and a minimized set of cited CRM facts to the selected paid API. Email addresses, phone numbers, provider credentials, and raw authorization data are excluded. Generated text remains a reviewable draft.</div>
           <button className="sk-primary-button w-fit" type="submit" disabled={saving}>{saving ? 'Validating…' : status.configured ? 'Validate and rotate key' : 'Validate and save key'}</button>
         </div>
       </form>
@@ -58,6 +62,22 @@ export function AiSettingsForm({ status }: { status: WorkspaceAiStatus }) {
             <div className="flex justify-between gap-4"><dt className="text-muted">Storage</dt><dd className="font-medium text-ink">Envelope encrypted</dd></div>
             <div className="flex justify-between gap-4"><dt className="text-muted">Policy</dt><dd className="font-medium text-ink">Paid-private</dd></div>
           </dl>
+        </div>
+        <div className="rounded-2xl border border-line bg-surface p-5">
+          <h2 className="font-semibold text-ink">Today’s AI activity</h2>
+          {usage ? (
+            <>
+              <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-xl bg-surface-2 p-3"><dt className="text-xs text-muted">Runs</dt><dd className="mt-1 text-xl font-semibold text-ink">{usage.runCount}</dd></div>
+                <div className="rounded-xl bg-surface-2 p-3"><dt className="text-xs text-muted">Committed cost</dt><dd className="mt-1 text-xl font-semibold text-ink">{usdFromMicrousd(usage.committedMicrousd)}</dd></div>
+                <div className="rounded-xl bg-surface-2 p-3"><dt className="text-xs text-muted">Completed</dt><dd className="mt-1 font-medium text-ink">{usage.succeeded}</dd></div>
+                <div className="rounded-xl bg-surface-2 p-3"><dt className="text-xs text-muted">Needs attention</dt><dd className="mt-1 font-medium text-ink">{usage.failed + usage.reserved}</dd></div>
+              </dl>
+              <p className="mt-3 text-xs leading-relaxed text-muted">Redacted operational receipts only. Omnix does not store prompts or generated responses here.</p>
+            </>
+          ) : (
+            <p className="mt-3 text-sm leading-relaxed text-muted">Usage receipts will appear after the protected Story 5.1 migration is active and the first governed run completes.</p>
+          )}
         </div>
         {status.configured ? <form action={removeAction} className="rounded-2xl border border-line bg-surface p-5">
           <input type="hidden" name="expectedSecretVersion" value={status.secretVersion} />

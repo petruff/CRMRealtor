@@ -42,6 +42,10 @@ export async function runOmnixAiCli(argv: readonly string[], dependencies: Omnix
   const write = dependencies.stdout ?? ((value: string) => process.stdout.write(value));
   const writeError = dependencies.stderr ?? ((value: string) => process.stderr.write(value));
   try {
+    if (argv.length === 1 && argv[0] === '--help') {
+      write(`${usage()}\n`);
+      return 0;
+    }
     const question = questionFrom(argv);
     if (!scanOmnixPromptContent(question).safe) throw new Error('Question refused by omnix-prompt-guard.v1.');
     const context = await dependencies.liveContext();

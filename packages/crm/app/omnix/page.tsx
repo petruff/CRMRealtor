@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { getRepository } from '@/lib/data';
 import { buildWorkspaceSnapshot } from '@/lib/domain/workspace-intelligence';
+import { readWorkspaceAiCapabilityStatus } from '@/lib/application/workspace-ai-settings';
 import { OmnixCopilot } from '@/components/omnix-copilot';
 import { askOmnixCopilotAction } from './actions';
 
@@ -35,23 +36,35 @@ const TONES = {
 } as const;
 
 export default async function OmnixPage() {
-  const { repository } = await getRepository();
+  const { repository, workspaceScope } = await getRepository();
   const snapshot = buildWorkspaceSnapshot(await repository.list());
   const actionable = snapshot.recommendations.filter((item) => item.count > 0);
+  const aiCapability = await readWorkspaceAiCapabilityStatus(workspaceScope)
+    .catch(() => ({ state: 'failed' as const }));
+  const aiCopy = aiCapability.state === 'available'
+    ? 'Gemini is available for grounded summaries and safe, reviewable recommendations. Nothing is sent, changed, or scheduled without your approval.'
+    : aiCapability.state === 'failed'
+      ? 'Your deterministic CRM brief is available, but Omnix could not confirm the AI connection. Review AI setup before relying on generated summaries.'
+      : 'Your deterministic CRM brief is ready. The workspace owner can connect Gemini in Settings for grounded summaries and reviewable recommendations.';
 
   return (
     <div>
       <header className="mb-9 md:mb-12">
         <div className="flex flex-wrap items-center gap-2">
           <p className="eyebrow">Omnix Intelligence</p>
-          <span className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">Explainable preview</span>
+          <span className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
+            {aiCapability.state === 'available' ? 'Gemini ready' : aiCapability.state === 'failed' ? 'AI needs attention' : 'AI setup available'}
+          </span>
         </div>
         <h1 className="mt-2 max-w-4xl font-display text-[2.5rem] leading-[1.04] text-ink sm:text-5xl md:text-[3.5rem]">
           Your business, <br /><span className="text-muted">already organized.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-muted">
-          Omnix turns stored CRM facts into a prioritized brief. No generative model is connected, and nothing is sent, changed or scheduled autonomously.
+          {aiCopy}
         </p>
+        {aiCapability.state !== 'available' ? (
+          <Link href="/settings#ai" className="sk-secondary-button mt-4 inline-flex">Review AI setup <ArrowUpRight className="size-4" aria-hidden /></Link>
+        ) : null}
       </header>
 
       <section aria-labelledby="brief-title">

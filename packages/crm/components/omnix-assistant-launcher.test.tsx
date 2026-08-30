@@ -250,11 +250,11 @@ describe('OmnixAssistantLauncher', () => {
     expect(css).toMatch(/\.omnix-assistant-dialog \.omnix-copilot-composer\s*{[^}]*safe-area-inset-bottom/s);
   });
 
-  it('uses a collision-safe 56px phone launcher while preserving the desktop avatar', () => {
+  it('removes the floating launcher from mobile content and preserves the desktop avatar', () => {
     const css = readFileSync(join(process.cwd(), 'app', 'globals.css'), 'utf8');
-    expect(css).toMatch(/\.omnix-assistant-launcher\s*{[^}]*width:\s*3\.5rem;[^}]*height:\s*3\.5rem;/s);
+    expect(css).toMatch(/\.omnix-assistant-launcher\s*{[^}]*display:\s*none;/s);
     expect(css).toMatch(/@media \(max-width:\s*63\.999rem\)[\s\S]*\.omnix-assistant-label\s*{[^}]*clip-path:\s*inset\(50%\)/s);
-    expect(css).toMatch(/@media \(min-width:\s*64rem\)[\s\S]*\.omnix-assistant-launcher\s*{[^}]*width:\s*5\.25rem;[^}]*height:\s*5\.25rem;/s);
+    expect(css).toMatch(/@media \(min-width:\s*64rem\)[\s\S]*\.omnix-assistant-launcher\s*{[^}]*display:\s*grid;[^}]*width:\s*5\.25rem;[^}]*height:\s*5\.25rem;/s);
   });
 
   it('suppresses the closed launcher while a competing shell disclosure is open', () => {

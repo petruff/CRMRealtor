@@ -52,7 +52,7 @@ const OPERATIONS_NAV = [
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-const MOBILE_NAV = [...CORE_NAV, OPERATIONS_NAV[0], OPERATIONS_NAV[2]] as const;
+const MOBILE_NAV = [...CORE_NAV, BUSINESS_NAV[3], OPERATIONS_NAV[2]] as const;
 const ALL_NAV = [...CORE_NAV, ...BUSINESS_NAV, ...OPERATIONS_NAV] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -209,6 +209,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <Link href="/alerts" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/alerts") ? "page" : undefined}>
                 <BellRing className="size-[18px]" aria-hidden /> Alerts
+              </Link>
+              <Link href="/pipeline" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/pipeline") ? "page" : undefined}>
+                <KanbanSquare className="size-[18px]" aria-hidden /> Pipeline
+              </Link>
+              <Link href="/insights" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/insights") ? "page" : undefined}>
+                <BarChart3 className="size-[18px]" aria-hidden /> Insights
+              </Link>
+              <Link href="/campaigns" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/campaigns") ? "page" : undefined}>
+                <Mail className="size-[18px]" aria-hidden /> Campaigns
+              </Link>
+              <Link href="/mailers" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/mailers") ? "page" : undefined}>
+                <Send className="size-[18px]" aria-hidden /> Mailers
+              </Link>
+              <Link href="/data" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/data") ? "page" : undefined}>
+                <Database className="size-[18px]" aria-hidden /> Data tools
               </Link>
               <Link href="/settings" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/settings") ? "page" : undefined}>
                 <Settings className="size-[18px]" aria-hidden /> Settings

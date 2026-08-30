@@ -62,7 +62,7 @@ describe('TodayCommandCenter', () => {
     expect(html).toContain('Canonical alert 1');
     expect(html).toContain('Canonical alert 3');
     expect(html).not.toContain('Canonical alert 4');
-    expect(html).toContain('Review all 4 alerts');
+    expect(html).toContain('Review the full alert horizon');
     expect(html).toContain('Work the day with intention.');
     expect(html).toContain('Relationship book');
     expect(html).toContain('Live CRM view');
