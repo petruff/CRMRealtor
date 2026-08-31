@@ -6,6 +6,9 @@ import {
   ShieldCheck,
   Upload,
   UserRoundPlus,
+  ClipboardCheck,
+  BriefcaseBusiness,
+  MessageCircleReply,
 } from 'lucide-react';
 import type { AlertCenterProps } from '@/components/alert-center';
 import { ContactCard } from '@/components/contact-card';
@@ -42,12 +45,14 @@ export function TodayCommandCenter({
   userDisplayName,
   timeZone = 'America/New_York',
   historicalImportContactIds = new Set<string>(),
+  operational,
 }: {
   alerts: AlertCenterProps;
   contacts: readonly Contact[];
   userDisplayName?: string;
   timeZone?: string;
   historicalImportContactIds?: ReadonlySet<string>;
+  operational?: { availability: 'available' | 'unavailable'; approvals: number; inbound: number; deadlines: number; overdueDeadlines: number };
 }) {
   const now = new Date(alerts.asOf);
   const { greeting, dateLabel } = todayDateContext(now, timeZone);
@@ -164,6 +169,12 @@ export function TodayCommandCenter({
         <>
           <TodayMetricLedger contacts={contacts} summary={summary} />
 
+          <section className="mb-6 grid overflow-hidden rounded-[var(--sk-card-radius)] border border-line bg-line sm:grid-cols-3" aria-label="Omnix operating brain">
+            <ActionLink href="/approvals" className="min-h-28 !items-end !justify-between !rounded-none !border-0 !bg-surface p-5"><span><ClipboardCheck className="mb-3 size-5 text-accent" aria-hidden /><strong className="block font-display text-3xl text-ink">{operational?.availability === 'available' ? operational.approvals : '—'}</strong><small className="text-xs uppercase tracking-[0.1em] text-muted">Awaiting approval</small></span></ActionLink>
+            <ActionLink href="/approvals" className="min-h-28 !items-end !justify-between !rounded-none !border-0 !bg-surface p-5"><span><MessageCircleReply className="mb-3 size-5 text-nurture" aria-hidden /><strong className="block font-display text-3xl text-ink">{operational?.availability === 'available' ? operational.inbound : '—'}</strong><small className="text-xs uppercase tracking-[0.1em] text-muted">Replies to review</small></span></ActionLink>
+            <ActionLink href="/transactions" className="min-h-28 !items-end !justify-between !rounded-none !border-0 !bg-surface p-5"><span><BriefcaseBusiness className="mb-3 size-5 text-warm" aria-hidden /><strong className="block font-display text-3xl text-ink">{operational?.availability === 'available' ? operational.deadlines : '—'}</strong><small className="text-xs uppercase tracking-[0.1em] text-muted">Open deadlines{operational?.overdueDeadlines ? ` · ${operational.overdueDeadlines} overdue` : ''}</small></span></ActionLink>
+          </section>
+
           <TodayFocusTimeline
             {...alerts}
             formattedAsOf={formattedAsOf}
@@ -182,6 +193,8 @@ export function TodayCommandCenter({
         </div>
         <nav aria-label="Today quick actions" className="flex flex-wrap gap-2">
           <ActionLink href="/activities">Tasks</ActionLink>
+          <ActionLink href="/approvals">Approvals</ActionLink>
+          <ActionLink href="/transactions">Deadlines</ActionLink>
           <ActionLink href="/contacts/import">Import</ActionLink>
           <ActionLink href="/contacts/new" variant="primary">Add contact</ActionLink>
         </nav>

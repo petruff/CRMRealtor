@@ -36,6 +36,7 @@ export interface GoogleGmailWakeupJob {
 export interface GoogleGmailWakeupAuthority {
   readonly job: GoogleGmailWakeupJob & { readonly wakeGeneration: number; readonly claimedGeneration: number };
   readonly connectionEmail: string; readonly accessState: 'live' | 'refresh-required';
+  readonly grantedScopes: readonly string[];
   readonly access: ReturnType<typeof envelope>; readonly refresh?: ReturnType<typeof envelope>;
   readonly cursor?: { readonly version: number; readonly envelope: ConnectorSecretEnvelope };
   readonly watch: { readonly resourceVersion: number; readonly bindingVersion: number;
@@ -98,6 +99,11 @@ export function supabaseGoogleGmailWakeupRepository(client: SupabaseClient) {
       });
       if (error) problem('Failed to read Google Gmail wake-up authority', error);
       const result = object(data, 'Google Gmail wake-up authority is invalid.');
+      const { data: connection, error: connectionError } = await client.from('connector_connections')
+        .select('granted_scopes').eq('id', value.connectionId).eq('workspace_id', value.workspaceId).single();
+      if (connectionError || !connection || !Array.isArray(connection.granted_scopes)) {
+        throw new ConnectorError('conflict', 'Google Gmail granted scopes are unavailable.');
+      }
       const row = object(result.job, 'Google Gmail wake-up authority job is invalid.');
       const base = job({ ...row, state: 'executing', correlationId: value.correlationId });
       const access = envelope(result.accessEnvelope);
@@ -111,6 +117,7 @@ export function supabaseGoogleGmailWakeupRepository(client: SupabaseClient) {
         job: { ...base, wakeGeneration: integer(row.wakeGeneration, 'wakeGeneration', 1),
           claimedGeneration: integer(row.claimedGeneration, 'claimedGeneration', 1) },
         connectionEmail: text(result.connectionEmail, 'connectionEmail'),
+        grantedScopes: connection.granted_scopes.filter((scope): scope is string => typeof scope === 'string'),
         accessState: result.accessState as 'live' | 'refresh-required', access,
         ...(refresh ? { refresh } : {}),
         ...(cursorRow ? { cursor: { version: integer(cursorRow.cursorVersion, 'cursorVersion', 1),
@@ -151,7 +158,7 @@ export function supabaseGoogleGmailWakeupRepository(client: SupabaseClient) {
     async bindMetadata(input: { job: GoogleGmailWakeupJob; workerId: string; messageId: string;
       threadId: string; direction: string; counterpartEmail: string; counterpartKind: string;
       labels: readonly string[]; providerOccurredAt: string; resourceHash: string; occurredAt: string }) {
-      const { error } = await client.rpc('bind_google_gmail_wakeup_metadata_resource', {
+      const { data, error } = await client.rpc('bind_google_gmail_wakeup_metadata_resource', {
         target_wakeup_job_id: input.job.id, target_worker_id: input.workerId,
         target_fencing_token: input.job.fencingToken, target_message_id: input.messageId,
         target_thread_id: input.threadId, target_direction: input.direction,
@@ -161,6 +168,34 @@ export function supabaseGoogleGmailWakeupRepository(client: SupabaseClient) {
         target_occurred_at: input.occurredAt,
       });
       if (error) problem('Failed to bind Google Gmail wake-up metadata', error);
+      const resource = object(object(data, 'Google Gmail metadata binding is invalid.').resource,
+        'Google Gmail metadata resource is invalid.');
+      return {
+        linkState: text(resource.linkState, 'linkState'),
+        ...(typeof resource.contactId === 'string' ? { contactId: resource.contactId } : {}),
+      };
+    },
+    async recordIntelligence(input: { job: GoogleGmailWakeupJob; workerId: string; resourceHash: string;
+      result: { state: string; policyVersion: string; contentHash: string; model?: string; intent: string;
+        sentiment: string; urgency: string; summary?: string; unknowns: readonly string[] };
+      occurredAt: string }) {
+      const { error } = await client.rpc('record_omnix_inbound_response_intelligence', {
+        target_wakeup_job_id: input.job.id,
+        target_worker_id: input.workerId,
+        target_fencing_token: input.job.fencingToken,
+        target_resource_hash: input.resourceHash,
+        target_state: input.result.state,
+        target_policy_version: input.result.policyVersion,
+        target_content_hash: input.result.contentHash,
+        target_model: input.result.model ?? null,
+        target_intent: input.result.intent,
+        target_sentiment: input.result.sentiment,
+        target_urgency: input.result.urgency,
+        target_summary: input.result.summary ?? null,
+        target_unknowns: [...input.result.unknowns],
+        target_occurred_at: input.occurredAt,
+      });
+      if (error) problem('Failed to record Gmail response intelligence', error);
     },
     async commit(input: { job: GoogleGmailWakeupJob; workerId: string; expectedVersion: number | null;
       cursorEnvelope: Record<string, unknown>; checkpointHash: string; hasMore: boolean;

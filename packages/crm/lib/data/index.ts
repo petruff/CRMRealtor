@@ -59,6 +59,15 @@ import { supabaseAttentionRepository } from './supabase-attention-repository';
 import type { TransactionRepository } from './transaction-repository';
 import { createMemoryTransactionRepository } from './memory-transaction-repository';
 import { supabaseTransactionRepository } from './supabase-transaction-repository';
+import type { OmnixProposalRepository } from './omnix-proposal-repository';
+import { createMemoryOmnixProposalRepository } from './memory-omnix-proposal-repository';
+import { supabaseOmnixProposalRepository } from './supabase-omnix-proposal-repository';
+import type { NurturePlanRepository } from './nurture-plan-repository';
+import { createMemoryNurturePlanRepository } from './memory-nurture-plan-repository';
+import { supabaseNurturePlanRepository } from './supabase-nurture-plan-repository';
+import type { OperationalSignalRepository } from './operational-signal-repository';
+import { createMemoryOperationalSignalRepository } from './memory-operational-signal-repository';
+import { supabaseOperationalSignalRepository } from './supabase-operational-signal-repository';
 
 // Sample work-queue repositories intentionally live for the lifetime of this
 // server process. Recreating them inside every request would make a successful
@@ -88,6 +97,9 @@ export const sampleAttentionRepository = createMemoryAttentionRepository({
   activeMembershipIds: [SAMPLE_WORKSPACE_SCOPE.membershipId, SAMPLE_ASSISTANT_MEMBERSHIP_ID],
 });
 const sampleTransactionRepository = createMemoryTransactionRepository(sampleContactRepository);
+const sampleOmnixProposalRepository = createMemoryOmnixProposalRepository();
+const sampleNurturePlanRepository = createMemoryNurturePlanRepository();
+const sampleOperationalSignalRepository = createMemoryOperationalSignalRepository(sampleContactRepository, sampleTransactionRepository);
 const connectorConfiguration = loadConfiguredConnectorRuntimeConfiguration();
 const sampleConnectorRepository = createMemoryConnectorRepository({
   definitions: connectorConfiguration.definitions,
@@ -116,6 +128,9 @@ export interface RepositoryContext {
   connectorRepository: ConnectorRepository;
   attentionRepository: AttentionRepository;
   transactionRepository: TransactionRepository;
+  omnixProposalRepository: OmnixProposalRepository;
+  nurturePlanRepository: NurturePlanRepository;
+  operationalSignalRepository: OperationalSignalRepository;
   /** Unavailable only while the live database is missing Story 3.2 migration support. */
   richContactRepository?: RichContactRepository;
   workspaceScope: WorkspaceScope;
@@ -163,6 +178,9 @@ export async function getRepository(): Promise<RepositoryContext> {
       connectorRepository: sampleConnectorRepository,
       attentionRepository: sampleAttentionRepository,
       transactionRepository: sampleTransactionRepository,
+      omnixProposalRepository: sampleOmnixProposalRepository,
+      nurturePlanRepository: sampleNurturePlanRepository,
+      operationalSignalRepository: sampleOperationalSignalRepository,
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
@@ -189,6 +207,9 @@ export async function getRepository(): Promise<RepositoryContext> {
       connectorRepository: sampleConnectorRepository,
       attentionRepository: sampleAttentionRepository,
       transactionRepository: sampleTransactionRepository,
+      omnixProposalRepository: sampleOmnixProposalRepository,
+      nurturePlanRepository: sampleNurturePlanRepository,
+      operationalSignalRepository: sampleOperationalSignalRepository,
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
@@ -212,6 +233,9 @@ export async function getRepository(): Promise<RepositoryContext> {
     connectorRepository: supabaseConnectorRepository(supabase, connectorConfiguration.definitions),
     attentionRepository: supabaseAttentionRepository(supabase),
     transactionRepository: supabaseTransactionRepository(supabase),
+    omnixProposalRepository: supabaseOmnixProposalRepository(supabase),
+    nurturePlanRepository: supabaseNurturePlanRepository(supabase),
+    operationalSignalRepository: supabaseOperationalSignalRepository(supabase),
     richContactRepository: supabaseRichContactRepository(supabase, contactIdentityMap),
     workspaceScope,
     isLive: true,

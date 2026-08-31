@@ -22,6 +22,10 @@ const SUCCESS_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> 
     title: 'Gmail activity is connected',
     message: 'Omnix can now match email activity to the right contact without storing message bodies.',
   },
+  'google-gmail-insights-connected': {
+    title: 'Gmail reply insights are authorized',
+    message: 'Omnix can now classify linked incoming replies. Message bodies are minimized, treated as untrusted data, and never stored.',
+  },
   'google-calendar-app-created-connected': {
     title: 'Google Calendar is connected',
     message: 'Omnix can now prepare your dedicated follow-up calendar.',
@@ -140,6 +144,11 @@ export function connectionNotice(input: {
 export function googleWorkspaceConnectHref(connectionId?: string): string {
   const params = new URLSearchParams({ bundle: 'workspace-core' });
   if (connectionId) params.set('connectionId', connectionId);
+  return `/api/connectors/google/connect?${params.toString()}`;
+}
+
+export function googleInsightsConnectHref(connectionId: string): string {
+  const params = new URLSearchParams({ bundle: 'gmail-insights', connectionId });
   return `/api/connectors/google/connect?${params.toString()}`;
 }
 

@@ -49,3 +49,41 @@ export function createSupabaseOmnixAiBudgetAuthority(
     },
   };
 }
+
+export function createSupabaseOmnixServiceAiBudgetAuthority(
+  client: SupabaseClient,
+  workspaceId: string,
+  ownerMembershipId: string,
+): OmnixAiBudgetAuthority {
+  return {
+    async reserve(input) {
+      const { data, error } = await client.rpc('reserve_omnix_ai_service_budget', {
+        target_workspace_id: workspaceId,
+        target_owner_membership_id: ownerMembershipId,
+        target_correlation_id: input.correlationId,
+        target_policy_version: input.policyVersion,
+        target_estimated_microusd: input.estimatedCostMicrousd,
+        target_per_run_limit_microusd: input.perRunLimitMicrousd,
+        target_daily_limit_microusd: input.dailyLimitMicrousd,
+      });
+      if (error) return { allowed: false, reason: 'unavailable' };
+      const row = firstRecord(data);
+      return row?.allowed && typeof row.reservation_id === 'string'
+        ? { allowed: true, reservationId: row.reservation_id }
+        : { allowed: false, reason: row?.reason === 'exhausted' ? 'exhausted' : 'unavailable' };
+    },
+    async finalize(input) {
+      const { error } = await client.rpc('finalize_omnix_ai_service_budget', {
+        target_workspace_id: workspaceId,
+        target_owner_membership_id: ownerMembershipId,
+        target_reservation_id: input.reservationId,
+        target_state: input.state,
+        target_input_tokens: input.inputTokens,
+        target_output_tokens: input.outputTokens,
+        target_actual_microusd: input.actualCostMicrousd,
+        target_error_category: input.errorCategory ?? null,
+      });
+      if (error) throw new Error('Automated Omnix AI budget receipt could not be finalized.');
+    },
+  };
+}

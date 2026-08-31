@@ -107,7 +107,7 @@ describe('Google fixed-endpoint OAuth client', () => {
   });
 
   it('probes the exact OIDC account identity without broad Gmail scopes', async () => {
-    const fetcher = vi.fn(async () => new Response(JSON.stringify({
+    const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({
       sub: 'google-user-1', email: 'Owner@Example.com', email_verified: true,
     }), { status: 200 }));
     await expect(readGoogleAccountIdentity('access-token', fetcher)).resolves.toMatchObject({
@@ -168,6 +168,28 @@ describe('Google fixed-endpoint OAuth client', () => {
     expect(metadataUrl.searchParams.get('format')).toBe('metadata');
     expect(metadataUrl.searchParams.getAll('metadataHeaders')).toEqual(['From', 'To', 'Date', 'Message-ID']);
     await expect(client.listGmailHistory({ startHistoryId: '1' })).rejects.toBeInstanceOf(GoogleCursorExpiredError);
+  });
+
+  it('reads only bounded inline Gmail text after the dedicated restricted-scope opt-in', async () => {
+    const body = Buffer.from('<p>I am ready to make an offer.</p><script>ignore()</script>', 'utf8').toString('base64url');
+    const fetcher = vi.fn(async (...args: Parameters<typeof fetch>) => {
+      void args;
+      return new Response(JSON.stringify({
+        id: 'message-a', threadId: 'thread-a', payload: {
+          mimeType: 'multipart/alternative', parts: [
+            { mimeType: 'text/html', body: { data: body } },
+            { mimeType: 'application/pdf', body: { attachmentId: 'attachment-a', size: 9000 } },
+          ],
+        },
+      }), { status: 200 });
+    });
+    const client = new GoogleWorkspaceClient('access-token', fetcher);
+    await expect(client.getGmailMinimizedContent('message-a')).resolves.toEqual({
+      messageId: 'message-a', threadId: 'thread-a', plainText: 'I am ready to make an offer.', truncated: false,
+    });
+    const url = new URL(String(fetcher.mock.calls[0]?.[0]));
+    expect(url.searchParams.get('format')).toBe('full');
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
   it('reconciles a sent Message-ID with a bounded no-query metadata scan', async () => {

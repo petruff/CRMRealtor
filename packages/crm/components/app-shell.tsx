@@ -4,8 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  BriefcaseBusiness,
   BellRing,
   CalendarCheck,
+  CalendarClock,
+  ClipboardCheck,
   CheckSquare,
   Grid2X2,
   KanbanSquare,
@@ -39,12 +42,15 @@ const CORE_NAV = [
 
 const BUSINESS_NAV = [
   { href: "/alerts", label: "Alerts", icon: BellRing },
+  { href: "/approvals", label: "Approvals", icon: ClipboardCheck },
   { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
   { href: "/insights", label: "Insights", icon: BarChart3 },
   { href: "/omnix", label: "Omnix AI", icon: Sparkles },
 ] as const;
 
 const OPERATIONS_NAV = [
+  { href: "/nurture", label: "Nurture", icon: CalendarClock },
+  { href: "/transactions", label: "Transactions", icon: BriefcaseBusiness },
   { href: "/campaigns", label: "Campaigns", icon: Mail },
   { href: "/mailers", label: "Mailers", icon: Send },
   { href: "/connections", label: "Connections", icon: Plug },
@@ -52,7 +58,7 @@ const OPERATIONS_NAV = [
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-const MOBILE_NAV = [...CORE_NAV, BUSINESS_NAV[3], OPERATIONS_NAV[2]] as const;
+const MOBILE_NAV = [...CORE_NAV, BUSINESS_NAV[4], OPERATIONS_NAV[3]] as const;
 const ALL_NAV = [...CORE_NAV, ...BUSINESS_NAV, ...OPERATIONS_NAV] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -213,11 +219,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link href="/pipeline" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/pipeline") ? "page" : undefined}>
                 <KanbanSquare className="size-[18px]" aria-hidden /> Pipeline
               </Link>
+              <Link href="/approvals" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/approvals") ? "page" : undefined}>
+                <ClipboardCheck className="size-[18px]" aria-hidden /> Approvals
+              </Link>
               <Link href="/insights" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/insights") ? "page" : undefined}>
                 <BarChart3 className="size-[18px]" aria-hidden /> Insights
               </Link>
               <Link href="/campaigns" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/campaigns") ? "page" : undefined}>
                 <Mail className="size-[18px]" aria-hidden /> Campaigns
+              </Link>
+              <Link href="/nurture" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/nurture") ? "page" : undefined}>
+                <CalendarClock className="size-[18px]" aria-hidden /> Nurture
+              </Link>
+              <Link href="/transactions" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/transactions") ? "page" : undefined}>
+                <BriefcaseBusiness className="size-[18px]" aria-hidden /> Transactions
               </Link>
               <Link href="/mailers" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/mailers") ? "page" : undefined}>
                 <Send className="size-[18px]" aria-hidden /> Mailers

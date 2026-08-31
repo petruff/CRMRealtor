@@ -60,7 +60,7 @@ function usage() {
     'Commands:',
     '  status [--live --connection-id <id>]',
     '  scopes',
-    '  oauth-start --live --bundle workspace-core|gmail-send|gmail-metadata|calendar-app-created [--connection-id <id>]',
+    '  oauth-start --live --bundle workspace-core|gmail-send|gmail-metadata|gmail-insights|calendar-app-created [--connection-id <id>]',
     '  oauth-complete --live --state <state> --code <one-time-code>',
     '  probe --live --connection-id <id>',
     '  sync-gmail --live --connection-id <id>',
@@ -104,7 +104,8 @@ function executeSample(selected: Options) {
   if (selected.command === 'scopes') return {
     identitySignIn: ['openid', 'email', 'profile'],
     featureBundles: GOOGLE_FEATURE_BUNDLES.map((bundle) => ({ bundle, scopes: GOOGLE_BUNDLE_SCOPES[bundle] })),
-    explicitlyExcluded: ['gmail.readonly', 'gmail.modify', 'calendar.events', 'primary-calendar-write'],
+    explicitlyExcluded: ['gmail.modify', 'calendar.events', 'primary-calendar-write'],
+    restrictedOptIn: ['gmail-insights'],
   };
   throw new ConnectorError('provider-disabled', 'Google live connector authority is required for this command.');
 }

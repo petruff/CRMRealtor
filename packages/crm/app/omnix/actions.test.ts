@@ -14,6 +14,7 @@ import { loadWorkspaceAiRuntimeCredential } from '@/lib/application/workspace-ai
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseOmnixAiBudgetAuthority } from '@/lib/application/omnix-ai-budget';
 import { askOmnixCopilotAction, getOmnixAssistantProfileAction } from './actions';
+import { createMemoryOmnixProposalRepository } from '@/lib/data/memory-omnix-proposal-repository';
 
 vi.mock('@/lib/application/omnix-copilot-service', () => ({
   executeOmnixCopilot: vi.fn(),
@@ -43,7 +44,9 @@ describe('askOmnixCopilotAction', () => {
   const context = {
     isLive: false,
     workspaceScope: SAMPLE_WORKSPACE_SCOPE,
-  } as Awaited<ReturnType<typeof getRepository>>;
+    repository: { list: vi.fn(async () => []) },
+    omnixProposalRepository: createMemoryOmnixProposalRepository(),
+  } as unknown as Awaited<ReturnType<typeof getRepository>>;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -182,7 +185,14 @@ describe('askOmnixCopilotAction', () => {
   });
 
   it('adds a grounded Gemini summary and governed proposal without executing it', async () => {
-    const liveContext = { ...context, isLive: true } as Awaited<ReturnType<typeof getRepository>>;
+    const contact = { id: 'contact-a', firstName: 'Alicia', lastName: 'Buyer', leadType: 'hot' as const,
+      relationship: 'lead' as const, intent: 'buyer' as const, source: 'referral' as const,
+      pipelineStage: 'contacted' as const, tags: [], createdAt: '2026-08-01T00:00:00.000Z' };
+    const liveContext = {
+      ...context, isLive: true,
+      repository: { list: vi.fn(async () => [contact]) },
+      omnixProposalRepository: createMemoryOmnixProposalRepository(),
+    } as unknown as Awaited<ReturnType<typeof getRepository>>;
     vi.mocked(getRepository).mockResolvedValue(liveContext);
     vi.mocked(loadWorkspaceAiRuntimeCredential).mockResolvedValue({
       apiKey: 'stored-server-key', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
@@ -190,7 +200,10 @@ describe('askOmnixCopilotAction', () => {
     vi.mocked(executeOmnixCopilot).mockImplementation(async (request) => ({
       ok: true, schemaVersion: OMNIX_COPILOT_SCHEMA_VERSION, command: 'ask',
       resolvedIntent: { kind: 'brief', date: 'today' }, correlationId: request.correlationId,
-      dataMode: 'live', asOf: request.asOf, answerBlocks: [], citations: [], suggestions: [], warnings: [], alerts: [],
+      dataMode: 'live', asOf: request.asOf, answerBlocks: [],
+      citations: [{ id: 'citation-1', schemaVersion: 'citation.v1', entityType: 'contact', recordId: contact.id,
+        factKeys: ['leadType', 'nextTouchAt'], responseAsOf: request.asOf, target: `/contacts/${contact.id}` }],
+      suggestions: [], warnings: [], alerts: [],
     }));
     vi.mocked(generateOmnixNarrative).mockResolvedValue({
       state: 'available', policyVersion: 'omnix-ai-policy.v1', model: 'gemini-3.5-flash-lite',

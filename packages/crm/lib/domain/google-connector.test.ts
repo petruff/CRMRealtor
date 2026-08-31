@@ -14,6 +14,10 @@ describe('Google connector domain', () => {
       'openid', 'email', 'https://www.googleapis.com/auth/gmail.send',
     ]);
     expect(googleRequestedScopes('calendar-app-created')).not.toContain('https://www.googleapis.com/auth/calendar.events');
+    expect(googleRequestedScopes('workspace-core')).not.toContain('https://www.googleapis.com/auth/gmail.readonly');
+    expect(googleRequestedScopes('gmail-insights')).toEqual([
+      'openid', 'email', 'https://www.googleapis.com/auth/gmail.readonly',
+    ]);
     expect(() => parseGoogleFeatureBundle('gmail.readonly')).toThrow(/bundle is invalid/i);
     expect(normalizeGoogleGrantedScopes([
       'openid',

@@ -84,7 +84,7 @@ function assertProviderModel(selectedProvider: WorkspaceAiProvider, selectedMode
   if (selectedProvider === 'anthropic-claude' && !selectedModel.startsWith('claude-')) throw new Error('Select a Claude model.');
 }
 
-function aad(scope: WorkspaceScope, version: number, selectedProvider: WorkspaceAiProvider) {
+function aad(scope: Pick<WorkspaceScope, 'workspaceId'>, version: number, selectedProvider: WorkspaceAiProvider) {
   return {
     workspaceId: scope.workspaceId,
     connectionId: `workspace-ai-${scope.workspaceId}`,
@@ -271,6 +271,40 @@ export async function loadWorkspaceAiRuntimeCredential(scope: WorkspaceScope): P
     provider: selectedProvider,
     model: selectedModel,
     dataPolicy: 'paid-private',
+  };
+}
+
+/** Service-worker authority for bounded automated analysis. It resolves one canonical owner only for attribution. */
+export async function loadWorkspaceAiAutomationCredential(workspaceId: string): Promise<{
+  readonly credential: WorkspaceAiCredential;
+  readonly ownerMembershipId: string;
+} | undefined> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workspaceId)) return undefined;
+  const client = serviceClient();
+  const { data: owner, error: ownerError } = await client.from('workspace_members')
+    .select('id,user_id').eq('workspace_id', workspaceId).eq('role', 'owner').eq('status', 'active')
+    .order('created_at', { ascending: true }).limit(1).maybeSingle();
+  if (ownerError || !owner) return undefined;
+  const { data, error } = await client.rpc('read_workspace_ai_runtime_envelope', {
+    target_workspace_id: workspaceId,
+    target_authenticated_user_id: owner.user_id,
+    target_membership_id: owner.id,
+  });
+  if (error || !data) return undefined;
+  const record = data as { enabled?: unknown; provider?: unknown; model?: unknown; dataPolicy?: unknown; secretVersion?: unknown; envelope?: unknown };
+  if (record.enabled !== true || record.dataPolicy !== 'paid-private'
+    || !Number.isInteger(record.secretVersion) || Number(record.secretVersion) < 1) return undefined;
+  const selectedProvider = provider(record.provider ?? 'google-gemini');
+  const selectedModel = model(record.model);
+  assertProviderModel(selectedProvider, selectedModel);
+  const version = Number(record.secretVersion);
+  return {
+    credential: {
+      apiKey: decryptConnectorSecret(record.envelope as ConnectorSecretEnvelope,
+        aad({ workspaceId }, version, selectedProvider), createEnvironmentKekResolver()),
+      provider: selectedProvider, model: selectedModel, dataPolicy: 'paid-private',
+    },
+    ownerMembershipId: owner.id,
   };
 }
 

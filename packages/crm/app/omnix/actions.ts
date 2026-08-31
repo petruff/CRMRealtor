@@ -15,6 +15,7 @@ import {
   type OmnixGenerativeResult,
 } from '@/lib/application/omnix-generative-narrator';
 import { scanOmnixPromptContent } from '@/lib/application/omnix-prompt-guard';
+import { persistGeneratedOmnixProposals } from '@/lib/application/omnix-generated-proposal-persistence';
 import { loadWorkspaceAiRuntimeCredential, type WorkspaceAiCredential, type WorkspaceAiProvider } from '@/lib/application/workspace-ai-settings';
 import { getRepository } from '@/lib/data';
 import {
@@ -226,7 +227,27 @@ export async function askOmnixCopilotAction(
       priorInputTokens: modelRoute?.inputTokens,
       priorOutputTokens: modelRoute?.outputTokens,
     });
-    return addGenerativeResult(mapped, narrative, modelProvider, Boolean(modelRoute?.query));
+    let durableNarrative = narrative;
+    let durableMapped = mapped;
+    if (narrative.state === 'available' && narrative.proposals.length > 0) {
+      const persistence = await persistGeneratedOmnixProposals({
+        repository: context.omnixProposalRepository,
+        scope: context.workspaceScope,
+        contacts: await context.repository.list(),
+        response,
+        narrative,
+        now,
+      }).catch(() => []);
+      if (persistence.length !== narrative.proposals.length
+        || persistence.some((item) => item.state !== 'persisted')) {
+        durableNarrative = { ...narrative, proposals: [] };
+        durableMapped = {
+          ...mapped,
+          warnings: ['Omnix could not save the suggested actions for review, so no action preview is shown.', ...mapped.warnings],
+        };
+      }
+    }
+    return addGenerativeResult(durableMapped, durableNarrative, modelProvider, Boolean(modelRoute?.query));
   } catch (error) {
     await finalizeUnusedReservation();
     if (!requestDispatched) {

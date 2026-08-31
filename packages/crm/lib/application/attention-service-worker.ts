@@ -6,6 +6,12 @@ import { resolveServerWorkspaceScope } from '../data/automation-context.ts';
 import { supabaseActivityRepository } from '../data/supabase-activity-repository.ts';
 import { supabaseAttentionRepository } from '../data/supabase-attention-repository.ts';
 import { supabaseRepository } from '../data/supabase-repository.ts';
+import { supabaseOmnixProposalAutomationRepository } from '../data/supabase-omnix-proposal-repository.ts';
+import { materializeOmnixOperationalBrain } from './omnix-operational-materializer.ts';
+import { supabaseNurturePlanAutomationRepository } from '../data/supabase-nurture-plan-repository.ts';
+import { supabaseNurturePlanRepository } from '../data/supabase-nurture-plan-repository.ts';
+import { materializeDueNurturePlans } from './nurture-materializer.ts';
+import { supabaseOperationalSignalRepository } from '../data/supabase-operational-signal-repository.ts';
 
 function calendarDate(date: Date, timeZone: string): string {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -55,6 +61,45 @@ export async function reconcileConfiguredAttention(
     now.toISOString(),
     `scheduled-attention:${fingerprint}`,
   );
+  let operationalBrain: { availability: 'available'; proposals: number; proposalNoOps: number; memories: number;
+    nurture: { availability: 'available'; claimed: number; materialized: number; noOps: number }
+      | { availability: 'unavailable'; errorCategory: 'nurture-automation-unavailable' } }
+    | { availability: 'unavailable'; errorCategory: 'operational-brain-unavailable' };
+  try {
+    const proposalAutomation = supabaseOmnixProposalAutomationRepository(client);
+    const operationalSignals = supabaseOperationalSignalRepository(client);
+    const [inboundResponses, milestones, nurturePlans] = await Promise.all([
+      operationalSignals.listInbound(scope, { unacknowledgedOnly: true, limit: 500 }),
+      operationalSignals.listMilestones(scope, { openOnly: true, limit: 1000 }),
+      supabaseNurturePlanRepository(client).list(scope, { limit: 500 }),
+    ]);
+    const core = await materializeOmnixOperationalBrain(
+      proposalAutomation, scope, contacts, result.alerts, inboundResponses, milestones, tasks, nurturePlans, now,
+    );
+    let nurture: { availability: 'available'; claimed: number; materialized: number; noOps: number }
+      | { availability: 'unavailable'; errorCategory: 'nurture-automation-unavailable' };
+    try {
+      nurture = { availability: 'available', ...await materializeDueNurturePlans(
+        proposalAutomation, supabaseNurturePlanAutomationRepository(client), scope, contacts, now,
+      ) };
+    } catch (error) {
+      console.error(JSON.stringify({
+        schemaVersion: 'omnix-nurture-automation-error.v1', workspaceId: scope.workspaceId,
+        category: 'nurture-automation-unavailable',
+        message: error instanceof Error ? error.message : 'Nurture materialization failed.',
+      }));
+      nurture = { availability: 'unavailable', errorCategory: 'nurture-automation-unavailable' };
+    }
+    operationalBrain = { availability: 'available', ...core, nurture };
+  } catch (error) {
+    console.error(JSON.stringify({
+      schemaVersion: 'omnix-operational-brain-error.v1',
+      workspaceId: scope.workspaceId,
+      category: 'operational-brain-unavailable',
+      message: error instanceof Error ? error.message : 'Operational brain materialization failed.',
+    }));
+    operationalBrain = { availability: 'unavailable', errorCategory: 'operational-brain-unavailable' };
+  }
   return {
     workspaceId: scope.workspaceId,
     sourceCount: result.alerts.length,
@@ -65,5 +110,6 @@ export async function reconcileConfiguredAttention(
     refreshed: receipt.refreshed,
     reopened: receipt.reopened,
     resolved: receipt.resolved,
+    operationalBrain,
   };
 }

@@ -49,7 +49,7 @@ import {
   otherConnectionCardStatus,
   type ConnectionCardStatus,
 } from './connection-status';
-import { connectionNotice, googleWorkspaceConnectHref, mailchimpConnectHref } from './oauth-presentation';
+import { connectionNotice, googleInsightsConnectHref, googleWorkspaceConnectHref, mailchimpConnectHref } from './oauth-presentation';
 import {
   mailchimpConnectionNeedsAttention,
   mailchimpConnectionRequiresReauthorization,
@@ -674,6 +674,25 @@ export default async function ConnectionsPage({
                 </div>
               );
             })}
+          </div>
+          <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-4 sm:flex sm:items-center sm:justify-between sm:gap-5">
+            <div>
+              <p className="text-sm font-medium text-ink">AI reply insights</p>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted">
+                Optional: Omnix can summarize intent, urgency, and sentiment for incoming replies linked to a contact.
+                The message is minimized, treated as untrusted data, and not stored. Google classifies this as restricted access.
+              </p>
+              <p className={`mt-2 text-[11px] ${googleLifecycle.grantedScopes.includes('https://www.googleapis.com/auth/gmail.readonly') ? 'text-nurture' : 'text-subtle'}`}>
+                {googleLifecycle.grantedScopes.includes('https://www.googleapis.com/auth/gmail.readonly')
+                  ? 'Authorized by the workspace owner'
+                  : 'Off until the workspace owner explicitly authorizes it'}
+              </p>
+            </div>
+            {canonicalOwner && !googleLifecycle.grantedScopes.includes('https://www.googleapis.com/auth/gmail.readonly') ? (
+              <a href={googleInsightsConnectHref(googleConnection.id)} className="sk-button-secondary mt-3 shrink-0 sm:mt-0">
+                Enable reply insights
+              </a>
+            ) : null}
           </div>
           {canonicalOwner && (
             <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
