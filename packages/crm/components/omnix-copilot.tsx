@@ -41,6 +41,7 @@ const SUPPORTED_PROMPTS = [
 const INLINE_SOURCE_LIMIT = 3;
 const SOURCE_BATCH_SIZE = 12;
 const ATTENTION_BATCH_SIZE = 6;
+const RESULT_BATCH_SIZE = 6;
 
 function intentLabel(intent?: string): string {
   if (intent === 'alerts') return 'Attention brief';
@@ -84,11 +85,15 @@ function CitationLinks({
 function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
   const [visibleSourceCount, setVisibleSourceCount] = useState(SOURCE_BATCH_SIZE);
   const [visibleAttentionCount, setVisibleAttentionCount] = useState(ATTENTION_BATCH_SIZE);
+  const [visibleAlertCount, setVisibleAlertCount] = useState(RESULT_BATCH_SIZE);
+  const [visibleBlockCounts, setVisibleBlockCounts] = useState<Record<string, number>>({});
   const isProblem = result.status === 'error';
   const isLimited = result.status === 'unsupported' || result.status === 'unavailable';
   const Icon = isProblem ? CircleAlert : isLimited ? CircleHelp : Sparkles;
   const itemIds = new Set(result.answerBlocks.flatMap((block) => block.items.map((item) => item.id)));
-  const visibleAlerts = result.alerts.filter((alert) => !itemIds.has(alert.id));
+  const availableAlerts = result.alerts.filter((alert) => !itemIds.has(alert.id));
+  const visibleAlerts = availableAlerts.slice(0, visibleAlertCount);
+  const remainingAlerts = Math.max(0, availableAlerts.length - visibleAlerts.length);
   const visibleCitations = result.citations.slice(0, visibleSourceCount);
   const remainingSources = result.citations.length - visibleCitations.length;
   const attentionItems = result.answerBlocks
@@ -131,9 +136,13 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
           ) : null}
           {result.answerBlocks.map((block) => {
             const isAttentionList = block.kind === 'list' && block.id.startsWith('attention-');
+            const visibleBlockCount = visibleBlockCounts[block.id] ?? RESULT_BATCH_SIZE;
             const visibleItems = isAttentionList
               ? block.items.filter((item) => visibleAttentionIds.has(item.id))
-              : block.items;
+              : block.items.slice(0, visibleBlockCount);
+            const remainingBlockItems = isAttentionList
+              ? 0
+              : Math.max(0, block.items.length - visibleItems.length);
             if (isAttentionList && !visibleItems.length) return null;
             return (
             <section
@@ -182,6 +191,32 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                 </ul>
               ) : null}
               <CitationLinks ids={block.citationIds} citations={result.citations} />
+              {!isAttentionList && block.items.length > RESULT_BATCH_SIZE ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-line pt-3">
+                  <button
+                    type="button"
+                    className="sk-secondary-button text-xs"
+                    aria-disabled={remainingBlockItems === 0}
+                    onClick={() => {
+                      if (!remainingBlockItems) return;
+                      setVisibleBlockCounts((current) => ({
+                        ...current,
+                        [block.id]: Math.min(
+                          (current[block.id] ?? RESULT_BATCH_SIZE) + RESULT_BATCH_SIZE,
+                          block.items.length,
+                        ),
+                      }));
+                    }}
+                  >
+                    {remainingBlockItems > 0
+                      ? `Show next ${Math.min(RESULT_BATCH_SIZE, remainingBlockItems)}`
+                      : 'All items shown'}
+                  </button>
+                  <span className="text-[11px] text-subtle">
+                    Showing {visibleItems.length} of {block.items.length}
+                  </span>
+                </div>
+              ) : null}
             </section>
             );
           })}
@@ -240,6 +275,29 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                   </li>
                 ))}
               </ul>
+              {availableAlerts.length > RESULT_BATCH_SIZE ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    className="sk-secondary-button text-xs"
+                    aria-disabled={remainingAlerts === 0}
+                    onClick={() => {
+                      if (!remainingAlerts) return;
+                      setVisibleAlertCount((current) => Math.min(
+                        current + RESULT_BATCH_SIZE,
+                        availableAlerts.length,
+                      ));
+                    }}
+                  >
+                    {remainingAlerts > 0
+                      ? `Show next ${Math.min(RESULT_BATCH_SIZE, remainingAlerts)} alerts`
+                      : 'All alerts shown'}
+                  </button>
+                  <span className="text-[11px] text-subtle">
+                    Showing {visibleAlerts.length} of {availableAlerts.length} alerts
+                  </span>
+                </div>
+              ) : null}
             </section>
           ) : null}
 

@@ -208,6 +208,57 @@ describe('OmnixAssistantLauncher', () => {
     expect(screen.getByText('All 20 sources shown')).toBeInTheDocument();
   });
 
+  it('keeps large CRM result collections bounded until the member asks for more', async () => {
+    const user = userEvent.setup();
+    const largeResponse: OmnixCopilotUiResult = {
+      ...response,
+      answerBlocks: [{
+        id: 'mailer-history',
+        kind: 'list',
+        title: 'Mailer history',
+        detail: 'Recent printed mailers recorded in the CRM.',
+        items: Array.from({ length: 14 }, (_, index) => ({
+          id: `mailer-${index + 1}`,
+          label: `Mailer ${index + 1}`,
+          citationIds: [],
+        })),
+        citationIds: [],
+      }],
+      alerts: Array.from({ length: 14 }, (_, index) => ({
+        id: `alert-${index + 1}`,
+        category: 'upcoming-follow-up',
+        priority: 'planned',
+        reason: `Follow-up ${index + 1}`,
+        recordId: `contact-${index + 1}`,
+        href: `/contacts/contact-${index + 1}`,
+        citationIds: [],
+      })),
+    };
+
+    render(<OmnixAssistantLauncher
+      action={vi.fn().mockResolvedValue(largeResponse)}
+      loadProfile={vi.fn().mockResolvedValue({ available: true, firstName: 'Judith', dataMode: 'live' })}
+    />);
+
+    await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
+    await user.click(await screen.findByRole('button', { name: 'What should I do today?' }));
+
+    expect(await screen.findByText('Mailer 6')).toBeInTheDocument();
+    expect(screen.queryByText('Mailer 7')).not.toBeInTheDocument();
+    expect(screen.getByText('Showing 6 of 14')).toBeInTheDocument();
+    expect(screen.getByText('Follow-up 6')).toBeInTheDocument();
+    expect(screen.queryByText('Follow-up 7')).not.toBeInTheDocument();
+    expect(screen.getByText('Showing 6 of 14 alerts')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show next 6' }));
+    expect(screen.getByText('Mailer 12')).toBeInTheDocument();
+    expect(screen.queryByText('Mailer 13')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show next 6 alerts' }));
+    expect(screen.getByText('Follow-up 12')).toBeInTheDocument();
+    expect(screen.queryByText('Follow-up 13')).not.toBeInTheDocument();
+  });
+
   it('contains page scrolling and exposes keyboard and latest-message navigation', async () => {
     const user = userEvent.setup();
     const scrollIntoView = vi.fn();
