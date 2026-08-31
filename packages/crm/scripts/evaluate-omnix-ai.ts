@@ -12,9 +12,11 @@ import type { OmnixCopilotSuccessResponse } from '../lib/domain/omnix-copilot.ts
 const citation = { id: 'eval-citation-1', schemaVersion: 'citation.v1' as const, entityType: 'contact' as const, recordId: 'eval-contact-1', factKeys: ['leadType','nextTouchAt'], sourceTimestamp: '2026-08-31T12:00:00.000Z', responseAsOf: '2026-08-31T12:00:00.000Z', target: '/contacts/eval-contact-1' };
 const fixture: OmnixCopilotSuccessResponse = { ok: true, schemaVersion: 'omnix-copilot.v1', command: 'ask', resolvedIntent: { kind: 'brief', date: 'today' }, correlationId: 'eval-correlation-1', dataMode: 'live', asOf: '2026-08-31T12:00:00.000Z', answerBlocks: [{ id: 'eval-block-1', kind: 'list', title: 'Priorities', detail: 'One verified follow-up is due.', items: [{ id: 'eval-item-1', label: 'Hot lead follow-up', detail: 'Due today', citations: [citation] }], citations: [citation] }], citations: [citation], suggestions: [], warnings: [], alerts: [] };
 const budget: OmnixAiBudgetAuthority = { reserve: async () => ({ allowed: true, reservationId: crypto.randomUUID() }), finalize: async () => undefined };
+const usage = 'Usage: npm run omnix:ai:eval -- --live [--output <path>]';
 
 async function main(argv: readonly string[]): Promise<number> {
-  if (!argv.includes('--live') || argv.some((value) => !['--live','--output'].includes(value) && argv[argv.indexOf('--output') + 1] !== value)) throw new Error('Usage: npm run omnix:ai:eval -- --live [--output <path>]');
+  if (argv.includes('--help')) { process.stdout.write(`${usage}\n`); return 0; }
+  if (!argv.includes('--live') || argv.some((value) => !['--live','--output'].includes(value) && argv[argv.indexOf('--output') + 1] !== value)) throw new Error(usage);
   const context = await createAuthenticatedCliContext(); const credential = await loadWorkspaceAiRuntimeCredential(context.scope);
   if (!credential || credential.provider !== 'google-gemini') throw new Error('Judith\'s paid-private Gemini runtime is not configured.');
   const results = [];

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import type { OmnixGenerativeResult } from './omnix-generative-narrator';
-import type { OmnixGeminiRouteResult } from './omnix-gemini-router';
-import { scanOmnixPromptContent } from './omnix-prompt-guard';
+import type { OmnixGenerativeResult } from './omnix-generative-narrator.ts';
+import type { OmnixGeminiRouteResult } from './omnix-gemini-router.ts';
+import { scanOmnixPromptContent } from './omnix-prompt-guard.ts';
 
 export const OMNIX_AI_EVALUATION_VERSION = 'omnix-ai-eval.v1' as const;
 export const OMNIX_ROUTING_EVAL_CASES = [
