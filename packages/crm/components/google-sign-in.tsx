@@ -32,6 +32,12 @@ export function GoogleSignIn({ next = '/' }: { next?: string }) {
         options: {
           redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(destination)}`,
           scopes: 'openid email profile',
+          queryParams: {
+            // A shared or support browser may already hold another Google
+            // identity. Choosing explicitly prevents an assistant session from
+            // being mistaken for the workspace owner during sign-in or UAT.
+            prompt: 'select_account',
+          },
         },
       });
 
