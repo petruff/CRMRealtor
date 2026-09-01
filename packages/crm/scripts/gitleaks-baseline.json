@@ -17,10 +17,45 @@
     },
     {
       "rule": "generic-api-key",
+      "path": "packages/crm/app/api/intake/website/route.test.ts",
+      "line": 20,
+      "secretSha256Parts": ["d83575a8", "8b0d2f9e", "8270c557", "7c8287d9", "21dba10a", "894bb486", "83438c73", "29fdf060"],
+      "reason": "Deterministic test-only signing material; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
       "path": "packages/crm/components/ai-settings-form.test.tsx",
       "line": 19,
       "secretSha256Parts": ["da4ec335", "8a10c9b0", "872eb877", "953cc7b0", "7af5f4d7", "5e4c1cb0", "597cbbf4", "1e5dbe35"],
       "reason": "Deterministic test-only fingerprint; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "packages/crm/components/ai-settings-form.test.tsx",
+      "line": 35,
+      "secretSha256Parts": ["da4ec335", "8a10c9b0", "872eb877", "953cc7b0", "7af5f4d7", "5e4c1cb0", "597cbbf4", "1e5dbe35"],
+      "reason": "Deterministic test-only fingerprint; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "packages/crm/lib/application/website-intake-security.test.ts",
+      "line": 6,
+      "secretSha256Parts": ["d83575a8", "8b0d2f9e", "8270c557", "7c8287d9", "21dba10a", "894bb486", "83438c73", "29fdf060"],
+      "reason": "Deterministic test-only signing material; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "packages/crm/lib/data/website-intake-repository.test.ts",
+      "line": 6,
+      "secretSha256Parts": ["d83575a8", "8b0d2f9e", "8270c557", "7c8287d9", "21dba10a", "894bb486", "83438c73", "29fdf060"],
+      "reason": "Deterministic test-only digest fixture; reviewed false positive."
+    },
+    {
+      "rule": "generic-api-key",
+      "path": "packages/crm/lib/data/website-intake-repository.test.ts",
+      "line": 7,
+      "secretSha256Parts": ["d83575a8", "8b0d2f9e", "8270c557", "7c8287d9", "21dba10a", "894bb486", "83438c73", "29fdf060"],
+      "reason": "Deterministic test-only digest fixture; reviewed false positive."
     },
     {
       "rule": "generic-api-key",

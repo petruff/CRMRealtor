@@ -13,7 +13,7 @@ vi.mock('@/lib/application/contact-import-service', () => ({ previewContactImpor
 
 import { POST } from './route';
 
-const secret=['test','website','intake','signing','material'].join('-').padEnd(32,'x');const timestamp=String(Math.floor(Date.now()/1000));
+const secret='s'.repeat(32);const timestamp=String(Math.floor(Date.now()/1000));
 const payload={submissionId:'lead-12345678',firstName:'Avery',lastName:'Buyer',email:'avery@example.com',intent:'buyer',requestedAction:'showing-request',timelineDays:14,attribution:{source:'instagram',medium:'social',campaign:'waterfront',formId:'property-interest',landingPage:'https://judith.example/listing'},consent:{email:'granted',sms:'unknown',phone:'granted',policyVersion:'privacy-v1'}};
 const terminal=(outcome:'created'|'quarantined')=>({idempotencyKey:'website:A1B2C3D4',requestHash:'unused',statusCode:200,response:{state:'recorded',runId:'run-1',planHash:'a'.repeat(64),counts:{total:1,created:outcome==='created'?1:0,updated:0,unchanged:0,rejected:0,quarantined:outcome==='quarantined'?1:0,failed:0,notesAdded:0},rowOutcomes:[outcome==='created'?{rowNumber:1,outcome:'created',contactId:'contact-1'}:{rowNumber:1,outcome:'quarantined',incompleteRecordId:'review-1'}],noOp:false},createdAt:new Date().toISOString()});
 
