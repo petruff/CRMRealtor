@@ -229,6 +229,27 @@ export default async function ContactsPage({
     ])) as Record<LeadType, number>;
   }
   const visibleContacts = contactPage.items;
+  const pastClients = visibleContacts.filter((contact) => contact.relationship === "past-client");
+  const contactGroups = [
+    ...(pastClients.length > 0 ? [{
+      key: "past-clients",
+      title: "Past clients",
+      blurb: "Relationships you have already served. Kept separate from lead priority.",
+      count: scope === "past-clients" ? contactPage.total : pastClients.length,
+      tone: "neutral" as const,
+      contacts: pastClients,
+    }] : []),
+    ...ORDER.map((candidate) => ({
+      key: candidate,
+      title: LEAD_TYPE_LABEL[candidate],
+      blurb: BLURB[candidate],
+      count: !archivedView && (scope === "leads" || scope === "active-clients")
+        ? leadTypeCounts[candidate]
+        : visibleContacts.filter((contact) => contact.relationship !== "past-client" && contact.leadType === candidate).length,
+      tone: candidate,
+      contacts: visibleContacts.filter((contact) => contact.relationship !== "past-client" && contact.leadType === candidate),
+    })).filter((group) => group.contacts.length > 0),
+  ];
   const viewState: ContactViewState = {
     scope,
     ...(query ? { query } : {}),
@@ -423,21 +444,17 @@ export default async function ContactsPage({
 
       {contactPage.total ? (
         <div className="space-y-12">
-          {ORDER.map((leadType) => {
-            const group = visibleContacts.filter((c) => c.leadType === leadType);
-            const exactGroupCount = leadTypeCounts[leadType];
-            if (group.length === 0) return null;
-            return (
-              <section key={leadType}>
+          {contactGroups.map((group) => (
+              <section key={group.key}>
                 <SectionHeader
-                  title={LEAD_TYPE_LABEL[leadType]}
-                  blurb={BLURB[leadType]}
-                  count={exactGroupCount}
-                  tone={leadType}
+                  title={group.title}
+                  blurb={group.blurb}
+                  count={group.count}
+                  tone={group.tone}
                 />
 
                 <ul className="sk-group sk-list-grid grid gap-px lg:grid-cols-2">
-                  {group.map((contact) => (
+                  {group.contacts.map((contact) => (
                     <li
                       key={contact.id}
                       className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 bg-surface p-4 sm:flex sm:p-5"
@@ -445,6 +462,7 @@ export default async function ContactsPage({
                       <Avatar
                         initials={initials(contact)}
                         leadType={contact.leadType}
+                        relationship={contact.relationship}
                       />
 
                       <div className="min-w-0 flex-1">
@@ -502,8 +520,7 @@ export default async function ContactsPage({
                   ))}
                 </ul>
               </section>
-            );
-          })}
+          ))}
           <ContactPagination
             page={contactPage}
             hrefForPage={(page) => archivedView ? archivedPageHref(page) : contactViewHref(viewState, { page })}

@@ -41,6 +41,8 @@ import {
   restoreContactNoteAction,
 } from "@/app/contact-actions";
 import { ContactActivityHistory } from "@/components/contact-activity-history";
+import { ContactRecordNavigator } from "@/components/contact-record-navigation";
+import { contactListHref, contactRecordNavigation } from "@/lib/application/contact-navigation";
 import {
   listActivityEventsCommand,
   listTasksCommand,
@@ -217,6 +219,7 @@ export default async function ContactDetailPage({
   }
 
   const name = displayName(contact);
+  const recordNavigation = contactRecordNavigation(allContacts, contact);
   const money = (n?: number) =>
     n === undefined ? undefined : `$${n.toLocaleString("en-US")}`;
 
@@ -246,10 +249,13 @@ export default async function ContactDetailPage({
 
   return (
     <div>
-      <Link href={archived ? "/contacts?view=archived" : "/"} className="sk-text-action mb-6">
-        <ArrowLeft className="size-4" />
-        {archived ? "Back to archived contacts" : "Back to today"}
-      </Link>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Link href={contactListHref(recordNavigation.scope)} className="sk-text-action self-start">
+          <ArrowLeft className="size-4" />
+          Back to contacts
+        </Link>
+        <ContactRecordNavigator navigation={recordNavigation} />
+      </div>
 
       {notice ? (
         <p
@@ -267,13 +273,13 @@ export default async function ContactDetailPage({
       ) : null}
 
       <header className="flex items-start gap-4 md:items-center">
-        <Avatar initials={initials(contact)} leadType={contact.leadType} />
+        <Avatar initials={initials(contact)} leadType={contact.leadType} relationship={contact.relationship} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="font-display text-3xl leading-tight text-ink md:text-5xl">
               {name}
             </h1>
-            <LeadBadge leadType={contact.leadType} />
+            <LeadBadge leadType={contact.leadType} relationship={contact.relationship} />
           </div>
           <p className="mt-1 text-sm text-muted">
             {RELATIONSHIP_LABEL[contact.relationship]} ·{" "}

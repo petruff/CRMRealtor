@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import type { LeadType } from '@/lib/domain/contact';
-import { LEAD_TYPE_LABEL } from '@/lib/domain/contact';
+import type { LeadType, Relationship } from '@/lib/domain/contact';
+import { LEAD_TYPE_LABEL, RELATIONSHIP_LABEL } from '@/lib/domain/contact';
 import type { BucketTone } from '@/lib/domain/triage';
 
 /**
@@ -36,7 +36,21 @@ const TONE_RULE: Record<BucketTone, string> = {
   neutral: 'bg-line-strong',
 };
 
-export function LeadBadge({ leadType }: { leadType: LeadType }) {
+export function LeadBadge({
+  leadType,
+  relationship,
+}: {
+  leadType: LeadType;
+  relationship?: Relationship;
+}) {
+  if (relationship === 'past-client' || relationship === 'active-client') {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted">
+        <span className="size-1.5 rounded-full bg-accent" aria-hidden />
+        {RELATIONSHIP_LABEL[relationship]}
+      </span>
+    );
+  }
   return (
     <span
       className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium ${LEAD_STYLES[leadType]}`}
@@ -47,11 +61,14 @@ export function LeadBadge({ leadType }: { leadType: LeadType }) {
   );
 }
 
-export function Avatar({ initials, leadType }: { initials: string; leadType: LeadType }) {
+export function Avatar({ initials, leadType, relationship }: { initials: string; leadType: LeadType; relationship?: Relationship }) {
+  const relationshipStyle = relationship === 'past-client' || relationship === 'active-client'
+    ? 'border-line bg-surface-2 text-muted'
+    : LEAD_STYLES[leadType];
   return (
     <span
       aria-hidden
-      className={`grid size-11 shrink-0 place-items-center rounded-full border text-sm font-medium tracking-tight ${LEAD_STYLES[leadType]}`}
+      className={`grid size-11 shrink-0 place-items-center rounded-full border text-sm font-medium tracking-tight ${relationshipStyle}`}
     >
       {initials}
     </span>

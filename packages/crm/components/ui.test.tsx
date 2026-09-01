@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { ActionLink, EmptyState } from '@/components/ui';
+import { ActionLink, EmptyState, LeadBadge } from '@/components/ui';
 
 describe('semantic action primitives', () => {
   it('keeps internal and protocol navigation as anchors with button affordance', () => {
@@ -20,5 +20,16 @@ describe('semantic action primitives', () => {
 
     expect(actionable).toContain('href="/contacts/new"');
     expect(passive).not.toContain('<a');
+  });
+
+  it('shows client relationship status instead of a misleading lead temperature', () => {
+    const pastClient = renderToStaticMarkup(
+      <LeadBadge leadType="hot" relationship="past-client" />,
+    );
+    const lead = renderToStaticMarkup(<LeadBadge leadType="hot" relationship="lead" />);
+
+    expect(pastClient).toContain('Past client');
+    expect(pastClient).not.toContain('Hot');
+    expect(lead).toContain('Hot');
   });
 });

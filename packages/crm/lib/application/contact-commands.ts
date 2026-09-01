@@ -287,6 +287,14 @@ export function parseContactForm(formData: FormData): EditableContactFields {
     });
   }
 
+  const relationship = oneOf(formData, 'relationship', RELATIONSHIPS);
+  const requestedLeadType = optionalOneOf(formData, 'leadType', LEAD_TYPES);
+  if (relationship !== 'past-client' && !requestedLeadType) {
+    throw new ContactCommandError('Review the highlighted fields.', {
+      leadType: 'Choose a follow-up priority.',
+    });
+  }
+
   return {
     firstName,
     lastName,
@@ -300,9 +308,12 @@ export function parseContactForm(formData: FormData): EditableContactFields {
     postalCode: optional(formData, 'postalCode'),
     birthdate: dateValue(formData, 'birthdate'),
     homePurchaseDate: dateValue(formData, 'homePurchaseDate'),
-    leadType: oneOf(formData, 'leadType', LEAD_TYPES),
+    // Past clients are relationships, not active leads. The legacy database
+    // enum remains non-null, so Nurture is retained only as a compatibility
+    // value and is intentionally hidden from client-facing lead badges.
+    leadType: relationship === 'past-client' ? 'nurture' : requestedLeadType!,
     qualificationStatus: optionalOneOf(formData, 'qualificationStatus', QUALIFICATION_STATUSES) ?? 'qualified',
-    relationship: oneOf(formData, 'relationship', RELATIONSHIPS),
+    relationship,
     intent: oneOf(formData, 'intent', INTENTS),
     source: oneOf(formData, 'source', SOURCES),
     pipelineStage: oneOf(formData, 'pipelineStage', PIPELINE_STAGES),
@@ -388,14 +399,10 @@ export async function updateContactCommand(
     touchDateOverridden: next.touchDateOverridden,
   };
   const updated = await repository.update(id, patch);
-  const changedFields = Object.keys(patch)
-    .filter((field) => JSON.stringify(existing[field as keyof Contact]) !== JSON.stringify(updated[field as keyof Contact]))
-    .sort();
   await appendContactActivity(activity, {
     type: 'contact-updated',
     contactId: updated.id,
     idempotencyKey: `contact-updated:${updated.id}:${now.getTime()}`,
-    metadata: { changedFields: changedFields.join(',') },
   }, now);
   return updated;
 }

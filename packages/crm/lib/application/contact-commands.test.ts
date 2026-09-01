@@ -213,6 +213,31 @@ describe('contact commands', () => {
     expect(updated.touchDateOverridden).toBe(true);
   });
 
+  it('allows an existing email to be cleared without blocking the contact save', async () => {
+    const repository = new FakeRepository([contact({ email: 'avery@example.com' })]);
+    const updated = await updateContactCommand(
+      repository,
+      'c-1',
+      form({ email: '' }),
+      NOW,
+    );
+
+    expect(updated.email).toBeUndefined();
+  });
+
+  it('keeps past clients out of lead priority while preserving the legacy enum contract', async () => {
+    const repository = new FakeRepository([contact({ leadType: 'hot' })]);
+    const updated = await updateContactCommand(
+      repository,
+      'c-1',
+      form({ relationship: 'past-client', leadType: '' }),
+      NOW,
+    );
+
+    expect(updated.relationship).toBe('past-client');
+    expect(updated.leadType).toBe('nurture');
+  });
+
   it('restores automatic cadence when an active edit clears the next date', async () => {
     const repository = new FakeRepository([
       contact({ nextTouchAt: '2026-09-20', touchDateOverridden: true }),
@@ -278,9 +303,21 @@ describe('contact commands', () => {
     expect(updated.pipelineStage).toBe('contacted');
   });
 
-  it('appends the corresponding CRM activities and deduplicates an exact touch replay', async () => {
+  it('appends provider-compatible CRM activities and deduplicates an exact touch replay', async () => {
     const repository = new FakeRepository();
-    const activityRepository = createMemoryActivityRepository();
+    const memoryActivityRepository = createMemoryActivityRepository();
+    const activityRepository = {
+      ...memoryActivityRepository,
+      async appendEvent(
+        scope: Parameters<typeof memoryActivityRepository.appendEvent>[0],
+        input: Parameters<typeof memoryActivityRepository.appendEvent>[1],
+      ) {
+        if (input.metadata && Object.keys(input.metadata).length) {
+          throw new Error('Metadata events require a specialized atomic command.');
+        }
+        return memoryActivityRepository.appendEvent(scope, input);
+      },
+    };
     const activity = { repository: activityRepository, scope: SAMPLE_WORKSPACE_SCOPE };
     const created = await createContactCommand(repository, form(), NOW, activity);
     await updateContactCommand(repository, created.id, form({ city: 'Miami' }), NOW, activity);
@@ -300,27 +337,7 @@ describe('contact commands', () => {
     ]);
     expect(events.every((event) => event.contactId === created.id)).toBe(true);
     const updateEvent = events.find((event) => event.type === 'contact-updated');
-    expect(updateEvent?.metadata?.changedFields).toContain('city');
-    expect(updateEvent?.metadata?.changedFields).not.toContain('pipelineStage');
-  });
-
-  it('records pipelineStage in changed-field metadata when the contact form moves it', async () => {
-    const repository = new FakeRepository([contact({ pipelineStage: 'active' })]);
-    const activityRepository = createMemoryActivityRepository();
-    await updateContactCommand(
-      repository,
-      'c-1',
-      form({ pipelineStage: 'closed' }),
-      NOW,
-      { repository: activityRepository, scope: SAMPLE_WORKSPACE_SCOPE },
-    );
-
-    const events = await activityRepository.listEvents(SAMPLE_WORKSPACE_SCOPE, {
-      contactId: 'c-1',
-      type: 'contact-updated',
-      limit: 10,
-    });
-    expect(events[0]?.metadata?.changedFields).toContain('pipelineStage');
+    expect(updateEvent?.metadata).toBeUndefined();
   });
 
   it('propagates repository failures instead of claiming success', async () => {

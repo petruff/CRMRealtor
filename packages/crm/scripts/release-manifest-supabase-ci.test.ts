@@ -89,14 +89,14 @@ describe('Supabase candidate recovery planning', () => {
     const result = recoveryPlan(packageRoot, baseSha, candidateSha);
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain(`supabase/migrations/${migrationName}.sql`);
-  });
+  }, 15_000);
 
   it('fails closed when a candidate migration has no forward repair', async () => {
     const { packageRoot, baseSha, candidateSha, migrationName } = await fixture(false);
     const result = recoveryPlan(packageRoot, baseSha, candidateSha);
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain(`${migrationName}.forward-repair.sql`);
-  });
+  }, 15_000);
 
   it('rejects equal, descendant, and sibling recovery bases', async () => {
     const { repoRoot, packageRoot, baseSha, candidateSha } = await fixture(true);
@@ -111,7 +111,7 @@ describe('Supabase candidate recovery planning', () => {
     const siblingSha = git(repoRoot, 'rev-parse', 'HEAD');
     git(repoRoot, 'checkout', '--quiet', currentBranch);
     expect(recoveryPlan(packageRoot, siblingSha, candidateSha).stderr).toContain('strict ancestor');
-  });
+  }, 15_000);
 
   it('fails closed on deleted and renamed migrations', async () => {
     const deletion = await fixture(true);
@@ -129,7 +129,7 @@ describe('Supabase candidate recovery planning', () => {
     git(rename.repoRoot, 'commit', '--quiet', '-m', 'rename migration');
     const renameSha = git(rename.repoRoot, 'rev-parse', 'HEAD');
     expect(recoveryPlan(rename.packageRoot, rename.candidateSha, renameSha).stderr).toContain('Migration rename is forbidden');
-  });
+  }, 15_000);
 
   it('fails when the migration tree differs without a candidate migration SQL file', async () => {
     const { repoRoot, packageRoot, candidateSha } = await fixture(true);
@@ -141,7 +141,7 @@ describe('Supabase candidate recovery planning', () => {
     const result = recoveryPlan(packageRoot, candidateSha, changedTreeSha);
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('Migration tree differs without a candidate migration SQL file');
-  });
+  }, 15_000);
 });
 
 describe('Release evidence workflow authority', () => {

@@ -42,7 +42,9 @@ function actionError(
   console.error(`[contact-action:${operation}]`, error);
   return {
     status: 'error',
-    message: "We couldn't save that change. Nothing was updated — please try again.",
+    message: operation === 'update'
+      ? "We couldn't confirm the complete update. Refresh this contact before trying again."
+      : "We couldn't save that change. Nothing was updated — please try again.",
     values,
   };
 }

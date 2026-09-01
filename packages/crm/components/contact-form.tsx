@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState, type InputHTMLAttributes, type SelectHTMLAttributes } from 'react';
+import { useActionState, useState, type InputHTMLAttributes, type SelectHTMLAttributes } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
   INTENT_LABEL,
@@ -72,13 +72,16 @@ function SelectField({
   label,
   name,
   error,
+  hint,
   children,
   ...props
 }: SelectHTMLAttributes<HTMLSelectElement> & {
   label: string;
   name: string;
   error?: string;
+  hint?: string;
 }) {
+  const describedBy = error ? errorId(name) : hint ? `${name}-hint` : undefined;
   return (
     <label className="sk-field">
       <span className="sk-label">{label}</span>
@@ -87,10 +90,11 @@ function SelectField({
         name={name}
         className="sk-input"
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId(name) : undefined}
+        aria-describedby={describedBy}
       >
         {children}
       </select>
+      {hint && !error ? <span id={`${name}-hint`} className="sk-help">{hint}</span> : null}
       {error ? <span id={errorId(name)} className="sk-error">{error}</span> : null}
     </label>
   );
@@ -127,6 +131,11 @@ export function ContactForm({
   const valueFor = (name: string, initial?: string | number) =>
     state.values ? (state.values[name] ?? '') : initial;
   const formKey = state.values ? JSON.stringify(state.values) : 'initial';
+  const initialRelationship = valueFor('relationship', contact?.relationship ?? 'lead') as typeof RELATIONSHIPS[number];
+  const [relationship, setRelationship] = useState(initialRelationship);
+  const [leadType, setLeadType] = useState(
+    valueFor('leadType', contact?.relationship === 'past-client' ? '' : (contact?.leadType ?? 'warm')) as string,
+  );
 
   return (
     <form key={formKey} action={formAction} className="space-y-4">
@@ -145,10 +154,35 @@ export function ContactForm({
           <TextField label="First name" name="firstName" autoComplete="given-name" defaultValue={valueFor('firstName', contact?.firstName)} error={fieldError('firstName')} />
           <TextField label="Last name" name="lastName" autoComplete="family-name" defaultValue={valueFor('lastName', contact?.lastName)} error={fieldError('lastName')} />
           <TextField label="Phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={valueFor('phone', contact?.phone)} error={fieldError('phone')} />
-          <TextField label="Email" name="email" type="email" inputMode="email" autoComplete="email" defaultValue={valueFor('email', contact?.email)} error={fieldError('email')} />
-          <SelectField label="Lead type" name="leadType" defaultValue={valueFor('leadType', contact?.leadType ?? 'warm')} error={fieldError('leadType')}>
+          <TextField label="Email (optional)" name="email" type="email" inputMode="email" autoComplete="email" defaultValue={valueFor('email', contact?.email)} hint="Leave blank when no email is available." error={fieldError('email')} />
+          <SelectField
+            label="Relationship"
+            name="relationship"
+            value={relationship}
+            onChange={(event) => {
+              const nextRelationship = event.currentTarget.value as typeof RELATIONSHIPS[number];
+              setRelationship(nextRelationship);
+              if (nextRelationship === 'past-client') setLeadType('');
+              else if (!leadType) setLeadType('warm');
+            }}
+            hint="Use Past client for people you have already helped."
+            error={fieldError('relationship')}
+          >
+            {RELATIONSHIPS.map((entry) => <option key={entry} value={entry}>{RELATIONSHIP_LABEL[entry]}</option>)}
+          </SelectField>
+          <SelectField
+            label="Follow-up priority"
+            name="leadType"
+            value={leadType}
+            onChange={(event) => setLeadType(event.currentTarget.value)}
+            disabled={relationship === 'past-client'}
+            hint={relationship === 'past-client' ? 'Past clients are kept in the client relationship list, not Hot/Warm/Nurture.' : 'Hot, Warm, and Nurture apply to active leads.'}
+            error={fieldError('leadType')}
+          >
+            <option value="">Client — no lead priority</option>
             {LEAD_TYPES.map((entry) => <option key={entry} value={entry}>{LEAD_TYPE_LABEL[entry]}</option>)}
           </SelectField>
+          {relationship === 'past-client' ? <input type="hidden" name="leadType" value="" /> : null}
           <SelectField label="Qualification" name="qualificationStatus" defaultValue={valueFor('qualificationStatus', contact?.qualificationStatus ?? 'qualified')} error={fieldError('qualificationStatus')}>
             {QUALIFICATION_STATUSES.map((entry) => <option key={entry} value={entry}>{QUALIFICATION_STATUS_LABEL[entry]}</option>)}
           </SelectField>
@@ -160,9 +194,6 @@ export function ContactForm({
         <div className="grid gap-4 border-t border-line p-5 sm:grid-cols-2 sm:p-6">
           <TextField label="Preferred name" name="preferredName" autoComplete="nickname" defaultValue={valueFor('preferredName', contact?.preferredName)} error={fieldError('preferredName')} />
           <TextField label="Secondary phone" name="secondaryPhone" type="tel" inputMode="tel" defaultValue={valueFor('secondaryPhone', contact?.secondaryPhone)} error={fieldError('secondaryPhone')} />
-          <SelectField label="Relationship" name="relationship" defaultValue={valueFor('relationship', contact?.relationship ?? 'lead')} error={fieldError('relationship')}>
-            {RELATIONSHIPS.map((entry) => <option key={entry} value={entry}>{RELATIONSHIP_LABEL[entry]}</option>)}
-          </SelectField>
           <SelectField label="Intent" name="intent" defaultValue={valueFor('intent', contact?.intent ?? 'unknown')} error={fieldError('intent')}>
             {INTENTS.map((entry) => <option key={entry} value={entry}>{INTENT_LABEL[entry]}</option>)}
           </SelectField>

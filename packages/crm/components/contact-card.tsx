@@ -33,7 +33,7 @@ export function ContactCard({
 
   return (
     <article className={`group grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 gap-y-3 bg-surface p-4 ${compact ? '' : 'sm:flex sm:p-5'}`}>
-      <Avatar initials={initials(contact)} leadType={contact.leadType} />
+      <Avatar initials={initials(contact)} leadType={contact.leadType} relationship={contact.relationship} />
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -43,7 +43,7 @@ export function ContactCard({
           >
             {name}
           </Link>
-          <LeadBadge leadType={contact.leadType} />
+          <LeadBadge leadType={contact.leadType} relationship={contact.relationship} />
         </div>
 
         <p className={`mt-0.5 text-[13px] ${urgent ? 'font-medium text-hot' : 'text-muted'}`}>
