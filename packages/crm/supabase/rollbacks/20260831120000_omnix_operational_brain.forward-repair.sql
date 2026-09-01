@@ -1,16 +1,23 @@
--- Forward repair for a partially applied pre-use migration.
--- If any proposal or memory row exists, stop and prepare a data-preserving repair.
+-- Restore the exact mutation grants revoked by the containment rollback.
 
-do $$ begin
-  if to_regclass('public.omnix_action_proposals') is not null
-     and exists(select 1 from public.omnix_action_proposals limit 1) then
-    raise exception 'Omnix proposal data exists; use a data-preserving forward repair';
-  end if;
-  if to_regclass('public.omnix_relationship_memories') is not null
-     and exists(select 1 from public.omnix_relationship_memories limit 1) then
-    raise exception 'Omnix relationship memory data exists; use a data-preserving forward repair';
-  end if;
-end $$;
+begin;
 
-\ir 20260831120000_omnix_operational_brain.rollback.sql
-\ir ../migrations/20260831120000_omnix_operational_brain.sql
+grant execute on function public.create_omnix_action_proposal(
+  uuid, uuid, uuid, uuid, public.omnix_proposal_kind, public.omnix_proposal_origin,
+  public.omnix_approval_mode, public.attention_priority, integer, jsonb, text, text, jsonb, text,
+  jsonb, timestamptz, timestamptz, uuid, uuid, text, timestamptz
+) to authenticated, service_role;
+
+grant execute on function public.decide_omnix_action_proposal(
+  uuid, uuid, integer, text, uuid, text, timestamptz
+) to authenticated;
+
+grant execute on function public.transition_omnix_proposal_execution(
+  uuid, uuid, public.omnix_proposal_state, public.omnix_proposal_state,
+  uuid, text, text, text, timestamptz
+) to authenticated;
+
+comment on table public.omnix_action_proposals is
+  'Versioned, recoverable Omnix action proposals. Approval does not itself execute an external action.';
+
+commit;
