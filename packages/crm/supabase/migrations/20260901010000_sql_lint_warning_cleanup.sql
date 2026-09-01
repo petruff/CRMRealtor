@@ -186,13 +186,13 @@ select pg_temp.replace_function_fragment(
 );
 select pg_temp.replace_function_fragment(
   'public.read_twilio_job_authority(uuid,uuid,bigint,timestamptz)',
-  E' target_snapshot public.texting_send_approval_snapshots%rowtype; target_consent public.texting_consent_states%rowtype;\n',
-  E' target_snapshot public.texting_send_approval_snapshots%rowtype;\n'
+  'target_consent public.texting_consent_states%rowtype;',
+  ''
 );
 select pg_temp.replace_function_fragment(
   'public.read_twilio_job_authority(uuid,uuid,bigint,timestamptz)',
-  'select state.* into target_consent',
-  'perform 1'
+  'select state.* into target_consent from public.texting_consent_states state',
+  'perform 1 from public.texting_consent_states state'
 );
 select pg_temp.replace_function_fragment(
   'public.register_and_apply_twilio_callback(text,text,text,text,text,text,text,text,public.twilio_callback_kind,text,public.texting_keyword_class,text,text,text,jsonb,timestamptz,timestamptz,uuid)',
