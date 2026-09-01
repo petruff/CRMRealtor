@@ -15,6 +15,7 @@ import {
   type AttentionTransition,
 } from '../domain/attention.ts';
 import type { OmnixCopilotAlert } from '../domain/omnix-copilot.ts';
+import type { TransactionMilestone } from '../domain/operational-signal.ts';
 import type { WorkspaceScope } from '../domain/workspace.ts';
 
 const PRIORITY_MAP: Readonly<Record<OmnixCopilotAlert['priority'], AttentionPriority>> = {
@@ -78,6 +79,60 @@ export function attentionMaterializationsFromAlerts(
         ...(entry.sourceTimestamp ? { sourceTimestamp: entry.sourceTimestamp } : {}),
       })),
     });
+  }));
+}
+
+export function attentionMaterializationsFromMilestones(
+  milestones: readonly TransactionMilestone[],
+  observedAt: Date,
+): readonly AttentionMaterialization[] {
+  const open = milestones.filter((milestone) => milestone.state === 'open');
+  const contradictory = new Set<string>();
+  const grouped = new Map<string, TransactionMilestone[]>();
+  for (const milestone of open) {
+    const key = `${milestone.transactionId}:${milestone.kind}`;
+    grouped.set(key, [...(grouped.get(key) ?? []), milestone]);
+  }
+  for (const group of grouped.values()) {
+    const dates = new Set(group.filter((item) => item.verificationState === 'verified').map((item) => item.dueAt));
+    if (dates.size > 1) for (const item of group) contradictory.add(item.id);
+  }
+  const horizon = observedAt.getTime() + 7 * 86_400_000;
+  return Object.freeze(open.flatMap((milestone) => {
+    const due = Date.parse(milestone.dueAt);
+    const isContradictory = milestone.verificationState === 'contradictory' || contradictory.has(milestone.id);
+    const isUnverified = milestone.verificationState === 'unverified';
+    const isOverdue = milestone.verificationState === 'verified' && due <= observedAt.getTime();
+    const isApproaching = milestone.verificationState === 'verified' && due > observedAt.getTime() && due <= horizon;
+    const missingResponsibility = !milestone.responsibleMembershipId;
+    let rule: string; let reason: string; let priority: AttentionPriority;
+    if (isContradictory) {
+      rule = 'transaction-deadline-contradictory'; priority = 'p0';
+      reason = `${milestone.label} has conflicting sourced dates. Review the source before acting.`;
+    } else if (missingResponsibility) {
+      rule = 'transaction-deadline-unassigned'; priority = 'p0';
+      reason = `${milestone.label} has no responsible person.`;
+    } else if (isUnverified) {
+      rule = 'transaction-deadline-unverified'; priority = 'p1';
+      reason = `${milestone.label} needs verification against ${milestone.sourceReference}.`;
+    } else if (isOverdue) {
+      rule = 'transaction-deadline-overdue'; priority = 'p0';
+      reason = `${milestone.label} is overdue. Confirm its current source and outcome.`;
+    } else if (isApproaching) {
+      rule = 'transaction-deadline-approaching'; priority = 'p1';
+      reason = `${milestone.label} is approaching from verified source ${milestone.sourceReference}.`;
+    } else return [];
+    return [validateAttentionMaterialization({
+      rule, category: 'transaction-deadline', subjectType: 'transaction', subjectId: milestone.transactionId,
+      occurrenceKey: `transaction-milestone-risk:${milestone.id}`,
+      sourceFingerprint: hash({ milestoneId: milestone.id, version: milestone.currentVersion, rule, dueAt: milestone.dueAt,
+        verificationState: milestone.verificationState, sourceReference: milestone.sourceReference }),
+      reason, href: `/transactions#deadline-${milestone.id}`, priority, dueAt: milestone.dueAt,
+      assigneeMembershipId: milestone.responsibleMembershipId || undefined, dismissAllowed: false,
+      evidence: [{ entityType: 'transaction', recordId: milestone.transactionId,
+        factKeys: ['milestoneKind','state','dueAt','timezone','sourceType','sourceReference','sourceDate','verificationState','currentVersion'],
+        sourceTimestamp: milestone.updatedAt }],
+    })];
   }));
 }
 

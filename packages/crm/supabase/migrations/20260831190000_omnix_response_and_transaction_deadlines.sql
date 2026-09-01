@@ -226,7 +226,6 @@ create or replace function public.record_omnix_inbound_response_intelligence(
   target_sentiment text,target_urgency text,target_summary text,target_unknowns text[],target_occurred_at timestamptz
 ) returns jsonb language plpgsql security definer set search_path='' as $$
 declare target_job public.google_gmail_history_wakeup_jobs%rowtype;
-  target_resource connector_private.google_gmail_resources%rowtype;
   target_signal public.omnix_inbound_response_signals%rowtype;
 begin
   target_job:=connector_private.google_authorized_wakeup_job(target_wakeup_job_id,target_worker_id,target_fencing_token,target_occurred_at);
@@ -242,9 +241,12 @@ begin
     or (target_model is not null and (length(target_model) not between 1 and 120 or target_model ~ '[[:cntrl:]]')) then
     raise exception 'invalid Gmail response intelligence' using errcode='22023';
   end if;
-  select * into strict target_resource from connector_private.google_gmail_resources
+  perform 1 from connector_private.google_gmail_resources
     where workspace_id=target_job.workspace_id and connection_id=target_job.connection_id
       and resource_hash=target_resource_hash and direction='incoming' and contact_id is not null;
+  if not found then
+    raise exception 'authorized Gmail resource was not found' using errcode='P0002';
+  end if;
   select * into strict target_signal from public.omnix_inbound_response_signals
     where workspace_id=target_job.workspace_id and resource_hash=target_resource_hash for update;
   if target_signal.intelligence_state<>'pending' then

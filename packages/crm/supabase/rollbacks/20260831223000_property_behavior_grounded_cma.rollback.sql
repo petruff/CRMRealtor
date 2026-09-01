@@ -1,0 +1,10 @@
+begin;
+drop function if exists public.transition_cma_request(uuid,uuid,uuid,integer,text,text,timestamptz);
+drop function if exists public.add_cma_comparable_candidate(uuid,uuid,uuid,numeric,boolean,text,timestamptz);
+drop function if exists public.create_cma_request(uuid,uuid,uuid,uuid,text,jsonb,timestamptz,uuid,text,timestamptz);
+drop function if exists public.record_property_behavior(uuid,uuid,uuid,uuid,text,text,text,timestamptz,text,text,timestamptz);
+drop function if exists public.guard_property_behavior_history();
+drop table if exists public.cma_comparable_candidates;
+drop table if exists public.cma_requests;
+drop table if exists public.property_behavior_events;
+commit;

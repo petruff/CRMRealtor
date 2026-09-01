@@ -68,6 +68,18 @@ import { supabaseNurturePlanRepository } from './supabase-nurture-plan-repositor
 import type { OperationalSignalRepository } from './operational-signal-repository';
 import { createMemoryOperationalSignalRepository } from './memory-operational-signal-repository';
 import { supabaseOperationalSignalRepository } from './supabase-operational-signal-repository';
+import type { AffordabilityRepository } from './affordability-repository';
+import { createMemoryAffordabilityRepository } from './memory-affordability-repository';
+import { supabaseAffordabilityRepository } from './supabase-affordability-repository';
+import type { PropertyRepository } from './property-repository';
+import { createMemoryPropertyRepository } from './memory-property-repository';
+import { supabasePropertyRepository } from './supabase-property-repository';
+import type { ListingProviderRepository } from './listing-provider-repository';
+import { createMemoryListingProviderRepository } from './memory-listing-provider-repository';
+import { supabaseListingProviderRepository } from './supabase-listing-provider-repository';
+import type { PropertyBehaviorRepository } from './property-behavior-repository';
+import { createMemoryPropertyBehaviorRepository } from './memory-property-behavior-repository';
+import { supabasePropertyBehaviorRepository } from './supabase-property-behavior-repository';
 
 // Sample work-queue repositories intentionally live for the lifetime of this
 // server process. Recreating them inside every request would make a successful
@@ -100,6 +112,10 @@ const sampleTransactionRepository = createMemoryTransactionRepository(sampleCont
 const sampleOmnixProposalRepository = createMemoryOmnixProposalRepository();
 const sampleNurturePlanRepository = createMemoryNurturePlanRepository();
 const sampleOperationalSignalRepository = createMemoryOperationalSignalRepository(sampleContactRepository, sampleTransactionRepository);
+const sampleAffordabilityRepository = createMemoryAffordabilityRepository();
+const samplePropertyRepository = createMemoryPropertyRepository();
+const sampleListingProviderRepository = createMemoryListingProviderRepository();
+const samplePropertyBehaviorRepository = createMemoryPropertyBehaviorRepository();
 const connectorConfiguration = loadConfiguredConnectorRuntimeConfiguration();
 const sampleConnectorRepository = createMemoryConnectorRepository({
   definitions: connectorConfiguration.definitions,
@@ -131,6 +147,10 @@ export interface RepositoryContext {
   omnixProposalRepository: OmnixProposalRepository;
   nurturePlanRepository: NurturePlanRepository;
   operationalSignalRepository: OperationalSignalRepository;
+  affordabilityRepository: AffordabilityRepository;
+  propertyRepository: PropertyRepository;
+  listingProviderRepository: ListingProviderRepository;
+  propertyBehaviorRepository: PropertyBehaviorRepository;
   /** Unavailable only while the live database is missing Story 3.2 migration support. */
   richContactRepository?: RichContactRepository;
   workspaceScope: WorkspaceScope;
@@ -181,6 +201,10 @@ export async function getRepository(): Promise<RepositoryContext> {
       omnixProposalRepository: sampleOmnixProposalRepository,
       nurturePlanRepository: sampleNurturePlanRepository,
       operationalSignalRepository: sampleOperationalSignalRepository,
+      affordabilityRepository: sampleAffordabilityRepository,
+      propertyRepository: samplePropertyRepository,
+      listingProviderRepository: sampleListingProviderRepository,
+      propertyBehaviorRepository: samplePropertyBehaviorRepository,
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
@@ -210,6 +234,10 @@ export async function getRepository(): Promise<RepositoryContext> {
       omnixProposalRepository: sampleOmnixProposalRepository,
       nurturePlanRepository: sampleNurturePlanRepository,
       operationalSignalRepository: sampleOperationalSignalRepository,
+      affordabilityRepository: sampleAffordabilityRepository,
+      propertyRepository: samplePropertyRepository,
+      listingProviderRepository: sampleListingProviderRepository,
+      propertyBehaviorRepository: samplePropertyBehaviorRepository,
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
@@ -236,6 +264,10 @@ export async function getRepository(): Promise<RepositoryContext> {
     omnixProposalRepository: supabaseOmnixProposalRepository(supabase),
     nurturePlanRepository: supabaseNurturePlanRepository(supabase),
     operationalSignalRepository: supabaseOperationalSignalRepository(supabase),
+    affordabilityRepository: supabaseAffordabilityRepository(supabase),
+    propertyRepository: supabasePropertyRepository(supabase),
+    listingProviderRepository: supabaseListingProviderRepository(supabase),
+    propertyBehaviorRepository: supabasePropertyBehaviorRepository(supabase),
     richContactRepository: supabaseRichContactRepository(supabase, contactIdentityMap),
     workspaceScope,
     isLive: true,

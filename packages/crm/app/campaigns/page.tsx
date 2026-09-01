@@ -9,7 +9,7 @@ import { isCanonicalWorkspaceOwnerScope } from '@/lib/domain/workspace';
 import { createCampaignDraftAction, createInMailchimpAction, sendMailchimpCampaignAction,
   updateCampaignDraftAction } from './actions';
 
-export const metadata: Metadata = { title: 'Email campaigns · Omnix' };
+export const metadata: Metadata = { title: 'Email campaigns' };
 
 const STATE_LABELS = {
   draft: 'Draft in Omnix', create_approved: 'Creating in Mailchimp', created: 'Ready in Mailchimp',

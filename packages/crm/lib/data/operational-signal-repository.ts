@@ -1,4 +1,4 @@
-import type { CreateTransactionMilestoneInput, InboundResponseSignal, TransactionMilestone, TransactionMilestoneState } from '@/lib/domain/operational-signal';
+import type { CreateTransactionMilestoneInput, InboundResponseSignal, TransactionMilestone, TransitionTransactionMilestoneInput, UpdateTransactionMilestoneInput } from '@/lib/domain/operational-signal';
 import type { WorkspaceScope } from '@/lib/domain/workspace';
 
 export interface OperationalSignalRepository {
@@ -6,5 +6,6 @@ export interface OperationalSignalRepository {
   acknowledgeInbound(scope: WorkspaceScope, signalId: string, occurredAt: string): Promise<void>;
   listMilestones(scope: WorkspaceScope, options?: { openOnly?: boolean; limit?: number }): Promise<readonly TransactionMilestone[]>;
   createMilestone(scope: WorkspaceScope, input: CreateTransactionMilestoneInput, occurredAt: string): Promise<TransactionMilestone>;
-  transitionMilestone(scope: WorkspaceScope, milestoneId: string, expectedVersion: number, nextState: Exclude<TransactionMilestoneState, 'open'>, idempotencyKey: string, occurredAt: string): Promise<void>;
+  updateMilestone(scope: WorkspaceScope, input: UpdateTransactionMilestoneInput, occurredAt: string): Promise<TransactionMilestone>;
+  transitionMilestone(scope: WorkspaceScope, input: TransitionTransactionMilestoneInput, occurredAt: string): Promise<TransactionMilestone>;
 }

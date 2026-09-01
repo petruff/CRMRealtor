@@ -150,12 +150,13 @@ export function buildOperationalSignalProposals(
   const deadlineHorizon = now.getTime() + 14 * 86_400_000;
   const deadlines = milestones.flatMap((milestone) => {
     const contact = contactById.get(milestone.contactId);
-    if (!contact || contact.archivedAt || milestone.state !== 'open' || Date.parse(milestone.dueAt) > deadlineHorizon) return [];
-    const payload = { contactId: contact.id, transactionId: milestone.transactionId, title: `${milestone.label} · ${milestone.propertyAddress}`, dueAt: milestone.dueAt, sourceMilestoneId: milestone.id };
-    return [{ contactId: contact.id, transactionId: milestone.transactionId, kind: 'task-create' as const,
-      origin: 'deterministic' as const, approvalMode: 'active-member' as const,
+    if (!contact || contact.archivedAt || milestone.state !== 'open' || milestone.verificationState !== 'verified'
+      || Date.parse(milestone.dueAt) > deadlineHorizon) return [];
+    const payload = { contactId: contact.id, transactionId: milestone.transactionId, title: `${milestone.label} · ${milestone.propertyAddress}`, dueAt: milestone.dueAt, timezone: milestone.timezone, sourceMilestoneId: milestone.id, sourceReference: milestone.sourceReference };
+    return [{ contactId: contact.id, transactionId: milestone.transactionId, kind: 'google-calendar-event' as const,
+      origin: 'deterministic' as const, approvalMode: 'owner' as const,
       factors: { urgency: Date.parse(milestone.dueAt) <= now.getTime() ? 100 : 78, leadTemperature: contact.leadType, daysOverdue: milestoneDaysOverdue(milestone, now), awaitingReply: false, potentialValueCents: milestone.potentialValueCents },
-      title: milestone.label, rationale: `${milestone.propertyAddress} has a verified ${milestone.kind} deadline.`, payload,
+      title: milestone.label, rationale: `${milestone.propertyAddress} has a verified ${milestone.kind} deadline from ${milestone.sourceReference}. Calendar preparation still requires owner approval and a provider receipt.`, payload,
       contentHash: hashOmnixProposalPayload(payload), citations: [{ entityType: 'transaction' as const, recordId: milestone.transactionId, factKeys: ['milestoneKind', 'milestoneState', 'dueAt', 'grossCommissionCents'], sourceTimestamp: milestone.updatedAt, href: `/transactions#deadline-${milestone.id}` }],
       dueAt: milestone.dueAt, expiresAt: new Date(Math.max(Date.parse(milestone.dueAt) + 7 * 86_400_000, now.getTime() + 86_400_000)).toISOString(), correlationId: randomUUID(), idempotencyKey: `transaction-deadline:${milestone.id}:v${milestone.currentVersion}`, createdAt }];
   });

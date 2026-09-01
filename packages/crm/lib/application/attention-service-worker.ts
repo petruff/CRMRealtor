@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import { attentionMaterializationsFromAlerts } from './attention-commands.ts';
+import { attentionMaterializationsFromAlerts, attentionMaterializationsFromMilestones } from './attention-commands.ts';
 import { buildOmnixAlertResult } from './omnix-copilot-service.ts';
 import { resolveServerWorkspaceScope } from '../data/automation-context.ts';
 import { supabaseActivityRepository } from '../data/supabase-activity-repository.ts';
@@ -51,7 +51,21 @@ export async function reconcileConfiguredAttention(
     timeZone,
     historicalImportContactIds: new Set(importedEvents.flatMap((event) => event.contactId ? [event.contactId] : [])),
   });
-  const materializations = attentionMaterializationsFromAlerts(result.alerts);
+  const operationalSignals = supabaseOperationalSignalRepository(client);
+  let milestoneSignals = [] as Awaited<ReturnType<typeof operationalSignals.listMilestones>>;
+  try {
+    milestoneSignals = await operationalSignals.listMilestones(scope, { openOnly: true, limit: 1000 });
+  } catch (error) {
+    console.error(JSON.stringify({
+      schemaVersion: 'omnix-milestone-attention-error.v1', workspaceId: scope.workspaceId,
+      category: 'milestone-attention-unavailable',
+      message: error instanceof Error ? error.message : 'Milestone attention materialization failed.',
+    }));
+  }
+  const materializations = [
+    ...attentionMaterializationsFromAlerts(result.alerts),
+    ...attentionMaterializationsFromMilestones(milestoneSignals, now),
+  ];
   const fingerprint = createHash('sha256').update(JSON.stringify(materializations.map((item) => [
     item.occurrenceKey, item.sourceFingerprint,
   ]).sort(([left], [right]) => String(left).localeCompare(String(right))))).digest('hex');
@@ -67,10 +81,9 @@ export async function reconcileConfiguredAttention(
     | { availability: 'unavailable'; errorCategory: 'operational-brain-unavailable' };
   try {
     const proposalAutomation = supabaseOmnixProposalAutomationRepository(client);
-    const operationalSignals = supabaseOperationalSignalRepository(client);
     const [inboundResponses, milestones, nurturePlans] = await Promise.all([
       operationalSignals.listInbound(scope, { unacknowledgedOnly: true, limit: 500 }),
-      operationalSignals.listMilestones(scope, { openOnly: true, limit: 1000 }),
+      Promise.resolve(milestoneSignals),
       supabaseNurturePlanRepository(client).list(scope, { limit: 500 }),
     ]);
     const core = await materializeOmnixOperationalBrain(

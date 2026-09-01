@@ -10,6 +10,7 @@ import { getRepository } from '@/lib/data';
 import { PIPELINE_STAGE_ORDER } from '@/lib/domain/workspace-intelligence';
 import type { InsightAvailability } from '@/lib/domain/operating-insights';
 import { calculateTransactionMetrics, type RealEstateTransaction } from '@/lib/domain/transaction';
+import { calculateFinancialPortfolioMetrics, type TransactionFinancialAuthority } from '@/lib/domain/transaction-finance';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Insights' };
@@ -74,10 +75,14 @@ export default async function InsightsPage({
   const context = await getRepository();
   const report = await getOperatingInsights(context, { period: periodDays }, now);
   let transactions: readonly RealEstateTransaction[] = [];
+  let financialAuthorities: readonly TransactionFinancialAuthority[] = [];
   let transactionStatus: DisplayStatus = 'available';
   let transactionError: string | undefined;
   try {
-    transactions = await context.transactionRepository.list(context.workspaceScope);
+    [transactions, financialAuthorities] = await Promise.all([
+      context.transactionRepository.list(context.workspaceScope),
+      context.transactionRepository.listFinancials(context.workspaceScope),
+    ]);
   } catch (error) {
     transactionStatus = 'insufficient-evidence';
     transactionError = 'Financial data could not be loaded safely. No values were estimated; refresh or ask the developer to review the workspace connection.';
@@ -85,6 +90,9 @@ export default async function InsightsPage({
   }
   const transactionMetrics = transactionStatus === 'available'
     ? calculateTransactionMetrics(transactions, report.currentWindow.from, report.currentWindow.to)
+    : null;
+  const financialMetrics = transactionStatus === 'available'
+    ? calculateFinancialPortfolioMetrics(transactions, financialAuthorities, report.currentWindow.from.slice(0, 10), report.currentWindow.to.slice(0, 10))
     : null;
 
   const portfolioStatus = displayStatus(report.portfolio.status);
@@ -241,6 +249,7 @@ export default async function InsightsPage({
         : typeof params.message === 'string' ? params.message : 'The deal was not saved.'
       : transactionError,
     transactionMetrics,
+    financialMetrics,
     transactions: transactions.slice(0, 8),
     transactionContacts: [...report.contactDisplayNames.entries()]
       .map(([id, label]) => ({ id, label })).sort((left, right) => left.label.localeCompare(right.label)),

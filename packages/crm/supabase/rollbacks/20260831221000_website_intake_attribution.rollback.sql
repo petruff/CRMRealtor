@@ -1,0 +1,13 @@
+begin;
+drop function if exists public.fail_website_intake_submission(uuid,uuid,text,timestamptz);
+drop function if exists public.finalize_website_intake_submission(uuid,uuid,uuid,uuid,text,jsonb,jsonb,jsonb,timestamptz);
+drop function if exists public.review_website_intake_submission(uuid,uuid,jsonb,jsonb,jsonb,text,timestamptz);
+drop function if exists public.claim_website_intake_submission(uuid,text,text,text,text,text,text,timestamptz);
+drop function if exists public.configure_website_intake_endpoint(uuid,uuid,text,text,text[],integer,integer,uuid,timestamptz);
+drop table if exists public.website_response_slas;
+drop table if exists public.contact_consent_events;
+drop table if exists public.contact_attribution_events;
+drop table if exists public.website_intake_submissions;
+drop table if exists public.website_intake_endpoints;
+drop function if exists public.guard_website_intake_history();
+commit;

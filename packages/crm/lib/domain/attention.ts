@@ -6,7 +6,7 @@ export const ATTENTION_STATES = [
 ] as const;
 export type AttentionState = (typeof ATTENTION_STATES)[number];
 
-export const ATTENTION_SUBJECT_TYPES = ['contact', 'task', 'connection', 'workspace'] as const;
+export const ATTENTION_SUBJECT_TYPES = ['contact', 'task', 'transaction', 'connection', 'workspace'] as const;
 export type AttentionSubjectType = (typeof ATTENTION_SUBJECT_TYPES)[number];
 
 export const ATTENTION_TRANSITIONS = [

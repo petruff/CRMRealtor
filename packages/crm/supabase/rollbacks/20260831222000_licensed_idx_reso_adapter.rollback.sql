@@ -1,0 +1,10 @@
+begin;
+drop function if exists public.finalize_listing_sync(uuid,uuid,text,integer,integer,integer,timestamptz);
+drop function if exists public.record_listing_sync_change(uuid,uuid,text,uuid,text,text,timestamptz,timestamptz);
+drop function if exists public.claim_listing_sync(uuid,text,text,text,text,timestamptz);
+drop function if exists public.revoke_listing_provider_authority(uuid,uuid,uuid,text,timestamptz);
+drop function if exists public.configure_listing_provider_authority(uuid,uuid,text,text,text,text,text,timestamptz,timestamptz,text,text,integer,integer,integer,integer,boolean,timestamptz);
+drop table if exists public.licensed_listing_records;
+drop table if exists public.listing_sync_runs;
+drop table if exists public.listing_provider_authorities;
+commit;

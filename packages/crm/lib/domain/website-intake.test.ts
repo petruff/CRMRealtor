@@ -1,0 +1,10 @@
+import { describe, expect, it } from 'vitest';
+import { classifyWebsiteLead, validateWebsiteLeadPayload, websiteImportContact } from './website-intake';
+
+const payload = { submissionId:'lead-12345678',firstName:'Avery',lastName:'Buyer',email:'AVERY@example.com',intent:'buyer',requestedAction:'showing-request',timelineDays:14,preApproved:true,message:'I would like a tour.',attribution:{source:'instagram',medium:'social',campaign:'waterfront',formId:'property-interest',landingPage:'https://example.com/listings/123#form'},consent:{email:'granted',sms:'unknown',phone:'granted',policyVersion:'privacy-2026-08'} };
+
+describe('website lead intake domain',()=>{
+  it('normalizes a bounded payload and keeps exact attribution plus consent',()=>{const value=validateWebsiteLeadPayload(payload);expect(value).toMatchObject({email:'avery@example.com',attribution:{source:'instagram',landingPage:'https://example.com/listings/123'},consent:{email:'granted',sms:'unknown'}});});
+  it('classifies deterministic intent without inventing a stage',()=>{const value=validateWebsiteLeadPayload(payload);const result=classifyWebsiteLead(value);expect(result).toEqual({policyVersion:'omnix.website-intake.v1',leadType:'hot',qualificationStatus:'qualified',reasons:['showing-requested']});expect(websiteImportContact(value,result)).toMatchObject({source:'website',leadType:'hot',pipelineStage:'new',emailSubscribed:true});});
+  it('uses needs-qualification when intent is unknown and rejects unsafe input',()=>{const value=validateWebsiteLeadPayload({...payload,intent:'unknown',requestedAction:'general-inquiry',timelineDays:undefined,preApproved:false});expect(classifyWebsiteLead(value)).toMatchObject({leadType:'nurture',qualificationStatus:'needs-qualification'});expect(()=>validateWebsiteLeadPayload({...payload,attribution:{...payload.attribution,landingPage:'javascript:alert(1)'}})).toThrow(/HTTPS/);expect(()=>validateWebsiteLeadPayload({...payload,email:undefined,phone:undefined})).toThrow(/Email or phone/);});
+});

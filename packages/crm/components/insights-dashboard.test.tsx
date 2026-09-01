@@ -45,12 +45,24 @@ const MODEL: InsightsDashboardModel = {
     activeForecastGciCents: 900000, averageSalePriceCents: 42500000,
     sourceMetrics: [{ source: 'referral', deals: 1, volumeCents: 42500000, netIncomeCents: 750000, marketingCostCents: 20000, roiPercentage: 3750 }],
   },
+  financialMetrics: {
+    booked: { deals: 1, volumeCents: 42500000, gciCents: 1275000, netCommissionCents: 820000, expensesCents: 70000, netIncomeCents: 750000 },
+    activeForecast: { deals: 1, gciCents: 900000, assumption: 'unweighted-verified-gci' },
+    excluded: { lostOrCancelled: 0, incomplete: 0, unverified: 0, contradictory: 0 },
+    contributors: [{
+      transactionId: 'transaction-1', transactionTitle: 'Morgan sale', source: 'referral', status: 'closed',
+      effectiveDate: '2026-08-20', volumeCents: 42500000, gciCents: 1275000, netCommissionCents: 820000,
+      expensesCents: 70000, netIncomeCents: 750000, verificationState: 'verified', missing: [],
+    }],
+  },
   transactions: [{
     id: 'transaction-1', workspaceId: 'workspace-live', contactId: '00000000-0000-4000-8000-000000000001',
-    contactName: 'Morgan Ellis', status: 'closed', side: 'seller', propertyAddress: '123 Main Street',
+    contactName: 'Morgan Ellis', kind: 'seller', kindVerified: true, title: 'Morgan sale',
+    status: 'closed', side: 'seller', propertyAddress: '123 Main Street',
     source: 'referral', closedAt: '2026-08-20', salePriceCents: 42500000,
     grossCommissionCents: 1275000, netCommissionCents: 820000, marketingCostCents: 20000,
-    expenseCents: 50000, createdByMembershipId: 'membership-live',
+    expenseCents: 50000, responsibleMembershipId: 'membership-live', version: 1,
+    createdByMembershipId: 'membership-live',
     createdAt: '2026-08-20T15:00:00.000Z', updatedAt: '2026-08-20T15:00:00.000Z',
   }],
   transactionContacts: [{ id: '00000000-0000-4000-8000-000000000001', label: 'Morgan Ellis' }],
@@ -187,8 +199,9 @@ describe('Insights dashboard', () => {
     render(<InsightsDashboard model={MODEL} />);
     expect(screen.getByRole('heading', { name: 'The financial pulse of the business.' })).toBeInTheDocument();
     expect(screen.getAllByText('$425,000')).toHaveLength(2);
-    expect(screen.getByRole('button', { name: 'Save verified deal' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save verified transaction' })).toBeEnabled();
     expect(screen.getByRole('combobox', { name: 'Contact' })).toHaveValue('');
+    expect(screen.getByRole('combobox', { name: 'Type' })).toHaveValue('buyer');
   });
 
   it('withholds finance when the verified ledger read fails', () => {

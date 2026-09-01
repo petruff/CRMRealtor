@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { createTransactionAction } from '@/app/insights/actions';
 import type { RealEstateTransaction, TransactionMetrics } from '@/lib/domain/transaction';
+import type { FinancialPortfolioMetrics } from '@/lib/domain/transaction-finance';
 import {
   InsightsContributorExplorer,
   type InsightsDrilldownView,
@@ -70,6 +71,7 @@ export interface InsightsDashboardModel {
   transactionStatus: DisplayStatus;
   transactionMessage?: string;
   transactionMetrics: TransactionMetrics | null;
+  financialMetrics: FinancialPortfolioMetrics | null;
   transactions: readonly RealEstateTransaction[];
   transactionContacts: readonly { id: string; label: string }[];
   coverage: {
@@ -227,33 +229,36 @@ export function InsightsDashboard({ model }: { model: InsightsDashboardModel }) 
     <section id="transaction-intelligence" className="insights-transactions" aria-labelledby="transaction-intelligence-title">
       <div className="insights-section-heading"><div><p className="eyebrow">Transaction intelligence</p><h2 id="transaction-intelligence-title">The financial pulse of the business.</h2></div><p><CircleDollarSign className="size-4" aria-hidden /> Live workspace ledger · selected {model.periodDays}-day close period</p></div>
       {model.transactionMessage ? <p className={model.transactionStatus === 'available' ? 'insights-transaction-message' : 'insights-coverage-warning'} role="status">{model.transactionMessage}</p> : null}
-      {model.transactionStatus === 'insufficient-evidence' || !model.transactionMetrics ? <div className="insights-coverage-warning" role="status"><ShieldCheck className="size-5" aria-hidden /><div><strong>Financial ledger needs its database update</strong><p>Metrics remain withheld until the verified transaction schema is available in this workspace.</p></div></div> : <>
+      {model.transactionStatus === 'insufficient-evidence' || !model.transactionMetrics || !model.financialMetrics ? <div className="insights-coverage-warning" role="status"><ShieldCheck className="size-5" aria-hidden /><div><strong>Financial ledger needs its database update</strong><p>Metrics remain withheld until the sourced financial authority is available in this workspace.</p></div></div> : <>
         <div className="insights-financial-grid" aria-label="Verified financial metrics">
-          <article className="is-primary"><span>Closed volume</span><strong>{currency(model.transactionMetrics.closedVolumeCents)}</strong><small>{model.transactionMetrics.closedDeals} closed {model.transactionMetrics.closedDeals === 1 ? 'deal' : 'deals'}</small></article>
-          <article><span>Gross commission</span><strong>{currency(model.transactionMetrics.grossCommissionCents)}</strong><small>GCI from closed deals</small></article>
-          <article><span>Net commission</span><strong>{currency(model.transactionMetrics.netCommissionCents)}</strong><small>Explicitly recorded net</small></article>
-          <article><span>Tracked expenses</span><strong>{currency(model.transactionMetrics.trackedExpensesCents)}</strong><small>Marketing + deal costs</small></article>
-          <article className={model.transactionMetrics.netIncomeCents < 0 ? 'is-negative' : 'is-positive'}><span>Net income</span><strong>{currency(model.transactionMetrics.netIncomeCents)}</strong><small>Net commission − tracked costs</small></article>
-          <article><span>Active GCI forecast</span><strong>{currency(model.transactionMetrics.activeForecastGciCents)}</strong><small>Pending + under contract, unweighted</small></article>
+          <article className="is-primary"><span>Verified closed volume</span><strong>{currency(model.financialMetrics.booked.volumeCents)}</strong><small>{model.financialMetrics.booked.deals} complete booked {model.financialMetrics.booked.deals === 1 ? 'deal' : 'deals'}</small></article>
+          <article><span>Verified GCI</span><strong>{currency(model.financialMetrics.booked.gciCents)}</strong><small>Closed, in-period, sourced records only</small></article>
+          <article><span>Verified net commission</span><strong>{currency(model.financialMetrics.booked.netCommissionCents)}</strong><small>Separate from brokerage split and referral fee</small></article>
+          <article><span>Tracked expenses</span><strong>{currency(model.financialMetrics.booked.expensesCents)}</strong><small>Marketing + other sourced costs</small></article>
+          <article className={model.financialMetrics.booked.netIncomeCents < 0 ? 'is-negative' : 'is-positive'}><span>Net income</span><strong>{currency(model.financialMetrics.booked.netIncomeCents)}</strong><small>Operational view, not tax or accounting advice</small></article>
+          <article><span>Active GCI forecast</span><strong>{currency(model.financialMetrics.activeForecast.gciCents)}</strong><small>{model.financialMetrics.activeForecast.deals} active · unweighted verified GCI</small></article>
         </div>
+        {(model.financialMetrics.excluded.incomplete || model.financialMetrics.excluded.unverified || model.financialMetrics.excluded.contradictory) ? <div className="insights-coverage-warning" role="status"><ShieldCheck className="size-5" aria-hidden/><div><strong>Some financial records are excluded from booked truth</strong><p>{model.financialMetrics.excluded.incomplete} incomplete · {model.financialMetrics.excluded.unverified} unverified · {model.financialMetrics.excluded.contradictory} contradictory. Open Transactions to reconcile the exact source.</p></div></div> : null}
         <div className="insights-transaction-grid">
           <div className="insights-transaction-ledger">
             <div className="insights-panel-heading"><span><BriefcaseBusiness className="size-5" aria-hidden /></span><div><p className="eyebrow">Deal ledger</p><h3>Recent transactions</h3></div></div>
-            {model.transactions.length ? <div className="insights-deal-list">{model.transactions.map((transaction) => <article key={transaction.id}><div><strong>{transaction.contactName}</strong><span>{transaction.propertyAddress}</span></div><div><span className={`insights-deal-status is-${transaction.status}`}>{titleCase(transaction.status)}</span><strong>{currency(transaction.salePriceCents)}</strong><small>{titleCase(transaction.side)} · {titleCase(transaction.source)}</small></div></article>)}</div> : <div className="insights-empty-deals"><CircleDollarSign className="size-7" aria-hidden /><strong>No deals recorded yet</strong><p>Add the first transaction. Verified zeroes are already live; every saved deal updates this view immediately.</p></div>}
-            {model.transactionMetrics.sourceMetrics.length ? <div className="insights-source-roi"><h3>Source return</h3>{model.transactionMetrics.sourceMetrics.map((source) => <article key={source.source}><div><strong>{titleCase(source.source)}</strong><span>{source.deals} closed · {currency(source.volumeCents)} volume</span></div><div><strong>{source.roiPercentage === null ? 'ROI —' : `${source.roiPercentage}% ROI`}</strong><span>{source.roiPercentage === null ? 'Add marketing cost to calculate' : `${currency(source.netIncomeCents)} net income`}</span></div></article>)}</div> : null}
+            {model.transactions.length ? <div className="insights-deal-list">{model.transactions.map((transaction) => <article key={transaction.id}><div><strong>{transaction.title}</strong><span>{transaction.contactName} · {transaction.propertyAddress}</span></div><div><span className={`insights-deal-status is-${transaction.status}`}>{titleCase(transaction.status)}</span><strong>{currency(transaction.salePriceCents)}</strong><small>{transaction.kindVerified ? titleCase(transaction.kind) : 'Type needs review'} · {titleCase(transaction.side)} · {titleCase(transaction.source)}</small></div></article>)}</div> : <div className="insights-empty-deals"><CircleDollarSign className="size-7" aria-hidden /><strong>No transactions recorded yet</strong><p>Add the first transaction. Verified zeroes are already live; every saved transaction updates this view immediately.</p></div>}
+            {model.financialMetrics.contributors.length ? <div className="insights-source-roi"><h3>Exact financial contributors</h3>{model.financialMetrics.contributors.slice(0, 12).map((row) => <article key={row.transactionId}><div><strong>{row.transactionTitle}</strong><span>{titleCase(row.status)} · {titleCase(row.source)} · {row.effectiveDate}</span></div><div><strong>{row.netIncomeCents === undefined ? 'Net income unknown' : currency(row.netIncomeCents)}</strong><span>{row.verificationState}{row.missing.length ? ` · ${row.missing.length} fields missing` : ' · complete'}</span></div></article>)}</div> : null}
           </div>
           <form action={createTransactionAction} className="insights-deal-form">
-            <div><p className="eyebrow">Verified entry</p><h3>Add a deal</h3><p>Amounts are stored as exact USD cents. Under-contract and closed deals also move the linked contact in Pipeline.</p></div>
+            <div><p className="eyebrow">Verified entry</p><h3>Add a transaction</h3><p>Amounts are stored as exact USD cents. Transaction status stays separate from the contact relationship and Pipeline.</p></div>
             <input type="hidden" name="period" value={model.periodDays} />
             <input type="hidden" name="idempotencyKey" value={transactionIdempotencyKey} />
             <label>Contact<select className="sk-input" name="contactId" required defaultValue=""><option value="" disabled>Select a contact</option>{model.transactionContacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.label}</option>)}</select></label>
-            <div className="insights-deal-form-row"><label>Status<select className="sk-input" name="status" defaultValue="under-contract"><option value="pending">Pending</option><option value="under-contract">Under contract</option><option value="closed">Closed</option><option value="lost">Lost</option><option value="cancelled">Cancelled</option></select></label><label>Side<select className="sk-input" name="side" defaultValue="buyer"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="dual">Dual</option><option value="referral">Referral</option></select></label></div>
+            <label>Transaction name<input className="sk-input" name="title" maxLength={120} required placeholder="Joan's Palm City purchase" /></label>
+            <div className="insights-deal-form-row"><label>Type<select className="sk-input" name="kind" defaultValue="buyer"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="listing">Listing</option><option value="lease">Lease</option><option value="referral">Referral</option></select></label><label>Status<select className="sk-input" name="status" defaultValue="under-contract"><option value="pending">Pending</option><option value="under-contract">Under contract</option><option value="closed">Closed</option><option value="lost">Lost</option><option value="cancelled">Cancelled</option></select></label></div>
+            <label>Representation side<select className="sk-input" name="side" defaultValue="buyer"><option value="buyer">Buyer</option><option value="seller">Seller</option><option value="dual">Dual</option><option value="referral">Referral</option></select></label>
             <label>Property address<input className="sk-input" name="propertyAddress" maxLength={240} required placeholder="123 Main Street, City, State" /></label>
             <div className="insights-deal-form-row"><label>Expected close<input className="sk-input" type="date" name="expectedCloseDate" /></label><label>Closed date<input className="sk-input" type="date" name="closedAt" /></label></div>
             <div className="insights-deal-form-row"><label>Sale price<input className="sk-input" inputMode="decimal" name="salePrice" placeholder="$0" /></label><label>Gross commission (GCI)<input className="sk-input" inputMode="decimal" name="grossCommission" placeholder="$0" /></label></div>
             <div className="insights-deal-form-row"><label>Net commission<input className="sk-input" inputMode="decimal" name="netCommission" placeholder="$0" /></label><label>Marketing cost<input className="sk-input" inputMode="decimal" name="marketingCost" placeholder="$0" /></label></div>
             <label>Other deal expenses<input className="sk-input" inputMode="decimal" name="expenses" placeholder="$0" /></label>
-            <button className="sk-primary-button min-h-11" type="submit" disabled={!model.transactionContacts.length}>Save verified deal</button>
+            <button className="sk-primary-button min-h-11" type="submit" disabled={!model.transactionContacts.length}>Save verified transaction</button>
           </form>
         </div>
       </>}

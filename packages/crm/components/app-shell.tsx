@@ -21,6 +21,7 @@ import {
   LogOut,
   Users,
   Ellipsis,
+  House,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -51,6 +52,7 @@ const BUSINESS_NAV = [
 const OPERATIONS_NAV = [
   { href: "/nurture", label: "Nurture", icon: CalendarClock },
   { href: "/transactions", label: "Transactions", icon: BriefcaseBusiness },
+  { href: "/properties", label: "Properties", icon: House },
   { href: "/campaigns", label: "Campaigns", icon: Mail },
   { href: "/mailers", label: "Mailers", icon: Send },
   { href: "/connections", label: "Connections", icon: Plug },
@@ -58,7 +60,7 @@ const OPERATIONS_NAV = [
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-const MOBILE_NAV = [...CORE_NAV, BUSINESS_NAV[4], OPERATIONS_NAV[3]] as const;
+const MOBILE_NAV = [...CORE_NAV, BUSINESS_NAV[4], OPERATIONS_NAV[4]] as const;
 const ALL_NAV = [...CORE_NAV, ...BUSINESS_NAV, ...OPERATIONS_NAV] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -233,6 +235,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
               <Link href="/transactions" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/transactions") ? "page" : undefined}>
                 <BriefcaseBusiness className="size-[18px]" aria-hidden /> Transactions
+              </Link>
+              <Link href="/properties" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/properties") ? "page" : undefined}>
+                <House className="size-[18px]" aria-hidden /> Properties
               </Link>
               <Link href="/mailers" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/mailers") ? "page" : undefined}>
                 <Send className="size-[18px]" aria-hidden /> Mailers

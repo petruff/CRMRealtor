@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   ArrowLeft,
   Phone,
@@ -65,8 +66,13 @@ import {
   supabaseTwilioOperationRepository,
   type TwilioReadinessState,
 } from "@/lib/data/twilio-operation-repository";
+import { projectOmnichannelTimeline } from "@/lib/application/omnichannel-timeline";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Contact relationship",
+  description: "Review one contact's follow-up, consent, source, and relationship history in Omnix.",
+};
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
@@ -75,6 +81,10 @@ function Fact({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 text-[15px] text-ink">{value}</dd>
     </div>
   );
+}
+
+function deadlineDay(value: string, timezone: string): string {
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: timezone }).format(new Date(value));
 }
 
 function savedMessage(saved?: string): string | undefined {
@@ -119,7 +129,7 @@ export default async function ContactDetailPage({
     repository.notesFor(id),
     repository.notesFor(id, { archivedOnly: true }),
   ]);
-  const [events, tasks, allContacts, members] = await Promise.all([
+  const [events, tasks, allContacts, members, contactMilestones, propertyBehaviors] = await Promise.all([
     listActivityEventsCommand(activityRepository, workspaceScope, {
       contactId: id,
       limit: 100,
@@ -131,6 +141,9 @@ export default async function ContactDetailPage({
     }),
     repository.list({ includeArchived: true }),
     workspaceRepository.listMemberships(workspaceScope),
+    repositoryContext.operationalSignalRepository.listMilestones(workspaceScope, { limit: 1000 })
+      .then((rows) => rows.filter((milestone) => milestone.contactId === id)),
+    repositoryContext.propertyBehaviorRepository.listBehaviors(workspaceScope, { contactId: id }),
   ]);
   const richData = richContactRepository ? await Promise.all([
     listContactPointsCommand(richContactRepository, workspaceScope, id, true),
@@ -181,6 +194,20 @@ export default async function ContactDetailPage({
       textingSummary = undefined;
     }
   }
+  let attributions: { id:string;touchType:string;source:string;medium?:string;campaign?:string;occurredAt:string }[] = [];
+  let websiteConsents: { id:string;channel:'email'|'sms'|'phone';state:string;occurredAt:string;policyVersion:string }[] = [];
+  let responseSlas: { id:string;status:string;dueAt:string;createdAt:string }[] = [];
+  if (repositoryContext.isLive) {
+    const evidenceClient = await createSupabaseServerClient();
+    const [attributionResult,consentResult,responseResult] = await Promise.all([
+      evidenceClient.from('contact_attribution_events').select('id,touch_type,source,medium,campaign,occurred_at').eq('workspace_id',workspaceScope.workspaceId).eq('contact_id',id).order('occurred_at',{ascending:false}).limit(100),
+      evidenceClient.from('contact_consent_events').select('id,channel,consent_state,policy_version,occurred_at').eq('workspace_id',workspaceScope.workspaceId).eq('contact_id',id).order('occurred_at',{ascending:false}).limit(100),
+      evidenceClient.from('website_response_slas').select('id,status,due_at,created_at').eq('workspace_id',workspaceScope.workspaceId).eq('contact_id',id).order('created_at',{ascending:false}).limit(50),
+    ]);
+    attributions=(attributionResult.data??[]).map((row)=>({id:String(row.id),touchType:String(row.touch_type),source:String(row.source),...(typeof row.medium==='string'?{medium:row.medium}:{}),...(typeof row.campaign==='string'?{campaign:row.campaign}:{}),occurredAt:String(row.occurred_at)}));
+    websiteConsents=(consentResult.data??[]).filter((row)=>['email','sms','phone'].includes(String(row.channel))).map((row)=>({id:String(row.id),channel:String(row.channel) as 'email'|'sms'|'phone',state:String(row.consent_state),occurredAt:String(row.occurred_at),policyVersion:String(row.policy_version)}));
+    responseSlas=(responseResult.data??[]).map((row)=>({id:String(row.id),status:String(row.status),dueAt:String(row.due_at),createdAt:String(row.created_at)}));
+  }
   let householdViews: HouseholdView[] = [];
   if (richContactRepository && richData) {
     householdViews = await Promise.all(richData[1].map(async (household) => ({
@@ -215,6 +242,7 @@ export default async function ContactDetailPage({
   const notice = savedMessage(saved);
   const noteAction = addContactNoteAction.bind(null, id);
   const touchAction = recordContactTouchAction.bind(null, id);
+  const omnichannelTimeline = projectOmnichannelTimeline({events,textMessages:textingSummary?.messages??[],...(textingSummary?.consent?{textingConsent:{status:textingSummary.consent.status,effectiveAt:textingSummary.consent.effectiveAt}}:{}),propertyBehaviors,attributions,consents:websiteConsents,responseSlas,pipelineStage:contact.pipelineStage,contactCreatedAt:contact.createdAt,now});
 
   return (
     <div>
@@ -341,6 +369,25 @@ export default async function ContactDetailPage({
         </section>
       </GroupedSurface>
 
+      {contactMilestones.length ? (
+        <GroupedSurface className="mt-4">
+          <section className="bg-surface p-5 sm:p-6" aria-labelledby="contact-deadlines-title">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div><p className="eyebrow">Transaction dates</p><h2 id="contact-deadlines-title" className="mt-1 font-display text-2xl text-ink">Sourced deadlines</h2></div>
+              <Link href="/transactions" className="sk-text-action">Open transaction cockpit</Link>
+            </div>
+            <ul className="mt-4 grid gap-2">
+              {contactMilestones.slice(0, 8).map((milestone) => (
+                <li key={milestone.id} className="rounded-xl border border-line bg-surface-2 p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2"><div><strong className="text-sm text-ink">{milestone.label}</strong><p className="mt-1 text-xs text-muted">{milestone.sourceReference} · {milestone.verificationState}</p></div><span className="text-xs font-medium text-ink">{deadlineDay(milestone.dueAt, milestone.timezone)}</span></div>
+                </li>
+              ))}
+            </ul>
+            {contactMilestones.length > 8 ? <p className="mt-3 text-xs text-muted">Showing 8 of {contactMilestones.length} deadlines. Open Transactions for the complete history.</p> : null}
+          </section>
+        </GroupedSurface>
+      ) : null}
+
       {/* Dates worth remembering */}
       {(contact.birthdate || contact.homePurchaseDate) && (
         <GroupedSurface className="mt-4 grid gap-px sm:grid-cols-2">
@@ -466,7 +513,7 @@ export default async function ContactDetailPage({
         <p role="status" className="mt-8 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-muted">Rich relationship data is not available in this workspace yet.</p>
       )}
 
-      <ContactActivityHistory events={events} tasks={tasks} />
+      <ContactActivityHistory events={events} tasks={tasks} timeline={omnichannelTimeline} />
 
       {/* Notes — she said this was her favourite thing about the old CRM. */}
       <section id="notes" className="mt-10 scroll-mt-24">
