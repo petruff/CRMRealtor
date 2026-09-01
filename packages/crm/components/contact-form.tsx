@@ -33,6 +33,7 @@ interface ContactFormProps {
   referralOptions: ReferralOption[];
   cancelHref: string;
   submitLabel: string;
+  nextContactName?: string;
 }
 
 function errorId(name: string) {
@@ -100,10 +101,24 @@ function SelectField({
   );
 }
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton({
+  label,
+  intent = 'save',
+  secondary = false,
+}: {
+  label: string;
+  intent?: 'save' | 'save-next';
+  secondary?: boolean;
+}) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className="sk-primary-button min-w-32">
+    <button
+      type="submit"
+      name="reviewAction"
+      value={intent}
+      disabled={pending}
+      className={`${secondary ? 'sk-secondary-button' : 'sk-primary-button'} min-w-32 justify-center`}
+    >
       {pending ? 'Saving…' : label}
     </button>
   );
@@ -125,6 +140,7 @@ export function ContactForm({
   referralOptions,
   cancelHref,
   submitLabel,
+  nextContactName,
 }: ContactFormProps) {
   const [state, formAction] = useActionState(action, INITIAL_CONTACT_ACTION_STATE);
   const fieldError = (name: string) => state.fieldErrors?.[name];
@@ -135,6 +151,10 @@ export function ContactForm({
   const [relationship, setRelationship] = useState(initialRelationship);
   const [leadType, setLeadType] = useState(
     valueFor('leadType', contact?.relationship === 'past-client' ? '' : (contact?.leadType ?? 'warm')) as string,
+  );
+  const [email, setEmail] = useState(String(valueFor('email', contact?.email) ?? ''));
+  const [emailSubscribed, setEmailSubscribed] = useState(
+    state.values ? state.values.emailSubscribed === 'on' : (contact?.emailSubscribed ?? true),
   );
 
   return (
@@ -154,7 +174,7 @@ export function ContactForm({
           <TextField label="First name" name="firstName" autoComplete="given-name" defaultValue={valueFor('firstName', contact?.firstName)} error={fieldError('firstName')} />
           <TextField label="Last name" name="lastName" autoComplete="family-name" defaultValue={valueFor('lastName', contact?.lastName)} error={fieldError('lastName')} />
           <TextField label="Phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" defaultValue={valueFor('phone', contact?.phone)} error={fieldError('phone')} />
-          <TextField label="Email (optional)" name="email" type="email" inputMode="email" autoComplete="email" defaultValue={valueFor('email', contact?.email)} hint="Leave blank when no email is available." error={fieldError('email')} />
+          <TextField label="Email (optional)" name="email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} hint="Leave blank when no email is available." error={fieldError('email')} />
           <SelectField
             label="Relationship"
             name="relationship"
@@ -192,7 +212,7 @@ export function ContactForm({
       <details className="sk-form-section" open>
         <summary>CRM details</summary>
         <div className="grid gap-4 border-t border-line p-5 sm:grid-cols-2 sm:p-6">
-          <TextField label="Preferred name" name="preferredName" autoComplete="nickname" defaultValue={valueFor('preferredName', contact?.preferredName)} error={fieldError('preferredName')} />
+          <TextField label="Preferred name" name="preferredName" defaultValue={valueFor('preferredName', contact?.preferredName)} error={fieldError('preferredName')} />
           <TextField label="Secondary phone" name="secondaryPhone" type="tel" inputMode="tel" defaultValue={valueFor('secondaryPhone', contact?.secondaryPhone)} error={fieldError('secondaryPhone')} />
           <SelectField label="Intent" name="intent" defaultValue={valueFor('intent', contact?.intent ?? 'unknown')} error={fieldError('intent')}>
             {INTENTS.map((entry) => <option key={entry} value={entry}>{INTENT_LABEL[entry]}</option>)}
@@ -209,10 +229,17 @@ export function ContactForm({
           </SelectField>
           <TextField label="Tags" name="tags" defaultValue={valueFor('tags', contact?.tags.join(', '))} placeholder="VIP, first-time buyer" hint="Separate tags with commas." error={fieldError('tags')} />
           <label className="flex min-h-11 items-center gap-3 sm:col-span-2">
-            <input name="emailSubscribed" type="checkbox" defaultChecked={state.values ? state.values.emailSubscribed === 'on' : (contact?.emailSubscribed ?? true)} className="size-5 accent-accent" />
+            <input
+              name="emailSubscribed"
+              type="checkbox"
+              checked={Boolean(email.trim()) && emailSubscribed}
+              disabled={!email.trim()}
+              onChange={(event) => setEmailSubscribed(event.currentTarget.checked)}
+              className="size-5 accent-accent"
+            />
             <span>
               <span className="block text-sm font-medium text-ink">Subscribed to email</span>
-              <span className="block text-xs text-muted">Keep this off for anyone who has opted out.</span>
+              <span className="block text-xs text-muted">{email.trim() ? 'Keep this off for anyone who has opted out.' : 'Add an email address before enabling email subscription.'}</span>
             </span>
           </label>
         </div>
@@ -280,10 +307,16 @@ export function ContactForm({
         </div>
       </details>
 
-      <div className="flex items-center justify-end gap-5 rounded-2xl border border-line bg-surface px-4 py-3">
-        <Link href={cancelHref} className="sk-text-action">Cancel</Link>
-        <SubmitButton label={submitLabel} />
+      <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-end">
+        <Link href={cancelHref} className="sk-text-action self-center sm:mr-auto">Cancel</Link>
+        <SubmitButton label={submitLabel} secondary={Boolean(nextContactName)} />
+        {nextContactName ? (
+          <SubmitButton label="Save & review next" intent="save-next" />
+        ) : null}
       </div>
+      {nextContactName ? (
+        <p className="px-1 text-right text-xs text-muted">Next in this view: {nextContactName}</p>
+      ) : null}
     </form>
   );
 }

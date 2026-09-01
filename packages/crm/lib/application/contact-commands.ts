@@ -288,6 +288,7 @@ export function parseContactForm(formData: FormData): EditableContactFields {
   }
 
   const relationship = oneOf(formData, 'relationship', RELATIONSHIPS);
+  const email = emailValue(formData);
   const requestedLeadType = optionalOneOf(formData, 'leadType', LEAD_TYPES);
   if (relationship !== 'past-client' && !requestedLeadType) {
     throw new ContactCommandError('Review the highlighted fields.', {
@@ -301,7 +302,7 @@ export function parseContactForm(formData: FormData): EditableContactFields {
     preferredName: optional(formData, 'preferredName'),
     phone: optional(formData, 'phone'),
     secondaryPhone: optional(formData, 'secondaryPhone'),
-    email: emailValue(formData),
+    email,
     mailingAddress: optional(formData, 'mailingAddress'),
     city: optional(formData, 'city'),
     state: optional(formData, 'state'),
@@ -322,7 +323,7 @@ export function parseContactForm(formData: FormData): EditableContactFields {
     referredById: optional(formData, 'referredById'),
     nextTouchAt: dateValue(formData, 'nextTouchAt'),
     tags: commaList(optional(formData, 'tags')),
-    emailSubscribed: formData.get('emailSubscribed') === 'on',
+    emailSubscribed: Boolean(email) && formData.get('emailSubscribed') === 'on',
   };
 }
 

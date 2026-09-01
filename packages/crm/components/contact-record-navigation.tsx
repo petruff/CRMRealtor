@@ -20,18 +20,24 @@ function DisabledDirection({ direction }: { direction: 'Previous' | 'Next' }) {
 }
 
 export function ContactRecordNavigator({ navigation }: { navigation: ContactRecordNavigation }) {
-  const label = navigation.scope === 'past-clients'
+  const label = navigation.context.archived
+    ? 'archived contacts'
+    : navigation.context.scope === 'past-clients'
     ? 'past clients'
-    : navigation.scope === 'active-clients'
+    : navigation.context.scope === 'active-clients'
       ? 'active clients'
-      : navigation.scope === 'archived'
-        ? 'archived contacts'
-        : 'working leads';
+      : navigation.context.scope === 'needs-review'
+        ? 'contacts to review'
+        : navigation.context.scope === 'clients'
+          ? 'clients'
+          : navigation.context.scope === 'all'
+            ? 'contacts'
+            : 'working leads';
   return (
     <nav aria-label="Browse contact records" className="flex flex-wrap items-center justify-end gap-2">
       {navigation.previous ? (
         <Link
-          href={contactRecordHref(navigation.previous.id, navigation.scope)}
+          href={contactRecordHref(navigation.previous.id, navigation.context)}
           className="sk-secondary-button px-3"
           aria-label={`Previous contact: ${displayName(navigation.previous)}`}
         >
@@ -39,11 +45,13 @@ export function ContactRecordNavigator({ navigation }: { navigation: ContactReco
         </Link>
       ) : <DisabledDirection direction="Previous" />}
       <span className="min-w-24 text-center text-xs tabular-nums text-muted" aria-live="polite">
-        {navigation.position} of {navigation.total} {label}
+        {navigation.currentMatches
+          ? `${navigation.position} of ${navigation.total} ${label}`
+          : `Complete · ${navigation.total} ${label} remaining`}
       </span>
       {navigation.next ? (
         <Link
-          href={contactRecordHref(navigation.next.id, navigation.scope)}
+          href={contactRecordHref(navigation.next.id, navigation.context)}
           className="sk-secondary-button px-3"
           aria-label={`Next contact: ${displayName(navigation.next)}`}
         >

@@ -223,6 +223,7 @@ describe('contact commands', () => {
     );
 
     expect(updated.email).toBeUndefined();
+    expect(updated.emailSubscribed).toBe(false);
   });
 
   it('keeps past clients out of lead priority while preserving the legacy enum contract', async () => {

@@ -42,7 +42,13 @@ import {
 } from "@/app/contact-actions";
 import { ContactActivityHistory } from "@/components/contact-activity-history";
 import { ContactRecordNavigator } from "@/components/contact-record-navigation";
-import { contactListHref, contactRecordNavigation } from "@/lib/application/contact-navigation";
+import {
+  contactBrowseSequence,
+  contactEditHref,
+  contactListHref,
+  contactRecordNavigation,
+  parseContactBrowseContext,
+} from "@/lib/application/contact-navigation";
 import {
   listActivityEventsCommand,
   listTasksCommand,
@@ -108,14 +114,24 @@ export default async function ContactDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string; view?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    view?: string;
+    scope?: string;
+    q?: string;
+    leadType?: string;
+    source?: string;
+    smartList?: string;
+    page?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { saved, view } = await searchParams;
+  const browseParams = await searchParams;
+  const { saved, view } = browseParams;
   const now = new Date();
 
   const repositoryContext = await getRepository();
-  const { repository, activityRepository, workspaceScope, workspaceRepository } = repositoryContext;
+  const { repository, activityRepository, workspaceScope, workspaceRepository, smartListRepository } = repositoryContext;
   const contact = await repository.get(id);
   if (!contact) notFound();
   const archived = Boolean(contact.archivedAt);
@@ -218,8 +234,17 @@ export default async function ContactDetailPage({
     })));
   }
 
+  const browseContext = parseContactBrowseContext(browseParams, contact);
+  const smartList = browseContext.smartList
+    ? await smartListRepository.get(workspaceScope, browseContext.smartList)
+    : undefined;
+  const browseSequence = contactBrowseSequence(
+    allContacts,
+    browseContext,
+    smartList?.status === "active" ? smartList.definition : undefined,
+  );
   const name = displayName(contact);
-  const recordNavigation = contactRecordNavigation(allContacts, contact);
+  const recordNavigation = contactRecordNavigation(browseSequence, contact, browseContext);
   const money = (n?: number) =>
     n === undefined ? undefined : `$${n.toLocaleString("en-US")}`;
 
@@ -250,7 +275,7 @@ export default async function ContactDetailPage({
   return (
     <div>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link href={contactListHref(recordNavigation.scope)} className="sk-text-action self-start">
+        <Link href={contactListHref(recordNavigation.context)} className="sk-text-action self-start">
           <ArrowLeft className="size-4" />
           Back to contacts
         </Link>
@@ -305,10 +330,20 @@ export default async function ContactDetailPage({
             <Mail className="size-4" /> Email
           </a>
         )}
-        <Link href={`/contacts/${id}/edit`} className="sk-text-action">
+        <Link href={contactEditHref(id, recordNavigation.context)} className="sk-text-action">
           <Pencil className="size-4" /> Edit
         </Link>
       </div> : null}
+
+      {!archived && !googleEmailPoint && !contact.email ? (
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-line bg-surface-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-ink">No email on file</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted">This contact can stay email-free. Add an address only when Judith has one.</p>
+          </div>
+          <Link href={contactEditHref(id, recordNavigation.context)} className="sk-secondary-button shrink-0">Add email</Link>
+        </div>
+      ) : null}
 
       {!archived && googleConnection?.remoteAccountLabel && googleEmailPoint && gmailReadiness?.ready ? (
         <GoogleEmailComposer contactId={id} connectionId={googleConnection.id}

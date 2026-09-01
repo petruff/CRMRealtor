@@ -14,6 +14,11 @@ import {
 import type { ContactActionState } from '@/lib/application/contact-action-state';
 import { getRepository } from '@/lib/data';
 import { randomUUID } from 'node:crypto';
+import {
+  contactEditHref,
+  contactRecordHref,
+  type ContactBrowseContext,
+} from '@/lib/application/contact-navigation';
 
 function formValues(formData?: FormData): Record<string, string> | undefined {
   if (!formData) return undefined;
@@ -79,22 +84,30 @@ export async function createContactAction(
 
 export async function updateContactAction(
   id: string,
+  navigation: Readonly<{ context: ContactBrowseContext; nextContactId?: string }>,
   _state: ContactActionState,
   formData: FormData,
 ): Promise<ContactActionState> {
   void _state;
+  let destination = contactRecordHref(id, navigation.context, 'updated');
   try {
     const { repository, activityRepository, workspaceScope } = await getRepository();
     await updateContactCommand(repository, id, formData, new Date(), {
       repository: activityRepository,
       scope: workspaceScope,
     });
+    if (formData.get('reviewAction') === 'save-next' && navigation.nextContactId) {
+      const nextContact = await repository.get(navigation.nextContactId);
+      if (nextContact && !nextContact.archivedAt) {
+        destination = contactEditHref(nextContact.id, navigation.context);
+      }
+    }
   } catch (error) {
     return actionError(error, 'update', formData);
   }
 
   revalidateContact(id);
-  redirect(`/contacts/${encodeURIComponent(id)}?saved=updated`);
+  redirect(destination);
 }
 
 export async function addContactNoteAction(

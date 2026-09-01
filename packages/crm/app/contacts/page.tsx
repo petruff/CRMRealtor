@@ -45,6 +45,7 @@ import {
   type ContactScope,
 } from "@/lib/application/contact-query";
 import { contactViewHref, type ContactViewState } from "@/lib/application/contact-view-state";
+import { contactRecordHref, type ContactBrowseContext } from "@/lib/application/contact-navigation";
 import { formatHuman } from "@/lib/domain/dates";
 import {
   applySmartListCommand,
@@ -136,6 +137,7 @@ export default async function ContactsPage({
   } catch {
     leadType = undefined;
   }
+  if (!archivedView && scope === "past-clients") leadType = undefined;
   const rawSource = typeof params.source === "string" ? params.source : undefined;
   let source: LeadSource | undefined;
   try {
@@ -258,6 +260,16 @@ export default async function ContactsPage({
     ...(rawSmartListId ? { smartList: rawSmartListId } : {}),
     ...(contactPage.page > 1 ? { page: contactPage.page } : {}),
   };
+  const browseContext: ContactBrowseContext = archivedView
+    ? {
+      archived: true,
+      scope: "all",
+      ...(query ? { query } : {}),
+      ...(leadType ? { leadType } : {}),
+      ...(source ? { source } : {}),
+      ...(contactPage.page > 1 ? { page: contactPage.page } : {}),
+    }
+    : viewState;
   const listContactAggregates = activityRepository.listContactAggregates?.bind(activityRepository);
   if (!listContactAggregates) {
     throw new Error("Exact contact activity counts are unavailable.");
@@ -381,21 +393,27 @@ export default async function ContactsPage({
         {source ? <input type="hidden" name="source" value={source} /> : null}
         {!archivedView && scope !== "leads" ? <input type="hidden" name="scope" value={scope} /> : null}
         {archivedView ? <input type="hidden" name="view" value="archived" /> : null}
-        <label className="bg-surface">
-          <span className="sr-only">Filter by follow-up group</span>
-          <select
-            name="leadType"
-            defaultValue={leadType ?? ""}
-            className="sk-input min-h-14 rounded-none border-0 bg-surface"
-          >
-            <option value="">All follow-up groups</option>
-            {CONTACT_LEAD_TYPES.map((value) => (
-              <option key={value} value={value}>
-                {LEAD_TYPE_LABEL[value]}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!archivedView && scope === "past-clients" ? (
+          <div className="flex min-h-14 items-center bg-surface px-4 text-xs leading-relaxed text-muted">
+            Past clients are organized by relationship, not lead priority.
+          </div>
+        ) : (
+          <label className="bg-surface">
+            <span className="sr-only">Filter by follow-up group</span>
+            <select
+              name="leadType"
+              defaultValue={leadType ?? ""}
+              className="sk-input min-h-14 rounded-none border-0 bg-surface"
+            >
+              <option value="">All follow-up groups</option>
+              {CONTACT_LEAD_TYPES.map((value) => (
+                <option key={value} value={value}>
+                  {LEAD_TYPE_LABEL[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="flex min-h-14 items-center gap-1 bg-surface px-2">
           <button
             type="submit"
@@ -467,7 +485,7 @@ export default async function ContactsPage({
 
                       <div className="min-w-0 flex-1">
                         <Link
-                          href={`/contacts/${contact.id}${archivedView ? "?view=archived" : ""}`}
+                          href={contactRecordHref(contact.id, browseContext)}
                           className="flex min-h-11 items-center truncate font-medium text-ink underline-offset-2 hover:underline"
                         >
                           {displayName(contact)}
