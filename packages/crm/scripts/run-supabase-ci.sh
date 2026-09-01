@@ -45,6 +45,25 @@ database_psql() {
   docker exec -i "${database_container}" psql -U postgres -d postgres "$@"
 }
 
+refresh_local_database_url() {
+  local_database_url="$(
+    npx --yes "supabase@${SUPABASE_CLI_VERSION}" status -o json |
+      node -e '
+        let input = "";
+        process.stdin.setEncoding("utf8");
+        process.stdin.on("data", (chunk) => { input += chunk; });
+        process.stdin.on("end", () => {
+          const status = JSON.parse(input);
+          const databaseUrl = status.DB_URL ?? status.db_url;
+          if (typeof databaseUrl !== "string" || !databaseUrl.startsWith("postgresql://")) {
+            process.exit(1);
+          }
+          process.stdout.write(databaseUrl);
+        });
+      '
+  )"
+}
+
 run_database_tests() {
   local assertion_count=0
   local expected_assertions
@@ -119,22 +138,7 @@ ensure_local_database_ready() {
   stack_started=false
   npx --yes "supabase@${SUPABASE_CLI_VERSION}" start --exclude "${SUPABASE_DATABASE_ONLY_EXCLUDES}" >/dev/null
   stack_started=true
-  local_database_url="$(
-    npx --yes "supabase@${SUPABASE_CLI_VERSION}" status -o json |
-      node -e '
-        let input = "";
-        process.stdin.setEncoding("utf8");
-        process.stdin.on("data", (chunk) => { input += chunk; });
-        process.stdin.on("end", () => {
-          const status = JSON.parse(input);
-          const databaseUrl = status.DB_URL ?? status.db_url;
-          if (typeof databaseUrl !== "string" || !databaseUrl.startsWith("postgresql://")) {
-            process.exit(1);
-          }
-          process.stdout.write(databaseUrl);
-        });
-      '
-  )"
+  refresh_local_database_url
   for attempt in $(seq 1 30); do
     if database_psql --set ON_ERROR_STOP=1 --command 'select 1' >/dev/null 2>&1; then
       return 0
@@ -238,6 +242,7 @@ fi
 npx --yes "supabase@${SUPABASE_CLI_VERSION}" start --exclude "${SUPABASE_DATABASE_ONLY_EXCLUDES}"
 stack_started=true
 npx --yes "supabase@${SUPABASE_CLI_VERSION}" db reset --local
+refresh_local_database_url
 
 history_file="$(mktemp)"
 npx --yes "supabase@${SUPABASE_CLI_VERSION}" migration list --local | tee "${history_file}"
