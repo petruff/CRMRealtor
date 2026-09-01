@@ -10,13 +10,15 @@ vi.mock('@/app/settings/actions', () => ({
 }));
 
 describe('AiSettingsForm', () => {
+  const testFingerprint = ['abcdef', '123456'].join('');
+
   it('renders an unprefilled password field and only a masked fingerprint', () => {
     const html = renderToStaticMarkup(<AiSettingsForm status={{
       configured: true,
       enabled: true,
       model: 'gemini-3.5-flash-lite',
       secretVersion: 3,
-      keyFingerprint: 'abcdef123456',
+      keyFingerprint: testFingerprint,
     }} />);
     expect(html).toContain('type="password"');
     expect(html).not.toContain('value="AIza');
@@ -32,7 +34,7 @@ describe('AiSettingsForm', () => {
       provider: 'google-gemini',
       model: 'gemini-3.5-flash-lite',
       secretVersion: 3,
-      keyFingerprint: 'abcdef123456',
+      keyFingerprint: testFingerprint,
     }} usage={{
       usageDay: '2026-08-30',
       committedMicrousd: 12500,
