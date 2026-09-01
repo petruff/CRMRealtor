@@ -42,7 +42,7 @@ reset role;
 select throws_ok(format($sql$update public.contact_attribution_events set source='changed' where submission_id=%L::uuid$sql$,current_setting('omnix.story92_submission')),'55000','website intake history is append-only','attribution history cannot be rewritten');
 
 set local role authenticated; select set_config('request.jwt.claim.role','authenticated',true); select set_config('request.jwt.claim.sub','19100000-0000-4000-8000-000000000091',true);
-select throws_ok($sql$select public.claim_website_intake_submission('29100000-0000-4000-8000-000000000091','judith-web','website:lead-0004',repeat('1',64),'https://judith.example',repeat('2',64),repeat('3',64),'2026-08-31T12:03:00Z')$sql$,'42501','permission denied for function claim_website_intake_submission','browser members cannot call the public intake worker RPC');
+select ok(not has_function_privilege('authenticated','public.claim_website_intake_submission(uuid,text,text,text,text,text,text,timestamp with time zone)','EXECUTE'),'browser members cannot call the public intake worker RPC');
 select is((select count(*)::integer from public.website_intake_submissions where workspace_id='29100000-0000-4000-8000-000000000091'),3,'owner sees the workspace intake ledger');
 select set_config('request.jwt.claim.sub','19100000-0000-4000-8000-000000000093',true);
 select is((select count(*)::integer from public.website_intake_submissions where workspace_id='29100000-0000-4000-8000-000000000091'),0,'RLS hides intake evidence from another workspace');
