@@ -46,10 +46,67 @@ database_psql() {
 }
 
 run_database_tests() {
-  if ! npx --yes "supabase@${SUPABASE_CLI_VERSION}" test db "${TEST_DIRECTORY}" --local; then
-    print_database_diagnostics
+  local assertion_count=0
+  local expected_assertions
+  local file_assertions
+  local file_count=0
+  local plan_line
+  local test_error
+  local test_file
+  local test_output
+
+  # The Supabase pg_prove helper container has repeatedly triggered a
+  # PostgreSQL 17 SIGSEGV on constrained hosted runners late in this suite.
+  # Execute every pgTAP file in its own deterministic session instead, disable
+  # JIT only for that session, and verify both its TAP plan and every assertion.
+  database_psql --no-psqlrc --set ON_ERROR_STOP=1 \
+    --command "create extension if not exists pgtap with schema extensions" >/dev/null
+  while IFS= read -r test_file; do
+    test_output="$(mktemp)"
+    test_error="$(mktemp)"
+    if ! {
+      printf '%s\n' "set jit = off;"
+      cat "${test_file}"
+    } | database_psql --no-psqlrc --quiet --tuples-only --no-align --set ON_ERROR_STOP=1 \
+      >"${test_output}" 2>"${test_error}"; then
+      echo "Database test failed: ${test_file}" >&2
+      cat "${test_output}" >&2
+      cat "${test_error}" >&2
+      print_database_diagnostics
+      return 1
+    fi
+    if grep -Eq '^not ok([[:space:]]|$)' "${test_output}"; then
+      echo "Database assertion failed: ${test_file}" >&2
+      cat "${test_output}" >&2
+      cat "${test_error}" >&2
+      return 1
+    fi
+    plan_line="$(grep -E '^1\.\.[0-9]+$' "${test_output}" | tail -n 1 || true)"
+    if [[ -z "${plan_line}" ]]; then
+      echo "Database test emitted no pgTAP plan: ${test_file}" >&2
+      cat "${test_output}" >&2
+      cat "${test_error}" >&2
+      return 1
+    fi
+    expected_assertions="${plan_line#1..}"
+    file_assertions="$(grep -Ec '^ok[[:space:]]+[0-9]+' "${test_output}" || true)"
+    if [[ "${file_assertions}" -ne "${expected_assertions}" ]]; then
+      echo "Database TAP plan mismatch in ${test_file}: expected ${expected_assertions}, observed ${file_assertions}." >&2
+      cat "${test_output}" >&2
+      cat "${test_error}" >&2
+      return 1
+    fi
+    file_count=$((file_count + 1))
+    assertion_count=$((assertion_count + file_assertions))
+    printf '%s ok (%d assertions)\n' "${test_file}" "${file_assertions}"
+    rm -f "${test_output}" "${test_error}"
+  done < <(find "${TEST_DIRECTORY}" -maxdepth 1 -type f -name '*.sql' -print | sort)
+
+  if (( file_count == 0 || assertion_count == 0 )); then
+    echo "Database test discovery returned no executable pgTAP assertions." >&2
     return 1
   fi
+  printf 'Database tests passed: %d files, %d assertions.\n' "${file_count}" "${assertion_count}"
 }
 
 ensure_local_database_ready() {

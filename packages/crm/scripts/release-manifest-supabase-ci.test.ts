@@ -70,13 +70,16 @@ afterEach(async () => {
 describe('Supabase candidate recovery planning', () => {
   it('reasserts local database readiness before recovery rehearsal', async () => {
     const script = await readFile(sourceScript, 'utf8');
-    const initialDatabaseTests = script.indexOf('test db "${TEST_DIRECTORY}" --local');
+    const initialDatabaseTests = script.lastIndexOf('\nrun_database_tests\n', script.indexOf('if (( ${#candidate_migrations[@]} > 0 ));'));
     const readinessCheck = script.indexOf('ensure_local_database_ready', initialDatabaseTests);
     const rollbackRehearsal = script.indexOf('Rehearsing containment rollback', initialDatabaseTests);
 
     expect(initialDatabaseTests).toBeGreaterThan(-1);
     expect(readinessCheck).toBeGreaterThan(initialDatabaseTests);
     expect(rollbackRehearsal).toBeGreaterThan(readinessCheck);
+    expect(script).toContain('set jit = off;');
+    expect(script).toContain("grep -E '^1\\.\\.[0-9]+$'");
+    expect(script).toContain('Database TAP plan mismatch');
     expect(script).toContain('status -o json');
     expect(script).not.toContain('127.0.0.1:54322');
   });
