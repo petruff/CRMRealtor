@@ -7,7 +7,7 @@ export type OmnixCopilotMessageState =
 
 export interface OmnixCopilotCitationView {
   id: string;
-  entityType: 'contact' | 'task' | 'activity' | 'mailer' | 'mailer-send' | 'connector';
+  entityType: 'contact' | 'task' | 'activity' | 'mailer' | 'mailer-send' | 'connector' | 'web';
   recordId: string;
   factKeys: string[];
   sourceTimestamp?: string;
@@ -73,6 +73,7 @@ export interface OmnixCopilotUiResult {
     model?: string;
     routed: boolean;
     narrated?: boolean;
+    researched?: boolean;
     policyVersion?: string;
   };
 }
@@ -95,6 +96,15 @@ export function validateCopilotQuestion(question: string): string | null {
 
 export function isSafeInProductTarget(target: string): boolean {
   return target.startsWith('/') && !target.startsWith('//');
+}
+
+export function isSafeExternalSourceTarget(target: string): boolean {
+  try {
+    const url = new URL(target);
+    return url.protocol === 'https:' && !url.username && !url.password;
+  } catch {
+    return false;
+  }
 }
 
 export function mapOmnixCopilotEnvelope(

@@ -17,6 +17,7 @@ import {
 import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
 import {
   isSafeInProductTarget,
+  isSafeExternalSourceTarget,
   validateCopilotQuestion,
   type OmnixCopilotAction,
   type OmnixCopilotCitationView,
@@ -34,8 +35,8 @@ const SUPPORTED_PROMPTS = [
   'What should I do today?',
   'Who needs attention?',
   "Show today's tasks",
-  'Show upcoming dates',
   'Show pipeline',
+  'Research current Florida real estate trends',
 ] as const;
 
 const INLINE_SOURCE_LIMIT = 3;
@@ -46,6 +47,7 @@ const RESULT_BATCH_SIZE = 6;
 function intentLabel(intent?: string): string {
   if (intent === 'alerts') return 'Attention brief';
   if (intent === 'brief') return 'Daily brief';
+  if (intent === 'web-research') return 'Web research';
   return intent ?? '';
 }
 
@@ -69,14 +71,21 @@ function CitationLinks({
   if (!sources.length) return null;
   const visibleSources = sources.slice(0, INLINE_SOURCE_LIMIT);
   const remaining = sources.length - visibleSources.length;
+  const sourceKind = visibleSources.some((citation) => citation.entityType === 'web') ? 'Web source:' : 'CRM source:';
   return (
     <p className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-relaxed text-subtle">
-      <span>CRM source:</span>
-      {visibleSources.map((citation) => isSafeInProductTarget(citation.target) ? (
-        <Link key={citation.id} href={citation.target} className="break-words text-accent hover:underline">
-          {citation.displayLabel ?? evidenceEntityLabel(citation.entityType)}
-        </Link>
-      ) : null)}
+      <span>{sourceKind}</span>
+      {visibleSources.map((citation) => citation.entityType === 'web'
+        ? isSafeExternalSourceTarget(citation.target) ? (
+          <a key={citation.id} href={citation.target} target="_blank" rel="noopener noreferrer" className="break-words text-accent hover:underline">
+            {citation.displayLabel ?? 'Public source'}
+          </a>
+        ) : null
+        : isSafeInProductTarget(citation.target) ? (
+          <Link key={citation.id} href={citation.target} className="break-words text-accent hover:underline">
+            {citation.displayLabel ?? evidenceEntityLabel(citation.entityType)}
+          </Link>
+        ) : null)}
       {remaining > 0 ? <span>+{remaining} more in the source list</span> : null}
     </p>
   );
@@ -118,7 +127,7 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               {result.intent ? `Omnix · ${intentLabel(result.intent)}` : 'Omnix'}
             </p>
-            {result.dataMode ? (
+            {result.dataMode && !result.model?.researched ? (
               <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-subtle">
                 {result.dataMode === 'live' ? 'Live CRM' : 'Sample data'}
               </span>
@@ -126,6 +135,11 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
             {result.model?.narrated ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
                 <Sparkles className="size-3" aria-hidden /> AI grounded
+              </span>
+            ) : null}
+            {result.model?.researched ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                <BookOpen className="size-3" aria-hidden /> Web researched
               </span>
             ) : null}
           </div>
@@ -308,6 +322,21 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
               </summary>
               <ul className="mt-3 grid gap-2" aria-label="Answer sources">
                 {visibleCitations.map((citation) => {
+                  if (citation.entityType === 'web') {
+                    return (
+                      <li key={citation.id} className="min-w-0 rounded-xl bg-surface-2 p-3">
+                        <p className="break-words text-xs font-medium text-ink">{citation.displayLabel ?? 'Public web source'}</p>
+                        <p className="mt-1 break-words text-[11px] leading-relaxed text-muted">
+                          Public source returned by Gemini Google Search grounding.
+                        </p>
+                        {isSafeExternalSourceTarget(citation.target) ? (
+                          <a href={citation.target} target="_blank" rel="noopener noreferrer" className="sk-secondary-button mt-2 text-xs">
+                            Open source <ArrowUpRight className="size-3.5" aria-hidden />
+                          </a>
+                        ) : null}
+                      </li>
+                    );
+                  }
                   const updatedAt = evidenceTimestamp(citation.sourceTimestamp);
                   return (
                     <li key={citation.id} className="min-w-0 rounded-xl bg-surface-2 p-3">
@@ -382,10 +411,14 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
 
           {result.asOf ? (
             <p className="mt-3 text-[11px] text-subtle">
-              CRM checked {new Date(result.asOf).toLocaleString()} · Read-only response
+              {result.model?.researched ? 'Web researched' : 'CRM checked'} {new Date(result.asOf).toLocaleString()} · Read-only response
             </p>
           ) : null}
-          {result.model?.narrated ? (
+          {result.model?.researched ? (
+            <p className="mt-2 text-[11px] text-subtle" role="status">
+              Gemini researched public sources. Web content cannot change CRM records or authorize actions · {result.model.policyVersion}
+            </p>
+          ) : result.model?.narrated ? (
             <p className="mt-2 text-[11px] text-subtle" role="status">
               Gemini organized the answer from the cited CRM records · {result.model.policyVersion}
             </p>
@@ -405,7 +438,7 @@ function PendingResponse() {
     <div className="max-w-[88%] rounded-2xl rounded-tl-md border border-line bg-surface p-4 text-sm text-muted" role="status">
       <span className="flex items-center gap-2">
         <LoaderCircle className="size-4 animate-spin text-accent" aria-hidden />
-        Checking your CRM…
+        Checking your CRM and trusted public sources…
       </span>
     </div>
   );
@@ -519,7 +552,7 @@ export function OmnixCopilot({
               {compact && greetingName ? `Hi ${greetingName}, I'm Omnix` : 'Ask Omnix'}
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-              I check your CRM records behind each answer and show you where the information came from.
+              Ask about your business or research a topic. CRM answers cite records; web answers cite public sources.
             </p>
           </div>
         </div>
@@ -571,7 +604,7 @@ export function OmnixCopilot({
                 {greetingName ? `What should we focus on, ${greetingName}?` : 'What should we focus on?'}
               </h3>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-                Ask about today, people who need attention, tasks, dates or pipeline. I cite the records and never act without you.
+                Ask about today, contacts, tasks, pipeline, real estate, or a broader topic. I show the sources and never act without you.
               </p>
               <div className="mt-5 flex max-w-full flex-wrap justify-center gap-2" aria-label="Supported prompt examples">
                 {SUPPORTED_PROMPTS.map((prompt) => (
@@ -601,7 +634,7 @@ export function OmnixCopilot({
         </div>
 
         <form onSubmit={submit} className="omnix-copilot-composer border-t border-line bg-surface-2 p-4 sm:p-5" aria-busy={isPending}>
-          <label htmlFor={questionId} className="sr-only">Ask Omnix a supported question</label>
+          <label htmlFor={questionId} className="sr-only">Ask Omnix about the CRM or research a topic</label>
           <div className="flex min-w-0 items-center gap-2 rounded-[1.15rem] border border-line bg-surface p-2 focus-within:border-accent focus-within:ring-3 focus-within:ring-accent-soft">
             <input
               ref={inputRef}
@@ -616,7 +649,7 @@ export function OmnixCopilot({
               maxLength={200}
               disabled={isPending}
               autoComplete="off"
-              placeholder="Ask about today's priorities…"
+              placeholder="Ask about your CRM or research a topic…"
               className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-base text-ink outline-none placeholder:text-subtle disabled:cursor-wait"
               aria-invalid={composerError ? true : undefined}
               aria-describedby={composerError ? 'omnix-question-error' : 'omnix-question-help'}

@@ -42,7 +42,7 @@ export default async function OmnixPage() {
   const aiCapability = await readWorkspaceAiCapabilityStatus(workspaceScope)
     .catch(() => ({ state: 'failed' as const }));
   const aiCopy = aiCapability.state === 'available'
-    ? 'Gemini is available for grounded summaries and safe, reviewable recommendations. Nothing is sent, changed, or scheduled without your approval.'
+    ? 'Gemini is available for grounded CRM summaries, public web research, and safe, reviewable recommendations. Nothing is sent, changed, or scheduled without your approval.'
     : aiCapability.state === 'failed'
       ? 'Your deterministic CRM brief is available, but Omnix could not confirm the AI connection. Review AI setup before relying on generated summaries.'
       : 'Your deterministic CRM brief is ready. The workspace owner can connect Gemini in Settings for grounded summaries and reviewable recommendations.';
@@ -111,15 +111,15 @@ export default async function OmnixPage() {
           <div>
             <h2 id="contract-title" className="font-display text-2xl text-ink">How Omnix keeps you in control</h2>
             <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted">
-              Omnix bases recommendations on your CRM records. You review client messages, calendar changes, and pipeline updates before anything is sent or changed.
+              Omnix separates private CRM evidence from public web research. You review client messages, calendar changes, and pipeline updates before anything is sent or changed.
             </p>
           </div>
         </div>
         <ul className="mt-5 grid gap-px overflow-hidden rounded-[var(--sk-control-radius)] bg-line sm:grid-cols-3">
           {[
             ['Use your CRM', 'Base answers on the records available to your account.'],
+            ['Research the web', 'Use Gemini with cited public sources without sending client records.'],
             ['Ask before acting', 'Preview important changes before they happen.'],
-            ['Keep a history', 'Show what changed and whether it completed.'],
           ].map(([title, detail]) => (
             <li key={title} className="bg-surface p-4">
               <p className="text-sm font-medium text-ink">{title}</p>

@@ -63,11 +63,12 @@ function configuration(
   return { state: 'available', model, apiKey };
 }
 
-function parseModelText(payload: GeminiResponse): string | undefined {
+function parseModelText(payload: GeminiResponse): string | null | undefined {
   const text = payload.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('').trim();
   if (!text) return undefined;
   try {
     const decoded = JSON.parse(text) as { query?: unknown };
+    if (decoded.query === null) return null;
     if (typeof decoded.query !== 'string') return undefined;
     const query = decoded.query.trim();
     parseOmnixCopilotQuestion(query);
@@ -100,8 +101,9 @@ export async function routeOmnixQuestionWithGemini(
           systemInstruction: {
             parts: [{ text: [
               'You are a read-only CRM query router.',
-              'Return JSON only: {"query":"one exact supported query"}.',
+              'Return JSON only: {"query":"one exact supported query"} or {"query":null}.',
               'Never answer the question, request data, combine queries, or invent an identifier.',
+              'Return null for general knowledge, public web research, current news, or anything that does not require the stored CRM.',
               `Supported forms: ${OMNIX_COPILOT_SUPPORTED_EXAMPLES.join(' | ')}`,
               'For a named person use: find contact <name>.',
               'For all stored details about one person use: contact profile <name>.',
@@ -119,9 +121,9 @@ export async function routeOmnixQuestionWithGemini(
     if (!response.ok) return { state: 'failed', model: configured.model, reason: 'request-failed' };
     const payload = await response.json() as GeminiResponse;
     const query = parseModelText(payload);
-    return query
+    return query !== undefined
       ? {
-        state: 'available', model: configured.model, query,
+        state: 'available', model: configured.model, ...(query ? { query } : {}),
         ...(payload.usageMetadata?.promptTokenCount !== undefined ? { inputTokens: payload.usageMetadata.promptTokenCount } : {}),
         ...(payload.usageMetadata?.candidatesTokenCount !== undefined ? { outputTokens: payload.usageMetadata.candidatesTokenCount } : {}),
       }

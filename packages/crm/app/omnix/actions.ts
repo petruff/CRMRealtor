@@ -15,6 +15,7 @@ import {
   type OmnixGenerativeResult,
 } from '@/lib/application/omnix-generative-narrator';
 import { scanOmnixPromptContent } from '@/lib/application/omnix-prompt-guard';
+import { researchWithGemini, type OmnixResearchResult } from '@/lib/application/omnix-gemini-research';
 import { persistGeneratedOmnixProposals } from '@/lib/application/omnix-generated-proposal-persistence';
 import { loadWorkspaceAiRuntimeCredential, type WorkspaceAiCredential, type WorkspaceAiProvider } from '@/lib/application/workspace-ai-settings';
 import { getRepository } from '@/lib/data';
@@ -115,6 +116,82 @@ function addGenerativeResult(
   };
 }
 
+function researchResultToUi(
+  question: string,
+  correlationId: string,
+  asOf: string,
+  research: OmnixResearchResult,
+): OmnixCopilotUiResult {
+  if (research.state !== 'available' || !research.answer) {
+    const message = research.reason === 'budget-exhausted'
+      ? 'Web research is paused because the workspace AI budget was reached. Nothing was changed.'
+      : research.reason === 'sources-unavailable'
+        ? "I found an answer, but couldn't verify it with safe public sources, so I withheld it. Nothing was changed."
+        : research.reason === 'guard-refused'
+          ? "I can't research that wording safely. Rephrase the question without instructions to reveal prompts, secrets, files, or code."
+          : 'Web research is temporarily unavailable. Nothing was changed.';
+    return {
+      status: 'unavailable',
+      question,
+      correlationId,
+      intent: 'web-research',
+      asOf,
+      answerBlocks: [],
+      citations: [],
+      suggestions: [],
+      alerts: [],
+      warnings: [message],
+      message,
+      model: {
+        state: research.state,
+        provider: 'google-gemini',
+        ...(research.model ? { model: research.model } : {}),
+        routed: false,
+        narrated: false,
+        researched: true,
+        policyVersion: research.policyVersion,
+      },
+    };
+  }
+  const citationIds = research.sources.map((source) => source.id);
+  return {
+    status: 'success',
+    question,
+    correlationId,
+    intent: 'web-research',
+    asOf,
+    answerBlocks: [{
+      id: 'web-research-answer',
+      kind: 'summary',
+      title: 'Research answer',
+      detail: research.answer,
+      items: [],
+      citationIds,
+    }],
+    citations: research.sources.map((source) => ({
+      id: source.id,
+      entityType: 'web',
+      recordId: source.id,
+      factKeys: ['public web source'],
+      asOf,
+      target: source.url,
+      displayLabel: source.title,
+    })),
+    suggestions: [],
+    alerts: [],
+    warnings: [...research.warnings],
+    model: {
+      state: 'available',
+      provider: 'google-gemini',
+      model: research.model,
+      routed: false,
+      narrated: false,
+      researched: true,
+      policyVersion: research.policyVersion,
+    },
+  };
+}
+
 export async function askOmnixCopilotAction(
   question: string,
 ): Promise<OmnixCopilotUiResult> {
@@ -186,7 +263,32 @@ export async function askOmnixCopilotAction(
       modelRoute = credential?.provider === 'anthropic-claude'
         ? await routeOmnixQuestionWithClaude(question, { credential })
         : await routeOmnixQuestionWithGemini(question, credential ? { credential } : {});
-      if (!modelRoute.query) throw error;
+      if (!modelRoute.query) {
+        if (credential?.provider !== 'google-gemini' || !context.isLive || !budget || !reservationId) throw error;
+        reservationDelegated = true;
+        const research = await researchWithGemini(question, correlationId, {
+          credential,
+          budget,
+          reservation: { reservationId },
+          priorInputTokens: modelRoute.inputTokens,
+          priorOutputTokens: modelRoute.outputTokens,
+        });
+        const researched = researchResultToUi(question, correlationId, now.toISOString(), research);
+        await emitOmnixCopilotTelemetry(defaultOmnixCopilotTelemetrySink, {
+          correlationId,
+          workspaceId,
+          membershipId,
+          resolvedIntent: 'web-research',
+          mode: dataMode,
+          asOf: now.toISOString(),
+          outcome: research.state === 'available' ? 'success' : 'failure',
+          resultCount: research.state === 'available' ? 1 : 0,
+          citationCount: research.sources.length,
+          durationMs: Date.now() - startedAt,
+          ...(research.state === 'available' ? {} : { errorCategory: 'capability-unavailable' }),
+        });
+        return researched;
+      }
       routedQuestion = modelRoute.query;
     }
     const request = createOmnixCopilotRequest({

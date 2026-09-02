@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isSafeInProductTarget,
+  isSafeExternalSourceTarget,
   mapOmnixCopilotEnvelope,
   validateCopilotQuestion,
 } from '@/components/omnix-copilot-view-model';
@@ -26,6 +27,15 @@ describe('isSafeInProductTarget', () => {
     expect(isSafeInProductTarget('/contacts/c-1')).toBe(true);
     expect(isSafeInProductTarget('//example.com')).toBe(false);
     expect(isSafeInProductTarget('https://example.com')).toBe(false);
+  });
+});
+
+describe('isSafeExternalSourceTarget', () => {
+  it('allows only credential-free HTTPS links', () => {
+    expect(isSafeExternalSourceTarget('https://example.gov/report')).toBe(true);
+    expect(isSafeExternalSourceTarget('http://example.gov/report')).toBe(false);
+    expect(isSafeExternalSourceTarget('https://user:secret@example.gov/report')).toBe(false);
+    expect(isSafeExternalSourceTarget('/contacts/c-1')).toBe(false);
   });
 });
 

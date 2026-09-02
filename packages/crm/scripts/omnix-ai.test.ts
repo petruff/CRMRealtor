@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateOmnixNarrative } from '../lib/application/omnix-generative-narrator';
 import { routeOmnixQuestionWithGemini } from '../lib/application/omnix-gemini-router';
 import { loadWorkspaceAiRuntimeCredential } from '../lib/application/workspace-ai-settings';
+import { researchWithGemini } from '../lib/application/omnix-gemini-research';
 import { OMNIX_COPILOT_SCHEMA_VERSION, type OmnixCopilotSuccessResponse } from '../lib/domain/omnix-copilot';
 import { SAMPLE_WORKSPACE_SCOPE } from '../lib/domain/workspace';
 import { runOmnixAiCli } from './omnix-ai';
@@ -9,6 +10,7 @@ import { runOmnixAiCli } from './omnix-ai';
 vi.mock('server-only', () => ({}));
 vi.mock('../lib/application/omnix-generative-narrator', () => ({ generateOmnixNarrative: vi.fn() }));
 vi.mock('../lib/application/omnix-gemini-router', () => ({ routeOmnixQuestionWithGemini: vi.fn() }));
+vi.mock('../lib/application/omnix-gemini-research', () => ({ researchWithGemini: vi.fn() }));
 vi.mock('../lib/application/workspace-ai-settings', () => ({ loadWorkspaceAiRuntimeCredential: vi.fn() }));
 const reserve = vi.fn(async () => ({
   allowed: true,
@@ -49,6 +51,10 @@ describe('runOmnixAiCli', () => {
       state: 'available', policyVersion: 'omnix-ai-policy.v1', model: 'gemini-3.5-flash-lite',
       summary: { text: 'Pipeline summary.', citationIds: ['citation-1'] }, highlights: [], proposals: [], unknowns: [],
     });
+    vi.mocked(researchWithGemini).mockResolvedValue({
+      state: 'limited', policyVersion: 'omnix-ai-policy.v1', reason: 'sources-unavailable',
+      sources: [], searchQueries: [], warnings: [],
+    });
   });
 
   it('uses authenticated scope and emits one machine-readable deterministic plus model envelope', async () => {
@@ -88,5 +94,40 @@ describe('runOmnixAiCli', () => {
       liveContext, execute: vi.fn(async () => response), stdout: vi.fn(), stderr,
     })).resolves.toBe(2);
     expect(stderr).toHaveBeenCalledWith(expect.stringContaining('refused'));
+  });
+
+  it('falls back to grounded public research when no CRM route is authorized', async () => {
+    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({
+      state: 'failed', model: 'gemini-3.5-flash-lite', reason: 'invalid-response', inputTokens: 20, outputTokens: 2,
+    });
+    vi.mocked(researchWithGemini).mockResolvedValue({
+      state: 'available', policyVersion: 'omnix-ai-policy.v1', model: 'gemini-3.5-flash-lite',
+      answer: 'A grounded answer.',
+      sources: [{ id: 'web-source-1', title: 'Official source', url: 'https://example.gov/research' }],
+      searchQueries: ['current research'], warnings: [],
+    });
+    const stdout = vi.fn();
+    const execute = vi.fn();
+    const code = await runOmnixAiCli(['--live', '--question', 'Research a current public topic'], {
+      liveContext: vi.fn(async () => ({ client: {} as never, scope: SAMPLE_WORKSPACE_SCOPE })),
+      execute,
+      stdout,
+      stderr: vi.fn(),
+    });
+
+    expect(code).toBe(0);
+    expect(execute).not.toHaveBeenCalled();
+    expect(researchWithGemini).toHaveBeenCalledWith(
+      'Research a current public topic',
+      expect.any(String),
+      expect.objectContaining({
+        reservation: { reservationId: '62000000-0000-4000-8000-000000000001' },
+        priorInputTokens: 20,
+        priorOutputTokens: 2,
+      }),
+    );
+    expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
+      schemaVersion: 'omnix-ai-cli.v1', mode: 'web-research', model: { state: 'available' },
+    });
   });
 });

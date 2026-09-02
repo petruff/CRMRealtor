@@ -44,6 +44,26 @@ const responseWithSource: OmnixCopilotUiResult = {
   }],
 };
 
+const webResearchResponse: OmnixCopilotUiResult = {
+  status: 'success',
+  question: 'Research Florida market trends',
+  intent: 'web-research',
+  asOf: '2026-09-01T20:00:00.000Z',
+  answerBlocks: [{
+    id: 'web-research-answer', kind: 'summary', title: 'Research answer',
+    detail: 'Current conditions vary by local market.', items: [], citationIds: ['web-source-1'],
+  }],
+  citations: [{
+    id: 'web-source-1', entityType: 'web', recordId: 'web-source-1', factKeys: ['public web source'],
+    asOf: '2026-09-01T20:00:00.000Z', target: 'https://www.floridarealtors.org/research', displayLabel: 'Florida Realtors Research',
+  }],
+  suggestions: [], alerts: [], warnings: [],
+  model: {
+    state: 'available', provider: 'google-gemini', model: 'gemini-3.5-flash-lite',
+    routed: false, narrated: false, researched: true, policyVersion: 'omnix-ai-policy.v1',
+  },
+};
+
 describe('OmnixAssistantLauncher', () => {
   afterEach(() => {
     cleanup();
@@ -62,7 +82,7 @@ describe('OmnixAssistantLauncher', () => {
     await user.click(open);
     expect(await screen.findByRole('dialog', { name: 'Omnix AI' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: "Hi Judith, I'm Omnix" })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Ask Omnix a supported question' })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Ask Omnix about the CRM or research a topic' })).toHaveFocus());
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -106,6 +126,25 @@ describe('OmnixAssistantLauncher', () => {
     expect(screen.queryByText(/5cfc13f8-844c-4f4c-a992-f02c060939c8/)).not.toBeInTheDocument();
     expect(screen.queryByText(/pipelineStage|lastContactedAt|createdAt|leadType/)).not.toBeInTheDocument();
     expect(screen.queryByText(/2026-08-20T17:54:45.764Z/)).not.toBeInTheDocument();
+  });
+
+  it('distinguishes grounded web research and opens public sources safely', async () => {
+    const user = userEvent.setup();
+    render(<OmnixAssistantLauncher
+      action={vi.fn().mockResolvedValue(webResearchResponse)}
+      loadProfile={vi.fn().mockResolvedValue({ available: true, firstName: 'Judith', dataMode: 'live' })}
+    />);
+
+    await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
+    await user.type(await screen.findByRole('textbox', { name: 'Ask Omnix about the CRM or research a topic' }), 'Research Florida market trends');
+    await user.click(screen.getByRole('button', { name: 'Ask Omnix' }));
+
+    expect(await screen.findByText('Web researched')).toBeInTheDocument();
+    const link = await screen.findByRole('link', { name: 'Florida Realtors Research' });
+    expect(link).toHaveAttribute('href', 'https://www.floridarealtors.org/research');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    expect(screen.queryByText('Live CRM')).not.toBeInTheDocument();
   });
 
   it('renders who needs attention as a bounded people-first decision brief', async () => {

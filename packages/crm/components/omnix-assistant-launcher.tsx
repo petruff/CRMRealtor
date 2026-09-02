@@ -129,7 +129,7 @@ export function OmnixAssistantLauncher({
                 <Image src="/omnix-assistant-blue.png" alt="" width={42} height={42} className="size-10 object-contain" />
                 <div className="min-w-0">
                   <h2 id="omnix-assistant-dialog-title" className="font-display text-lg leading-tight text-ink">Omnix AI</h2>
-                  <p className="truncate text-xs text-muted">Uses your CRM · Nothing changes without you</p>
+                  <p className="truncate text-xs text-muted">CRM + public research · Nothing changes without you</p>
                 </div>
               </div>
               <button type="button" className="sk-icon-button" onClick={close} aria-label="Close Omnix assistant">

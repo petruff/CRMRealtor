@@ -13,6 +13,7 @@ import { generateOmnixNarrative } from '@/lib/application/omnix-generative-narra
 import { loadWorkspaceAiRuntimeCredential } from '@/lib/application/workspace-ai-settings';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseOmnixAiBudgetAuthority } from '@/lib/application/omnix-ai-budget';
+import { researchWithGemini } from '@/lib/application/omnix-gemini-research';
 import { askOmnixCopilotAction, getOmnixAssistantProfileAction } from './actions';
 import { createMemoryOmnixProposalRepository } from '@/lib/data/memory-omnix-proposal-repository';
 
@@ -23,6 +24,7 @@ vi.mock('@/lib/application/omnix-gemini-router', () => ({
   routeOmnixQuestionWithGemini: vi.fn(),
 }));
 vi.mock('@/lib/application/omnix-generative-narrator', () => ({ generateOmnixNarrative: vi.fn() }));
+vi.mock('@/lib/application/omnix-gemini-research', () => ({ researchWithGemini: vi.fn() }));
 vi.mock('@/lib/application/omnix-ai-budget', () => ({ createSupabaseOmnixAiBudgetAuthority: vi.fn(() => ({ reserve: vi.fn(), finalize: vi.fn() })) }));
 vi.mock('@/lib/application/workspace-ai-settings', () => ({
   loadWorkspaceAiRuntimeCredential: vi.fn(),
@@ -62,6 +64,10 @@ describe('askOmnixCopilotAction', () => {
     vi.mocked(generateOmnixNarrative).mockResolvedValue({
       state: 'unconfigured', policyVersion: 'omnix-ai-policy.v1', reason: 'missing-credential',
       highlights: [], proposals: [], unknowns: [],
+    });
+    vi.mocked(researchWithGemini).mockResolvedValue({
+      state: 'limited', policyVersion: 'omnix-ai-policy.v1', reason: 'sources-unavailable',
+      sources: [], searchQueries: [], warnings: [],
     });
   });
 
@@ -181,6 +187,43 @@ describe('askOmnixCopilotAction', () => {
     );
     expect(result.model).toMatchObject({
       state: 'available', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', routed: true, narrated: true,
+    });
+  });
+
+  it('researches an unmatched broad question without sending CRM records to Gemini', async () => {
+    vi.mocked(getRepository).mockResolvedValue({ ...context, isLive: true } as Awaited<ReturnType<typeof getRepository>>);
+    vi.mocked(loadWorkspaceAiRuntimeCredential).mockResolvedValue({
+      apiKey: 'stored-server-key', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
+    });
+    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({
+      state: 'failed', model: 'gemini-3.5-flash-lite', reason: 'invalid-response', inputTokens: 30, outputTokens: 2,
+    });
+    vi.mocked(researchWithGemini).mockResolvedValue({
+      state: 'available', policyVersion: 'omnix-ai-policy.v1', model: 'gemini-3.5-flash-lite',
+      answer: 'Florida market conditions vary by county and property type.',
+      sources: [{ id: 'web-source-1', title: 'Florida Realtors', url: 'https://www.floridarealtors.org/research' }],
+      searchQueries: ['Florida real estate market'], warnings: [],
+    });
+
+    const result = await askOmnixCopilotAction('Research current Florida real estate market conditions');
+
+    expect(executeOmnixCopilot).not.toHaveBeenCalled();
+    expect(researchWithGemini).toHaveBeenCalledWith(
+      'Research current Florida real estate market conditions',
+      expect.any(String),
+      expect.objectContaining({
+        credential: expect.objectContaining({ apiKey: 'stored-server-key' }),
+        reservation: { reservationId: '63000000-0000-4000-8000-000000000001' },
+        priorInputTokens: 30,
+        priorOutputTokens: 2,
+      }),
+    );
+    expect(result).toMatchObject({
+      status: 'success',
+      intent: 'web-research',
+      answerBlocks: [{ title: 'Research answer' }],
+      citations: [{ entityType: 'web', target: 'https://www.floridarealtors.org/research' }],
+      model: { researched: true, provider: 'google-gemini' },
     });
   });
 

@@ -6,6 +6,7 @@ import { OMNIX_AI_POLICY, OMNIX_AI_POLICY_VERSION } from '../lib/application/omn
 import { generateOmnixNarrative } from '../lib/application/omnix-generative-narrator.ts';
 import { routeOmnixQuestionWithGemini } from '../lib/application/omnix-gemini-router.ts';
 import { scanOmnixPromptContent } from '../lib/application/omnix-prompt-guard.ts';
+import { researchWithGemini } from '../lib/application/omnix-gemini-research.ts';
 import { loadWorkspaceAiRuntimeCredential } from '../lib/application/workspace-ai-settings.ts';
 import { createAuthenticatedCliContext } from '../lib/data/authenticated-cli-context.ts';
 import {
@@ -76,15 +77,21 @@ export async function runOmnixAiCli(argv: readonly string[], dependencies: Omnix
       routeInputTokens = route.inputTokens ?? 0;
       routeOutputTokens = route.outputTokens ?? 0;
       if (!route.query) {
-        await budget.finalize({
-          reservationId,
-          state: 'failed',
-          inputTokens: routeInputTokens,
-          outputTokens: routeOutputTokens,
-          actualCostMicrousd: OMNIX_AI_POLICY.perRunBudgetMicrousd,
-          errorCategory: 'route-failed',
+        const research = await researchWithGemini(question, correlationId, {
+          credential,
+          budget,
+          reservation: { reservationId },
+          priorInputTokens: routeInputTokens,
+          priorOutputTokens: routeOutputTokens,
         });
-        throw new Error('Gemini could not map the question to an authorized CRM query.');
+        write(`${JSON.stringify({
+          schemaVersion: 'omnix-ai-cli.v1',
+          correlationId,
+          dataMode: 'live',
+          mode: 'web-research',
+          model: research,
+        }, null, 2)}\n`);
+        return research.state === 'available' ? 0 : 6;
       }
       routedQuestion = route.query;
     }

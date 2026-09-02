@@ -54,6 +54,23 @@ describe('routeOmnixQuestionWithGemini', () => {
     });
   });
 
+  it('returns no CRM route for a valid public research classification', async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({
+      usageMetadata: { promptTokenCount: 25, candidatesTokenCount: 2 },
+      candidates: [{ content: { parts: [{ text: '{"query":null}' }] } }],
+    }), { status: 200 })) as typeof fetch;
+
+    await expect(routeOmnixQuestionWithGemini('What changed in mortgage rates today?', {
+      env: enabled,
+      fetchImpl,
+    })).resolves.toEqual({
+      state: 'available',
+      model: 'gemini-3.5-flash-lite',
+      inputTokens: 25,
+      outputTokens: 2,
+    });
+  });
+
   it('does not retry failed provider requests', async () => {
     const fetchImpl = vi.fn(async () => new Response('unavailable', { status: 503 })) as typeof fetch;
     await expect(routeOmnixQuestionWithGemini('What matters?', {
