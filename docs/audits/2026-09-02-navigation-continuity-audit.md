@@ -52,3 +52,7 @@ This avoids a misleading “Next” button between unrelated modules while keepi
 | P2 | Campaign pagination omitted an explicit disabled Previous boundary. | Normalize both boundaries and add `rel` semantics. |
 | Correct | Contact detail/edit already preserve filtered scope and provide Previous/Next record navigation. | Retain and cover with regression tests. |
 | Correct | Top-level pages do not form one linear sequence. | Keep global navigation instead of artificial Back/Next controls. |
+
+## Release Result
+
+Story 9.7 shipped to production from commit `b181d36fc682cd2b02fc57b2ee98fa768a00d19e` through Vercel deployment `dpl_7UCnL1koYcn7pM7Rx1yzHGNGpbxi`. Exact-SHA CI and the post-deploy desktop/390-pixel navigation smoke passed.
