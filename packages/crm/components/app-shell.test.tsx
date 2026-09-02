@@ -72,6 +72,7 @@ describe('AppShell account controls', () => {
     expect(utilities.querySelector('a[href="/insights"]')).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/campaigns"]')).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/mailers"]')).toBeInTheDocument();
+    expect(utilities.querySelector('a[href="/connections"]')).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/data"]')).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/settings"]')).toBeInTheDocument();
     expect(utilities.querySelector('a[href="/workspace"]')).toBeInTheDocument();
@@ -106,5 +107,22 @@ describe('AppShell account controls', () => {
     navigation.pathname = '/activities';
     view.rerender(<AppShell><p>Content</p></AppShell>);
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Mobile utilities' })).not.toBeInTheDocument());
+  });
+
+  it('provides a deterministic mobile return action and a precise nested-route title', () => {
+    navigation.pathname = '/contacts/contact-1/edit';
+    const html = renderToStaticMarkup(<AppShell><p>Content</p></AppShell>);
+
+    expect(html).toContain('href="/contacts/contact-1"');
+    expect(html).toContain('aria-label="Back to Contact"');
+    expect(html).toContain('Edit contact');
+  });
+
+  it('does not invent a return action for an independent command center', () => {
+    navigation.pathname = '/omnix';
+    const html = renderToStaticMarkup(<AppShell><p>Content</p></AppShell>);
+
+    expect(html).not.toContain('aria-label="Back to');
+    expect(html).toContain('Omnix AI');
   });
 });

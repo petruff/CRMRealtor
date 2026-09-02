@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
+  ArrowLeft,
   BriefcaseBusiness,
   BellRing,
   CalendarCheck,
@@ -34,6 +35,7 @@ import { PRODUCT_NAME } from "@/lib/brand";
 import { CrmCommandPalette } from "@/components/crm-command-palette";
 import { OmnixAssistantLauncher } from "@/components/omnix-assistant-launcher";
 import { PwaInstallAction } from "@/components/pwa-provider";
+import { parentRouteNavigation } from "@/lib/application/route-navigation";
 
 const CORE_NAV = [
   { href: "/", label: "Today", icon: CalendarCheck },
@@ -74,10 +76,12 @@ function isActive(pathname: string, href: string): boolean {
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const parentRoute = parentRouteNavigation(pathname);
   const [mobileUtilitiesOpen, setMobileUtilitiesOpen] = useState(false);
   const mobileUtilitiesTriggerRef = useRef<HTMLButtonElement>(null);
   const mobileUtilitiesRef = useRef<HTMLElement>(null);
   const currentLabel =
+    parentRoute?.currentLabel ??
     ALL_NAV.find(({ href }) => isActive(pathname, href))?.label ??
     (pathname.startsWith("/workspace") ? "Workspaces" : PRODUCT_NAME);
 
@@ -177,7 +181,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           style={{ background: "var(--sk-nav-background)" }}
         >
           <div className="flex min-w-0 items-center gap-2.5">
-            <BrandMark size={32} />
+            {parentRoute ? (
+              <Link
+                href={parentRoute.href}
+                className="sk-icon-button shrink-0"
+                aria-label={`Back to ${parentRoute.label}`}
+              >
+                <ArrowLeft className="size-[18px]" aria-hidden />
+              </Link>
+            ) : (
+              <BrandMark size={32} />
+            )}
             <div className="min-w-0">
               <p className="text-[11px] font-medium text-muted">
                 {PRODUCT_NAME}
@@ -241,6 +255,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
               <Link href="/mailers" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/mailers") ? "page" : undefined}>
                 <Send className="size-[18px]" aria-hidden /> Mailers
+              </Link>
+              <Link href="/connections" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/connections") ? "page" : undefined}>
+                <Plug className="size-[18px]" aria-hidden /> Connections
               </Link>
               <Link href="/data" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/data") ? "page" : undefined}>
                 <Database className="size-[18px]" aria-hidden /> Data tools

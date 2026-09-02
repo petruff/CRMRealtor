@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { randomUUID } from 'node:crypto';
 import Link from 'next/link';
-import { CheckCircle2, Mail, ShieldCheck, Sparkles, Users, XCircle } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, ChevronRight, Mail, ShieldCheck, Sparkles, Users, XCircle } from 'lucide-react';
 import { getRepository } from '@/lib/data';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createMailchimpServerRepository } from '@/lib/data/mailchimp-operation-server-context';
@@ -93,8 +93,13 @@ export default async function CampaignsPage({ searchParams }: {
           </div></article>;
       })}</div>
       {page > 1 || hasMore ? <nav aria-label="Campaign history pages" className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-5">
-        {page > 1 ? <Link href={`/campaigns?page=${page - 1}`} className="inline-flex min-h-11 items-center rounded-[var(--sk-control-radius)] border border-control px-4 text-sm font-semibold text-ink">Previous</Link> : <span />}
-        {hasMore ? <Link href={`/campaigns?page=${page + 1}`} className="inline-flex min-h-11 items-center rounded-[var(--sk-control-radius)] bg-ink px-4 text-sm font-semibold text-white">Next</Link> : null}
+        {page > 1
+          ? <Link rel="prev" href={`/campaigns?page=${page - 1}`} className="sk-secondary-button px-4"><ChevronLeft className="size-4" aria-hidden />Previous</Link>
+          : <span aria-disabled="true" className="sk-secondary-button px-4 opacity-50"><ChevronLeft className="size-4" aria-hidden />Previous</span>}
+        <span className="text-sm tabular-nums text-muted" aria-live="polite">Page {page}</span>
+        {hasMore
+          ? <Link rel="next" href={`/campaigns?page=${page + 1}`} className="sk-secondary-button px-4">Next<ChevronRight className="size-4" aria-hidden /></Link>
+          : <span aria-disabled="true" className="sk-secondary-button px-4 opacity-50">Next<ChevronRight className="size-4" aria-hidden /></span>}
       </nav> : null}
     </section>
   </div>;
