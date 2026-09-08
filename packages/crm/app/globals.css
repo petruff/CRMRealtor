@@ -1841,6 +1841,26 @@
     outline: 0;
   }
 
+  .ai-settings-control {
+    min-height: 3rem;
+    background-color: var(--sk-fill-secondary-color);
+    color: var(--sk-body-text-color);
+    color-scheme: inherit;
+  }
+
+  .ai-settings-select {
+    appearance: none;
+    padding-inline-end: 2.75rem;
+    cursor: pointer;
+    text-overflow: ellipsis;
+  }
+
+  .ai-settings-select option,
+  .ai-settings-select optgroup {
+    background-color: var(--sk-card-background);
+    color: var(--sk-body-text-color);
+  }
+
   .sk-input[aria-invalid='true'] {
     border-color: var(--omnix-hot);
   }

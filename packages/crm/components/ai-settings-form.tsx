@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { KeyRound, ShieldCheck, Trash2 } from 'lucide-react';
+import { ChevronDown, KeyRound, ShieldCheck, Trash2 } from 'lucide-react';
 import { INITIAL_AI_SETTINGS_ACTION_STATE } from '@/app/settings/action-state';
 import {
   removeGeminiSettingsAction,
@@ -21,29 +21,40 @@ export function AiSettingsForm({ status, usage }: { status: WorkspaceAiStatus; u
   const feedback = saveState.status !== 'idle' ? saveState : removeState.status !== 'idle' ? removeState : toggleState;
   return (
     <div id="ai" className="scroll-mt-24 grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
-      <form action={saveAction} className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
+      <form action={saveAction} className="min-w-0 rounded-2xl border border-line bg-surface p-5 sm:p-6">
         <input type="hidden" name="expectedSecretVersion" value={status.secretVersion} />
         <div className="flex items-start gap-3">
           <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-surface-2 text-accent"><KeyRound className="size-5" aria-hidden /></span>
           <div><h2 className="font-display text-2xl text-ink">Omnix AI provider</h2><p className="mt-1 text-sm leading-relaxed text-muted">Choose Gemini or Claude. The key is tested with a non-customer prompt, encrypted on the server and never displayed again.</p></div>
         </div>
         <div className="mt-6 grid gap-5">
-          <label className="grid gap-2 text-sm font-medium text-ink">API key
-            <input className="min-h-11 rounded-lg border border-control bg-canvas px-3 text-ink outline-none focus:ring-3 focus:ring-focus" name="apiKey" type="password" autoComplete="new-password" required minLength={20} maxLength={256} placeholder={status.configured ? 'Enter a new key to rotate the current key' : 'Paste the provider API key'} />
+          <label className="grid min-w-0 gap-2 text-sm font-medium text-ink">API key
+            <input className="sk-input ai-settings-control" name="apiKey" type="password" autoComplete="new-password" required minLength={20} maxLength={256} placeholder={status.configured ? 'Enter a new key to rotate the current key' : 'Paste the provider API key'} />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-ink">Provider
-            <select className="min-h-11 rounded-lg border border-control bg-canvas px-3 text-ink outline-none focus:ring-3 focus:ring-focus" name="provider" defaultValue={status.provider ?? 'google-gemini'}>
-              <option value="google-gemini">Google Gemini</option><option value="anthropic-claude">Anthropic Claude</option>
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-ink">Model
-            <select className="min-h-11 rounded-lg border border-control bg-canvas px-3 text-ink outline-none focus:ring-3 focus:ring-focus" name="model" defaultValue={status.model}>
-              <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite · recommended</option>
-              <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
-              <option value="claude-sonnet-4-20250514">Claude Sonnet 4 · recommended Claude</option>
-              <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku · lower cost</option>
-            </select>
-          </label>
+          <div className="min-w-0">
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] lg:grid-cols-1">
+              <label className="grid min-w-0 gap-2 text-sm font-medium text-ink">Provider
+                <span className="relative block min-w-0">
+                  <select className="sk-input ai-settings-control ai-settings-select" name="provider" defaultValue={status.provider ?? 'google-gemini'} aria-describedby="ai-provider-model-help">
+                    <option value="google-gemini">Google Gemini</option><option value="anthropic-claude">Anthropic Claude</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+                </span>
+              </label>
+              <label className="grid min-w-0 gap-2 text-sm font-medium text-ink">Model
+                <span className="relative block min-w-0">
+                  <select className="sk-input ai-settings-control ai-settings-select" name="model" defaultValue={status.model} aria-describedby="ai-provider-model-help">
+                    <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite · recommended</option>
+                    <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+                    <option value="claude-sonnet-4-20250514">Claude Sonnet 4 · recommended Claude</option>
+                    <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku · lower cost</option>
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted" aria-hidden />
+                </span>
+              </label>
+            </div>
+            <p id="ai-provider-model-help" className="mt-3 text-xs leading-relaxed text-muted">Choose the provider that issued your key and a matching model.</p>
+          </div>
           <label className="flex min-h-11 items-center gap-3 rounded-xl border border-line bg-surface-2 px-4 text-sm text-ink">
             <input name="enabled" type="checkbox" defaultChecked={status.enabled || !status.configured} className="size-4 accent-[var(--sk-accent)]" />
             Enable conversational routing after validation
