@@ -34,6 +34,42 @@ function budget(allowed = true): OmnixAiBudgetAuthority {
 }
 
 describe('generateOmnixNarrative', () => {
+  it.each(['workspace-overview', 'organization', 'client-status', 'transactions', 'properties', 'nurture', 'finances', 'proposals'] as const)('reconstructs %s facts without accepting model-written amounts, dates or status', async (kind) => {
+    const scoped = { ...response, resolvedIntent: kind === 'client-status' ? { kind, query: 'Alicia' } : { kind } };
+    const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body));
+      const context = JSON.parse(body.contents[0].parts[0].text);
+      expect(context.selectionVersion).toBe('omnix-fact-selection.v1');
+      expect(context.facts[0].text).toBe('Alicia Monroe · Hot lead due today');
+      expect(body.generationConfig.maxOutputTokens).toBe(600);
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify({
+        summaryFactId: context.facts[0].id, highlightFactIds: [], proposals: [],
+      }) }] } }] }));
+    }) as typeof fetch;
+    expect(await generateOmnixNarrative('Show CRM facts', scoped, { credential, budget: budget(), fetchImpl }))
+      .toMatchObject({ state: 'available', grounding: 'fact-selection', summary: { text: 'Alicia Monroe · Hot lead due today', citationIds: [citation.id] } });
+  });
+
+  it.each([
+    { summaryFactId: 'fact-1', highlightFactIds: [], proposals: [], summary: { text: 'Closed for $900,000 tomorrow.', citationIds: [citation.id] } },
+    { summaryFactId: 'fact-invented', highlightFactIds: [], proposals: [] },
+    { summaryFactId: 'fact-1', highlightFactIds: ['fact-1'], proposals: [] },
+    { summaryFactId: 'fact-1', highlightFactIds: ['fact-999'], proposals: [] },
+  ])('rejects changed factual prose or invalid fact selection %j', async (selection) => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(selection) }] } }] }))) as typeof fetch;
+    const result = await generateOmnixNarrative('Show finances', { ...response, resolvedIntent: { kind: 'finances' } }, { credential, budget: budget(), fetchImpl });
+    expect(result).toMatchObject({ state: 'failed', reason: 'invalid-response' });
+    expect(result.summary).toBeUndefined();
+  });
+
+  it('refuses a giant provider envelope even when its selection itself is valid', async () => {
+    const authority = budget();
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ irrelevant: 'x'.repeat(40_000), candidates: [{ content: { parts: [{ text: JSON.stringify({ summaryFactId: 'fact-1', highlightFactIds: [], proposals: [] }) }] } }] }))) as typeof fetch;
+    expect(await generateOmnixNarrative('Show finances', { ...response, resolvedIntent: { kind: 'finances' } }, { credential, budget: authority, fetchImpl }))
+      .toMatchObject({ state: 'failed', reason: 'provider-failed' });
+    expect(authority.finalize).toHaveBeenCalledWith(expect.objectContaining({ state: 'failed' }));
+  });
+
   it('returns a schema-validated grounded narrative and read-only proposal', async () => {
     const authority = budget();
     const fetchImpl = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {

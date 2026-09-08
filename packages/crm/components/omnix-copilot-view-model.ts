@@ -7,7 +7,8 @@ export type OmnixCopilotMessageState =
 
 export interface OmnixCopilotCitationView {
   id: string;
-  entityType: 'contact' | 'task' | 'activity' | 'mailer' | 'mailer-send' | 'connector' | 'web';
+  entityType: 'contact' | 'task' | 'activity' | 'mailer' | 'mailer-send' | 'connector' | 'web'
+    | 'transaction' | 'property' | 'nurture-plan' | 'transaction-finance' | 'proposal' | 'capture' | 'workflow-step' | 'property-fact';
   recordId: string;
   factKeys: string[];
   sourceTimestamp?: string;
@@ -67,6 +68,7 @@ export interface OmnixCopilotUiResult {
   alerts: OmnixCopilotAlertView[];
   warnings: string[];
   message?: string;
+  selectedContact?: { id: string; name: string };
   model?: {
     state: 'available' | 'unconfigured' | 'limited' | 'failed';
     provider: 'google-gemini' | 'anthropic-claude';
@@ -78,15 +80,21 @@ export interface OmnixCopilotUiResult {
   };
 }
 
+export interface OmnixCopilotRequestOptions {
+  source: 'crm' | 'public-web';
+  contactId?: string;
+}
+
 export type OmnixCopilotAction = (
   question: string,
+  options?: OmnixCopilotRequestOptions,
 ) => Promise<OmnixCopilotUiResult>;
 
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/u;
 
 export function validateCopilotQuestion(question: string): string | null {
   const normalized = question.trim();
-  if (!normalized) return 'Enter one of the supported questions.';
+  if (!normalized) return 'Enter a question for Omnix.';
   if (normalized.length > 200) return 'Keep the question to 200 characters or fewer.';
   if (CONTROL_CHARACTERS.test(normalized)) {
     return 'Use printable characters only.';
@@ -146,9 +154,7 @@ export function mapOmnixCopilotEnvelope(
       suggestions: [],
       alerts: [],
       warnings: envelope.warnings.map((warning) => warning.message),
-      message: envelope.code === 'unsupported-intent'
-        ? "I couldn't match that wording yet. Nothing was changed."
-        : envelope.message,
+      message: envelope.message,
     };
   }
 

@@ -1,0 +1,33 @@
+{
+  "subtaskId": "10.1-backend",
+  "critiquedAt": "2026-09-07T19:25:00Z",
+  "step5_5": {
+    "predictedBugs": [
+      "Canonical-only source reads can drop donor notes; corrected with bounded ContactIdentityMap group retrieval.",
+      "Persisted member JSON may contain unsafe navigation; SQL rejects external routes and application reads reconstruct internal links.",
+      "Refresh races could overwrite evidence; snapshots are immutable, with unique prior snapshot linkage and optimistic version checks.",
+      "Native Node strip-types rejects TypeScript parameter properties; error constructor uses explicit field assignment."
+    ],
+    "edgeCases": [
+      "Unknown contact or unrelated transaction must fail without exposing existence.",
+      "Prompt injection in a note is omitted and never reaches a model; negation and false preapproval remain literal recorded facts.",
+      "An expired or changed snapshot is stale, but prior stored content remains immutable and refresh appends a version.",
+      "Source query failure returns a named unavailable family without leaking raw database errors."
+    ],
+    "errorHandling": true,
+    "securityCheck": true,
+    "passed": true
+  },
+  "step6_5": {
+    "followsPatterns": true,
+    "noHardcoded": true,
+    "testsAdded": true,
+    "docsUpdated": true,
+    "noConsoleLogs": true,
+    "passed": true
+  },
+  "overallVerdict": "PASSED",
+  "skipped": false,
+  "skipWarning": null,
+  "limits": "Backend code self-review only. Authorized continuation adds opt-in exact-ID model selection under existing paid-private credential/budget/guard controls and permitted property metadata. Model output cannot supply new fact text or citation IDs; stale or unsafe facts, invalid output, timeout and budget receipt failure preserve deterministic content. Sidecar output is response-only; budget-ledger correlation/usage is durable. Story not Done: migration apply/RLS execution, rollback/repair exercise, authenticated UAT, appointment coverage and release evidence remain pending. No real provider request was made. Fixed versioned constants encode documented deterministic policy, not hidden configurable behavior."
+}

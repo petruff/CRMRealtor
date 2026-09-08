@@ -42,7 +42,7 @@ export default async function OmnixPage() {
   const aiCapability = await readWorkspaceAiCapabilityStatus(workspaceScope)
     .catch(() => ({ state: 'failed' as const }));
   const aiCopy = aiCapability.state === 'available'
-    ? 'Gemini is available for grounded CRM summaries, public web research, and safe, reviewable recommendations. Nothing is sent, changed, or scheduled without your approval.'
+    ? 'Ask about clients, transactions, properties, and next steps. Gemini helps make sense of your records and prepares actions for your review.'
     : aiCapability.state === 'failed'
       ? 'Your deterministic CRM brief is available, but Omnix could not confirm the AI connection. Review AI setup before relying on generated summaries.'
       : 'Your deterministic CRM brief is ready. The workspace owner can connect Gemini in Settings for grounded summaries and reviewable recommendations.';
@@ -57,7 +57,7 @@ export default async function OmnixPage() {
           </span>
         </div>
         <h1 className="mt-2 max-w-4xl font-display text-[2.5rem] leading-[1.04] text-ink sm:text-5xl md:text-[3.5rem]">
-          Your business, <br /><span className="text-muted">already organized.</span>
+          Your CRM, <br /><span className="text-muted">in one conversation.</span>
         </h1>
         <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-muted">
           {aiCopy}
@@ -67,7 +67,9 @@ export default async function OmnixPage() {
         ) : null}
       </header>
 
-      <section aria-labelledby="brief-title">
+      <OmnixCopilot action={askOmnixCopilotAction} />
+
+      <section className="mt-8" aria-labelledby="brief-title">
         <div className="mb-4 flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-2xl bg-accent text-white"><Sparkles className="size-[18px]" aria-hidden /></span>
           <div>
@@ -102,8 +104,6 @@ export default async function OmnixPage() {
           <p className="rounded-[var(--sk-card-radius)] bg-surface-2 px-6 py-10 text-center text-sm text-muted">No current recommendation needs attention.</p>
         )}
       </section>
-
-      <OmnixCopilot action={askOmnixCopilotAction} />
 
       <section className="mt-8 rounded-[var(--sk-card-radius)] bg-surface-2 p-5 sm:p-6" aria-labelledby="contract-title">
         <div className="flex items-start gap-3">

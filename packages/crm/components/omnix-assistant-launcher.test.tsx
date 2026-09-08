@@ -101,7 +101,7 @@ describe('OmnixAssistantLauncher', () => {
     await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
     await user.click(await screen.findByRole('button', { name: 'What should I do today?' }));
 
-    await waitFor(() => expect(action).toHaveBeenCalledWith('What should I do today?'));
+    await waitFor(() => expect(action).toHaveBeenCalledWith('What should I do today?', { source: 'crm' }));
     expect(await screen.findByText('Two people need attention.')).toBeInTheDocument();
     expect(screen.getByText('Live CRM')).toBeInTheDocument();
   });
@@ -137,6 +137,7 @@ describe('OmnixAssistantLauncher', () => {
 
     await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
     await user.type(await screen.findByRole('textbox', { name: 'Ask Omnix about the CRM or research a topic' }), 'Research Florida market trends');
+    await user.click(screen.getByRole('button', { name: 'Public web' }));
     await user.click(screen.getByRole('button', { name: 'Ask Omnix' }));
 
     expect(await screen.findByText('Web researched')).toBeInTheDocument();
@@ -300,10 +301,10 @@ describe('OmnixAssistantLauncher', () => {
 
   it('contains page scrolling and exposes keyboard and latest-message navigation', async () => {
     const user = userEvent.setup();
-    const scrollIntoView = vi.fn();
-    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
       configurable: true,
-      value: scrollIntoView,
+      value: scrollTo,
     });
     document.body.style.overflow = 'clip';
 
@@ -323,9 +324,9 @@ describe('OmnixAssistantLauncher', () => {
 
     const jump = await screen.findByRole('button', { name: 'Jump to latest message' });
     expect(jump).toHaveAttribute('aria-controls', activeConversation.id);
-    scrollIntoView.mockClear();
+    scrollTo.mockClear();
     await user.click(jump);
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end', behavior: 'smooth' });
+    expect(scrollTo).toHaveBeenCalledWith({ top: activeConversation.scrollHeight, behavior: 'smooth' });
 
     await user.keyboard('{Escape}');
     expect(document.body.style.overflow).toBe('clip');

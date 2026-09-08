@@ -2,9 +2,11 @@
 
 import {
   mapOmnixCopilotEnvelope,
+  type OmnixCopilotRequestOptions,
   type OmnixCopilotUiResult,
 } from '@/components/omnix-copilot-view-model';
 import { executeOmnixCopilot } from '@/lib/application/omnix-copilot-service';
+import { contextualOmnixQuestion, validateOmnixAssistantRequest } from '@/lib/application/omnix-assistant-request';
 import { routeOmnixQuestionWithGemini, type OmnixGeminiRouteResult } from '@/lib/application/omnix-gemini-router';
 import { routeOmnixQuestionWithClaude } from '@/lib/application/omnix-claude-router';
 import { createSupabaseOmnixAiBudgetAuthority } from '@/lib/application/omnix-ai-budget';
@@ -79,7 +81,7 @@ function addGenerativeResult(
     id: 'ai-grounded-highlights',
     kind: 'list',
     title: 'What matters most',
-    detail: 'Prioritized from the verified CRM records below.',
+    detail: 'Review these highlights alongside the recorded facts below.',
     items: narrative.highlights.map((item, index) => ({
       id: `ai-highlight-${index + 1}`,
       label: item.text,
@@ -194,6 +196,7 @@ function researchResultToUi(
 
 export async function askOmnixCopilotAction(
   question: string,
+  options?: OmnixCopilotRequestOptions,
 ): Promise<OmnixCopilotUiResult> {
   const now = new Date();
   const startedAt = Date.now();
@@ -223,6 +226,7 @@ export async function askOmnixCopilotAction(
   };
 
   try {
+    const input = validateOmnixAssistantRequest(question, options);
     const context = await getRepository();
     dataMode = context.isLive ? 'live' : 'sample';
     workspaceId = context.workspaceScope.workspaceId;
@@ -234,12 +238,19 @@ export async function askOmnixCopilotAction(
         "I can't process that wording safely. Rephrase the CRM question without instructions to reveal, override, browse files, or run code.",
       );
     }
-    let routedQuestion = question;
+    const selected = input.contactId ? await context.repository.get(input.contactId) : undefined;
+    if (input.contactId && !selected) {
+      throw new OmnixCopilotError('not-found', 'That contact is no longer available in this workspace. Choose a contact again.');
+    }
+    const selectedContact = selected ? { id: selected.id, name: `${selected.firstName} ${selected.lastName}`.trim() } : undefined;
+    let routedQuestion = contextualOmnixQuestion(question, selectedContact?.id);
     try {
-      createOmnixCopilotRequest({ command: 'ask', question, live: context.isLive, correlationId, now });
+      if (input.source === 'public-web') throw new OmnixCopilotError('unsupported-intent', 'Public research requires a separate public question.');
+      createOmnixCopilotRequest({ command: 'ask', question: routedQuestion, live: context.isLive, correlationId, now });
     } catch (error) {
       if (!(error instanceof OmnixCopilotError) || error.code !== 'unsupported-intent') throw error;
       credential = await loadOmnixCredential(context.workspaceScope);
+      if (!credential || !context.isLive) throw error;
       modelProvider = credential?.provider ?? 'google-gemini';
       if (credential?.provider === 'google-gemini' && context.isLive) {
         const supabase = await createSupabaseServerClient();
@@ -262,9 +273,15 @@ export async function askOmnixCopilotAction(
       }
       modelRoute = credential?.provider === 'anthropic-claude'
         ? await routeOmnixQuestionWithClaude(question, { credential })
-        : await routeOmnixQuestionWithGemini(question, credential ? { credential } : {});
-      if (!modelRoute.query) {
-        if (credential?.provider !== 'google-gemini' || !context.isLive || !budget || !reservationId) throw error;
+        : await routeOmnixQuestionWithGemini(question, {
+          credential,
+          ...(selectedContact ? { contextContactName: selectedContact.name } : {}),
+        });
+      if (input.source === 'public-web') {
+        if (modelRoute.state !== 'available' || modelRoute.route !== 'public-web'
+          || credential?.provider !== 'google-gemini' || !context.isLive || !budget || !reservationId) {
+          throw new OmnixCopilotError('unsupported-intent', 'Keep CRM questions in CRM mode. Public web research needs a clearly public topic.');
+        }
         reservationDelegated = true;
         const research = await researchWithGemini(question, correlationId, {
           credential,
@@ -289,16 +306,26 @@ export async function askOmnixCopilotAction(
         });
         return researched;
       }
+      if (!modelRoute.query || modelRoute.route === 'public-web' || modelRoute.route === 'clarify') {
+        throw new OmnixCopilotError('unsupported-intent', modelRoute.route === 'public-web'
+          ? 'Choose Public web to research this topic. CRM mode only reads your workspace records.'
+          : 'I need a clearer CRM question or a specific client. Try a client status, transactions, properties, or workspace overview.');
+      }
       routedQuestion = modelRoute.query;
     }
-    const request = createOmnixCopilotRequest({
+    let request = createOmnixCopilotRequest({
       command: 'ask', question: routedQuestion, live: context.isLive, correlationId, now,
     });
+    if (selectedContact && ['client-status', 'transactions', 'properties', 'nurture', 'finances', 'proposals'].includes(request.intent.kind)
+      && /\b(?:her|his|their|this client|this contact|dela|dele)\b/iu.test(question)
+      && 'query' in request.intent && request.intent.query?.toLocaleLowerCase('en-US') === selectedContact.name.toLocaleLowerCase('en-US')) {
+      request = { ...request, intent: { ...request.intent, query: selectedContact.id } };
+    }
     requestDispatched = true;
     const response = await executeOmnixCopilot(request, {
       getRepository: async () => context,
     });
-    const mapped = mapOmnixCopilotEnvelope(question, response);
+    const mapped = { ...mapOmnixCopilotEnvelope(question, response), ...(selectedContact ? { selectedContact } : {}) };
     if (!response.ok) {
       await finalizeUnusedReservation();
       return mapped;
@@ -340,12 +367,22 @@ export async function askOmnixCopilotAction(
         narrative,
         now,
       }).catch(() => []);
-      if (persistence.length !== narrative.proposals.length
-        || persistence.some((item) => item.state !== 'persisted')) {
-        durableNarrative = { ...narrative, proposals: [] };
+      const reviewable = narrative.proposals.flatMap((proposal, index) => {
+        const receipt = persistence[index];
+        if (receipt?.state === 'persisted') return [{ ...proposal, href: receipt.reviewHref }];
+        if (receipt?.state === 'review-required') return [{
+          ...proposal,
+          href: receipt.reviewHref,
+          title: 'Choose a date and prepare this follow-up',
+          text: `${proposal.text} Open the client review to set the exact task and date. No task has been created.`,
+        }];
+        return [];
+      });
+      durableNarrative = { ...narrative, proposals: reviewable };
+      if (reviewable.length !== narrative.proposals.length) {
         durableMapped = {
           ...mapped,
-          warnings: ['Omnix could not save the suggested actions for review, so no action preview is shown.', ...mapped.warnings],
+          warnings: ['Some suggested actions could not be prepared for review and are not shown.', ...mapped.warnings],
         };
       }
     }

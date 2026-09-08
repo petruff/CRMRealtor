@@ -10,6 +10,12 @@ import { memoryMailerRepository } from '../lib/data/memory-mailer-repository.ts'
 import type { ContactRepository } from '../lib/data/repository.ts';
 import { supabaseActivityRepository } from '../lib/data/supabase-activity-repository.ts';
 import { supabaseRepository } from '../lib/data/supabase-repository.ts';
+import { supabaseContactIdentityMap } from '../lib/data/supabase-contact-identity-map.ts';
+import { supabaseTransactionRepository } from '../lib/data/supabase-transaction-repository.ts';
+import { supabasePropertyRepository } from '../lib/data/supabase-property-repository.ts';
+import { supabaseNurturePlanRepository } from '../lib/data/supabase-nurture-plan-repository.ts';
+import { supabaseOmnixProposalRepository } from '../lib/data/supabase-omnix-proposal-repository.ts';
+import { supabaseCaptureOutcomeRepository } from '../lib/data/supabase-capture-outcome-repository.ts';
 import type { Contact } from '../lib/domain/contact.ts';
 import type { MailerCampaign, MailerSend } from '../lib/domain/mailer.ts';
 import { SAMPLE_WORKSPACE_SCOPE } from '../lib/domain/workspace.ts';
@@ -108,12 +114,19 @@ function liveReadOnlyMailerRepository(
 
 async function liveRepositoryContext() {
   const { client, scope } = await createAuthenticatedCliContext();
+  const contactIdentityMap = supabaseContactIdentityMap(client);
   return {
-    repository: supabaseRepository(client, scope),
+    repository: supabaseRepository(client, scope, contactIdentityMap),
+    contactIdentityMap,
     workspaceScope: scope,
     isLive: true,
-    activityRepository: supabaseActivityRepository(client),
+    activityRepository: supabaseActivityRepository(client, contactIdentityMap),
     mailerRepository: liveReadOnlyMailerRepository(client, scope.workspaceId),
+    transactionRepository: supabaseTransactionRepository(client),
+    propertyRepository: supabasePropertyRepository(client),
+    nurturePlanRepository: supabaseNurturePlanRepository(client),
+    omnixProposalRepository: supabaseOmnixProposalRepository(client),
+    captureOutcomeRepository: supabaseCaptureOutcomeRepository(client),
   } as const;
 }
 

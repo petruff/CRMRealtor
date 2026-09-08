@@ -1,12 +1,14 @@
 import type { AttentionPriority } from './attention.ts';
 
 export const OMNIX_PROPOSAL_KINDS = [
+  'note-append',
   'task-create',
   'pipeline-move',
   'google-email-draft',
   'google-calendar-event',
   'mailchimp-campaign-draft',
   'nurture-plan',
+  'nurture-transition',
 ] as const;
 export type OmnixProposalKind = (typeof OMNIX_PROPOSAL_KINDS)[number];
 

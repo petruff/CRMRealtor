@@ -11,9 +11,9 @@ import {
   type PropertyIdentity,
   type PropertyInterest,
   type TransactionPropertyLink,
-} from '@/lib/domain/property';
-import { validateWorkspaceScope } from '@/lib/domain/workspace';
-import type { PropertyRepository } from './property-repository';
+} from '../domain/property.ts';
+import { validateWorkspaceScope } from '../domain/workspace.ts';
+import type { PropertyRepository } from './property-repository.ts';
 
 interface PropertyRow { id:string;workspace_id:string;address_line_1:string;address_line_2:string|null;city:string;state_code:string;postal_code:string;country_code:'US';normalized_address_key:string;property_kind:PropertyIdentity['kind'];lifecycle:PropertyIdentity['lifecycle'];current_version:number;created_by_membership_id:string;updated_by_membership_id:string;created_at:string;updated_at:string }
 interface FactRow { id:string;workspace_id:string;property_id:string;field_key:PropertyFact['field'];fact_value:PropertyFactValue;authority:PropertyFact['authority'];provider:string|null;provider_record_id:string|null;source_reference:string;as_of:string;permission_state:PropertyFact['permissionState'];display_until:string|null;retention_until:string|null;current_version:number;recorded_by_membership_id:string;created_at:string;updated_at:string }

@@ -99,13 +99,13 @@ describe('mapOmnixCopilotEnvelope', () => {
       dataMode: 'sample',
       asOf: '2026-08-11T15:00:00.000Z',
       code: 'unsupported-intent',
-      message: 'That request is outside the deterministic grammar.',
+      message: 'Choose Public web to research this topic.',
       supportedExamples: ['brief today', 'pipeline'],
       warnings: [],
     });
 
     expect(result.status).toBe('unsupported');
-    expect(result.message).toBe("I couldn't match that wording yet. Nothing was changed.");
+    expect(result.message).toBe('Choose Public web to research this topic.');
     expect(result.answerBlocks[0]).toMatchObject({
       title: 'Try asking in one of these ways',
       items: [

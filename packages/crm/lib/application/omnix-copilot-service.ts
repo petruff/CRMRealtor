@@ -63,6 +63,7 @@ import {
   type OmnixCopilotTelemetrySink,
 } from '../observability/omnix-copilot-telemetry.ts';
 import { activityEventLabel } from '../presentation/activity-feed.ts';
+import { readOmnixModules, OMNIX_MODULE_INTENTS, type OmnixModuleRepositories } from './omnix-copilot-module-reads.ts';
 
 export const OMNIX_COPILOT_RESULT_MAX = 500;
 const UPCOMING_DAYS = 7;
@@ -127,7 +128,7 @@ function followUpFactKeys(
 }
 
 export interface OmnixCopilotRepositoryContext
-  extends Pick<RepositoryContext, 'repository' | 'workspaceScope' | 'isLive'> {
+  extends Pick<RepositoryContext, 'repository' | 'workspaceScope' | 'isLive'>, Omit<OmnixModuleRepositories, 'repository'> {
   readonly activityRepository?: ActivityRepository;
   readonly mailerRepository?: MailerRepository;
   readonly connectorRepository?: ConnectorRepository;
@@ -1259,6 +1260,7 @@ async function dispatch(
   const intent = request.intent;
 
   if (intent.kind === 'help') return helpResult();
+  if ((OMNIX_MODULE_INTENTS as readonly string[]).includes(intent.kind)) return readOmnixModules(context, scope, intent, request.asOf);
   if (intent.kind === 'campaigns') {
     return {
       answerBlocks: [block(

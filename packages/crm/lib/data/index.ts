@@ -52,6 +52,7 @@ import type { PipelineRepository } from './pipeline-repository';
 import { createMemoryPipelineRepository } from './memory-pipeline-repository';
 import { supabasePipelineRepository } from './supabase-pipeline-repository';
 import { supabaseContactIdentityMap } from './supabase-contact-identity-map';
+import type { ContactIdentityMap } from './contact-identity-map';
 import { selectedWorkspaceId } from './selected-workspace';
 import type { AttentionRepository } from './attention-repository';
 import { createMemoryAttentionRepository } from './memory-attention-repository';
@@ -80,13 +81,26 @@ import { supabaseListingProviderRepository } from './supabase-listing-provider-r
 import type { PropertyBehaviorRepository } from './property-behavior-repository';
 import { createMemoryPropertyBehaviorRepository } from './memory-property-behavior-repository';
 import { supabasePropertyBehaviorRepository } from './supabase-property-behavior-repository';
+import type { MeetingBriefRepository } from './meeting-brief-repository';
+import { createMemoryMeetingBriefRepository } from './memory-meeting-brief-repository';
+import { supabaseMeetingBriefRepository } from './supabase-meeting-brief-repository';
+import type { CaptureOutcomeRepository } from './capture-outcome-repository';
+import { createMemoryCaptureOutcomeRepository } from './memory-capture-outcome-repository';
+import { supabaseCaptureOutcomeRepository } from './supabase-capture-outcome-repository';
 
 // Sample work-queue repositories intentionally live for the lifetime of this
 // server process. Recreating them inside every request would make a successful
 // Smart List/task action disappear on the very next render.
 const sampleSmartListRepository = createMemorySmartListRepository();
 const sampleIncompleteRecordRepository = createMemoryIncompleteRecordRepository();
-const sampleActivityRepository = createMemoryActivityRepository({
+const sampleConversationCache = globalThis as typeof globalThis & {
+  __omnixConversationActivities?: ActivityRepository;
+  __omnixConversationProposals?: OmnixProposalRepository;
+  __omnixConversationCaptures?: CaptureOutcomeRepository;
+  __omnixConversationBriefs?: MeetingBriefRepository;
+  __omnixConversationNurture?: NurturePlanRepository;
+};
+const sampleActivityRepository = sampleConversationCache.__omnixConversationActivities ??= createMemoryActivityRepository({
   activeMembershipIds: [SAMPLE_WORKSPACE_SCOPE.membershipId, SAMPLE_ASSISTANT_MEMBERSHIP_ID],
   isActiveContact: memoryContactIsActive,
 });
@@ -109,13 +123,22 @@ export const sampleAttentionRepository = createMemoryAttentionRepository({
   activeMembershipIds: [SAMPLE_WORKSPACE_SCOPE.membershipId, SAMPLE_ASSISTANT_MEMBERSHIP_ID],
 });
 const sampleTransactionRepository = createMemoryTransactionRepository(sampleContactRepository);
-const sampleOmnixProposalRepository = createMemoryOmnixProposalRepository();
-const sampleNurturePlanRepository = createMemoryNurturePlanRepository();
+const sampleOmnixProposalRepository = sampleConversationCache.__omnixConversationProposals ??= createMemoryOmnixProposalRepository();
+const sampleCaptureOutcomeRepository = sampleConversationCache.__omnixConversationCaptures ??= createMemoryCaptureOutcomeRepository(sampleContactRepository, sampleOmnixProposalRepository, sampleActivityRepository);
+const sampleNurturePlanRepository = sampleConversationCache.__omnixConversationNurture ??= createMemoryNurturePlanRepository();
 const sampleOperationalSignalRepository = createMemoryOperationalSignalRepository(sampleContactRepository, sampleTransactionRepository);
 const sampleAffordabilityRepository = createMemoryAffordabilityRepository();
 const samplePropertyRepository = createMemoryPropertyRepository();
 const sampleListingProviderRepository = createMemoryListingProviderRepository();
 const samplePropertyBehaviorRepository = createMemoryPropertyBehaviorRepository();
+const sampleMeetingBriefSources = createMemoryMeetingBriefRepository({
+  contacts: sampleContactRepository, activities: sampleActivityRepository,
+  transactions: sampleTransactionRepository, nurturePlans: sampleNurturePlanRepository,
+  propertyBehavior: samplePropertyBehaviorRepository,
+});
+const sampleMeetingBriefHistory = sampleConversationCache.__omnixConversationBriefs ??= sampleMeetingBriefSources;
+// Keep prior snapshots across development reloads while using the current source adapters.
+const sampleMeetingBriefRepository: MeetingBriefRepository = { ...sampleMeetingBriefHistory, loadSources: sampleMeetingBriefSources.loadSources };
 const connectorConfiguration = loadConfiguredConnectorRuntimeConfiguration();
 const sampleConnectorRepository = createMemoryConnectorRepository({
   definitions: connectorConfiguration.definitions,
@@ -133,6 +156,9 @@ const sampleConnectorRepository = createMemoryConnectorRepository({
 });
 
 export interface RepositoryContext {
+  contactIdentityMap?: ContactIdentityMap;
+  meetingBriefRepository?: MeetingBriefRepository;
+  captureOutcomeRepository?: CaptureOutcomeRepository;
   repository: ContactRepository;
   importGateway: ImportGateway;
   mailerRepository: MailerRepository;
@@ -208,6 +234,8 @@ export async function getRepository(): Promise<RepositoryContext> {
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
+      meetingBriefRepository: sampleMeetingBriefRepository,
+      captureOutcomeRepository: sampleCaptureOutcomeRepository,
     };
   }
 
@@ -241,6 +269,8 @@ export async function getRepository(): Promise<RepositoryContext> {
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
+      meetingBriefRepository: sampleMeetingBriefRepository,
+      captureOutcomeRepository: sampleCaptureOutcomeRepository,
     };
   }
 
@@ -250,6 +280,7 @@ export async function getRepository(): Promise<RepositoryContext> {
   const contactIdentityMap = supabaseContactIdentityMap(supabase);
   const repository = supabaseRepository(supabase, workspaceScope, contactIdentityMap);
   return {
+    contactIdentityMap,
     repository,
     importGateway: supabaseImportGateway(supabase, workspaceScope, contactIdentityMap),
     mailerRepository: supabaseMailerRepository(supabase, workspaceScope),
@@ -271,6 +302,8 @@ export async function getRepository(): Promise<RepositoryContext> {
     richContactRepository: supabaseRichContactRepository(supabase, contactIdentityMap),
     workspaceScope,
     isLive: true,
+    meetingBriefRepository: supabaseMeetingBriefRepository(supabase),
+    captureOutcomeRepository: supabaseCaptureOutcomeRepository(supabase),
     userEmail: user.email ?? undefined,
     userDisplayName: resolveUserDisplayName(user),
   };

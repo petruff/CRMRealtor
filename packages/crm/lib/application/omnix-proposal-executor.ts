@@ -8,6 +8,8 @@ import type { OmnixProposalRepository } from '../data/omnix-proposal-repository.
 import type { PipelineRepository } from '../data/pipeline-repository.ts';
 import type { NurturePlanRepository } from '../data/nurture-plan-repository.ts';
 import type { OperationalSignalRepository } from '../data/operational-signal-repository.ts';
+import type { CaptureOutcomeRepository } from '../data/capture-outcome-repository.ts';
+import { CAPTURE_SOURCE_MAX, captureText } from '../domain/capture-outcome.ts';
 
 export interface OmnixInternalExecutionDependencies {
   readonly proposals: OmnixProposalRepository;
@@ -15,6 +17,7 @@ export interface OmnixInternalExecutionDependencies {
   readonly pipeline: PipelineRepository;
   readonly nurture: NurturePlanRepository;
   readonly operationalSignals?: OperationalSignalRepository;
+  readonly captureOutcomes?: CaptureOutcomeRepository;
 }
 
 function stringField(payload: Readonly<Record<string, unknown>>, field: string): string {
@@ -51,7 +54,7 @@ export async function executeApprovedOmnixProposalCommand(
   if (proposal.state !== 'approved' && proposal.state !== 'executing') {
     throw new OmnixOperationalError('conflict', 'Proposal is not approved for execution.');
   }
-  if (proposal.kind !== 'task-create' && proposal.kind !== 'pipeline-move' && proposal.kind !== 'nurture-plan') {
+  if (proposal.kind !== 'note-append' && proposal.kind !== 'task-create' && proposal.kind !== 'pipeline-move' && proposal.kind !== 'nurture-plan' && proposal.kind !== 'nurture-transition') {
     throw new OmnixOperationalError('unavailable', 'This approved provider action requires its connector handoff.');
   }
   const version = await dependencies.proposals.getVersion(scope, proposal.id, proposal.currentVersion);
@@ -67,7 +70,15 @@ export async function executeApprovedOmnixProposalCommand(
   }
   try {
     let executionReference: string;
-    if (proposal.kind === 'task-create') {
+    if (proposal.kind === 'note-append') {
+      if (!dependencies.captureOutcomes) throw new OmnixOperationalError('unavailable', 'Capture note persistence is unavailable.');
+      const receipt = await dependencies.captureOutcomes.appendNote(scope, {
+        contactId: stringField(version.payload, 'contactId'), body: captureText(version.payload.body, CAPTURE_SOURCE_MAX, 'Approved note'),
+        proposalId: proposal.id, proposalVersion: proposal.currentVersion,
+        idempotencyKey: `omnix:${proposal.id}:${proposal.currentVersion}`, occurredAt: now.toISOString(),
+      });
+      executionReference = `note:${receipt.id}`;
+    } else if (proposal.kind === 'task-create') {
       const receipt = await createTaskCommand(dependencies.activities, scope, {
         contactId: stringField(version.payload, 'contactId'),
         title: stringField(version.payload, 'title'),
@@ -88,6 +99,21 @@ export async function executeApprovedOmnixProposalCommand(
         idempotencyKey: `omnix-${proposal.id}-${proposal.currentVersion}`,
       }, now);
       executionReference = `contact:${receipt.contact.id}:pipeline:${receipt.contact.pipelineStage}`;
+    } else if (proposal.kind === 'nurture-transition') {
+      const action = stringField(version.payload, 'action');
+      if (!['pause', 'resume', 'snooze', 'stop'].includes(action)) throw new OmnixOperationalError('invalid-input', 'Invalid nurture action.');
+      const planId = stringField(version.payload, 'planId');
+      const target = await dependencies.nurture.get(scope, planId);
+      if (!target || target.contactId !== stringField(version.payload, 'contactId')) throw new OmnixOperationalError('not-found', 'The contact nurture plan was not found.');
+      const receipt = await dependencies.nurture.transition(scope, planId, {
+        expectedVersion: integerField(version.payload, 'expectedVersion', 2147483647), action: action as 'pause' | 'resume' | 'snooze' | 'stop',
+        ...(typeof version.payload.snoozedUntil === 'string' ? { snoozedUntil: version.payload.snoozedUntil } : {}),
+        ...(typeof version.payload.stopReason === 'string' ? { stopReason: version.payload.stopReason } : {}),
+        idempotencyKey: `omnix:${proposal.id}:${proposal.currentVersion}`, occurredAt: now.toISOString(),
+      });
+      // SQL replay may return the plan's later mutable state; the approved transition owns expectedVersion + 1.
+      if (receipt.id !== planId) throw new OmnixOperationalError('conflict', 'The nurture receipt does not match the approved plan.');
+      executionReference = `nurture-plan:${receipt.id}:version:${integerField(version.payload, 'expectedVersion', 2147483646) + 1}`;
     } else {
       const plan = await dependencies.nurture.create(scope, {
         contactId: stringField(version.payload, 'contactId'), sourceProposalId: proposal.id,

@@ -1,0 +1,202 @@
+[
+  {
+    "path": "packages/crm/app/contacts/[id]/brief/loading.tsx",
+    "sha256": "09d5af63a99925c2ae3c7ca229913bdea46b1dfdd268b2ea335ac0cc4d4faca1"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/brief/page.test.ts",
+    "sha256": "eda52fc5a75e52c1f175122e1453f1a1e2e3246f242387fd1a2507eeef33f5f1"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/brief/page.tsx",
+    "sha256": "cba6c8f6f88f08366ef23590578c742789517742153b9478c47a78860775af67"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/outcome/actions.test.ts",
+    "sha256": "92f7f5f8a293e3c571941a4f5986f8eb48218b0539403476afeb9b0eb1228a6e"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/outcome/actions.ts",
+    "sha256": "503cff7cdee5ae6f92329e8e57e3e968892ad870bf02efea99d93a3889cdfff2"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/outcome/page.tsx",
+    "sha256": "ce4965e6210c0571d2e428e955407a12f0fe963a63189f7a0f19e7b8598eb159"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/page.tsx",
+    "sha256": "32ab0b14b5f344999b249255cbc23011210f3d48224a37e15e39df915c96bb70"
+  },
+  {
+    "path": "packages/crm/app/globals.css",
+    "sha256": "3ec50cd892dcd9f7c3d95bb80878988df3d2ad759056d1bb6ebe58a82b089499"
+  },
+  {
+    "path": "packages/crm/app/transactions/page.tsx",
+    "sha256": "9c1c46e6e494833b1875bea2c38ab7565f8c5a2cfa6aed3a214a4453dafebdac"
+  },
+  {
+    "path": "packages/crm/components/capture-outcome.test.tsx",
+    "sha256": "8bde357b3f186874651f7136775e5ae5efcf717ac4ab2791db464361e0f4f66d"
+  },
+  {
+    "path": "packages/crm/components/capture-outcome.tsx",
+    "sha256": "5c6c26263239a768c52fae341b4f63819303f4d209380a1284dca7fa6177f839"
+  },
+  {
+    "path": "packages/crm/components/conversation-actions.tsx",
+    "sha256": "a19046f0f4731f1fb6f4d5b2214986f4d394cbd17536c65a3ca0d1d7b390d079"
+  },
+  {
+    "path": "packages/crm/components/meeting-brief.tsx",
+    "sha256": "b520cc37333e3b0654035f3d6a53b79e755d43ef4eb041aed8957deade97a92c"
+  },
+  {
+    "path": "packages/crm/components/today-command-center.tsx",
+    "sha256": "776c5081197f9cee1f6cf46db408631b2bf536bde9571380ebdaa9579077010c"
+  },
+  {
+    "path": "packages/crm/components/today-conversations.tsx",
+    "sha256": "692d080c731babe2054c855971bb921e343be4a3e12010feefcff23835918d3d"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-extraction.test.ts",
+    "sha256": "b04f0d751949e399b067486dc222226fbdd8a408e7561a25d8198ccede3195d7"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-extraction.ts",
+    "sha256": "2cfba0cd321093c81c8bcfb91b5d95a959139a20e3c0900a67b4b6f0957a415c"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-service.test.ts",
+    "sha256": "be0a40b9a4588c113ea8576c693113ce1200062f02b112cfd357247a8c1a252a"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-service.ts",
+    "sha256": "d003f3aff6a6e8e89a933b4ded524980db54788499de4011b1a4252a542bdfdf"
+  },
+  {
+    "path": "packages/crm/lib/application/meeting-brief-service.test.ts",
+    "sha256": "7fe313b0be9493a73096177324fba14a4ddf00f3f375c9b8732147516afdea2f"
+  },
+  {
+    "path": "packages/crm/lib/application/meeting-brief-service.ts",
+    "sha256": "84f2b80ed0f89bc724371cda749c065a4cbfdc2191192ea14997d05922639e15"
+  },
+  {
+    "path": "packages/crm/lib/application/omnix-proposal-executor.ts",
+    "sha256": "880433cbc968c6d9bc7a9a6504fee0104d5b062a9d6acc3310b6016168158b52"
+  },
+  {
+    "path": "packages/crm/lib/application/route-navigation.test.ts",
+    "sha256": "8325b779a9664ab6c2c113b98aa7064e09149fe59e0bed777659bb1cf4e31fa2"
+  },
+  {
+    "path": "packages/crm/lib/application/route-navigation.ts",
+    "sha256": "2e2a2e654075677353c4f8a17251a587c67b7639dbaf33137feb23c5ba9274bc"
+  },
+  {
+    "path": "packages/crm/lib/data/capture-outcome-repository.ts",
+    "sha256": "9d910477c515138d1d65c84cdddc4ea5e5c52e9c26e596be5d95b5fa2e2b6c7f"
+  },
+  {
+    "path": "packages/crm/lib/data/index.ts",
+    "sha256": "3fdc2a6d6653f1d09cb2b70717b01c0aca25f2da1ec9d7f000140ee58bf8bbb4"
+  },
+  {
+    "path": "packages/crm/lib/data/meeting-brief-repository.ts",
+    "sha256": "fc52a8b9aa6717eeab685a51afbbe778af3110e80c2b7d89c57943156d60ed58"
+  },
+  {
+    "path": "packages/crm/lib/data/memory-capture-outcome-repository.ts",
+    "sha256": "6acef9cc1a9e59d4510b0a2a8cf5ab552a23aa643bd8473dd3a33fd5b2373f9c"
+  },
+  {
+    "path": "packages/crm/lib/data/memory-meeting-brief-repository.ts",
+    "sha256": "5387e86004a37f6c02c2fb4fd5e6bc37513703d1bfacd2f4e64b42601d0f9f05"
+  },
+  {
+    "path": "packages/crm/lib/data/supabase-capture-outcome-repository.ts",
+    "sha256": "f1571e9d46e6647d6fbab62b7a0bca8f9e0424067fa76995acb9a5c6e43c1d0f"
+  },
+  {
+    "path": "packages/crm/lib/data/supabase-meeting-brief-repository.test.ts",
+    "sha256": "71a710f1def9d9c826cfe026504b711dd936f76a5b9eb3d679106751acca779f"
+  },
+  {
+    "path": "packages/crm/lib/data/supabase-meeting-brief-repository.ts",
+    "sha256": "129f6ff8ff843998051c78d2333ef488bfed59795203ff6585f58159213433e5"
+  },
+  {
+    "path": "packages/crm/lib/domain/capture-outcome.ts",
+    "sha256": "ef254fadc77129fe50cc512c4212dc2016965b99f019d687ad81fe5bf77adac9"
+  },
+  {
+    "path": "packages/crm/lib/domain/meeting-brief.ts",
+    "sha256": "26a143f1cfc3f0bac7e092083cbb4cc49e9bbd15c9ba2581094441ff2ddd8a59"
+  },
+  {
+    "path": "packages/crm/lib/domain/omnix-operational-brain.ts",
+    "sha256": "811a390c179d5b8029fbebc341be485610928081d0af897178f6f524d752f806"
+  },
+  {
+    "path": "packages/crm/package.json",
+    "sha256": "11facdbdfd0b03495e9073e52c3a339514cad7d2f4f6b5ebcdcf6a238c31ac00"
+  },
+  {
+    "path": "packages/crm/scripts/capture-outcome.test.ts",
+    "sha256": "adc9c4f1e2e7054a2bed9e7275579345823389e43a47acfde4b80d3be83fa8fa"
+  },
+  {
+    "path": "packages/crm/scripts/capture-outcome.ts",
+    "sha256": "96210c783382c7cb4a85ebfeefbf03853d53fe733eb470e50882bd29a74a5d40"
+  },
+  {
+    "path": "packages/crm/scripts/meeting-brief.ts",
+    "sha256": "89a133abc76d5f59d333ba7e7a9ce587b49ff6da7fd5b5d51c6efb2cd49ffa63"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907120000_meeting_brief_snapshots.sql",
+    "sha256": "567185f94050d3fb24104fba779ba027d8974b3adc9a63d105793ed24f11e2ac"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907121000_capture_note_kind.sql",
+    "sha256": "e6761a766960016686ff1847fb1945bc0fb20a5fac97405db5b08fbbaadc4929"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907122000_capture_outcome.sql",
+    "sha256": "fd4fbdc92dfc6e86b635f6b9548f737d984c2080e61001579456c20dc6ebdf63"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907120000_meeting_brief_snapshots.forward-repair.sql",
+    "sha256": "1010821ab16989df4037657d52b363ae5c39913be5d81087777d2214f5893224"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907120000_meeting_brief_snapshots.rollback.sql",
+    "sha256": "b57dad298999b04d55f59fbba5b1143d228093ec630cbe0200963c47154de5af"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907121000_capture_note_kind.forward-repair.sql",
+    "sha256": "434df2c38b77365d2d77420e563318ef6c0aab52b0f9f79fc57fcd39a479be0e"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907121000_capture_note_kind.rollback.sql",
+    "sha256": "1a1d0a28efbb18d93ff52fa5ea7331ca20c812fc111aea407f6a33523fd93121"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907122000_capture_outcome.forward-repair.sql",
+    "sha256": "8c31f600ee05e08d3057b9c70a2fe96f8dc99852da6d5c6e1702129e844cbf7d"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907122000_capture_outcome.rollback.sql",
+    "sha256": "0599541204c87c3577a26b288f3806972636feee075310e266668fd0d5b12ae5"
+  },
+  {
+    "path": "packages/crm/supabase/tests/20260907120000_meeting_brief_snapshots_test.sql",
+    "sha256": "84d47da3627a4b97bd20e6e6850f8c8dae8060958d87522b78e65e6bff629a02"
+  },
+  {
+    "path": "packages/crm/supabase/tests/20260907122000_capture_outcome_test.sql",
+    "sha256": "04cdda1a73ed00d6d3d2c2df0128c51a89cc9d59dd8d485f77d8c19dc35de246"
+  }
+]

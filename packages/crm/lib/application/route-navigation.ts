@@ -15,6 +15,11 @@ function contactRecordId(pathname: string): string | undefined {
  * a restored PWA session may not have a safe in-app history entry.
  */
 export function parentRouteNavigation(pathname: string): ParentRouteNavigation | undefined {
+  const conversation = pathname.match(/^\/contacts\/([^/]+)\/(brief|outcome)$/);
+  if (conversation) return {
+    href: `/contacts/${conversation[1]}`, label: 'Contact',
+    currentLabel: conversation[2] === 'brief' ? 'Meeting brief' : 'Capture outcome',
+  };
   if (pathname === '/contacts/new') {
     return { href: '/contacts', label: 'Contacts', currentLabel: 'Add contact' };
   }

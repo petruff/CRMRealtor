@@ -74,15 +74,15 @@ describe('runOmnixAiCli', () => {
   });
 
   it('routes natural language once and refuses injection before loading workspace data', async () => {
-    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({ state: 'available', model: 'gemini-3.5-flash-lite', query: 'pipeline' });
+    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({ state: 'available', route: 'crm', model: 'gemini-3.5-flash-lite', query: 'pipeline' });
     const liveContext = vi.fn(async () => ({ client: {} as never, scope: SAMPLE_WORKSPACE_SCOPE }));
-    await expect(runOmnixAiCli(['--live', '--question', 'How is my business doing?'], {
+    await expect(runOmnixAiCli(['--live', '--question', 'Quais negócios exigem atenção?'], {
       liveContext, execute: vi.fn(async () => response), stdout: vi.fn(), stderr: vi.fn(),
     })).resolves.toBe(0);
     expect(routeOmnixQuestionWithGemini).toHaveBeenCalledOnce();
     expect(reserve).toHaveBeenCalledOnce();
     expect(generateOmnixNarrative).toHaveBeenCalledWith(
-      'How is my business doing?',
+      'Quais negócios exigem atenção?',
       response,
       expect.objectContaining({
         reservation: { reservationId: '62000000-0000-4000-8000-000000000001' },
@@ -96,9 +96,9 @@ describe('runOmnixAiCli', () => {
     expect(stderr).toHaveBeenCalledWith(expect.stringContaining('refused'));
   });
 
-  it('falls back to grounded public research when no CRM route is authorized', async () => {
+  it('uses grounded public research only with explicit source and a valid public route', async () => {
     vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({
-      state: 'failed', model: 'gemini-3.5-flash-lite', reason: 'invalid-response', inputTokens: 20, outputTokens: 2,
+      state: 'available', route: 'public-web', query: 'Research a current public topic', model: 'gemini-3.5-flash-lite', inputTokens: 20, outputTokens: 2,
     });
     vi.mocked(researchWithGemini).mockResolvedValue({
       state: 'available', policyVersion: 'omnix-ai-policy.v1', model: 'gemini-3.5-flash-lite',
@@ -108,7 +108,7 @@ describe('runOmnixAiCli', () => {
     });
     const stdout = vi.fn();
     const execute = vi.fn();
-    const code = await runOmnixAiCli(['--live', '--question', 'Research a current public topic'], {
+    const code = await runOmnixAiCli(['--live', '--question', 'Research a current public topic', '--source', 'public-web'], {
       liveContext: vi.fn(async () => ({ client: {} as never, scope: SAMPLE_WORKSPACE_SCOPE })),
       execute,
       stdout,
@@ -129,5 +129,33 @@ describe('runOmnixAiCli', () => {
     expect(JSON.parse(stdout.mock.calls[0]?.[0] as string)).toMatchObject({
       schemaVersion: 'omnix-ai-cli.v1', mode: 'web-research', model: { state: 'available' },
     });
+  });
+  it.each([
+    { state: 'failed' as const, reason: 'invalid-response' as const },
+    { state: 'available' as const, route: 'clarify' as const },
+    { state: 'available' as const, route: 'public-web' as const, query: 'A different public question' },
+  ])('never searches public sources for an unmatched private CRM request: %j', async (route) => {
+    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue(route);
+    const stdout = vi.fn(), execute = vi.fn();
+    expect(await runOmnixAiCli(['--live', '--question', 'What did my client commit to?'], { liveContext: vi.fn(async () => ({ client: {} as never, scope: SAMPLE_WORKSPACE_SCOPE })), execute, stdout, stderr: vi.fn() })).toBe(6);
+    expect(researchWithGemini).not.toHaveBeenCalled(); expect(execute).not.toHaveBeenCalled(); expect(finalize).toHaveBeenCalledOnce();
+    expect(JSON.parse(stdout.mock.calls[0]![0]).mode).toBe('clarify');
+  });
+  it('blocks explicit public questions containing private context before loading authority or credentials', async () => {
+    const liveContext = vi.fn();
+    expect(await runOmnixAiCli(['--live', '--question', 'Search for my client confidential notes', '--source', 'public-web'], { liveContext, execute: vi.fn(), stdout: vi.fn(), stderr: vi.fn() })).toBe(2);
+    expect(liveContext).not.toHaveBeenCalled(); expect(researchWithGemini).not.toHaveBeenCalled();
+  });
+  it('finalizes a routed reservation when the deterministic repository throws', async () => {
+    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({ state: 'available', route: 'crm', query: 'transactions' });
+    expect(await runOmnixAiCli(['--live', '--question', 'Show the deals I have been handling'], { liveContext: vi.fn(async () => ({ client: {} as never, scope: SAMPLE_WORKSPACE_SCOPE })), execute: vi.fn().mockRejectedValue(new Error('Unavailable')), stdout: vi.fn(), stderr: vi.fn() })).toBe(2);
+    expect(finalize).toHaveBeenCalledOnce(); expect(researchWithGemini).not.toHaveBeenCalled();
+  });
+  it('retains deterministic CRM answers when the configured model is unavailable', async () => {
+    vi.mocked(loadWorkspaceAiRuntimeCredential).mockResolvedValue(undefined);
+    const stdout = vi.fn(), execute = vi.fn(async () => response);
+    expect(await runOmnixAiCli(['--live', '--question', 'transactions'], { liveContext: vi.fn(async () => ({ client: {} as never, scope: SAMPLE_WORKSPACE_SCOPE })), execute, stdout, stderr: vi.fn() })).toBe(6);
+    expect(JSON.parse(stdout.mock.calls[0]![0])).toMatchObject({ deterministic: response, model: { state: 'unconfigured' } });
+    expect(researchWithGemini).not.toHaveBeenCalled(); expect(reserve).not.toHaveBeenCalled();
   });
 });

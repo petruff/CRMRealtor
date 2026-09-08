@@ -190,13 +190,13 @@ describe('askOmnixCopilotAction', () => {
     });
   });
 
-  it('researches an unmatched broad question without sending CRM records to Gemini', async () => {
+  it('researches only an explicitly public question with a valid public route', async () => {
     vi.mocked(getRepository).mockResolvedValue({ ...context, isLive: true } as Awaited<ReturnType<typeof getRepository>>);
     vi.mocked(loadWorkspaceAiRuntimeCredential).mockResolvedValue({
       apiKey: 'stored-server-key', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
     });
     vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({
-      state: 'failed', model: 'gemini-3.5-flash-lite', reason: 'invalid-response', inputTokens: 30, outputTokens: 2,
+      state: 'available', route: 'public-web', model: 'gemini-3.5-flash-lite', inputTokens: 30, outputTokens: 2,
     });
     vi.mocked(researchWithGemini).mockResolvedValue({
       state: 'available', policyVersion: 'omnix-ai-policy.v1', model: 'gemini-3.5-flash-lite',
@@ -205,7 +205,7 @@ describe('askOmnixCopilotAction', () => {
       searchQueries: ['Florida real estate market'], warnings: [],
     });
 
-    const result = await askOmnixCopilotAction('Research current Florida real estate market conditions');
+    const result = await askOmnixCopilotAction('Research current Florida real estate market conditions', { source: 'public-web' });
 
     expect(executeOmnixCopilot).not.toHaveBeenCalled();
     expect(researchWithGemini).toHaveBeenCalledWith(
@@ -225,6 +225,59 @@ describe('askOmnixCopilotAction', () => {
       citations: [{ entityType: 'web', target: 'https://www.floridarealtors.org/research' }],
       model: { researched: true, provider: 'google-gemini' },
     });
+  });
+
+  it('never turns failed or ambiguous CRM routing into public research and finalizes its reservation', async () => {
+    vi.mocked(getRepository).mockResolvedValue({ ...context, isLive: true });
+    vi.mocked(loadWorkspaceAiRuntimeCredential).mockResolvedValue({
+      apiKey: 'stored-server-key', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
+    });
+    for (const route of [
+      { state: 'failed' as const, reason: 'invalid-response' as const },
+      { state: 'available' as const, route: 'clarify' as const },
+      { state: 'available' as const, route: 'public-web' as const, query: 'Research my client Alicia' },
+    ]) {
+      vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue(route);
+      const answer = await askOmnixCopilotAction('Research my client Alicia');
+      expect(answer.status).toBe('unsupported');
+    }
+    expect(researchWithGemini).not.toHaveBeenCalled();
+    expect(executeOmnixCopilot).not.toHaveBeenCalled();
+    expect(generateOmnixNarrative).not.toHaveBeenCalled();
+    expect(vi.mocked(createSupabaseOmnixAiBudgetAuthority).mock.results[0]?.value.finalize).toHaveBeenCalledTimes(3);
+  });
+
+  it('rejects private web requests before loading credentials or dispatching tools', async () => {
+    const answer = await askOmnixCopilotAction('Research my client Alicia', { source: 'public-web' });
+    expect(answer.status).toBe('unsupported');
+    expect(loadWorkspaceAiRuntimeCredential).not.toHaveBeenCalled();
+    expect(routeOmnixQuestionWithGemini).not.toHaveBeenCalled();
+    expect(researchWithGemini).not.toHaveBeenCalled();
+  });
+
+  it('rejects missing selected contacts without passing browser context to a model', async () => {
+    vi.mocked(getRepository).mockResolvedValue({ ...context, repository: { ...context.repository, get: vi.fn(async () => undefined) } });
+    const answer = await askOmnixCopilotAction('and her status?', { source: 'crm', contactId: 'other-workspace-contact' });
+    expect(answer.status).toBe('empty');
+    expect(routeOmnixQuestionWithGemini).not.toHaveBeenCalled();
+    expect(executeOmnixCopilot).not.toHaveBeenCalled();
+  });
+
+  it.each(['and her status?', 'Show her transactions and next actions'])('keeps the selected canonical identity for %s even with duplicate names', async (question) => {
+    const contact = { id: 'selected-1', firstName: 'Alex', lastName: 'Morgan' };
+    const get = vi.fn(async () => contact);
+    vi.mocked(getRepository).mockResolvedValue({ ...context, isLive: true, repository: { ...context.repository, get } } as unknown as Awaited<ReturnType<typeof getRepository>>);
+    vi.mocked(loadWorkspaceAiRuntimeCredential).mockResolvedValue({ apiKey: 'stored-server-key', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private' });
+    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({ state: 'available', route: 'crm', query: 'transactions for alex morgan' });
+    vi.mocked(executeOmnixCopilot).mockImplementation(async (request) => ({
+      ok: true, schemaVersion: OMNIX_COPILOT_SCHEMA_VERSION, command: 'ask',
+      resolvedIntent: request.intent, correlationId: request.correlationId, dataMode: 'live', asOf: request.asOf,
+      answerBlocks: [], citations: [], suggestions: [], warnings: [], alerts: [],
+    }));
+    const answer = await askOmnixCopilotAction(question, { source: 'crm', contactId: 'selected-1' });
+    expect(get).toHaveBeenCalledWith('selected-1');
+    expect(vi.mocked(executeOmnixCopilot).mock.calls[0]?.[0].intent).toMatchObject({ query: 'selected-1' });
+    expect(answer.selectedContact).toEqual({ id: 'selected-1', name: 'Alex Morgan' });
   });
 
   it('adds a grounded Gemini summary and governed proposal without executing it', async () => {
@@ -262,7 +315,7 @@ describe('askOmnixCopilotAction', () => {
     expect(result.model).toMatchObject({ state: 'available', narrated: true, policyVersion: 'omnix-ai-policy.v1' });
     expect(result.answerBlocks[0]).toMatchObject({ title: 'Omnix summary', detail: 'Start with the overdue follow-up.' });
     expect(result.suggestions[0]).toMatchObject({
-      label: 'Prepare a follow-up', href: '/activities', commandPreview: 'Call and confirm their current needs.',
+      label: 'Choose a date and prepare this follow-up', href: '/contacts/contact-a/outcome', commandPreview: 'Call and confirm their current needs.',
     });
     expect(result.suggestions[0]?.detail).toContain('preview only');
   });

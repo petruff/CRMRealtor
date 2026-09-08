@@ -1,0 +1,92 @@
+
+> @omnix/web@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.23
+   - Environments: .env.local
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 29.1s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/23) ...
+   Generating static pages (5/23)
+   Generating static pages (11/23)
+   Generating static pages (17/23)
+ ✓ Generating static pages (23/23)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                             Size  First Load JS
+┌ ƒ /                                                9.38 kB         115 kB
+├ ○ /_not-found                                         1 kB         104 kB
+├ ƒ /activities                                      4.77 kB         111 kB
+├ ƒ /alerts                                          8.97 kB         115 kB
+├ ƒ /api/connectors/google/callback                    222 B         103 kB
+├ ƒ /api/connectors/google/connect                     222 B         103 kB
+├ ƒ /api/connectors/google/gmail/push/[endpointKey]    222 B         103 kB
+├ ƒ /api/connectors/mailchimp/callback                 222 B         103 kB
+├ ƒ /api/connectors/mailchimp/connect                  222 B         103 kB
+├ ƒ /api/connectors/mailchimp/webhook/[endpointKey]    222 B         103 kB
+├ ƒ /api/connectors/meta/callback                      222 B         103 kB
+├ ƒ /api/connectors/meta/connect                       222 B         103 kB
+├ ƒ /api/connectors/meta/webhook/[endpointKey]         222 B         103 kB
+├ ƒ /api/connectors/twilio/[endpointKey]/inbound       222 B         103 kB
+├ ƒ /api/connectors/twilio/[endpointKey]/status        222 B         103 kB
+├ ƒ /api/data/exports/contacts                         222 B         103 kB
+├ ƒ /api/data/templates/contacts                       222 B         103 kB
+├ ƒ /api/health                                        222 B         103 kB
+├ ƒ /api/intake/contacts                               222 B         103 kB
+├ ƒ /api/intake/website                                222 B         103 kB
+├ ƒ /api/internal/connectors/drain                     222 B         103 kB
+├ ƒ /api/readiness                                     222 B         103 kB
+├ ƒ /api/v1/contacts                                   222 B         103 kB
+├ ƒ /api/v1/contacts/[id]                              222 B         103 kB
+├ ƒ /api/v1/contacts/[id]/archive                      222 B         103 kB
+├ ƒ /api/v1/intake                                     222 B         103 kB
+├ ƒ /api/v1/status                                     222 B         103 kB
+├ ƒ /api/v1/webhooks/[endpointKey]                     222 B         103 kB
+├ ƒ /api/workspace/health                              222 B         103 kB
+├ ƒ /approvals                                         182 B         106 kB
+├ ƒ /auth/callback                                     222 B         103 kB
+├ ƒ /auth/signout                                      222 B         103 kB
+├ ƒ /campaigns                                         182 B         106 kB
+├ ƒ /connections                                       169 B         106 kB
+├ ƒ /contacts                                        5.85 kB         112 kB
+├ ƒ /contacts/[id]                                   10.3 kB         116 kB
+├ ƒ /contacts/[id]/brief                             2.12 kB         108 kB
+├ ƒ /contacts/[id]/edit                                178 B         111 kB
+├ ƒ /contacts/[id]/outcome                           8.22 kB         114 kB
+├ ƒ /contacts/[id]/outcome/export                      222 B         103 kB
+├ ƒ /contacts/import                                  8.9 kB         115 kB
+├ ƒ /contacts/incomplete                             4.23 kB         110 kB
+├ ƒ /contacts/new                                      178 B         111 kB
+├ ƒ /data                                            1.49 kB         108 kB
+├ ƒ /data/duplicates                                   182 B         106 kB
+├ ○ /icon.svg                                            0 B            0 B
+├ ƒ /insights                                         3.5 kB         110 kB
+├ ƒ /login                                           1.89 kB         182 kB
+├ ƒ /mailers                                          6.2 kB         112 kB
+├ ○ /manifest.webmanifest                              222 B         103 kB
+├ ƒ /nurture                                           182 B         106 kB
+├ ○ /offline                                           176 B         111 kB
+├ ƒ /omnix                                           2.04 kB         115 kB
+├ ƒ /pipeline                                        6.23 kB         112 kB
+├ ƒ /properties                                        182 B         106 kB
+├ ƒ /settings                                        3.85 kB         106 kB
+├ ƒ /transactions                                      169 B         106 kB
+├ ƒ /transactions/scenarios                            182 B         106 kB
+├ ƒ /welcome                                         47.8 kB         228 kB
+└ ƒ /workspace                                       2.98 kB         109 kB
++ First Load JS shared by all                         103 kB
+  ├ chunks/1255-a20f6c5e797a687b.js                  46.4 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js              54.2 kB
+  └ other shared chunks (total)                      2.02 kB
+
+
+ƒ Middleware                                         93.7 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

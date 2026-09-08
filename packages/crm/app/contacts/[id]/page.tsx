@@ -42,6 +42,7 @@ import {
 } from "@/app/contact-actions";
 import { ContactActivityHistory } from "@/components/contact-activity-history";
 import { ContactRecordNavigator } from "@/components/contact-record-navigation";
+import { ConversationActions } from "@/components/conversation-actions";
 import {
   contactBrowseSequence,
   contactEditHref,
@@ -312,6 +313,8 @@ export default async function ContactDetailPage({
           </p>
         </div>
       </header>
+
+      {!archived && <div className="mt-5"><ConversationActions contactId={contact.id} /></div>}
 
       {/* Actions kept large and thumb-reachable — this is the mobile lookup case she described. */}
       {!archived ? <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1">

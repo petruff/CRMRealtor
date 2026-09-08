@@ -12,6 +12,11 @@ function kind(proposal: OmnixGeneratedProposal) {
   return 'mailchimp-campaign-draft' as const;
 }
 
+export type OmnixGeneratedProposalPersistenceResult =
+  | { readonly state: 'persisted'; readonly proposalId: string; readonly version: number; readonly noOp: boolean; readonly reviewHref: string }
+  | { readonly state: 'review-required'; readonly reason: 'date-confirmation-required'; readonly reviewHref: string }
+  | { readonly state: 'skipped'; readonly reason: 'missing-citation' | 'missing-contact' | 'ambiguous-contact' | 'owner-required' };
+
 export async function persistGeneratedOmnixProposals(input: {
   readonly repository: OmnixProposalRepository;
   readonly scope: WorkspaceScope;
@@ -19,16 +24,19 @@ export async function persistGeneratedOmnixProposals(input: {
   readonly response: OmnixCopilotSuccessResponse;
   readonly narrative: OmnixGenerativeResult;
   readonly now: Date;
-}) {
+}): Promise<readonly OmnixGeneratedProposalPersistenceResult[]> {
   if (input.narrative.state !== 'available' || input.narrative.proposals.length === 0) return [];
   const citations = new Map(input.response.citations.map((citation) => [citation.id, citation]));
   const contacts = new Map(input.contacts.map((contact) => [contact.id, contact]));
   return Promise.all(input.narrative.proposals.map(async (proposal, index) => {
+    if (!proposal.citationIds.length || proposal.citationIds.some((id) => !citations.has(id))) {
+      return { state: 'skipped' as const, reason: 'missing-citation' as const };
+    }
     const selected = proposal.citationIds.flatMap((id) => {
       const citation = citations.get(id);
       if (!citation) return [];
       const entityType = citation.entityType === 'connector' ? 'connection'
-        : citation.entityType === 'contact' || citation.entityType === 'task' || citation.entityType === 'activity'
+        : citation.entityType === 'contact' || citation.entityType === 'task' || citation.entityType === 'activity' || citation.entityType === 'transaction'
           ? citation.entityType : 'workspace';
       return [{
         entityType, recordId: citation.recordId, factKeys: citation.factKeys,
@@ -36,32 +44,37 @@ export async function persistGeneratedOmnixProposals(input: {
       } satisfies OmnixProposalCitation];
     });
     if (selected.length === 0) return { state: 'skipped' as const, reason: 'missing-citation' as const };
-    const contactCitation = proposal.citationIds.map((id) => citations.get(id))
-      .find((citation) => citation?.entityType === 'contact');
+    const contactCitations = proposal.citationIds.map((id) => citations.get(id))
+      .filter((citation) => citation?.entityType === 'contact');
+    if (proposal.kind !== 'campaign-draft' && new Set(contactCitations.map((citation) => citation!.recordId)).size > 1) {
+      return { state: 'skipped' as const, reason: 'ambiguous-contact' as const };
+    }
+    const contactCitation = contactCitations[0];
     const contact = contactCitation ? contacts.get(contactCitation.recordId) : undefined;
     if ((proposal.kind === 'follow-up' || proposal.kind === 'email-draft') && !contact) {
       return { state: 'skipped' as const, reason: 'missing-contact' as const };
     }
-    const dueAt = new Date(input.now.getTime() + 24 * 60 * 60 * 1000).toISOString();
-    const payload = proposal.kind === 'follow-up'
-      ? { contactId: contact!.id, title: proposal.title, description: proposal.text, dueAt }
-      : proposal.kind === 'email-draft'
+    // A draft is not evidence of a commitment. Dates must be explicitly chosen in capture.
+    if (proposal.kind === 'follow-up') return { state: 'review-required' as const,
+      reason: 'date-confirmation-required' as const, reviewHref: `/contacts/${encodeURIComponent(contact!.id)}/outcome` };
+    if (input.scope.role !== 'owner') return { state: 'skipped' as const, reason: 'owner-required' as const };
+    const payload = proposal.kind === 'email-draft'
         ? { contactId: contact!.id, subject: proposal.title, body: proposal.preview, targetResolutionRequired: true }
         : { title: proposal.title, message: proposal.preview, segment: 'all-subscribers', audienceReviewRequired: true };
     const receipt = await createOmnixProposalCommand(input.repository, input.scope, {
       ...(contact ? { contactId: contact.id } : {}), kind: kind(proposal), origin: 'gemini',
-      approvalMode: proposal.kind === 'follow-up' ? 'active-member' : 'owner',
+      approvalMode: 'owner',
       factors: {
-        urgency: proposal.kind === 'follow-up' ? 70 : 45,
+        urgency: 45,
         leadTemperature: contact?.leadType ?? 'unknown', daysOverdue: 0,
         awaitingReply: false, potentialValueCents: 0,
       },
       title: proposal.title, rationale: proposal.text, payload, citations: selected,
-      ...(proposal.kind === 'follow-up' ? { dueAt } : {}),
       expiresAt: new Date(input.now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       correlationId: input.response.correlationId,
       idempotencyKey: `gemini:${input.response.correlationId}:${index + 1}`,
     }, input.now);
-    return { state: 'persisted' as const, ...receipt };
+    return { state: 'persisted' as const, ...receipt,
+      reviewHref: `/approvals?proposalId=${encodeURIComponent(receipt.proposalId)}#proposal-${encodeURIComponent(receipt.proposalId)}` };
   }));
 }

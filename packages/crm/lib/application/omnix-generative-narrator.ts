@@ -42,6 +42,8 @@ export interface OmnixGenerativeResult {
   readonly inputTokens?: number;
   readonly outputTokens?: number;
   readonly estimatedCostMicrousd?: number;
+  /** Factual text is reconstructed only in fact-selection mode; drafts still require review. */
+  readonly grounding?: 'fact-selection' | 'citation-checked';
 }
 
 export interface OmnixAiBudgetReservation {
@@ -94,6 +96,49 @@ interface RawNarrative {
 
 const PROPOSAL_KINDS = new Set<OmnixProposalKind>(['follow-up', 'email-draft', 'campaign-draft']);
 const EXECUTION_CLAIM = /\b(?:i|omnix)\s+(?:sent|scheduled|updated|created|changed|moved|deleted|subscribed|unsubscribed)\b/iu;
+const FACT_SELECTION_INTENTS = new Set<string>([
+  'workspace-overview', 'organization', 'client-status', 'transactions', 'properties', 'nurture', 'finances', 'proposals',
+]);
+const FACT_SELECTION_VERSION = 'omnix-fact-selection.v1';
+interface SelectableFact extends OmnixGeneratedStatement { readonly id: string }
+
+// Reuse the bounded provider-envelope pattern from meeting-brief narration.
+async function readBoundedPayload(response: Response): Promise<GeminiPayload> {
+  const maximumBytes = 32_768;
+  if (!response.body || Number(response.headers.get('content-length')) > maximumBytes) throw new Error('provider-failed');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let bytes = 0;
+  let text = '';
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      bytes += chunk.value.byteLength;
+      if (bytes > maximumBytes) { await reader.cancel(); throw new Error('provider-failed'); }
+      text += decoder.decode(chunk.value, { stream: true });
+    }
+    return JSON.parse(text + decoder.decode()) as GeminiPayload;
+  } finally { reader.releaseLock(); }
+}
+
+function parseFactSelection(text: string, facts: readonly SelectableFact[], citations: readonly OmnixCopilotCitation[]) {
+  let raw: Record<string, unknown>;
+  try { raw = JSON.parse(text) as Record<string, unknown>; } catch { return undefined; }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)
+    || Object.keys(raw).some((key) => !['summaryFactId', 'highlightFactIds', 'proposals'].includes(key))
+    || typeof raw.summaryFactId !== 'string' || !Array.isArray(raw.highlightFactIds) || raw.highlightFactIds.length > 5) return undefined;
+  const selectedIds = [raw.summaryFactId, ...raw.highlightFactIds];
+  const byId = new Map(facts.map((fact) => [fact.id, fact]));
+  if (new Set(selectedIds).size !== selectedIds.length || selectedIds.some((id) => typeof id !== 'string' || !byId.has(id))) return undefined;
+  const summary = byId.get(raw.summaryFactId)!;
+  // Drafts use the existing validation authority. No provider-written factual prose is accepted.
+  const draftResult = parseNarrative(JSON.stringify({ summary: { text: 'Selected CRM facts.', citationIds: summary.citationIds },
+    highlights: [], proposals: raw.proposals, unknowns: [] }), citations);
+  if (!draftResult) return undefined;
+  const statement = (fact: SelectableFact): OmnixGeneratedStatement => ({ text: fact.text, citationIds: fact.citationIds });
+  return { ...draftResult, summary: statement(summary), highlights: raw.highlightFactIds.map((id) => statement(byId.get(id)!)) };
+}
 
 function cleanText(value: unknown, max: number): string | undefined {
   if (typeof value !== 'string') return undefined;
@@ -110,6 +155,7 @@ function redactedText(value: string): string {
 
 function boundedCitations(value: unknown, allowed: ReadonlySet<string>): string[] | undefined {
   if (!Array.isArray(value) || value.length < 1 || value.length > 8) return undefined;
+  if (value.some((item) => typeof item !== 'string')) return undefined;
   const ids = Array.from(new Set(value.filter((item): item is string => typeof item === 'string')));
   if (ids.length < 1 || ids.some((id) => !allowed.has(id))) return undefined;
   return ids;
@@ -155,7 +201,7 @@ function parseNarrative(text: string, citations: readonly OmnixCopilotCitation[]
     const proposalText = cleanText(record.text, 320);
     const preview = cleanText(record.preview, 1_200);
     const citationIds = boundedCitations(record.citationIds, allowed);
-    if (!title || !proposalText || !preview || !citationIds || EXECUTION_CLAIM.test(`${proposalText} ${preview}`)) return undefined;
+    if (!title || !proposalText || !preview || !citationIds || EXECUTION_CLAIM.test(`${title} ${proposalText} ${preview}`)) return undefined;
     proposals.push({
       kind,
       title,
@@ -169,7 +215,7 @@ function parseNarrative(text: string, citations: readonly OmnixCopilotCitation[]
   if (!Array.isArray(decoded.unknowns) || decoded.unknowns.length > 5) return undefined;
   const unknowns = decoded.unknowns.map((item) => cleanText(item, 240));
   if (unknowns.some((item) => !item)) return undefined;
-  const allGenerated = [summaryText, ...highlights.map((item) => item.text), ...proposals.flatMap((item) => [item.text, item.preview]), ...unknowns];
+  const allGenerated = [summaryText, ...highlights.map((item) => item.text), ...proposals.flatMap((item) => [item.title, item.text, item.preview]), ...unknowns];
   if (!scanOmnixPromptContent(allGenerated.join('\n')).safe) return undefined;
   return {
     summary: { text: summaryText, citationIds: summaryCitations },
@@ -189,7 +235,7 @@ function contextProjection(question: string, response: OmnixCopilotSuccessRespon
     facts: response.answerBlocks.map((block) => ({
       title: redactedText(block.title),
       detail: redactedText(block.detail),
-      items: block.items.map((item) => ({
+      items: block.items.filter((item) => item.citations.length > 0 && item.citations.every((citation) => allowed.has(citation.id))).map((item) => ({
         label: redactedText(item.label),
         ...(item.detail ? { detail: redactedText(item.detail) } : {}),
         ...(item.value !== undefined ? { value: item.value } : {}),
@@ -238,7 +284,16 @@ export async function generateOmnixNarrative(
   }
 
   const projection = contextProjection(question, response);
-  const context = JSON.stringify(projection);
+  const factSelection = FACT_SELECTION_INTENTS.has(response.resolvedIntent.kind);
+  const facts: SelectableFact[] = projection.facts.flatMap((block) => block.items).flatMap((item, index) => {
+    const text = [item.label, item.value === undefined ? undefined : redactedText(String(item.value)), item.detail].filter(Boolean).join(' · ');
+    return text.length <= 700 && item.citationIds.length <= 8 && scanOmnixPromptContent(text).safe
+      ? [{ id: `fact-${index + 1}`, text, citationIds: item.citationIds }] : [];
+  }).slice(0, 24);
+  if (factSelection && !facts.length) {
+    return closePreReservedFailure({ ...base, state: 'limited', model: options.credential.model, reason: 'no-evidence' }, 'no-evidence');
+  }
+  const context = JSON.stringify(factSelection ? { ...projection, facts, selectionVersion: FACT_SELECTION_VERSION } : projection);
   if (context.length > OMNIX_AI_POLICY.maxContextCharacters) {
     return closePreReservedFailure({ ...base, state: 'limited', model: options.credential.model, reason: 'context-limit' }, 'context-limit');
   }
@@ -297,13 +352,24 @@ export async function generateOmnixNarrative(
             'Do not claim an action was sent, scheduled, created, changed, or completed.',
             'Proposals are previews requiring separate human approval.',
             'Return only the requested JSON schema.',
+            ...(factSelection ? ['Select summaryFactId and unique highlightFactIds from the supplied facts. Never write or alter factual text. Do not repeat the summary in highlights.'] : []),
           ].join('\n') }] },
           contents: [{ role: 'user', parts: [{ text: context }] }],
           generationConfig: {
             responseMimeType: 'application/json',
             temperature: 0.2,
             maxOutputTokens: OMNIX_AI_POLICY.maxOutputTokens,
-            responseSchema: {
+            responseSchema: factSelection ? {
+              type: 'OBJECT', required: ['summaryFactId', 'highlightFactIds', 'proposals'],
+              properties: {
+                summaryFactId: { type: 'STRING', enum: facts.map((fact) => fact.id) },
+                highlightFactIds: { type: 'ARRAY', maxItems: 5, items: { type: 'STRING', enum: facts.map((fact) => fact.id) } },
+                proposals: { type: 'ARRAY', maxItems: OMNIX_AI_POLICY.maxProposals, items: { type: 'OBJECT', required: ['kind', 'title', 'text', 'preview', 'citationIds'], properties: {
+                  kind: { type: 'STRING', enum: ['follow-up', 'email-draft', 'campaign-draft'] }, title: { type: 'STRING' }, text: { type: 'STRING' }, preview: { type: 'STRING' },
+                  citationIds: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1, maxItems: 8 },
+                } } },
+              },
+            } : {
               type: 'OBJECT',
               required: ['summary', 'highlights', 'proposals', 'unknowns'],
               properties: {
@@ -325,12 +391,13 @@ export async function generateOmnixNarrative(
       },
     );
     if (!providerResponse.ok) throw new Error('provider-failed');
-    const payload = await providerResponse.json() as GeminiPayload;
+    const payload = await readBoundedPayload(providerResponse);
     actualInputTokens = (payload.usageMetadata?.promptTokenCount ?? (inputTokens - (options.priorInputTokens ?? 0)))
       + (options.priorInputTokens ?? 0);
     outputTokens = (payload.usageMetadata?.candidatesTokenCount ?? 0) + (options.priorOutputTokens ?? 0);
     const text = payload.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('').trim();
-    const narrative = text ? parseNarrative(text, response.citations.slice(0, OMNIX_AI_POLICY.maxCitations)) : undefined;
+    const allowedCitations = response.citations.slice(0, OMNIX_AI_POLICY.maxCitations);
+    const narrative = text ? factSelection ? parseFactSelection(text, facts, allowedCitations) : parseNarrative(text, allowedCitations) : undefined;
     if (!narrative) {
       errorCategory = 'invalid-response';
       result = { ...base, state: 'failed', model: options.credential.model, reason: 'invalid-response', inputTokens: actualInputTokens, outputTokens, estimatedCostMicrousd };
@@ -342,6 +409,7 @@ export async function generateOmnixNarrative(
         state: 'available',
         policyVersion: OMNIX_AI_POLICY_VERSION,
         model: options.credential.model,
+        grounding: factSelection ? 'fact-selection' : 'citation-checked',
         inputTokens: actualInputTokens,
         outputTokens,
         estimatedCostMicrousd: estimateOmnixCostMicrousd(actualInputTokens, outputTokens),

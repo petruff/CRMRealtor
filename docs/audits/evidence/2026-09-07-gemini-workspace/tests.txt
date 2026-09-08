@@ -1,0 +1,1448 @@
+
+> @omnix/web@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 C:/Projetos/CRMRealtor/packages/crm
+
+ ✓ scripts/evaluate-omnix-ai-script.test.ts (1 test) 344ms
+   ✓ Omnix AI evaluation script > loads through the production Node entrypoint and prints help without workspace authority  343ms
+ ✓ lib/providers/twilio-adapter.test.ts (7 tests) 47ms
+ ✓ lib/domain/texting.test.ts (5 tests) 123ms
+stdout | app/import-actions.test.ts > contact import actions > previews existing import organization without applying changes
+{"event":"contact_import_organization_previewed","policyVersion":"omnix.import-classification.v1","counts":{"scanned":140,"eligible":138,"wouldUpdate":138,"needsReview":12}}
+
+ ✓ lib/providers/google-client.test.ts (12 tests) 66ms
+stdout | app/import-actions.test.ts > contact import actions > fails receipt preflight before applying the first contact mutation
+{"event":"contact_import_commit_stage","stage":"authority-resolved","elapsedMs":1}
+
+ ✓ app/api/data/templates/contacts/route.test.ts (1 test) 78ms
+stdout | app/import-actions.test.ts > contact import actions > fails receipt preflight before applying the first contact mutation
+{"event":"contact_import_commit_stage","stage":"parsed","elapsedMs":1,"format":"numbers","counts":{"rows":1},"supportReference":"D1F685C1"}
+
+stdout | app/import-actions.test.ts > contact import actions > fails receipt preflight before applying the first contact mutation
+{"event":"contact_import_commit_stage","stage":"failed","elapsedMs":4,"format":"numbers","supportReference":"D1F685C1","databaseCode":"42883"}
+
+stdout | app/import-actions.test.ts > contact import actions > returns a durable aggregate replay before parsing or previewing mutable contact state
+{"event":"contact_import_commit_stage","stage":"authority-resolved","elapsedMs":0}
+
+stdout | app/import-actions.test.ts > contact import actions > returns a durable aggregate replay before parsing or previewing mutable contact state
+{"event":"contact_import_commit_stage","stage":"receipt-recovered","elapsedMs":1,"counts":{"rows":1,"created":1,"updated":0},"supportReference":"4E19C225"}
+
+stdout | app/import-actions.test.ts > contact import actions > recovers an exact prior import without replaying contact mutations
+{"event":"contact_import_commit_stage","stage":"authority-resolved","elapsedMs":0}
+
+ ✓ lib/application/contact-import.test.ts (31 tests) 85ms
+stdout | app/import-actions.test.ts > contact import actions > recovers an exact prior import without replaying contact mutations
+{"event":"contact_import_commit_stage","stage":"parsed","elapsedMs":0,"format":"numbers","counts":{"rows":2},"supportReference":"F1D8ADD2"}
+
+stdout | app/import-actions.test.ts > contact import actions > recovers an exact prior import without replaying contact mutations
+{"event":"contact_import_commit_stage","stage":"receipt-recovered","elapsedMs":1,"format":"numbers","counts":{"rows":2,"created":1,"updated":1,"unchanged":0},"supportReference":"F1D8ADD2"}
+
+ ✓ app/import-actions.test.ts (8 tests) 74ms
+ ✓ components/today-operating-briefing.test.tsx (2 tests) 31ms
+ ✓ lib/application/google-operations.test.ts (6 tests) 50ms
+ ✓ lib/application/mailchimp-commands.test.ts (11 tests) 56ms
+ ✓ lib/application/google-gmail-wakeup-worker.test.ts (4 tests) 57ms
+ ✓ app/server-action-exports.test.ts (1 test) 431ms
+   ✓ server action module exports > exports only async functions or erased TypeScript types from use-server modules  427ms
+ ✓ app/approvals/page.test.ts (6 tests) 127ms
+ ✓ components/relationship-queue.test.tsx (17 tests) 227ms
+stderr | app/api/intake/contacts/route.test.ts > POST /api/intake/contacts > rolls back the complete intake and leaves no terminal receipt on an injected RPC failure
+Automatic contact intake failed. Error: provider unavailable
+    at Object.create (C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.test.ts:16:35)
+    at Object.applyContactImportGroup (C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.test.ts:94:77)
+    at Object.applyContactImportPlan (C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.test.ts:145:49)
+    at executeContactImport (C:\Projetos\CRMRealtor\packages\crm\lib\application\contact-import-service.ts:738:35)
+    at Module.POST (C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.ts:135:11)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.test.ts:370:22
+    at file:///C:/Projetos/CRMRealtor/packages/crm/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+ ✓ lib/domain/smart-list.test.ts (6 tests) 47ms
+ ✓ app/api/intake/contacts/route.test.ts (7 tests) 60ms
+ ✓ lib/application/contact-import-service.test.ts (27 tests) 121ms
+ ✓ lib/application/capture-outcome-extraction.test.ts (17 tests) 37ms
+ ✓ components/ai-settings-form.test.tsx (2 tests) 48ms
+ ✓ components/contact-activity-history.test.tsx (1 test) 48ms
+ ✓ lib/application/mailchimp-reconciliation-service.test.ts (6 tests) 39ms
+ ✓ lib/application/mailchimp-webhook-service.test.ts (4 tests) 36ms
+ ✓ components/today-command-center.test.tsx (4 tests) 102ms
+ ✓ lib/application/omnix-generative-narrator.test.ts (20 tests) 49ms
+ ✓ app/api/connectors/meta/webhook/[endpointKey]/handler.test.ts (3 tests) 41ms
+ ✓ lib/application/capture-outcome-provider.test.ts (2 tests) 45ms
+ ✓ lib/application/capture-outcome-service.test.ts (11 tests) 82ms
+ ✓ lib/application/mailer-commands.test.ts (6 tests) 39ms
+ ✓ lib/domain/operational-signal.test.ts (4 tests) 34ms
+ ✓ lib/application/contact-commands.test.ts (17 tests) 36ms
+ ✓ lib/providers/mailchimp-client.test.ts (12 tests) 34ms
+ ✓ lib/application/mailchimp-campaign-service.test.ts (4 tests) 34ms
+ ✓ lib/data/memory-operational-signal-repository.test.ts (1 test) 35ms
+ ✓ app/api/connectors/mailchimp/webhook/[endpointKey]/handler.test.ts (3 tests) 39ms
+ ✓ lib/application/meeting-brief-narration.test.ts (18 tests) 124ms
+ ✓ app/contacts/page.integration.test.ts (4 tests) 90ms
+ ✓ lib/application/google-probe-service.test.ts (3 tests) 41ms
+ ✓ lib/application/texting-commands.test.ts (4 tests) 46ms
+ ✓ lib/providers/meta-client.test.ts (5 tests) 37ms
+ ✓ lib/presentation/crm-evidence.test.ts (3 tests) 33ms
+ ✓ lib/application/connector-commands.test.ts (8 tests) 35ms
+ ✓ lib/domain/operating-insights.test.ts (7 tests) 32ms
+ ✓ lib/application/workspace-cli.test.ts (10 tests) 37ms
+ ✓ app/api/intake/website/route.test.ts (4 tests) 37ms
+ ✓ lib/application/capture-outcome-telemetry.test.ts (3 tests) 27ms
+ ✓ lib/application/omnix-gemini-router.test.ts (19 tests) 38ms
+ ✓ lib/application/imported-contact-organization.test.ts (4 tests) 37ms
+ ✓ lib/application/meta-revocation-service.test.ts (1 test) 31ms
+ ✓ lib/application/omnix-proposal-commands.test.ts (3 tests) 25ms
+ ✓ lib/data/memory-workspace-repository.test.ts (7 tests) 33ms
+ ✓ lib/application/connector-worker.test.ts (3 tests) 31ms
+ ✓ lib/application/meeting-brief-service.test.ts (11 tests) 32ms
+ ✓ lib/application/google-sync-service.test.ts (2 tests) 28ms
+ ✓ lib/application/omnix-provider-gateway.test.ts (15 tests) 38ms
+ ✓ lib/application/rich-contact-commands.test.ts (6 tests) 31ms
+ ✓ lib/application/omnix-copilot-module-reads.test.ts (12 tests) 115ms
+ ✓ lib/application/omnix-copilot-service.test.ts (31 tests) 192ms
+ ✓ lib/providers/google-adapter.test.ts (5 tests) 35ms
+ ✓ lib/application/connector-revocation-worker.test.ts (6 tests) 36ms
+ ✓ lib/domain/omnix-copilot.test.ts (71 tests) 38ms
+ ✓ lib/application/operating-insights-service.test.ts (2 tests) 34ms
+ ✓ lib/application/omnix-provider-proposal-handoff.test.ts (2 tests) 27ms
+ ✓ lib/application/workspace-commands.test.ts (6 tests) 32ms
+ ✓ lib/application/omnix-proposal-executor.test.ts (2 tests) 33ms
+ ✓ lib/application/activity-commands.test.ts (3 tests) 29ms
+ ✓ scripts/capture-outcome.test.ts (3 tests) 960ms
+   ✓ Capture Outcome CLI boundary > runs the actual Node strip-types CLI help without runtime syntax errors  955ms
+ ✓ lib/application/smart-list-commands.test.ts (4 tests) 32ms
+ ✓ lib/data/memory-repository.test.ts (1 test) 25ms
+ ✓ lib/application/meta-asset-setup-service.test.ts (1 test) 41ms
+ ✓ lib/application/nurture-materializer.test.ts (1 test) 27ms
+ ✓ lib/application/mailchimp-oauth-service.test.ts (4 tests) 31ms
+ ✓ lib/application/crm-search-service.test.ts (2 tests) 30ms
+ ✓ lib/domain/mailchimp.test.ts (5 tests) 29ms
+ ✓ scripts/manage-rich-contacts.test.ts (3 tests) 25ms
+ ✓ scripts/omnix-copilot-native.test.ts (7 tests) 5946ms
+   ✓ native copilot module parity > runs workspace overview through the real Node CLI with truthful sample coverage  609ms
+   ✓ native copilot module parity > runs client status Alicia through the real Node CLI with truthful sample coverage  802ms
+   ✓ native copilot module parity > runs transactions through the real Node CLI with truthful sample coverage  810ms
+   ✓ native copilot module parity > runs properties through the real Node CLI with truthful sample coverage  808ms
+   ✓ native copilot module parity > runs finances through the real Node CLI with truthful sample coverage  939ms
+   ✓ native copilot module parity > runs nurture through the real Node CLI with truthful sample coverage  1034ms
+   ✓ native copilot module parity > runs proposals through the real Node CLI with truthful sample coverage  941ms
+ ✓ components/contact-scope-navigation.test.tsx (2 tests) 26ms
+ ✓ lib/domain/activity.test.ts (4 tests) 27ms
+ ✓ components/today-visual-dashboard.test.tsx (2 tests) 30ms
+ ✓ lib/domain/meta.test.ts (4 tests) 32ms
+ ✓ scripts/manage-mailchimp.test.ts (10 tests) 28ms
+ ✓ lib/domain/mailchimp-campaign.test.ts (4 tests) 24ms
+ ✓ lib/application/google-oauth-service.test.ts (4 tests) 34ms
+ ✓ components/alert-center.test.tsx (4 tests) 102ms
+ ✓ lib/application/omnix-operational-materializer.test.ts (4 tests) 28ms
+ ✓ app/omnix/actions.test.ts (12 tests) 41ms
+ ✓ lib/data/supabase-activity-repository.test.ts (7 tests) 23ms
+ ✓ app/approvals/actions.test.ts (4 tests) 40ms
+ ✓ lib/data/google-draft-repository.test.ts (1 test) 29ms
+ ✓ lib/presentation/activity-feed.test.ts (2 tests) 21ms
+ ✓ lib/application/crm-work-queue-cli.test.ts (7 tests) 21ms
+ ✓ components/today-focus-timeline.test.tsx (2 tests) 22ms
+ ✓ lib/domain/rich-contact.test.ts (3 tests) 24ms
+ ✓ lib/application/meta-review-service.test.ts (2 tests) 27ms
+ ✓ lib/application/workbook-portability.test.ts (16 tests) 6341ms
+   ✓ workbook portability > accepts more than five thousand real rows with CSV and XLSX parity  1003ms
+   ✓ workbook portability > ignores an inflated used range and empty styled tail rows  2568ms
+   ✓ workbook portability > retains workbook column and cell-length safety limits  396ms
+   ✓ workbook portability > rejects an XLSX package that advertises zip-bomb expansion before SheetJS reads it  308ms
+ ✓ lib/domain/pipeline-analytics.test.ts (6 tests) 28ms
+ ✓ lib/application/omnix-generated-proposal-persistence.test.ts (3 tests) 32ms
+ ✓ lib/domain/omnix-operational-brain.test.ts (3 tests) 23ms
+ ✓ lib/application/omnix-gemini-research.test.ts (5 tests) 25ms
+ ✓ lib/config/connector-runtime.test.ts (10 tests) 22ms
+ ✓ lib/data/supabase-rich-contact-repository.test.ts (6 tests) 16ms
+ ✓ lib/domain/transaction-finance.test.ts (3 tests) 24ms
+ ✓ lib/application/gmail-response-intelligence.test.ts (2 tests) 18ms
+ ✓ components/contact-pagination.test.tsx (2 tests) 23ms
+ ✓ lib/data/memory-mailer-repository.test.ts (1 test) 24ms
+ ✓ lib/application/omnichannel-timeline.test.ts (3 tests) 21ms
+ ✓ lib/application/workspace-ai-settings.test.ts (9 tests) 22ms
+ ✓ lib/data/supabase-workspace-repository.test.ts (8 tests) 22ms
+ ✓ lib/application/connector-lifecycle-projection.test.ts (8 tests) 27ms
+ ✓ scripts/omnix-ai.test.ts (10 tests) 32ms
+ ✓ lib/data/memory-transaction-repository.test.ts (4 tests) 17ms
+ ✓ lib/application/capture-outcome-export.test.ts (8 tests) 19ms
+ ✓ lib/application/connector-lifecycle-orchestrator.test.ts (10 tests) 21ms
+ ✓ lib/data/index.test.ts (4 tests) 19ms
+ ✓ lib/data/supabase-repository.test.ts (5 tests) 21ms
+ ✓ components/ui.test.tsx (3 tests) 19ms
+ ✓ app/error.test.ts (1 test) 19ms
+stderr | app/api/workspace/health/route.test.ts > GET /api/workspace/health > refuses assistants and fails safely without provider detail
+Workspace health check failed. Error: provider unavailable
+    at Object.health (C:\Projetos\CRMRealtor\packages\crm\app\api\workspace\health\route.test.ts:16:33)
+    at Module.GET (C:\Projetos\CRMRealtor\packages\crm\app\api\workspace\health\route.ts:26:46)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at C:\Projetos\CRMRealtor\packages\crm\app\api\workspace\health\route.test.ts:68:22
+    at file:///C:/Projetos/CRMRealtor/packages/crm/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+ ✓ app/api/workspace/health/route.test.ts (3 tests) 19ms
+ ✓ lib/application/incomplete-record-commands.test.ts (5 tests) 15ms
+ ✓ lib/application/contact-query.test.ts (16 tests) 16ms
+ ✓ lib/application/twilio-uat-service.test.ts (4 tests) 36ms
+ ✓ lib/application/mailchimp-outbound-backfill-service.test.ts (2 tests) 17ms
+ ✓ lib/providers/twilio-client.test.ts (6 tests) 21ms
+ ✓ lib/application/meta-review-conversion-service.test.ts (3 tests) 20ms
+ ✓ lib/data/supabase-meeting-brief-repository.test.ts (4 tests) 17ms
+ ✓ lib/application/twilio-webhook-service.test.ts (2 tests) 32ms
+ ✓ lib/data/supabase-mailchimp-operation-repository.test.ts (3 tests) 14ms
+ ✓ app/api/connectors/twilio/handler.test.ts (2 tests) 51ms
+ ✓ lib/application/google-gmail-push-service.test.ts (2 tests) 18ms
+stdout | app/api/internal/connectors/drain/route.test.ts > connector drain route > returns only bounded aggregate results for an authorized drain
+{"schemaVersion":"connector-drain-result.v1","result":{"claimed":2,"reconciliationClaimed":1,"succeeded":2,"deferred":1,"failed":0,"swept":0,"revocations":{"claimed":1,"confirmed":1,"deferred":0,"unconfirmed":0},"mailchimpWebhooks":{"claimed":1,"succeeded":1,"deferred":0,"review":0}}}
+
+ ✓ app/api/internal/connectors/drain/route.test.ts (3 tests) 17ms
+ ✓ lib/application/contact-import-classification.test.ts (15 tests) 12ms
+ ✓ lib/data/supabase-mailchimp-webhook-repository.test.ts (2 tests) 14ms
+ ✓ lib/data/supabase-mailchimp-reconciliation-repository.test.ts (4 tests) 13ms
+ ✓ scripts/manage-texting.test.ts (4 tests) 47ms
+ ✓ components/incomplete-record-workspace.test.tsx (1 test) 23ms
+ ✓ app/api/v1/contacts/route.test.ts (4 tests) 14ms
+ ✓ app/api/connectors/google/gmail/push/[endpointKey]/handler.test.ts (2 tests) 15ms
+ ✓ lib/data/import-gateway.test.ts (5 tests) 12ms
+ ✓ app/api/v1/webhooks/[endpointKey]/route.test.ts (2 tests) 13ms
+ ✓ lib/data/operational-api-server-context.test.ts (3 tests) 16ms
+ ✓ lib/data/supabase-mailchimp-oauth-repository.test.ts (3 tests) 18ms
+ ✓ lib/providers/supabase-mailchimp-authority-loader.test.ts (2 tests) 14ms
+ ✓ lib/application/omnix-claude-router.test.ts (2 tests) 18ms
+ ✓ app/contacts/[id]/brief/page.test.ts (2 tests) 18ms
+ ✓ app/api/readiness/route.test.ts (2 tests) 13ms
+ ✓ lib/data/supabase-contact-identity-map.test.ts (5 tests) 13ms
+ ✓ lib/providers/mailchimp-adapter.test.ts (6 tests) 13ms
+ ✓ app/design-system-contract.test.ts (14 tests) 17ms
+ ✓ lib/data/memory-activity-repository.test.ts (5 tests) 14ms
+ ✓ lib/data/supabase-import-gateway.test.ts (5 tests) 17ms
+ ✓ lib/data/memory-property-repository.test.ts (2 tests) 12ms
+ ✓ lib/data/supabase-workspace-scope.test.ts (9 tests) 10ms
+ ✓ lib/application/connector-service-worker.test.ts (10 tests) 56ms
+ ✓ lib/domain/attention.test.ts (6 tests) 10ms
+ ✓ lib/application/omnix-prompt-guard.test.ts (6 tests) 13ms
+ ✓ lib/security/connector-webhook.test.ts (3 tests) 12ms
+ ✓ lib/domain/google-connector.test.ts (3 tests) 8ms
+ ✓ lib/application/attention-commands.test.ts (3 tests) 11ms
+ ✓ scripts/manage-connectors.test.ts (7 tests) 77ms
+ ✓ components/rich-contact-workspace.test.tsx (2 tests) 19ms
+ ✓ lib/application/connector-kek-rewrap.test.ts (2 tests) 23ms
+ ✓ lib/data/memory-smart-list-repository.test.ts (1 test) 7ms
+ ✓ scripts/manage-transactions.test.ts (2 tests) 18ms
+ ✓ lib/domain/transaction.test.ts (4 tests) 14ms
+ ✓ lib/data/supabase-mailchimp-outbound-backfill-repository.test.ts (2 tests) 10ms
+ ✓ lib/domain/workspace-intelligence.test.ts (3 tests) 12ms
+ ✓ lib/data/authenticated-cli-context.test.ts (4 tests) 13ms
+ ✓ lib/data/memory-affordability-repository.test.ts (2 tests) 10ms
+ ✓ lib/providers/mailchimp-webhook.test.ts (2 tests) 11ms
+ ✓ lib/domain/triage.test.ts (16 tests) 14ms
+ ✓ lib/data/memory-listing-provider-repository.test.ts (1 test) 8ms
+ ✓ lib/data/supabase-smart-list-repository.test.ts (3 tests) 12ms
+ ✓ lib/security/connector-secret-envelope.test.ts (3 tests) 10ms
+ ✓ lib/security/connector-oauth.test.ts (3 tests) 12ms
+ ✓ lib/data/memory-incomplete-record-repository.test.ts (2 tests) 15ms
+ ✓ lib/data/supabase-connector-rewrap-repository.test.ts (1 test) 8ms
+ ✓ app/contacts/smart-list-form.test.ts (4 tests) 11ms
+ ✓ lib/data/supabase-connector-revocation-repository.test.ts (2 tests) 9ms
+ ✓ app/data/actions.test.ts (3 tests) 11ms
+ ✓ lib/domain/nurture-plan.test.ts (3 tests) 9ms
+ ✓ lib/data/supabase-incomplete-record-repository.test.ts (4 tests) 11ms
+ ✓ lib/data/memory-attention-repository.test.ts (3 tests) 15ms
+ ✓ lib/domain/workspace.test.ts (8 tests) 10ms
+ ✓ lib/application/today-operating-projection.test.ts (3 tests) 9ms
+ ✓ lib/domain/cadence.test.ts (15 tests) 10ms
+ ✓ app/contacts/actions.test.ts (1 test) 10ms
+ ✓ lib/data/google-operation-server-context.test.ts (1 test) 11ms
+ ✓ lib/application/contact-duplicate-audit.test.ts (3 tests) 9ms
+ ✓ lib/domain/licensed-listing-provider.test.ts (4 tests) 10ms
+ ✓ lib/domain/incomplete-record.test.ts (5 tests) 10ms
+ ✓ lib/application/omnix-ai-evaluation.test.ts (3 tests) 11ms
+ ✓ lib/data/supabase-connector-repository.test.ts (3 tests) 9ms
+ ✓ lib/application/pipeline-commands.test.ts (2 tests) 12ms
+ ✓ app/api/health/route.test.ts (1 test) 9ms
+ ✓ app/contacts/rich-actions.test.ts (2 tests) 11ms
+ ✓ lib/domain/connector-lifecycle.test.ts (17 tests) 9ms
+ ✓ lib/application/omnix-assistant-request.test.ts (4 tests) 12ms
+ ✓ lib/data/website-intake-repository.test.ts (2 tests) 9ms
+ ✓ lib/observability/connector-telemetry.test.ts (2 tests) 9ms
+ ✓ lib/application/mailchimp-guided-setup-service.test.ts (4 tests) 9ms
+ ✓ lib/domain/property-behavior.test.ts (4 tests) 8ms
+ ✓ lib/domain/affordability.test.ts (5 tests) 9ms
+ ✓ lib/domain/property.test.ts (4 tests) 10ms
+ ✓ lib/domain/website-intake.test.ts (3 tests) 8ms
+ ✓ lib/observability/omnix-copilot-telemetry.test.ts (4 tests) 9ms
+ ✓ lib/config/google-gmail-push.test.ts (4 tests) 8ms
+ ✓ lib/data/supabase-google-operation-repository.test.ts (2 tests) 9ms
+ ✓ app/contacts/[id]/outcome/actions.test.ts (2 tests) 8ms
+ ❯ app/omnix/omnix-copilot-view-model.test.ts (7 tests | 1 failed) 21ms
+   ✓ validateCopilotQuestion > accepts a supported printable question 2ms
+   ✓ validateCopilotQuestion > rejects empty, control-character and oversized questions 0ms
+   ✓ isSafeInProductTarget > allows only relative in-product targets 0ms
+   ✓ isSafeExternalSourceTarget > allows only credential-free HTTPS links 0ms
+   ✓ mapOmnixCopilotEnvelope > preserves answer evidence and read-only navigation 2ms
+   × mapOmnixCopilotEnvelope > turns an unsupported envelope into a visible supported-question state 14ms
+     → expected 'That request is outside the determini…' to be 'I couldn\'t match that wording yet. N…' // Object.is equality
+   ✓ mapOmnixCopilotEnvelope > distinguishes honest empty and capability-unavailable results 0ms
+ ✓ app/workspace/page.test.ts (2 tests) 7ms
+ ✓ scripts/manage-google.test.ts (4 tests) 10ms
+ ✓ lib/data/memory-property-behavior-repository.test.ts (1 test) 8ms
+ ✓ lib/data/automation-context.test.ts (4 tests) 10ms
+ ✓ lib/application/contact-navigation.test.ts (4 tests) 7ms
+ ✓ lib/application/website-intake-security.test.ts (3 tests) 7ms
+ ✓ lib/data/supabase-mailer-repository.test.ts (1 test) 8ms
+ ✓ lib/application/contact-merge-plan.test.ts (2 tests) 7ms
+ ✓ lib/data/supabase-contact-outbound-guard.test.ts (4 tests) 8ms
+ ✓ lib/application/route-navigation.test.ts (10 tests) 7ms
+ ✓ lib/application/pipeline-evidence.test.ts (2 tests) 8ms
+ ✓ scripts/manage-affordability.test.ts (2 tests) 8ms
+ ✓ lib/application/intake-security.test.ts (4 tests) 9ms
+ ✓ lib/domain/workflow-pack.test.ts (2 tests) 8ms
+ ✓ lib/application/import-receipt-recovery.test.ts (4 tests) 7ms
+ ✓ scripts/manage-meta.test.ts (3 tests) 7ms
+ ✓ lib/application/omnix-ai-budget.test.ts (2 tests) 7ms
+ ✓ app/connections/connection-status.test.ts (11 tests) 7ms
+ ✓ app/connections/mailchimp-presentation.test.ts (4 tests) 7ms
+ ✓ lib/routing/route-policy.test.ts (13 tests) 7ms
+ ✓ lib/security/operational-api.test.ts (2 tests) 6ms
+ ✓ lib/data/supabase-google-oauth-repository.test.ts (1 test) 6ms
+ ✓ app/pwa-contract.test.ts (3 tests) 6ms
+ ✓ lib/application/governed-export.test.ts (2 tests) 5ms
+ ✓ app/contacts/import/page.test.ts (2 tests) 5ms
+ ✓ app/connections/oauth-presentation.test.ts (2 tests) 7ms
+ ✓ lib/security/connector-cron-auth.test.ts (2 tests) 5ms
+ ✓ lib/domain/crm-search.test.ts (2 tests) 6ms
+ ✓ lib/application/twilio-reconciliation-service.test.ts (2 tests) 7ms
+ ✓ lib/application/omnix-ai-policy.test.ts (2 tests) 5ms
+ ✓ scripts/validate-gitleaks-report.test.ts (3 tests) 6ms
+ ✓ app/connections/google-presentation.test.ts (3 tests) 5ms
+ ✓ lib/domain/mailer.test.ts (2 tests) 5ms
+ ✓ app/settings/actions.test.ts (1 test) 5ms
+ ✓ lib/application/google-email-readiness.test.ts (3 tests) 5ms
+ ✓ lib/data/attention-automation-server-context.test.ts (2 tests) 5ms
+ ✓ lib/domain/dates.test.ts (4 tests) 4ms
+ ✓ lib/observability/connector-oauth-route-telemetry.test.ts (1 test) 5ms
+ ✓ lib/security/generic-webhook.test.ts (1 test) 4ms
+ ✓ lib/application/contact-view-state.test.ts (3 tests) 5ms
+ ✓ app/transactions/scenarios/page.test.ts (2 tests) 4ms
+ ✓ lib/data/mailchimp-oauth-server-context.test.ts (1 test) 4ms
+ ✓ scripts/release-manifest-supabase-ci.test.ts (8 tests) 22197ms
+   ✓ Supabase candidate recovery planning > selects candidate migrations and requires paired rollback plus forward repair  4083ms
+   ✓ Supabase candidate recovery planning > fails closed when a candidate migration has no forward repair  5250ms
+   ✓ Supabase candidate recovery planning > rejects equal, descendant, and sibling recovery bases  6671ms
+   ✓ Supabase candidate recovery planning > fails closed on deleted and renamed migrations  3963ms
+   ✓ Supabase candidate recovery planning > fails when the migration tree differs without a candidate migration SQL file  2197ms
+ ✓ components/connector-activity-ledger.test.tsx (2 tests) 311ms
+ ✓ components/route-chrome.test.tsx (4 tests) 294ms
+ ✓ components/contact-form.test.tsx (2 tests) 940ms
+   ✓ ContactForm relationship UX > makes email optional and removes lead priority when Past client is selected  775ms
+ ✓ components/google-sign-in.test.tsx (1 test) 302ms
+   ✓ GoogleSignIn > requires explicit account selection before starting the owner session  300ms
+ ✓ components/today-focus-timeline.interaction.test.tsx (1 test) 301ms
+ ✓ app/activities/route-states.test.ts (2 tests) 316ms
+ ✓ components/pwa-provider.test.tsx (3 tests) 415ms
+   ✓ PwaProvider > offers clear manual installation guidance when a native prompt is unavailable  333ms
+ ✓ components/meeting-brief-highlights.test.tsx (4 tests) 533ms
+   ✓ opt-in brief highlights > does not spend on mount and retains a useful unavailable state  318ms
+ ✓ components/crm-command-palette.test.tsx (2 tests) 576ms
+   ✓ CrmCommandPalette > portals the dialog above shell stacking contexts and restores focus  427ms
+ ✓ components/workspace-assignment-panel.test.tsx (2 tests) 939ms
+   ✓ WorkspaceAssignmentPanel > shows human role labels and never exposes user identifiers  320ms
+   ✓ WorkspaceAssignmentPanel > keeps large workspaces bounded and supports search plus progressive disclosure  617ms
+ ✓ components/today-queue-disclosure.test.tsx (1 test) 551ms
+   ✓ TodayQueueDisclosure > keeps the queue unmounted until explicitly opened and deterministically resets after closing  549ms
+ ✓ components/app-shell.test.tsx (7 tests) 942ms
+   ✓ AppShell account controls > reveals every mobile utility, focuses the first action and restores focus on Escape  615ms
+ ✓ components/activity-workspace.test.tsx (4 tests) 1137ms
+   ✓ ActivityWorkspace responsive task authority > renders one canonical task collection and preserves every row and bulk action  783ms
+   ✓ ActivityWorkspace responsive task authority > keeps selection canonical and exposes a 44px checkbox hit-area contract  305ms
+ ✓ components/capture-outcome.test.tsx (6 tests) 1087ms
+   ✓ Capture outcome review > adds a manual pipeline change to review without executing it  602ms
+ ✓ components/contact-import-workspace.test.tsx (7 tests) 1433ms
+   ✓ ContactImportWorkspace automatic organization > explains and applies the bounded existing-import cleanup in one action  469ms
+ ✓ components/omnix-copilot.test.tsx (2 tests) 1434ms
+   ✓ Omnix workspace conversation > defaults to CRM and sends only the selected client identity on follow-up  673ms
+   ✓ Omnix workspace conversation > drops selected CRM context when switching to public research  760ms
+ ✓ components/pipeline-board.test.tsx (10 tests) 1655ms
+   ✓ PipelineBoard > prioritizes next action and keeps readable activity evidence behind disclosure  484ms
+   ✓ PipelineBoard > filters authorized contacts and progressively reveals a large stage  313ms
+ ✓ components/google-email-composer.test.tsx (2 tests) 1838ms
+   ✓ GoogleEmailComposer > gives the workspace owner an inline final review and send action  1251ms
+   ✓ GoogleEmailComposer > keeps assistant-created drafts waiting for owner approval  586ms
+ ✓ components/insights-dashboard.test.tsx (8 tests) 2308ms
+   ✓ Insights dashboard > mounts exact period-preserving drilldowns instead of generic destination links  709ms
+   ✓ Insights dashboard > keeps large exact sets bounded, searchable, filterable, and paginated  731ms
+ ✓ components/relationship-queue.interaction.test.tsx (5 tests) 5087ms
+   ✓ RelationshipQueue mounted interactions > reveals populated batches 12 → 24 → 36 → final and focuses terminal status  1143ms
+   ✓ RelationshipQueue mounted interactions > reaches all 109 entries and resets to 12 after real lead, scope, and context clicks  2308ms
+   ✓ RelationshipQueue mounted interactions > preserves last valid rendered results after invalid submit and exposes alert semantics  950ms
+   ✓ RelationshipQueue mounted interactions > recovers populated no-results through Clear search and updates the live region  617ms
+ ❯ components/omnix-assistant-launcher.test.tsx (12 tests | 3 failed) 4721ms
+   ✓ OmnixAssistantLauncher > opens an accessible personalized dialog and returns focus on Escape  508ms
+   × OmnixAssistantLauncher > uses the injected authorized action and renders its grounded response 1224ms
+     → expected "spy" to be called with arguments: [ 'What should I do today?' ]
+
+Received:
+
+  1st spy call:
+
+  [
+    "What should I do today?",
++   {
++     "source": "crm",
++   },
+  ]
+
+
+Number of calls: 1
+
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head>[39m
+    [36m<link[39m
+      [33mas[39m=[32m"image"[39m
+      [33mimagesrcset[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75 2x"[39m
+      [33mrel[39m=[32m"preload"[39m
+    [36m/>[39m
+  [36m</head>[39m
+  [36m<body[39m
+    [33mstyle[39m=[32m"overflow: hidden;"[39m
+  [36m>[39m
+    [36m<div>[39m
+      [36m<button[39m
+        [33maria-expanded[39m=[32m"true"[39m
+        [33maria-haspopup[39m=[32m"dialog"[39m
+        [33maria-label[39m=[32m"Open Omnix assistant"[39m
+        [33mclass[39m=[32m"omnix-assistant-launcher"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"omnix-assistant-pulse"[39m
+        [36m/>[39m
+        [36m<img[39m
+          [33malt[39m=[32m""[39m
+          [33mclass[39m=[32m"omnix-assistant-avatar"[39m
+          [33mdata-nimg[39m=[32m"1"[39m
+          [33mdecoding[39m=[32m"async"[39m
+          [33mheight[39m=[32m"84"[39m
+          [33msrc[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75"[39m
+          [33msrcset[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75 2x"[39m
+          [33mstyle[39m=[32m"color: transparent;"[39m
+          [33mwidth[39m=[32m"84"[39m
+        [36m/>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"omnix-assistant-label"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-message-circle size-4"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [0m Ask Omnix[0m
+        [36m</span>[39m
+      [36m</button>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"omnix-assistant-layer"[39m
+      [36m>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Close Omnix assistant"[39m
+          [33mclass[39m=[32m"omnix-assistant-backdrop"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m/>[39m
+        [36m<div[39m
+          [33maria-labelledby[39m=[32m"omnix-assistant-dialog-title"[39m
+          [33maria-modal[39m=[32m"true"[39m
+          [33mclass[39m=[32m"omnix-assistant-dialog"[39m
+          [33mrole[39m=[32m"dialog"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-h-14 items-center justify-between gap-4 border-b border-line bg-surface px-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex min-w-0 items-center gap-3"[39m
+            [36m>[39m
+              [36m<img[39m
+                [33malt[39m=[32m""[39m
+                [33mclass[39m=[32m"size-10 object-contain"[39m
+                [33mdata-nimg[39m=[32m"1"[39m
+                [33mdecoding[39m=[32m"async"[39m
+                [33mheight[39m=[32m"42"[39m
+                [33mloading[39m=[32m"lazy"[39m
+                [33msrc[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75"[39m
+                [33msrcset[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=48&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 2x"[39m
+                [33mstyle[39m=[32m"color: transparent;"[39m
+                [33mwidth[39m=[32m"42"[39m
+              [36m/>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"min-w-0"[39m
+              [36m>[39m
+                [36m<h2[39m
+                  [33mclass[39m=[32m"font-display text-lg leading-tight text-ink"[39m
+                  [33mid[39m=[32m"omnix-assistant-dialog-title"[39m
+                [36m>[39m
+                  [0mOmnix AI[0m
+                [36m</h2>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"truncate text-xs text-muted"[39m
+                [36m>[39m
+                  [0mCRM + public research · Nothing changes without you[0m
+                [36m</p>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<button[39m
+              [33maria-label[39m=[32m"Close Omnix assistant"[39m
+              [33mclass[39m=[32m"sk-icon-button"[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-x size-[18px]"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M18 6 6 18"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"m6 6 12 12"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</button>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"min-h-0 flex-1 overflow-hidden"[39m
+          [36m>[39m
+            [36m<section[39m
+              [33maria-labelledby[39m=[32m"omnix-assistant-copilot-title"[39m
+              [33mclass[39m=[32m"flex h-full min-h-0 flex-col overflow-hidden bg-surface"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-4 border-b border-line bg-surface-2 p-5 sm:p-6"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex min-w-0 items-start gap-3"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33mclass[39m=[32m"grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-white"[39m
+                  [36m>[39m
+      ...
+   ✓ OmnixAssistantLauncher > presents CRM evidence without exposing database language to the member 284ms
+   ✓ OmnixAssistantLauncher > distinguishes grounded web research and opens public sources safely  694ms
+   × OmnixAssistantLauncher > renders who needs attention as a bounded people-first decision brief 1065ms
+     → Unable to find role="button" and name "Who needs attention?"
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mstyle[39m=[32m"overflow: hidden;"[39m
+[36m>[39m
+  [36m<div>[39m
+    [36m<button[39m
+      [33maria-expanded[39m=[32m"true"[39m
+      [33maria-haspopup[39m=[32m"dialog"[39m
+      [33maria-label[39m=[32m"Open Omnix assistant"[39m
+      [33mclass[39m=[32m"omnix-assistant-launcher"[39m
+      [33mtype[39m=[32m"button"[39m
+    [36m>[39m
+      [36m<span[39m
+        [33maria-hidden[39m=[32m"true"[39m
+        [33mclass[39m=[32m"omnix-assistant-pulse"[39m
+      [36m/>[39m
+      [36m<img[39m
+        [33malt[39m=[32m""[39m
+        [33mclass[39m=[32m"omnix-assistant-avatar"[39m
+        [33mdata-nimg[39m=[32m"1"[39m
+        [33mdecoding[39m=[32m"async"[39m
+        [33mheight[39m=[32m"84"[39m
+        [33msrc[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75"[39m
+        [33msrcset[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75 2x"[39m
+        [33mstyle[39m=[32m"color: transparent;"[39m
+        [33mwidth[39m=[32m"84"[39m
+      [36m/>[39m
+      [36m<span[39m
+        [33mclass[39m=[32m"omnix-assistant-label"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-message-circle size-4"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"24"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"24"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Ask Omnix[0m
+      [36m</span>[39m
+    [36m</button>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"omnix-assistant-layer"[39m
+    [36m>[39m
+      [36m<button[39m
+        [33maria-label[39m=[32m"Close Omnix assistant"[39m
+        [33mclass[39m=[32m"omnix-assistant-backdrop"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33maria-labelledby[39m=[32m"omnix-assistant-dialog-title"[39m
+        [33maria-modal[39m=[32m"true"[39m
+        [33mclass[39m=[32m"omnix-assistant-dialog"[39m
+        [33mrole[39m=[32m"dialog"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex min-h-14 items-center justify-between gap-4 border-b border-line bg-surface px-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-w-0 items-center gap-3"[39m
+          [36m>[39m
+            [36m<img[39m
+              [33malt[39m=[32m""[39m
+              [33mclass[39m=[32m"size-10 object-contain"[39m
+              [33mdata-nimg[39m=[32m"1"[39m
+              [33mdecoding[39m=[32m"async"[39m
+              [33mheight[39m=[32m"42"[39m
+              [33mloading[39m=[32m"lazy"[39m
+              [33msrc[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75"[39m
+              [33msrcset[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=48&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 2x"[39m
+              [33mstyle[39m=[32m"color: transparent;"[39m
+              [33mwidth[39m=[32m"42"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"min-w-0"[39m
+            [36m>[39m
+              [36m<h2[39m
+                [33mclass[39m=[32m"font-display text-lg leading-tight text-ink"[39m
+                [33mid[39m=[32m"omnix-assistant-dialog-title"[39m
+              [36m>[39m
+                [0mOmnix AI[0m
+              [36m</h2>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"truncate text-xs text-muted"[39m
+              [36m>[39m
+                [0mCRM + public research · Nothing changes without you[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Close Omnix assistant"[39m
+            [33mclass[39m=[32m"sk-icon-button"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-x size-[18px]"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M18 6 6 18"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m6 6 12 12"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-0 flex-1 overflow-hidden"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33maria-labelledby[39m=[32m"omnix-assistant-copilot-title"[39m
+            [33mclass[39m=[32m"flex h-full min-h-0 flex-col overflow-hidden bg-surface"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-4 border-b border-line bg-surface-2 p-5 sm:p-6"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex min-w-0 items-start gap-3"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-white"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-message-circle size-[18px]"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [3...
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mstyle[39m=[32m"overflow: hidden;"[39m
+[36m>[39m
+  [36m<div>[39m
+    [36m<button[39m
+      [33maria-expanded[39m=[32m"true"[39m
+      [33maria-haspopup[39m=[32m"dialog"[39m
+      [33maria-label[39m=[32m"Open Omnix assistant"[39m
+      [33mclass[39m=[32m"omnix-assistant-launcher"[39m
+      [33mtype[39m=[32m"button"[39m
+    [36m>[39m
+      [36m<span[39m
+        [33maria-hidden[39m=[32m"true"[39m
+        [33mclass[39m=[32m"omnix-assistant-pulse"[39m
+      [36m/>[39m
+      [36m<img[39m
+        [33malt[39m=[32m""[39m
+        [33mclass[39m=[32m"omnix-assistant-avatar"[39m
+        [33mdata-nimg[39m=[32m"1"[39m
+        [33mdecoding[39m=[32m"async"[39m
+        [33mheight[39m=[32m"84"[39m
+        [33msrc[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75"[39m
+        [33msrcset[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75 2x"[39m
+        [33mstyle[39m=[32m"color: transparent;"[39m
+        [33mwidth[39m=[32m"84"[39m
+      [36m/>[39m
+      [36m<span[39m
+        [33mclass[39m=[32m"omnix-assistant-label"[39m
+      [36m>[39m
+        [36m<svg[39m
+          [33maria-hidden[39m=[32m"true"[39m
+          [33mclass[39m=[32m"lucide lucide-message-circle size-4"[39m
+          [33mfill[39m=[32m"none"[39m
+          [33mheight[39m=[32m"24"[39m
+          [33mstroke[39m=[32m"currentColor"[39m
+          [33mstroke-linecap[39m=[32m"round"[39m
+          [33mstroke-linejoin[39m=[32m"round"[39m
+          [33mstroke-width[39m=[32m"2"[39m
+          [33mviewBox[39m=[32m"0 0 24 24"[39m
+          [33mwidth[39m=[32m"24"[39m
+          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+        [36m>[39m
+          [36m<path[39m
+            [33md[39m=[32m"M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"[39m
+          [36m/>[39m
+        [36m</svg>[39m
+        [0m Ask Omnix[0m
+      [36m</span>[39m
+    [36m</button>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"omnix-assistant-layer"[39m
+    [36m>[39m
+      [36m<button[39m
+        [33maria-label[39m=[32m"Close Omnix assistant"[39m
+        [33mclass[39m=[32m"omnix-assistant-backdrop"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m/>[39m
+      [36m<div[39m
+        [33maria-labelledby[39m=[32m"omnix-assistant-dialog-title"[39m
+        [33maria-modal[39m=[32m"true"[39m
+        [33mclass[39m=[32m"omnix-assistant-dialog"[39m
+        [33mrole[39m=[32m"dialog"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex min-h-14 items-center justify-between gap-4 border-b border-line bg-surface px-4"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex min-w-0 items-center gap-3"[39m
+          [36m>[39m
+            [36m<img[39m
+              [33malt[39m=[32m""[39m
+              [33mclass[39m=[32m"size-10 object-contain"[39m
+              [33mdata-nimg[39m=[32m"1"[39m
+              [33mdecoding[39m=[32m"async"[39m
+              [33mheight[39m=[32m"42"[39m
+              [33mloading[39m=[32m"lazy"[39m
+              [33msrc[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75"[39m
+              [33msrcset[39m=[32m"/_next/image?url=%2Fomnix-assistant-blue.png&w=48&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 2x"[39m
+              [33mstyle[39m=[32m"color: transparent;"[39m
+              [33mwidth[39m=[32m"42"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"min-w-0"[39m
+            [36m>[39m
+              [36m<h2[39m
+                [33mclass[39m=[32m"font-display text-lg leading-tight text-ink"[39m
+                [33mid[39m=[32m"omnix-assistant-dialog-title"[39m
+              [36m>[39m
+                [0mOmnix AI[0m
+              [36m</h2>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"truncate text-xs text-muted"[39m
+              [36m>[39m
+                [0mCRM + public research · Nothing changes without you[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Close Omnix assistant"[39m
+            [33mclass[39m=[32m"sk-icon-button"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-x size-[18px]"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M18 6 6 18"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m6 6 12 12"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-0 flex-1 overflow-hidden"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33maria-labelledby[39m=[32m"omnix-assistant-copilot-title"[39m
+            [33mclass[39m=[32m"flex h-full min-h-0 flex-col overflow-hidden bg-surface"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-wrap items-start justify-between gap-4 border-b border-line bg-surface-2 p-5 sm:p-6"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex min-w-0 items-start gap-3"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-white"[39m
+                [36m>[39m
+                  [36m<svg[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"lucide lucide-message-circle size-[18px]"[39m
+                    [33mfill[39m=[32m"none"[39m
+                    [33mheight[39m=[32m"24"[39m
+                    [33mstroke[39m=[32m"currentColor"[39m
+                    [33mstroke-linecap[39m=[32m"round"[39m
+                    [33mstroke-linejoin[39m=[32m"round"[39m
+                    [33mstroke-width[39m=[32m"2"[39m
+                    [33mviewBox[39m=[32m"0 0 24 24"[39m
+                    [3...
+   ✓ OmnixAssistantLauncher > keeps large source sets calm and progressively reveals every citation  342ms
+   ✓ OmnixAssistantLauncher > keeps large CRM result collections bounded until the member asks for more  361ms
+   × OmnixAssistantLauncher > contains page scrolling and exposes keyboard and latest-message navigation 227ms
+     → expected "spy" to be called with arguments: [ Array(1) ]
+
+Number of calls: 0
+
+   ✓ OmnixAssistantLauncher > keeps the dialog bounded and provides visible cross-browser scrollbar styling 2ms
+   ✓ OmnixAssistantLauncher > removes the floating launcher from mobile content and preserves the desktop avatar 2ms
+   ✓ OmnixAssistantLauncher > suppresses the closed launcher while a competing shell disclosure is open 7ms
+   ✓ OmnixAssistantLauncher > does not mount a duplicate launcher on the dedicated Omnix route 2ms
+ ✓ components/alert-center.interaction.test.tsx (7 tests) 4791ms
+   ✓ AlertCenter mounted progressive disclosure > renders 88 canonical alerts with exact tiles, only Act now open, and a bounded default DOM  506ms
+   ✓ AlertCenter mounted progressive disclosure > AND-composes search, group, category, and priority while OR-composing selections within a dimension  797ms
+   ✓ AlertCenter mounted progressive disclosure > keeps Expand all bounded, preserves per-group progress through disclosure, and resets batches on criteria changes  1247ms
+   ✓ AlertCenter mounted progressive disclosure > reaches every record in canonical group order with final partial batches and no duplicates  1568ms
+   ✓ AlertCenter mounted progressive disclosure > clears criteria after filtered-zero and restores the canonical result with 12-item limits  516ms
+ ✓ scripts/release-manifest.test.ts (32 tests) 70561ms
+   ✓ release manifest validation > accepts complete exact-SHA evidence from a clean evidence checkout  3284ms
+   ✓ release manifest validation > accepts the supported Hobby daily fallback only with live connector promotion blocked  5002ms
+   ✓ release manifest validation > rejects a two-minute Hobby schedule that Vercel would reject at deployment  4534ms
+   ✓ release manifest validation > keeps the Hobby daily fallback fail-closed for live connector promotion  3073ms
+   ✓ release manifest validation > creates the immutable manifest for an explicit candidate Git object  2963ms
+   ✓ release manifest validation > fails closed on a dirty evidence checkout  2040ms
+   ✓ release manifest validation > rejects an expected candidate SHA mismatch  1938ms
+   ✓ release manifest validation > rejects migration checksum drift  1944ms
+   ✓ release manifest validation > rejects missing migration replay evidence  1941ms
+   ✓ release manifest validation > rejects deployment evidence bound to another deployment  2119ms
+   ✓ release manifest validation > rejects missing rollback rehearsal evidence  1937ms
+   ✓ release manifest validation > rejects equal, descendant, and sibling rollback targets instead of accepting any different commit  4131ms
+   ✓ release manifest validation > binds rollback recovery to declared known-good prior deployment evidence  1875ms
+   ✓ release manifest validation > rejects provider evidence from a non-owner actor  2127ms
+   ✓ release manifest validation > rejects an omitted applicable provider and its evidence record  1792ms
+   ✓ release manifest validation > rejects duplicate evidence records for one provider  2067ms
+   ✓ release manifest validation > rejects missing Google-specific facts  2009ms
+   ✓ release manifest validation > rejects missing Mailchimp-specific facts  2759ms
+   ✓ release manifest validation > rejects generic lifecycle receipts for Twilio readiness  2070ms
+   ✓ release manifest validation > rejects incomplete or false-green Twilio-specific readiness facts  1911ms
+   ✓ release manifest validation > rejects generic lifecycle receipts and incomplete facts for Meta readiness  2061ms
+   ✓ release manifest validation > rejects stale provider evidence  1894ms
+   ✓ release manifest validation > rejects incomplete authenticated responsive UAT  1823ms
+   ✓ release manifest validation > rejects a UAT cell without outcome, health, readiness, and bound evidence  1711ms
+   ✓ release manifest validation > rejects UAT cells without explicit browser, device, safe-area, and overflow evidence  1844ms
+   ✓ release manifest validation > requires separate iPhone 11 Safari browser and installed-PWA proof  1695ms
+   ✓ release manifest validation > fails required manifest-tree validation when no canonical manifest is tracked  1309ms
+   ✓ release manifest validation > does not let a valid historical manifest satisfy an exact expected-SHA CI gate  2034ms
+   ✓ release manifest validation > accepts only the canonical exact-SHA manifest path  1215ms
+   ✓ release manifest validation > rejects receipt traversal even when it resolves inside the repository  1772ms
+   ✓ release manifest validation > reports all failures as a fail-closed validation error  1667ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/omnix-assistant-launcher.test.tsx > OmnixAssistantLauncher > uses the injected authorized action and renders its grounded response
+AssertionError: expected "spy" to be called with arguments: [ 'What should I do today?' ]
+
+Received:
+
+  1st spy call:
+
+  [
+    "What should I do today?",
++   {
++     "source": "crm",
++   },
+  ]
+
+
+Number of calls: 1
+
+
+Ignored nodes: comments, script, style
+<html>
+  <head>
+    <link
+      as="image"
+      imagesrcset="/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75 2x"
+      rel="preload"
+    />
+  </head>
+  <body
+    style="overflow: hidden;"
+  >
+    <div>
+      <button
+        aria-expanded="true"
+        aria-haspopup="dialog"
+        aria-label="Open Omnix assistant"
+        class="omnix-assistant-launcher"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="omnix-assistant-pulse"
+        />
+        <img
+          alt=""
+          class="omnix-assistant-avatar"
+          data-nimg="1"
+          decoding="async"
+          height="84"
+          src="/_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75"
+          srcset="/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75 2x"
+          style="color: transparent;"
+          width="84"
+        />
+        <span
+          class="omnix-assistant-label"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-message-circle size-4"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
+            />
+          </svg>
+           Ask Omnix
+        </span>
+      </button>
+      <div
+        class="omnix-assistant-layer"
+      >
+        <button
+          aria-label="Close Omnix assistant"
+          class="omnix-assistant-backdrop"
+          type="button"
+        />
+        <div
+          aria-labelledby="omnix-assistant-dialog-title"
+          aria-modal="true"
+          class="omnix-assistant-dialog"
+          role="dialog"
+        >
+          <div
+            class="flex min-h-14 items-center justify-between gap-4 border-b border-line bg-surface px-4"
+          >
+            <div
+              class="flex min-w-0 items-center gap-3"
+            >
+              <img
+                alt=""
+                class="size-10 object-contain"
+                data-nimg="1"
+                decoding="async"
+                height="42"
+                loading="lazy"
+                src="/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75"
+                srcset="/_next/image?url=%2Fomnix-assistant-blue.png&w=48&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 2x"
+                style="color: transparent;"
+                width="42"
+              />
+              <div
+                class="min-w-0"
+              >
+                <h2
+                  class="font-display text-lg leading-tight text-ink"
+                  id="omnix-assistant-dialog-title"
+                >
+                  Omnix AI
+                </h2>
+                <p
+                  class="truncate text-xs text-muted"
+                >
+                  CRM + public research · Nothing changes without you
+                </p>
+              </div>
+            </div>
+            <button
+              aria-label="Close Omnix assistant"
+              class="sk-icon-button"
+              type="button"
+            >
+              <svg
+                aria-hidden="true"
+                class="lucide lucide-x size-[18px]"
+                fill="none"
+                height="24"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+                width="24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M18 6 6 18"
+                />
+                <path
+                  d="m6 6 12 12"
+                />
+              </svg>
+            </button>
+          </div>
+          <div
+            class="min-h-0 flex-1 overflow-hidden"
+          >
+            <section
+              aria-labelledby="omnix-assistant-copilot-title"
+              class="flex h-full min-h-0 flex-col overflow-hidden bg-surface"
+            >
+              <div
+                class="flex flex-wrap items-start justify-between gap-4 border-b border-line bg-surface-2 p-5 sm:p-6"
+              >
+                <div
+                  class="flex min-w-0 items-start gap-3"
+                >
+                  <span
+                    class="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-white"
+                  >
+      ...
+ ❯ components/omnix-assistant-launcher.test.tsx:104:40
+    102|     await user.click(await screen.findByRole('button', { name: 'What s…
+    103|
+    104|     await waitFor(() => expect(action).toHaveBeenCalledWith('What shou…
+       |                                        ^
+    105|     expect(await screen.findByText('Two people need attention.')).toBe…
+    106|     expect(screen.getByText('Live CRM')).toBeInTheDocument();
+ ❯ runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  components/omnix-assistant-launcher.test.tsx > OmnixAssistantLauncher > renders who needs attention as a bounded people-first decision brief
+TestingLibraryElementError: Unable to find role="button" and name "Who needs attention?"
+
+Ignored nodes: comments, script, style
+<body
+  style="overflow: hidden;"
+>
+  <div>
+    <button
+      aria-expanded="true"
+      aria-haspopup="dialog"
+      aria-label="Open Omnix assistant"
+      class="omnix-assistant-launcher"
+      type="button"
+    >
+      <span
+        aria-hidden="true"
+        class="omnix-assistant-pulse"
+      />
+      <img
+        alt=""
+        class="omnix-assistant-avatar"
+        data-nimg="1"
+        decoding="async"
+        height="84"
+        src="/_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75"
+        srcset="/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75 2x"
+        style="color: transparent;"
+        width="84"
+      />
+      <span
+        class="omnix-assistant-label"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-message-circle size-4"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
+          />
+        </svg>
+         Ask Omnix
+      </span>
+    </button>
+    <div
+      class="omnix-assistant-layer"
+    >
+      <button
+        aria-label="Close Omnix assistant"
+        class="omnix-assistant-backdrop"
+        type="button"
+      />
+      <div
+        aria-labelledby="omnix-assistant-dialog-title"
+        aria-modal="true"
+        class="omnix-assistant-dialog"
+        role="dialog"
+      >
+        <div
+          class="flex min-h-14 items-center justify-between gap-4 border-b border-line bg-surface px-4"
+        >
+          <div
+            class="flex min-w-0 items-center gap-3"
+          >
+            <img
+              alt=""
+              class="size-10 object-contain"
+              data-nimg="1"
+              decoding="async"
+              height="42"
+              loading="lazy"
+              src="/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75"
+              srcset="/_next/image?url=%2Fomnix-assistant-blue.png&w=48&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 2x"
+              style="color: transparent;"
+              width="42"
+            />
+            <div
+              class="min-w-0"
+            >
+              <h2
+                class="font-display text-lg leading-tight text-ink"
+                id="omnix-assistant-dialog-title"
+              >
+                Omnix AI
+              </h2>
+              <p
+                class="truncate text-xs text-muted"
+              >
+                CRM + public research · Nothing changes without you
+              </p>
+            </div>
+          </div>
+          <button
+            aria-label="Close Omnix assistant"
+            class="sk-icon-button"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-x size-[18px]"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M18 6 6 18"
+              />
+              <path
+                d="m6 6 12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div
+          class="min-h-0 flex-1 overflow-hidden"
+        >
+          <section
+            aria-labelledby="omnix-assistant-copilot-title"
+            class="flex h-full min-h-0 flex-col overflow-hidden bg-surface"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-4 border-b border-line bg-surface-2 p-5 sm:p-6"
+            >
+              <div
+                class="flex min-w-0 items-start gap-3"
+              >
+                <span
+                  class="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-white"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-message-circle size-[18px]"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    [3...
+
+Ignored nodes: comments, script, style
+<body
+  style="overflow: hidden;"
+>
+  <div>
+    <button
+      aria-expanded="true"
+      aria-haspopup="dialog"
+      aria-label="Open Omnix assistant"
+      class="omnix-assistant-launcher"
+      type="button"
+    >
+      <span
+        aria-hidden="true"
+        class="omnix-assistant-pulse"
+      />
+      <img
+        alt=""
+        class="omnix-assistant-avatar"
+        data-nimg="1"
+        decoding="async"
+        height="84"
+        src="/_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75"
+        srcset="/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=256&q=75 2x"
+        style="color: transparent;"
+        width="84"
+      />
+      <span
+        class="omnix-assistant-label"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-message-circle size-4"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"
+          />
+        </svg>
+         Ask Omnix
+      </span>
+    </button>
+    <div
+      class="omnix-assistant-layer"
+    >
+      <button
+        aria-label="Close Omnix assistant"
+        class="omnix-assistant-backdrop"
+        type="button"
+      />
+      <div
+        aria-labelledby="omnix-assistant-dialog-title"
+        aria-modal="true"
+        class="omnix-assistant-dialog"
+        role="dialog"
+      >
+        <div
+          class="flex min-h-14 items-center justify-between gap-4 border-b border-line bg-surface px-4"
+        >
+          <div
+            class="flex min-w-0 items-center gap-3"
+          >
+            <img
+              alt=""
+              class="size-10 object-contain"
+              data-nimg="1"
+              decoding="async"
+              height="42"
+              loading="lazy"
+              src="/_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75"
+              srcset="/_next/image?url=%2Fomnix-assistant-blue.png&w=48&q=75 1x, /_next/image?url=%2Fomnix-assistant-blue.png&w=96&q=75 2x"
+              style="color: transparent;"
+              width="42"
+            />
+            <div
+              class="min-w-0"
+            >
+              <h2
+                class="font-display text-lg leading-tight text-ink"
+                id="omnix-assistant-dialog-title"
+              >
+                Omnix AI
+              </h2>
+              <p
+                class="truncate text-xs text-muted"
+              >
+                CRM + public research · Nothing changes without you
+              </p>
+            </div>
+          </div>
+          <button
+            aria-label="Close Omnix assistant"
+            class="sk-icon-button"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="lucide lucide-x size-[18px]"
+              fill="none"
+              height="24"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M18 6 6 18"
+              />
+              <path
+                d="m6 6 12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <div
+          class="min-h-0 flex-1 overflow-hidden"
+        >
+          <section
+            aria-labelledby="omnix-assistant-copilot-title"
+            class="flex h-full min-h-0 flex-col overflow-hidden bg-surface"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-4 border-b border-line bg-surface-2 p-5 sm:p-6"
+            >
+              <div
+                class="flex min-w-0 items-start gap-3"
+              >
+                <span
+                  class="grid size-10 shrink-0 place-items-center rounded-2xl bg-accent text-white"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-message-circle size-[18px]"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    [3...
+ ❯ waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ components/omnix-assistant-launcher.test.tsx:193:35
+    191|
+    192|     await user.click(screen.getByRole('button', { name: 'Open Omnix as…
+    193|     await user.click(await screen.findByRole('button', { name: 'Who ne…
+       |                                   ^
+    194|
+    195|     expect(await screen.findByText('Omnix · Attention brief')).toBeInT…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  components/omnix-assistant-launcher.test.tsx > OmnixAssistantLauncher > contains page scrolling and exposes keyboard and latest-message navigation
+AssertionError: expected "spy" to be called with arguments: [ Array(1) ]
+
+Number of calls: 0
+
+ ❯ components/omnix-assistant-launcher.test.tsx:328:28
+    326|     scrollIntoView.mockClear();
+    327|     await user.click(jump);
+    328|     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end', behavi…
+       |                            ^
+    329|
+    330|     await user.keyboard('{Escape}');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  app/omnix/omnix-copilot-view-model.test.ts > mapOmnixCopilotEnvelope > turns an unsupported envelope into a visible supported-question state
+AssertionError: expected 'That request is outside the determini…' to be 'I couldn\'t match that wording yet. N…' // Object.is equality
+
+Expected: "I couldn't match that wording yet. Nothing was changed."
+Received: "That request is outside the deterministic grammar."
+
+ ❯ app/omnix/omnix-copilot-view-model.test.ts:108:28
+    106|
+    107|     expect(result.status).toBe('unsupported');
+    108|     expect(result.message).toBe("I couldn't match that wording yet. No…
+       |                            ^
+    109|     expect(result.answerBlocks[0]).toMatchObject({
+    110|       title: 'Try asking in one of these ways',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  2 failed | 272 passed (274)
+      Tests  4 failed | 1425 passed (1429)
+   Start at  20:51:48
+   Duration  72.24s (transform 56.93s, setup 0ms, collect 342.34s, tests 145.12s, environment 509.38s, prepare 65.12s)

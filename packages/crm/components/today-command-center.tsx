@@ -13,6 +13,7 @@ import { TodayFocusTimeline } from '@/components/today-focus-timeline';
 import { TodayQueueDisclosure } from '@/components/today-queue-disclosure';
 import { TodayMetricLedger, TodayVisualDashboard } from '@/components/today-visual-dashboard';
 import { TodayOperatingBriefing } from '@/components/today-operating-briefing';
+import { TodayConversations } from '@/components/today-conversations';
 import { ActionLink, GroupedSurface } from '@/components/ui';
 import type { TodayOperatingProjection } from '@/lib/application/today-operating-projection';
 import { ensureNextTouch } from '@/lib/domain/cadence';
@@ -168,6 +169,7 @@ export function TodayCommandCenter({
         <>
           <TodayMetricLedger contacts={contacts} summary={summary} />
 
+          <TodayConversations contacts={Array.from(new Map(buckets.flatMap((bucket) => bucket.entries.map((entry) => [entry.contact.id, entry.contact] as const))).values())} />
           {operatingProjection && <TodayOperatingBriefing projection={operatingProjection} />}
 
           <TodayFocusTimeline

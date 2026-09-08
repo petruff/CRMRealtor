@@ -8,6 +8,8 @@ describe('parentRouteNavigation', () => {
     ['/contacts/incomplete', '/contacts', 'Contact review'],
     ['/data/duplicates', '/data', 'Duplicate review'],
     ['/transactions/scenarios', '/transactions', 'Affordability studio'],
+    ['/contacts/c-1/brief', '/contacts/c-1', 'Meeting brief'],
+    ['/contacts/c-1/outcome', '/contacts/c-1', 'Capture outcome'],
   ])('maps %s to its deterministic parent', (pathname, href, currentLabel) => {
     expect(parentRouteNavigation(pathname)).toMatchObject({ href, currentLabel });
   });
