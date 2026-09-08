@@ -74,7 +74,7 @@ describe('runOmnixAiCli', () => {
   });
 
   it('routes natural language once and refuses injection before loading workspace data', async () => {
-    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({ state: 'available', route: 'crm', model: 'gemini-3.5-flash-lite', query: 'pipeline' });
+    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({ state: 'available', route: 'crm', model: 'gemini-3.5-flash-lite', query: 'pipeline', outputTokens: 140, usageEstimated: true });
     const liveContext = vi.fn(async () => ({ client: {} as never, scope: SAMPLE_WORKSPACE_SCOPE }));
     await expect(runOmnixAiCli(['--live', '--question', 'Quais negócios exigem atenção?'], {
       liveContext, execute: vi.fn(async () => response), stdout: vi.fn(), stderr: vi.fn(),
@@ -86,6 +86,7 @@ describe('runOmnixAiCli', () => {
       response,
       expect.objectContaining({
         reservation: { reservationId: '62000000-0000-4000-8000-000000000001' },
+        priorOutputTokens: 140, priorUsageEstimated: true,
       }),
     );
 

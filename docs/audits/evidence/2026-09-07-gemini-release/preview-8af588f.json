@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "crm-preview-observation.v1",
+  "candidateSha": "8af588f6c7389a9081d9923b28616d834c96bf28",
+  "observedAt": "2026-09-08T01:32:03.8979199Z",
+  "deploymentId": "dpl_CE522Y2Wf82dWBqUqYzCQaXvGbop",
+  "url": "https://crm-gxdhtyoer-contact-70575058s-projects.vercel.app",
+  "readyState": "READY",
+  "mode": "isolated-sample",
+  "productionPromoted": false,
+  "buildInputs": {
+    "checkoutClean": true,
+    "sourceHashesMatched": 122,
+    "framework": "Next.js",
+    "root": "packages/crm",
+    "databaseBuildAndRuntimeVariables": "empty per-deployment overrides",
+    "siteUrl": "existing Preview project setting"
+  },
+  "protection": "Vercel authentication remains required; anonymous HTML redirects to Vercel sign-in",
+  "health": {
+    "method": "Authenticated Vercel CLI curl",
+    "ok": true,
+    "schemaVersion": "health.v1",
+    "process": "ready"
+  },
+  "readiness": {
+    "method": "Authenticated Vercel CLI curl",
+    "ok": false,
+    "schemaVersion": "readiness.v2",
+    "databaseConfigured": false,
+    "databaseStatus": "unavailable",
+    "expectedForSample": true
+  },
+  "browser": {
+    "actualRemoteWorkspaceOverview": true,
+    "selectedClientStatus": true,
+    "sampleWarningVisible": true,
+    "sourceLinksVisible": true,
+    "viewportWidth": 390,
+    "viewportHeight": 844,
+    "documentScrollWidth": 375,
+    "composerBottom": 663.21875,
+    "conversationHeight": 464.1875,
+    "darkScreenshotInspectedInline": true,
+    "viewportRestored": true,
+    "physicalDevice": false
+  },
+  "failedAttempt": {
+    "deploymentId": "dpl_oHG4StnuqnncgGrTuWw4ETqiZygB",
+    "cause": "Blank NEXT_PUBLIC_SITE_URL caused layout metadata URL parsing failure",
+    "correction": "Removed only site URL override; database overrides remain empty"
+  },
+  "acceptance": "Preview evidence only. Candidate SQL CI failed inherited brief-table ACL assertions; corrections require a later exact-SHA rerun. No live Gemini or Production database is connected to this Preview."
+}

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "crm-live-ai-observation.v1",
+  "observedAt": "2026-09-08T01:20:00Z",
+  "environment": "existing-production",
+  "deploymentId": "dpl_GDHBv2TMX3ZB1B5dFFaeCyUvVU5r",
+  "deploymentMetadataSha": "eedc12eec250535946405671577e356f5f24c8e9",
+  "candidateAccepted": false,
+  "configuration": {
+    "provider": "Google Gemini",
+    "keyPresent": true,
+    "routing": "Enabled",
+    "storage": "Envelope encrypted",
+    "policy": "Paid-private",
+    "observation": "Authenticated Settings UI, owner configuration changed during task"
+  },
+  "observations": [
+    {
+      "promptClass": "built-in attention",
+      "state": "failed",
+      "errorCategory": "invalid-response",
+      "inputTokens": 5315,
+      "outputTokens": 584,
+      "actualMicrousd": 3055,
+      "createdAt": "2026-09-08T01:17:01.729122Z",
+      "completedAt": "2026-09-08T01:17:04.101209Z",
+      "ui": "Canonical records retained with explicit AI-unavailable notice",
+      "cause": "Not determined: provider output was not retained"
+    },
+    {
+      "promptClass": "built-in pipeline",
+      "state": "succeeded",
+      "errorCategory": null,
+      "inputTokens": 4250,
+      "outputTokens": 219,
+      "actualMicrousd": 1823,
+      "createdAt": "2026-09-08T01:19:51.931341Z",
+      "completedAt": "2026-09-08T01:19:53.496441Z",
+      "ui": "AI GROUNDED summary with links to recorded CRM facts"
+    }
+  ],
+  "limitations": [
+    "Existing Production deployment, not the new candidate",
+    "No raw prompts, customer records, credentials or model response retained in this evidence",
+    "No provider send, calendar mutation or new application deployment was performed by these read journeys"
+  ]
+}

@@ -20,11 +20,15 @@ create table public.meeting_brief_snapshots (
 create index meeting_brief_contact_time_idx on public.meeting_brief_snapshots(workspace_id,contact_id,created_at desc);
 alter table public.meeting_brief_snapshots enable row level security;
 create policy meeting_brief_member_read on public.meeting_brief_snapshots for select to authenticated using(public.has_workspace_access(workspace_id));
+-- Supabase schema default privileges can grant ALL at CREATE TABLE time.
+-- A subsequent GRANT SELECT alone does not remove those inherited grants.
+revoke all on public.meeting_brief_snapshots from public,anon,authenticated,service_role;
 grant select on public.meeting_brief_snapshots to authenticated;
 grant select,insert on public.meeting_brief_snapshots to service_role;
 
 create function public.reject_meeting_brief_mutation() returns trigger language plpgsql set search_path=public,pg_temp as $$
 begin raise exception 'Meeting brief evidence is append-only' using errcode='55000'; end $$;
+revoke all on function public.reject_meeting_brief_mutation() from public,anon,authenticated,service_role;
 create trigger meeting_brief_immutable before update or delete on public.meeting_brief_snapshots
 for each row execute function public.reject_meeting_brief_mutation();
 
@@ -97,6 +101,6 @@ begin
   values(new_id,target_workspace_id,contact,transaction_ref,target_membership_id,prior_id,(target_snapshot->>'version')::integer,target_snapshot,(target_snapshot->>'createdAt')::timestamptz,(target_snapshot->>'expiresAt')::timestamptz);
   return new_id;
 end $$;
-revoke all on function public.create_meeting_brief_snapshot(uuid,uuid,jsonb) from public,anon;
+revoke all on function public.create_meeting_brief_snapshot(uuid,uuid,jsonb) from public,anon,authenticated,service_role;
 grant execute on function public.create_meeting_brief_snapshot(uuid,uuid,jsonb) to authenticated;
 commit;

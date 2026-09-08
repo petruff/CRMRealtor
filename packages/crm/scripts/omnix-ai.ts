@@ -70,6 +70,7 @@ export async function runOmnixAiCli(argv: readonly string[], dependencies: Omnix
     let reservationId: string | undefined;
     let routeInputTokens = 0;
     let routeOutputTokens = 0;
+    let routeUsageEstimated = false;
     let routedQuestion = question;
     try {
       if (source === 'public-web') throw new OmnixCopilotError('unsupported-intent', 'Public routing requires an explicit classification.');
@@ -87,10 +88,11 @@ export async function runOmnixAiCli(argv: readonly string[], dependencies: Omnix
         throw new Error(reservation.reason === 'exhausted' ? 'The workspace AI budget is exhausted.' : 'The protected AI budget receipt is unavailable.');
       }
       reservationId = reservation.reservationId;
-      finalizePending = () => budget.finalize({ reservationId: reservation.reservationId!, state: 'failed', inputTokens: routeInputTokens, outputTokens: routeOutputTokens, actualCostMicrousd: OMNIX_AI_POLICY.perRunBudgetMicrousd, errorCategory: 'route-or-execution-failed' });
+      finalizePending = () => budget.finalize({ reservationId: reservation.reservationId!, state: 'failed', inputTokens: routeInputTokens, outputTokens: routeOutputTokens, actualCostMicrousd: OMNIX_AI_POLICY.perRunBudgetMicrousd, errorCategory: 'route-or-execution-failed.usage-estimated' });
       const route = await routeOmnixQuestionWithGemini(question, { credential });
       routeInputTokens = route.inputTokens ?? 0;
       routeOutputTokens = route.outputTokens ?? 0;
+      routeUsageEstimated = route.usageEstimated === true;
       if (route.state !== 'available' || route.route !== source || !route.query) {
         await finalizePending(); finalizePending = undefined;
         write(`${JSON.stringify({ schemaVersion: 'omnix-ai-cli.v1', correlationId, dataMode: 'live', mode: 'clarify', message: source === 'crm' ? 'Ask a supported CRM question, choose a client, or select Public web for a separate public question.' : 'Ask a separate public question without client information.', model: { state: route.state, reason: route.reason } }, null, 2)}\n`);
@@ -126,7 +128,7 @@ export async function runOmnixAiCli(argv: readonly string[], dependencies: Omnix
           inputTokens: routeInputTokens,
           outputTokens: routeOutputTokens,
           actualCostMicrousd: OMNIX_AI_POLICY.perRunBudgetMicrousd,
-          errorCategory: 'deterministic-failed',
+          errorCategory: 'deterministic-failed.usage-estimated',
         });
         finalizePending = undefined;
       }
@@ -139,6 +141,7 @@ export async function runOmnixAiCli(argv: readonly string[], dependencies: Omnix
       ...(reservationId ? { reservation: { reservationId } } : {}),
       priorInputTokens: routeInputTokens,
       priorOutputTokens: routeOutputTokens,
+      priorUsageEstimated: routeUsageEstimated,
     });
     finalizePending = undefined;
     write(`${JSON.stringify({

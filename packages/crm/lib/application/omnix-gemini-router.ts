@@ -1,9 +1,10 @@
 import { OMNIX_COPILOT_SUPPORTED_EXAMPLES, OMNIX_COPILOT_QUESTION_MAX, parseOmnixCopilotQuestion } from '../domain/omnix-copilot.ts';
-import { OMNIX_AI_POLICY } from './omnix-ai-policy.ts';
+import { estimateOmnixTokens, OMNIX_AI_POLICY } from './omnix-ai-policy.ts';
 import { scanOmnixPromptContent } from './omnix-prompt-guard.ts';
 
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const ALLOWED_MODELS = new Set(['gemini-3.5-flash-lite', 'gemini-3.6-flash']);
+const ROUTE_OUTPUT_LIMIT = 140;
 
 export type OmnixGeminiState = 'available' | 'unconfigured' | 'failed';
 export const OMNIX_GEMINI_ROUTE_SCHEMA_VERSION = 'omnix-route.v1' as const;
@@ -25,6 +26,7 @@ export interface OmnixGeminiRouteResult {
     | 'invalid-response';
   readonly inputTokens?: number;
   readonly outputTokens?: number;
+  readonly usageEstimated?: boolean;
 }
 
 interface GeminiResponse {
@@ -34,6 +36,7 @@ interface GeminiResponse {
   readonly usageMetadata?: {
     readonly promptTokenCount?: number;
     readonly candidatesTokenCount?: number;
+    readonly thoughtsTokenCount?: number;
   };
 }
 
@@ -106,6 +109,9 @@ export async function routeOmnixQuestionWithGemini(
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), OMNIX_AI_POLICY.requestTimeoutMs);
+  // Until measured usage arrives, preserve a bounded commitment for a dispatched request.
+  let usage = { inputTokens: estimateOmnixTokens(question + OMNIX_COPILOT_SUPPORTED_EXAMPLES.join(' | ') + (options.contextContactName ?? '')) + 700,
+    outputTokens: ROUTE_OUTPUT_LIMIT, usageEstimated: true };
   try {
     const response = await (options.fetchImpl ?? fetch)(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(configured.model)}:generateContent`,
@@ -134,24 +140,31 @@ export async function routeOmnixQuestionWithGemini(
           generationConfig: {
             responseMimeType: 'application/json',
             temperature: 0,
-            maxOutputTokens: 140,
+            maxOutputTokens: ROUTE_OUTPUT_LIMIT,
           },
         }),
       },
     );
-    if (!response.ok) return { state: 'failed', model: configured.model, reason: 'request-failed' };
+    if (!response.ok) return { state: 'failed', model: configured.model, reason: 'request-failed', ...usage };
     const reader = response.body?.getReader();
-    if (!reader) return { state: 'failed', route: 'clarify', model: configured.model, reason: 'invalid-response' };
+    if (!reader) return { state: 'failed', route: 'clarify', model: configured.model, reason: 'invalid-response', ...usage };
     let raw = '', bytes = 0; const decoder = new TextDecoder();
     while (true) { const part = await reader.read(); if (part.done) break; bytes += part.value.byteLength;
-      if (bytes > 32768) { await reader.cancel(); return { state: 'failed', route: 'clarify', model: configured.model, reason: 'invalid-response' }; }
+      if (bytes > 32768) { await reader.cancel(); return { state: 'failed', route: 'clarify', model: configured.model, reason: 'invalid-response', ...usage }; }
       raw += decoder.decode(part.value, { stream: true }); }
     const payload = JSON.parse(raw + decoder.decode()) as GeminiResponse;
-    const counts = [payload.usageMetadata?.promptTokenCount, payload.usageMetadata?.candidatesTokenCount];
-    if (counts.some((count) => count !== undefined && (!Number.isSafeInteger(count) || count < 0 || count > 100000))) {
-      return { state: 'failed', route: 'clarify', model: configured.model, reason: 'invalid-response' };
+    const input = payload.usageMetadata?.promptTokenCount;
+    const visible = payload.usageMetadata?.candidatesTokenCount;
+    const thoughts = payload.usageMetadata?.thoughtsTokenCount === undefined ? 0 : payload.usageMetadata.thoughtsTokenCount;
+    const valid = (value: unknown, maximum: number): value is number => Number.isSafeInteger(value) && Number(value) >= 0 && Number(value) <= maximum;
+    const invalid = (input !== undefined && !valid(input, 100_000))
+      || (visible !== undefined && !valid(visible, ROUTE_OUTPUT_LIMIT))
+      || !valid(thoughts, ROUTE_OUTPUT_LIMIT) || (valid(visible, ROUTE_OUTPUT_LIMIT) && visible + thoughts > ROUTE_OUTPUT_LIMIT);
+    if (invalid) {
+      return { state: 'failed', route: 'clarify', model: configured.model, reason: 'invalid-response', ...usage };
     }
-    const usage = { ...(counts[0] !== undefined ? { inputTokens: counts[0] } : {}), ...(counts[1] !== undefined ? { outputTokens: counts[1] } : {}) };
+    usage = { inputTokens: input ?? usage.inputTokens, outputTokens: visible === undefined ? ROUTE_OUTPUT_LIMIT : visible + thoughts,
+      usageEstimated: input === undefined || visible === undefined };
     const decision = parseModelText(payload, question, options.contextContactName);
     return decision !== undefined
       ? {
@@ -160,7 +173,7 @@ export async function routeOmnixQuestionWithGemini(
       }
       : { state: 'failed', route: 'clarify', model: configured.model, reason: 'invalid-response', ...usage };
   } catch {
-    return { state: 'failed', route: 'clarify', model: configured.model, reason: 'request-failed' };
+    return { state: 'failed', route: 'clarify', model: configured.model, reason: 'request-failed', ...usage };
   } finally {
     clearTimeout(timer);
   }

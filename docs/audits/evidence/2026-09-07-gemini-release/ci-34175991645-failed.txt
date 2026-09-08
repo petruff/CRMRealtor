@@ -1,0 +1,871 @@
+Exact-SHA quality and security	Replay complete migration history and run database tests	﻿2026-09-08T01:18:21.2032076Z ##[group]Run bash scripts/run-supabase-ci.sh
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:21.2032447Z [36;1mbash scripts/run-supabase-ci.sh[0m
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:21.2065361Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:21.2065700Z env:
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:21.2065940Z   CANDIDATE_SHA: 8af588f6c7389a9081d9923b28616d834c96bf28
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:21.2066323Z   MIGRATION_BASE_SHA: 334291a76a48a5482089d5b7a62915802205e838
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:21.2066723Z   MIGRATION_CANDIDATE_SHA: 8af588f6c7389a9081d9923b28616d834c96bf28
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:21.2067057Z ##[endgroup]
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:23.6879502Z npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:25.5103255Z  postgres Pulling
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0868367Z  589002ba0eae Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0868986Z  7cf4d048777d Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0869461Z  95fbbca7ef2e Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0869924Z  5592d1f29924 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0870366Z  a07822e4fc9b Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0870887Z  3e380916456e Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0871333Z  ddaed5f486f2 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0871797Z  194561821b3d Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0872248Z  dfba0188557a Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0872728Z  68e4396c0821 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0873213Z  064d9e7b3a4b Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0876874Z  86f2886dbf71 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0879793Z  a91a59e564b5 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0880943Z  1300f58250f6 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0883237Z  96f9b92ec58c Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0884226Z  841b608dbbf6 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0886447Z  b4dd7711ed13 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0888744Z  316321ad3727 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0891338Z  c183a9e089d3 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0892271Z  6a45b04bec46 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0894437Z  b22e88ff0788 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0896843Z  135ae91cd954 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0897781Z  950abda5b1ff Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0900517Z  413e72da565c Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0901497Z  f954702d0125 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0902285Z  b88c5e12ea9e Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0902755Z  41aabdb0883b Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0904706Z  549fa782358f Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0905163Z  551d34fec852 Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0905578Z  5592d1f29924 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0905924Z  a07822e4fc9b Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0906279Z  3e380916456e Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0906638Z  ddaed5f486f2 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0907008Z  194561821b3d Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0907338Z  dfba0188557a Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0907670Z  68e4396c0821 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0909634Z  064d9e7b3a4b Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0910056Z  86f2886dbf71 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0910448Z  a91a59e564b5 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0910837Z  1300f58250f6 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0911210Z  96f9b92ec58c Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0911592Z  841b608dbbf6 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0911962Z  b4dd7711ed13 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0912340Z  316321ad3727 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0912696Z  c183a9e089d3 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0913082Z  6a45b04bec46 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0913442Z  b22e88ff0788 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0913795Z  135ae91cd954 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0914151Z  950abda5b1ff Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0914528Z  413e72da565c Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0914874Z  f954702d0125 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0915218Z  b88c5e12ea9e Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0915590Z  41aabdb0883b Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0915942Z  549fa782358f Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.0916287Z  551d34fec852 Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.1916445Z  95fbbca7ef2e Downloading [==================================================>]  1.022kB/1.022kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.1922265Z  95fbbca7ef2e Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.1923089Z  589002ba0eae Downloading [>                                                  ]  49.15kB/3.862MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.1929741Z  7cf4d048777d Downloading [>                                                  ]  49.15kB/4.463MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.2123961Z  589002ba0eae Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.2125060Z  589002ba0eae Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.2157024Z  7cf4d048777d Downloading [==================================================>]  4.463MB/4.463MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.2163971Z  7cf4d048777d Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.2165049Z  7cf4d048777d Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.2170661Z  589002ba0eae Extracting [>                                                  ]  65.54kB/3.862MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.2969209Z  5592d1f29924 Downloading [>                                                  ]  533.9kB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3013053Z  3e380916456e Downloading [>                                                  ]  15.79kB/814.1kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3150254Z  3e380916456e Downloading [==================================================>]  814.1kB/814.1kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3166233Z  3e380916456e Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3172505Z  3e380916456e Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3190247Z  589002ba0eae Extracting [=============================>                     ]  2.294MB/3.862MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3395762Z  a07822e4fc9b Downloading [==>                                                ]  3.478kB/77.89kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3436496Z  a07822e4fc9b Downloading [==================================================>]  77.89kB/77.89kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3442523Z  a07822e4fc9b Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3448388Z  a07822e4fc9b Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3697026Z  589002ba0eae Extracting [==================================================>]  3.862MB/3.862MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3711402Z  589002ba0eae Extracting [==================================================>]  3.862MB/3.862MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.3985643Z  5592d1f29924 Downloading [===>                                               ]  23.41MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4069593Z  589002ba0eae Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4171581Z  7cf4d048777d Extracting [>                                                  ]  65.54kB/4.463MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4360002Z  ddaed5f486f2 Downloading [==================================================>]     293B/293B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4371711Z  ddaed5f486f2 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4395455Z  ddaed5f486f2 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4590044Z  194561821b3d Downloading [==================================================>]  3.204kB/3.204kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4605718Z  194561821b3d Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4611952Z  194561821b3d Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.4986583Z  5592d1f29924 Downloading [======>                                            ]  44.19MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.5182478Z  7cf4d048777d Extracting [==============>                                    ]  1.311MB/4.463MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.5282348Z  dfba0188557a Downloading [==================================================>]  1.032kB/1.032kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.5293927Z  dfba0188557a Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.5294891Z  dfba0188557a Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.5810136Z  68e4396c0821 Downloading [==================================================>]  2.359kB/2.359kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.5813047Z  68e4396c0821 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.5813625Z  68e4396c0821 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.5986088Z  5592d1f29924 Downloading [=========>                                         ]  68.66MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.6300804Z  7cf4d048777d Extracting [============================================>      ]  3.932MB/4.463MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.6495327Z  064d9e7b3a4b Downloading [==================================================>]  8.535kB/8.535kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.6540361Z  064d9e7b3a4b Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.6540949Z  064d9e7b3a4b Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.7105874Z  7cf4d048777d Extracting [==================================================>]  4.463MB/4.463MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.7187693Z  5592d1f29924 Downloading [=============>                                     ]  93.14MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.7474119Z  86f2886dbf71 Downloading [==================================================>]   1.89kB/1.89kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.7489607Z  86f2886dbf71 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.7490217Z  86f2886dbf71 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.8004035Z  5592d1f29924 Downloading [================>                                  ]  118.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.8290987Z  a91a59e564b5 Downloading [==================================================>]  1.016kB/1.016kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.8305534Z  a91a59e564b5 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.8306846Z  a91a59e564b5 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.8800142Z  1300f58250f6 Downloading [==================================================>]     341B/341B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.8804240Z  1300f58250f6 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.8804695Z  1300f58250f6 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.8923534Z  7cf4d048777d Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.9318983Z  96f9b92ec58c Downloading [==================================================>]     280B/280B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.9320055Z  96f9b92ec58c Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.9321095Z  96f9b92ec58c Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:26.9910369Z  5592d1f29924 Downloading [===================>                               ]  138.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.0173276Z  841b608dbbf6 Downloading [==================================================>]  1.524kB/1.524kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.0174589Z  841b608dbbf6 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.0175267Z  841b608dbbf6 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.0582436Z  5592d1f29924 Downloading [=======================>                           ]  164.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.0769509Z  b4dd7711ed13 Downloading [=============================================>     ]  3.501kB/3.858kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.0771601Z  b4dd7711ed13 Downloading [==================================================>]  3.858kB/3.858kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.0772869Z  b4dd7711ed13 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.0773577Z  b4dd7711ed13 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.1070634Z  316321ad3727 Downloading [==================================================>]     358B/358B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.1072921Z  316321ad3727 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.1073770Z  316321ad3727 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.1598617Z  5592d1f29924 Downloading [===========================>                       ]  192.6MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.1751403Z  c183a9e089d3 Downloading [==================================================>]     393B/393B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.2042914Z  6a45b04bec46 Downloading [==================================================>]     338B/338B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.3953800Z  c183a9e089d3 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.3954911Z  c183a9e089d3 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.3956362Z  5592d1f29924 Downloading [===========================>                       ]  194.2MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.3957468Z  6a45b04bec46 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.3971574Z  6a45b04bec46 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.3999558Z  95fbbca7ef2e Extracting [==================================================>]  1.022kB/1.022kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.4010862Z  95fbbca7ef2e Extracting [==================================================>]  1.022kB/1.022kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.4968142Z  135ae91cd954 Downloading [==================================================>]     638B/638B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.5071485Z  135ae91cd954 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.5072423Z  135ae91cd954 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.5073419Z  b22e88ff0788 Downloading [==================================================>]     398B/398B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.5074201Z  b22e88ff0788 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.5074957Z  b22e88ff0788 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.5075923Z  5592d1f29924 Downloading [=============================>                     ]  210.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.5967184Z  413e72da565c Downloading [=================>                                 ]  3.477kB/9.789kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.6040623Z  950abda5b1ff Downloading [====================>                              ]  3.501kB/8.578kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.6041930Z  413e72da565c Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.6044996Z  950abda5b1ff Downloading [==================================================>]  8.578kB/8.578kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.6062648Z  950abda5b1ff Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.6065360Z  950abda5b1ff Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.6068568Z  5592d1f29924 Downloading [===============================>                   ]    224MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.7142081Z  f954702d0125 Downloading [=============>                                     ]  3.478kB/12.86kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:27.7147911Z  b88c5e12ea9e Downloading [==================================================>]     525B/525B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.1530624Z  b88c5e12ea9e Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.1533910Z  5592d1f29924 Downloading [=================================>                 ]  236.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.1535212Z  b88c5e12ea9e Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.1541529Z  f954702d0125 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.2483322Z  41aabdb0883b Downloading [==================================================>]     272B/272B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.2487314Z  41aabdb0883b Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.2489179Z  41aabdb0883b Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.2534060Z  5592d1f29924 Downloading [=====================================>             ]    265MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.2608534Z  549fa782358f Downloading [=================================>                 ]    3.5kB/5.284kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.2611603Z  549fa782358f Downloading [==================================================>]  5.284kB/5.284kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.2613494Z  549fa782358f Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.2614215Z  549fa782358f Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.3724073Z  551d34fec852 Downloading [==================================================>]     314B/314B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.4004705Z  551d34fec852 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.4005532Z  551d34fec852 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.4086054Z  5592d1f29924 Downloading [=======================================>           ]  277.2MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.6538089Z  5592d1f29924 Downloading [=======================================>           ]  280.9MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.7000830Z  95fbbca7ef2e Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.7519738Z  5592d1f29924 Downloading [===========================================>       ]  310.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.8521572Z  5592d1f29924 Downloading [================================================>  ]  341.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.8930364Z  5592d1f29924 Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.8933747Z  5592d1f29924 Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:28.9233316Z  5592d1f29924 Extracting [>                                                  ]  557.1kB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.0302507Z  5592d1f29924 Extracting [>                                                  ]  5.571MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.1320221Z  5592d1f29924 Extracting [=>                                                 ]  11.14MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.2337530Z  5592d1f29924 Extracting [==>                                                ]  17.27MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.3346792Z  5592d1f29924 Extracting [==>                                                ]  20.61MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.4544899Z  5592d1f29924 Extracting [===>                                               ]   23.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.5786022Z  5592d1f29924 Extracting [===>                                               ]  24.51MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.6825078Z  5592d1f29924 Extracting [====>                                              ]  30.64MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.7912809Z  5592d1f29924 Extracting [=====>                                             ]  37.32MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:29.8992834Z  5592d1f29924 Extracting [======>                                            ]  44.01MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:30.0025578Z  5592d1f29924 Extracting [=======>                                           ]  50.69MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:30.1071838Z  5592d1f29924 Extracting [========>                                          ]  57.93MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:30.2123059Z  5592d1f29924 Extracting [========>                                          ]   63.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:30.3149526Z  5592d1f29924 Extracting [=========>                                         ]  65.73MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:30.4196260Z  5592d1f29924 Extracting [=========>                                         ]  69.07MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:30.5201720Z  5592d1f29924 Extracting [==========>                                        ]  72.42MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:30.6243708Z  5592d1f29924 Extracting [==========>                                        ]  74.65MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:30.7465167Z  5592d1f29924 Extracting [===========>                                       ]  77.99MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:31.2289483Z  5592d1f29924 Extracting [===========>                                       ]   79.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:31.3598739Z  5592d1f29924 Extracting [===========>                                       ]  80.77MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:31.4612891Z  5592d1f29924 Extracting [============>                                      ]   86.9MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:31.5718305Z  5592d1f29924 Extracting [=============>                                     ]  94.14MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:31.6935192Z  5592d1f29924 Extracting [=============>                                     ]   98.6MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:31.8014511Z  5592d1f29924 Extracting [==============>                                    ]  100.3MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:31.9672369Z  5592d1f29924 Extracting [==============>                                    ]  104.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.0864418Z  5592d1f29924 Extracting [===============>                                   ]  106.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.2012630Z  5592d1f29924 Extracting [===============>                                   ]  109.2MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.3147221Z  5592d1f29924 Extracting [===============>                                   ]    112MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.4289591Z  5592d1f29924 Extracting [================>                                  ]  114.8MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.5310183Z  5592d1f29924 Extracting [================>                                  ]  117.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.6374343Z  5592d1f29924 Extracting [=================>                                 ]  121.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.7466007Z  5592d1f29924 Extracting [=================>                                 ]  124.2MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.8590711Z  5592d1f29924 Extracting [==================>                                ]  130.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:32.9965709Z  5592d1f29924 Extracting [==================>                                ]  133.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:33.1021244Z  5592d1f29924 Extracting [===================>                               ]  134.8MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:33.2204524Z  5592d1f29924 Extracting [===================>                               ]  138.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:33.3260273Z  5592d1f29924 Extracting [====================>                              ]  145.9MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:33.4294030Z  5592d1f29924 Extracting [=====================>                             ]  153.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:33.5359150Z  5592d1f29924 Extracting [======================>                            ]  161.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:33.6591999Z  5592d1f29924 Extracting [=======================>                           ]  167.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:33.7679437Z  5592d1f29924 Extracting [========================>                          ]  172.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:33.9221073Z  5592d1f29924 Extracting [========================>                          ]  175.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:34.0586864Z  5592d1f29924 Extracting [=========================>                         ]  177.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:34.2253112Z  5592d1f29924 Extracting [=========================>                         ]  178.3MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:34.3332306Z  5592d1f29924 Extracting [=========================>                         ]    181MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:34.4524204Z  5592d1f29924 Extracting [==========================>                        ]  185.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:34.5791794Z  5592d1f29924 Extracting [==========================>                        ]  189.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:34.7009408Z  5592d1f29924 Extracting [===========================>                       ]  191.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:34.8154705Z  5592d1f29924 Extracting [===========================>                       ]  192.2MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:34.9205999Z  5592d1f29924 Extracting [===========================>                       ]    195MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:35.1515385Z  5592d1f29924 Extracting [===========================>                       ]  197.2MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:35.2599406Z  5592d1f29924 Extracting [============================>                      ]  200.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:35.3664253Z  5592d1f29924 Extracting [============================>                      ]    205MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:35.4949725Z  5592d1f29924 Extracting [=============================>                     ]    210MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:35.6096918Z  5592d1f29924 Extracting [=============================>                     ]  211.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:35.7736689Z  5592d1f29924 Extracting [==============================>                    ]  212.8MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:35.8802477Z  5592d1f29924 Extracting [==============================>                    ]  214.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:36.5372462Z  5592d1f29924 Extracting [==============================>                    ]  216.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:36.6391204Z  5592d1f29924 Extracting [==============================>                    ]  218.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:36.7464820Z  5592d1f29924 Extracting [===============================>                   ]  223.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:36.8476984Z  5592d1f29924 Extracting [===============================>                   ]  225.6MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:37.1497967Z  5592d1f29924 Extracting [================================>                  ]  226.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:37.2532237Z  5592d1f29924 Extracting [================================>                  ]  228.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:37.3533614Z  5592d1f29924 Extracting [=================================>                 ]  234.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:37.5029264Z  5592d1f29924 Extracting [=================================>                 ]  240.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:37.6172594Z  5592d1f29924 Extracting [==================================>                ]  242.3MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:37.7441050Z  5592d1f29924 Extracting [==================================>                ]  247.3MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:37.8474394Z  5592d1f29924 Extracting [===================================>               ]  248.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:37.9687204Z  5592d1f29924 Extracting [===================================>               ]  252.3MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:38.0715311Z  5592d1f29924 Extracting [====================================>              ]  255.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:38.1986152Z  5592d1f29924 Extracting [====================================>              ]  260.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:38.4210613Z  5592d1f29924 Extracting [=====================================>             ]  262.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:38.5288830Z  5592d1f29924 Extracting [=====================================>             ]  264.6MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:38.6679459Z  5592d1f29924 Extracting [======================================>            ]  270.2MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:38.7784875Z  5592d1f29924 Extracting [======================================>            ]  272.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:38.8900152Z  5592d1f29924 Extracting [======================================>            ]  273.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:39.0004350Z  5592d1f29924 Extracting [======================================>            ]  274.6MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:39.1009417Z  5592d1f29924 Extracting [=======================================>           ]  277.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:39.3302965Z  5592d1f29924 Extracting [=======================================>           ]  279.6MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:39.4396015Z  5592d1f29924 Extracting [=======================================>           ]  281.9MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:39.5440835Z  5592d1f29924 Extracting [========================================>          ]  283.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:39.6480270Z  5592d1f29924 Extracting [========================================>          ]  286.3MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:39.7540860Z  5592d1f29924 Extracting [=========================================>         ]  291.9MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:39.8560117Z  5592d1f29924 Extracting [=========================================>         ]  294.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:40.3864176Z  5592d1f29924 Extracting [==========================================>        ]  298.6MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:40.5024949Z  5592d1f29924 Extracting [==========================================>        ]  301.9MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:40.8029223Z  5592d1f29924 Extracting [==========================================>        ]  302.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:40.9073297Z  5592d1f29924 Extracting [==========================================>        ]  304.2MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.0089023Z  5592d1f29924 Extracting [===========================================>       ]  310.8MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.1246712Z  5592d1f29924 Extracting [============================================>      ]  315.3MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.2561902Z  5592d1f29924 Extracting [============================================>      ]  318.1MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.3738920Z  5592d1f29924 Extracting [=============================================>     ]    322MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.4803817Z  5592d1f29924 Extracting [==============================================>    ]  326.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.5808692Z  5592d1f29924 Extracting [==============================================>    ]  332.6MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.7055672Z  5592d1f29924 Extracting [===============================================>   ]  338.7MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.8256279Z  5592d1f29924 Extracting [================================================>  ]  340.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:41.9359059Z  5592d1f29924 Extracting [================================================>  ]    342MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:42.0421294Z  5592d1f29924 Extracting [================================================>  ]  344.8MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:42.1692713Z  5592d1f29924 Extracting [=================================================> ]  349.3MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:42.5115892Z  5592d1f29924 Extracting [=================================================> ]  350.4MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:42.6349169Z  5592d1f29924 Extracting [=================================================> ]  351.5MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:42.6734153Z  5592d1f29924 Extracting [==================================================>]  353.8MB/353.8MB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.7764211Z  5592d1f29924 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.7798805Z  a07822e4fc9b Extracting [=====================>                             ]  32.77kB/77.89kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.7838658Z  a07822e4fc9b Extracting [==================================================>]  77.89kB/77.89kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.7858600Z  a07822e4fc9b Extracting [==================================================>]  77.89kB/77.89kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8126118Z  a07822e4fc9b Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8138158Z  3e380916456e Extracting [==>                                                ]  32.77kB/814.1kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8343478Z  3e380916456e Extracting [==================================================>]  814.1kB/814.1kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8347120Z  3e380916456e Extracting [==================================================>]  814.1kB/814.1kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8431834Z  3e380916456e Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8449391Z  ddaed5f486f2 Extracting [==================================================>]     293B/293B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8450433Z  ddaed5f486f2 Extracting [==================================================>]     293B/293B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8593997Z  ddaed5f486f2 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8604250Z  194561821b3d Extracting [==================================================>]  3.204kB/3.204kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8607123Z  194561821b3d Extracting [==================================================>]  3.204kB/3.204kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8902189Z  194561821b3d Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8915702Z  dfba0188557a Extracting [==================================================>]  1.032kB/1.032kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.8917723Z  dfba0188557a Extracting [==================================================>]  1.032kB/1.032kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9128894Z  dfba0188557a Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9148174Z  68e4396c0821 Extracting [==================================================>]  2.359kB/2.359kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9151945Z  68e4396c0821 Extracting [==================================================>]  2.359kB/2.359kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9481154Z  68e4396c0821 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9495072Z  064d9e7b3a4b Extracting [==================================================>]  8.535kB/8.535kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9503539Z  064d9e7b3a4b Extracting [==================================================>]  8.535kB/8.535kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9588166Z  064d9e7b3a4b Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9612320Z  86f2886dbf71 Extracting [==================================================>]   1.89kB/1.89kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9613782Z  86f2886dbf71 Extracting [==================================================>]   1.89kB/1.89kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9686830Z  86f2886dbf71 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9697106Z  a91a59e564b5 Extracting [==================================================>]  1.016kB/1.016kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9704750Z  a91a59e564b5 Extracting [==================================================>]  1.016kB/1.016kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9810337Z  a91a59e564b5 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9823283Z  1300f58250f6 Extracting [==================================================>]     341B/341B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9827253Z  1300f58250f6 Extracting [==================================================>]     341B/341B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9907050Z  1300f58250f6 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9920439Z  96f9b92ec58c Extracting [==================================================>]     280B/280B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:45.9929651Z  96f9b92ec58c Extracting [==================================================>]     280B/280B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0006226Z  96f9b92ec58c Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0020541Z  841b608dbbf6 Extracting [==================================================>]  1.524kB/1.524kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0023522Z  841b608dbbf6 Extracting [==================================================>]  1.524kB/1.524kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0105297Z  841b608dbbf6 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0125879Z  b4dd7711ed13 Extracting [==================================================>]  3.858kB/3.858kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0130626Z  b4dd7711ed13 Extracting [==================================================>]  3.858kB/3.858kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0297483Z  b4dd7711ed13 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0310362Z  316321ad3727 Extracting [==================================================>]     358B/358B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0325328Z  316321ad3727 Extracting [==================================================>]     358B/358B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0404246Z  316321ad3727 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0418474Z  c183a9e089d3 Extracting [==================================================>]     393B/393B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0424651Z  c183a9e089d3 Extracting [==================================================>]     393B/393B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0560436Z  c183a9e089d3 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0578120Z  6a45b04bec46 Extracting [==================================================>]     338B/338B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0580790Z  6a45b04bec46 Extracting [==================================================>]     338B/338B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0672026Z  6a45b04bec46 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0695283Z  b22e88ff0788 Extracting [==================================================>]     398B/398B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0696410Z  b22e88ff0788 Extracting [==================================================>]     398B/398B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0775856Z  b22e88ff0788 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0791133Z  135ae91cd954 Extracting [==================================================>]     638B/638B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0794633Z  135ae91cd954 Extracting [==================================================>]     638B/638B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0882257Z  135ae91cd954 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0899574Z  950abda5b1ff Extracting [==================================================>]  8.578kB/8.578kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.0903641Z  950abda5b1ff Extracting [==================================================>]  8.578kB/8.578kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1029793Z  950abda5b1ff Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1043572Z  413e72da565c Extracting [==================================================>]  9.789kB/9.789kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1046436Z  413e72da565c Extracting [==================================================>]  9.789kB/9.789kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1140939Z  413e72da565c Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1155164Z  f954702d0125 Extracting [==================================================>]  12.86kB/12.86kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1159378Z  f954702d0125 Extracting [==================================================>]  12.86kB/12.86kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1392144Z  f954702d0125 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1403298Z  b88c5e12ea9e Extracting [==================================================>]     525B/525B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1411250Z  b88c5e12ea9e Extracting [==================================================>]     525B/525B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1493815Z  b88c5e12ea9e Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1508784Z  41aabdb0883b Extracting [==================================================>]     272B/272B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1517069Z  41aabdb0883b Extracting [==================================================>]     272B/272B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1652609Z  41aabdb0883b Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1673738Z  549fa782358f Extracting [==================================================>]  5.284kB/5.284kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1675347Z  549fa782358f Extracting [==================================================>]  5.284kB/5.284kB
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1808819Z  549fa782358f Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1822637Z  551d34fec852 Extracting [==================================================>]     314B/314B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1828144Z  551d34fec852 Extracting [==================================================>]     314B/314B
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.1938791Z  551d34fec852 Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.2004324Z  postgres Pulled
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:46.2026875Z Starting database...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:57.5575738Z Initialising schema...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:57.9861452Z v2.82.0: Pulling from supabase/realtime
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1240354Z 5c32499ab806: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1241006Z 894d2afcff23: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1241943Z bacc88dbb57e: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1242852Z db5f9c4306e4: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1243510Z 73720f1dca24: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1243976Z 220edceddb90: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1244477Z c0c40702a985: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1244976Z 4f4fb700ef54: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1245394Z 73720f1dca24: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1245775Z 220edceddb90: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1246168Z c0c40702a985: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1250650Z 4f4fb700ef54: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.1261705Z db5f9c4306e4: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.2651117Z bacc88dbb57e: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.2651813Z bacc88dbb57e: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.3680716Z db5f9c4306e4: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.3686600Z db5f9c4306e4: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.3730612Z 5c32499ab806: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.3731372Z 5c32499ab806: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.4762407Z 73720f1dca24: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.4763205Z 73720f1dca24: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.6035783Z 220edceddb90: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.6036586Z 220edceddb90: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.6190363Z c0c40702a985: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.6199442Z c0c40702a985: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.6705783Z 4f4fb700ef54: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.6706377Z 4f4fb700ef54: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.7565743Z 894d2afcff23: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:58.7567037Z 894d2afcff23: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:18:59.8783734Z 5c32499ab806: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:07.8024438Z 894d2afcff23: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:07.8367633Z bacc88dbb57e: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:07.8498048Z db5f9c4306e4: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:07.8664615Z 73720f1dca24: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:09.0691034Z 220edceddb90: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:09.0861579Z c0c40702a985: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:09.1054214Z 4f4fb700ef54: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:09.1102503Z Digest: sha256:e3a9a49c92d1fe7decf5bceda84c036dd8ecdedb145a94d39fc9433becb0b989
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:09.1117812Z Status: Downloaded newer image for public.ecr.aws/supabase/realtime:v2.82.0
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.8135490Z v1.48.28: Pulling from supabase/storage-api
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9520930Z 589002ba0eae: Already exists
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9527272Z 7b6b6a4c1d27: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9528473Z ae83e149ede8: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9529630Z 1862879ffc38: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9530120Z c31641d6dc4c: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9530728Z d289909bc41e: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9534167Z 8bf94887b3d4: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9534766Z 378b08a28f79: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9538646Z f0a7ae6f898b: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9538974Z 2917b15e50dc: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9539501Z 9dff1568df8b: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9540165Z 378b08a28f79: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9540409Z f0a7ae6f898b: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9540633Z 2917b15e50dc: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9541111Z 9dff1568df8b: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9541327Z c31641d6dc4c: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9541534Z d289909bc41e: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:13.9541745Z 8bf94887b3d4: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.0495586Z 1862879ffc38: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.0499779Z 1862879ffc38: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.0629071Z ae83e149ede8: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.1632191Z d289909bc41e: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.1633626Z d289909bc41e: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.3180785Z 8bf94887b3d4: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.3181925Z 8bf94887b3d4: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.4126371Z 7b6b6a4c1d27: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.4127423Z 7b6b6a4c1d27: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.4350242Z 378b08a28f79: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.4351310Z 378b08a28f79: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.5582389Z 2917b15e50dc: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.5583649Z 2917b15e50dc: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.6854995Z c31641d6dc4c: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.6856976Z c31641d6dc4c: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.6868806Z 9dff1568df8b: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.6870189Z 9dff1568df8b: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.7915070Z f0a7ae6f898b: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:14.7916144Z f0a7ae6f898b: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:17.4474498Z 7b6b6a4c1d27: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:17.5085389Z ae83e149ede8: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:17.5260012Z 1862879ffc38: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:21.4151556Z c31641d6dc4c: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:21.4272084Z d289909bc41e: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:21.4574317Z 8bf94887b3d4: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:21.4924673Z 378b08a28f79: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:47.0575832Z f0a7ae6f898b: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:47.3023758Z 2917b15e50dc: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:47.3167491Z 9dff1568df8b: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:47.3211667Z Digest: sha256:38850bce7c3056ef76acdc4c6357aa474b3124b22d383ed86843b765a1efe242
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:47.3223843Z Status: Downloaded newer image for public.ecr.aws/supabase/storage-api:v1.48.28
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.3336903Z v2.188.1: Pulling from supabase/gotrue
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.4593954Z 589002ba0eae: Already exists
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.4611312Z a6d41d3f7e67: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.4612423Z e04b88aaecea: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.4613266Z 5142a157d445: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.4617327Z 008ba72743b6: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.4619147Z 5a127130762f: Pulling fs layer
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.4619803Z 008ba72743b6: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.4620820Z 5a127130762f: Waiting
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.5644213Z a6d41d3f7e67: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.5676332Z e04b88aaecea: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.5678388Z e04b88aaecea: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.5908791Z a6d41d3f7e67: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.6899167Z 5142a157d445: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.6900323Z 5142a157d445: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.6918146Z 008ba72743b6: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.6920328Z 008ba72743b6: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.6993314Z 5a127130762f: Verifying Checksum
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.6994261Z 5a127130762f: Download complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:49.7329940Z e04b88aaecea: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.0115352Z 5142a157d445: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.0401899Z 008ba72743b6: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.0507167Z 5a127130762f: Pull complete
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.0558711Z Digest: sha256:87db8c737af49a64236c461882ed3925f8b1e5c2c47176c64694dedc65153573
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.0572118Z Status: Downloaded newer image for public.ecr.aws/supabase/gotrue:v2.188.1
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.4851949Z Seeding globals from roles.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.4922105Z Applying migration 0001_init.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.4940417Z NOTICE (42710): extension "pgcrypto" already exists, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.5128846Z Applying migration 0002_contact_import_intake.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.5225533Z Applying migration 0003_mailer_owner_scope.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.5286519Z Applying migration 0004_shared_workspace_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.5984138Z Applying migration 0005_crm_work_queue.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.6755673Z Applying migration 0006_connector_platform_foundation.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.8012427Z Applying migration 0007_rich_contact_lifecycle.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.9392310Z Applying migration 0008_connector_kek_rewrap.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.9527517Z Applying migration 0009_connector_live_disconnect.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:50.9742663Z Applying migration 0010_mailchimp_audience_sync.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.0451626Z Applying migration 0011_mailchimp_webhook_secret_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.0601412Z Applying migration 0012_mailchimp_reconciliation_runs.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.0982468Z Applying migration 0013_mailchimp_outbound_backfill.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.1553673Z Applying migration 0014_google_connector_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.2464689Z Applying migration 0015_twilio_compliant_texting.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.3939204Z Applying migration 0016_meta_inbound_business_messaging.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.4751875Z Applying migration 0017_twilio_activation_and_callback_routes.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.5105161Z Applying migration 0018_meta_page_access_token_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.5264138Z Applying migration 0019_twilio_uat_meta_subscription_evidence.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.5722824Z Applying migration 0020_twilio_uat_post_stop_recovery.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.5812420Z Applying migration 0021_google_push_reconciliation_calendar_lifecycle.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.6466755Z Applying migration 0022_crm_navigation_pipeline_analytics.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.6526731Z Applying migration 0023_data_portability_operational_api.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.7026127Z Applying migration 0024_workspace_ai_settings.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.7180182Z Applying migration 0025_note_qualification_claude.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.7353909Z Applying migration 0026_contact_import_source_facts.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.7461276Z Applying migration 0027_contact_merge_foundation.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.7855267Z Applying migration 0028_contact_merge_activation.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.7889242Z Applying migration 20260821155317_workspace_admin_multi_membership.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.7994844Z Applying migration 20260821181501_guided_connector_oauth.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8081895Z Applying migration 20260822043055_reversible_imported_contact_organization.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8238473Z Applying migration 20260822052500_workspace_admin_reversible_imports.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8287660Z Applying migration 20260823201500_connector_worker_least_privilege.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8403664Z Applying migration 20260823213000_numbers_import_receipt_recovery.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8446413Z Applying migration 20260823213100_google_partial_oauth.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8489604Z Applying migration 20260824181500_mailchimp_merge_field_enrichment.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8551952Z Applying migration 20260824203000_persistent_attention_operations.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8833038Z Applying migration 20260824213753_live_transaction_intelligence.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8932949Z Applying migration 20260825120000_canonical_owner_support_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.8991393Z NOTICE (00000): trigger "connector_oauth_canonical_owner_binding" for relation "connector_private.connector_oauth_transactions" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9020285Z Applying migration 20260825121000_immutable_atomic_import_integrity.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9059218Z NOTICE (00000): trigger "contact_points_consent_default" for relation "public.contact_points" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9170989Z NOTICE (00000): trigger "contact_intake_receipts_immutable" for relation "public.contact_intake_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9222752Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.workspace_authority_audit_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9228983Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.activity_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9235649Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.connector_approval_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9247229Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.connector_receipt_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9251022Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.contact_intake_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9253175Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.contact_intake_receipt_transition_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9256486Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.mailchimp_sync_evidence" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9262580Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.texting_consent_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9268503Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.twilio_callback_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9275081Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.meta_inbound_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9280845Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.twilio_real_number_uat_evidence_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9286232Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.twilio_real_number_uat_evidence_state" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9291757Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.meta_asset_subscription_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9297463Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.data_import_runs" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9302993Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.data_import_row_outcomes" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9308576Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.data_export_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9314318Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.operational_api_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9320254Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.generic_webhook_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9326007Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.contact_import_source_facts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9332188Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.note_lifecycle_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9337192Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.contact_merge_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9343241Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.attention_lifecycle_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9367306Z Applying migration 20260825122000_legacy_acl_least_privilege_repair.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9420599Z Applying migration 20260825123000_atomic_import_plan.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9487237Z Applying migration 20260825124000_database_authority_pagination_repair.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9726891Z Applying migration 20260826120000_mailchimp_owner_authorization_evidence.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9752908Z Applying migration 20260826123000_google_capability_self_repair.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:51.9795961Z Applying migration 20260827143000_governed_mailchimp_campaigns.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.0047101Z Applying migration 20260827190000_omnix_governed_ai_budget.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.0174242Z Applying migration 20260831120000_omnix_operational_brain.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.0526552Z Applying migration 20260831160000_omnix_nurture_lifecycle.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.0768565Z Applying migration 20260831190000_omnix_response_and_transaction_deadlines.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.1100505Z Applying migration 20260831200000_google_insights_trigger_acl_hardening.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.1112863Z Applying migration 20260831210000_transaction_cockpit_and_parties.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.1410625Z Applying migration 20260831211000_florida_critical_dates_and_risk.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.1526956Z Applying migration 20260831212000_omnix_ai_service_budget_lint_hardening.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.1560256Z Applying migration 20260831213000_transaction_financial_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.1710083Z Applying migration 20260831214000_versioned_florida_workflow_packs.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.1996147Z Applying migration 20260831215000_affordability_scenario_studio.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.2217039Z Applying migration 20260831220000_property_listing_bounded_context.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.2637659Z Applying migration 20260831221000_website_intake_attribution.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.2933902Z Applying migration 20260831222000_licensed_idx_reso_adapter.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.3143203Z Applying migration 20260831223000_property_behavior_grounded_cma.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.3478122Z Applying migration 20260901010000_sql_lint_warning_cleanup.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.3650059Z Applying migration 20260901180000_remote_lint_definition_reconciliation.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.3963700Z Applying migration 20260907120000_meeting_brief_snapshots.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4054315Z Applying migration 20260907121000_capture_note_kind.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4064888Z Applying migration 20260907122000_capture_outcome.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4216383Z Applying migration 20260907130000_capture_nurture_transition_kind.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4230091Z Applying migration 20260907131000_capture_operation_adapters.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4264487Z Applying migration 20260907132000_capture_calendar_intent_receipts.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4326511Z Applying migration 20260907133000_capture_nurture_replay_binding.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4347956Z Applying migration 20260907140000_capture_export_telemetry.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4448510Z Starting containers...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4458340Z Waiting for health checks...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4528726Z Started supabase local development setup.
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4529122Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4529272Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4538641Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4539425Z ╭───────────────────────────────────────────────────────────────╮
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4540808Z │ ⛁ Database                                                    │
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4542286Z ├─────┬─────────────────────────────────────────────────────────┤
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4544160Z │ URL │ ***127.0.0.1:55322/postgres │
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4544724Z ╰─────┴─────────────────────────────────────────────────────────╯
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4545074Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4545088Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4550782Z Local dev security notice
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4552947Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4553959Z All services bind to 0.0.0.0 (network-accessible, not just localhost)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4555297Z API keys and JWT secrets are shared defaults. Do not use in production
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4560301Z Studio, pgMeta (/pg/*), and analytics have no authentication
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:52.4560949Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:53.0154642Z A new version of Supabase CLI is available: v2.117.0 (currently installed v2.90.0)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:53.0155970Z We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:53.8792127Z Resetting local database...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:19:54.1149085Z Recreating database...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:05.3242545Z Initialising schema...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:11.7736663Z Seeding globals from roles.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:11.7809053Z Applying migration 0001_init.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:11.7835088Z NOTICE (42710): extension "pgcrypto" already exists, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:11.8023558Z Applying migration 0002_contact_import_intake.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:11.8120071Z Applying migration 0003_mailer_owner_scope.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:11.8181627Z Applying migration 0004_shared_workspace_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:11.8871960Z Applying migration 0005_crm_work_queue.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:11.9621997Z Applying migration 0006_connector_platform_foundation.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.0894522Z Applying migration 0007_rich_contact_lifecycle.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.2278493Z Applying migration 0008_connector_kek_rewrap.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.2413735Z Applying migration 0009_connector_live_disconnect.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.2633004Z Applying migration 0010_mailchimp_audience_sync.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.3311218Z Applying migration 0011_mailchimp_webhook_secret_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.3454161Z Applying migration 0012_mailchimp_reconciliation_runs.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.3840252Z Applying migration 0013_mailchimp_outbound_backfill.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.4415078Z Applying migration 0014_google_connector_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.5385431Z Applying migration 0015_twilio_compliant_texting.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.6844036Z Applying migration 0016_meta_inbound_business_messaging.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.7660593Z Applying migration 0017_twilio_activation_and_callback_routes.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.8027993Z Applying migration 0018_meta_page_access_token_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.8182775Z Applying migration 0019_twilio_uat_meta_subscription_evidence.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.8671995Z Applying migration 0020_twilio_uat_post_stop_recovery.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.8761221Z Applying migration 0021_google_push_reconciliation_calendar_lifecycle.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.9415841Z Applying migration 0022_crm_navigation_pipeline_analytics.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.9475619Z Applying migration 0023_data_portability_operational_api.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:12.9983567Z Applying migration 0024_workspace_ai_settings.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.0104098Z Applying migration 0025_note_qualification_claude.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.0281840Z Applying migration 0026_contact_import_source_facts.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.0384872Z Applying migration 0027_contact_merge_foundation.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.0783424Z Applying migration 0028_contact_merge_activation.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.0818642Z Applying migration 20260821155317_workspace_admin_multi_membership.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.0924601Z Applying migration 20260821181501_guided_connector_oauth.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1009509Z Applying migration 20260822043055_reversible_imported_contact_organization.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1145082Z Applying migration 20260822052500_workspace_admin_reversible_imports.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1192426Z Applying migration 20260823201500_connector_worker_least_privilege.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1317417Z Applying migration 20260823213000_numbers_import_receipt_recovery.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1368649Z Applying migration 20260823213100_google_partial_oauth.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1405560Z Applying migration 20260824181500_mailchimp_merge_field_enrichment.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1464984Z Applying migration 20260824203000_persistent_attention_operations.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1731434Z Applying migration 20260824213753_live_transaction_intelligence.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1862996Z Applying migration 20260825120000_canonical_owner_support_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1930692Z NOTICE (00000): trigger "connector_oauth_canonical_owner_binding" for relation "connector_private.connector_oauth_transactions" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1949798Z Applying migration 20260825121000_immutable_atomic_import_integrity.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.1984741Z NOTICE (00000): trigger "contact_points_consent_default" for relation "public.contact_points" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2104980Z NOTICE (00000): trigger "contact_intake_receipts_immutable" for relation "public.contact_intake_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2151368Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.workspace_authority_audit_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2156556Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.activity_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2162631Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.connector_approval_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2167620Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.connector_receipt_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2173735Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.contact_intake_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2177566Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.contact_intake_receipt_transition_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2183657Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.mailchimp_sync_evidence" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2189701Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.texting_consent_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2195424Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.twilio_callback_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2202198Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.meta_inbound_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2209929Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.twilio_real_number_uat_evidence_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2214467Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.twilio_real_number_uat_evidence_state" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2218215Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.meta_asset_subscription_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2226917Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.data_import_runs" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2232645Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.data_import_row_outcomes" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2237900Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.data_export_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2242998Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.operational_api_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2248485Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.generic_webhook_receipts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2254313Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.contact_import_source_facts" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2259439Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.note_lifecycle_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2265260Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.contact_merge_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2278185Z NOTICE (00000): trigger "evidence_no_truncate" for relation "public.attention_lifecycle_events" does not exist, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2298068Z Applying migration 20260825122000_legacy_acl_least_privilege_repair.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2346383Z Applying migration 20260825123000_atomic_import_plan.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2410333Z Applying migration 20260825124000_database_authority_pagination_repair.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2630635Z Applying migration 20260826120000_mailchimp_owner_authorization_evidence.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2658564Z Applying migration 20260826123000_google_capability_self_repair.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2699615Z Applying migration 20260827143000_governed_mailchimp_campaigns.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.2953964Z Applying migration 20260827190000_omnix_governed_ai_budget.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.3076714Z Applying migration 20260831120000_omnix_operational_brain.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.3434355Z Applying migration 20260831160000_omnix_nurture_lifecycle.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.3644741Z Applying migration 20260831190000_omnix_response_and_transaction_deadlines.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.3965659Z Applying migration 20260831200000_google_insights_trigger_acl_hardening.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.3977183Z Applying migration 20260831210000_transaction_cockpit_and_parties.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.4271114Z Applying migration 20260831211000_florida_critical_dates_and_risk.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.4388400Z Applying migration 20260831212000_omnix_ai_service_budget_lint_hardening.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.4424457Z Applying migration 20260831213000_transaction_financial_authority.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.4574155Z Applying migration 20260831214000_versioned_florida_workflow_packs.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.4846183Z Applying migration 20260831215000_affordability_scenario_studio.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.5060072Z Applying migration 20260831220000_property_listing_bounded_context.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.5511352Z Applying migration 20260831221000_website_intake_attribution.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.5811125Z Applying migration 20260831222000_licensed_idx_reso_adapter.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.6018335Z Applying migration 20260831223000_property_behavior_grounded_cma.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.6232728Z Applying migration 20260901010000_sql_lint_warning_cleanup.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.6404712Z Applying migration 20260901180000_remote_lint_definition_reconciliation.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.6715262Z Applying migration 20260907120000_meeting_brief_snapshots.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.6805218Z Applying migration 20260907121000_capture_note_kind.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.6815412Z Applying migration 20260907122000_capture_outcome.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.7074174Z Applying migration 20260907130000_capture_nurture_transition_kind.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.7086950Z Applying migration 20260907131000_capture_operation_adapters.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.7121525Z Applying migration 20260907132000_capture_calendar_intent_receipts.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.7186158Z Applying migration 20260907133000_capture_nurture_replay_binding.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.7220558Z Applying migration 20260907140000_capture_export_telemetry.sql...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.7319428Z Restarting containers...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:13.7348666Z Finished supabase db reset on branch codex/epic-10-meeting-outcomes.
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:14.3369350Z A new version of Supabase CLI is available: v2.117.0 (currently installed v2.90.0)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:14.3381132Z We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:15.2411234Z Stopped services: [supabase_kong_omnix-crm supabase_auth_omnix-crm supabase_inbucket_omnix-crm supabase_realtime_omnix-crm supabase_rest_omnix-crm supabase_storage_omnix-crm supabase_imgproxy_omnix-crm supabase_pg_meta_omnix-crm supabase_studio_omnix-crm supabase_edge_runtime_omnix-crm supabase_analytics_omnix-crm supabase_vector_omnix-crm supabase_pooler_omnix-crm]
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:15.7436355Z A new version of Supabase CLI is available: v2.117.0 (currently installed v2.90.0)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:15.7449578Z We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6608659Z Connecting to local database...
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6728341Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6728649Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6729185Z    Local          | Remote         | Time (UTC)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6729876Z   ----------------|----------------|---------------------
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6730563Z    0001           | 0001           | 0001
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6731149Z    0002           | 0002           | 0002
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6731750Z    0003           | 0003           | 0003
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6732325Z    0004           | 0004           | 0004
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6732891Z    0005           | 0005           | 0005
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6733469Z    0006           | 0006           | 0006
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6734029Z    0007           | 0007           | 0007
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6734593Z    0008           | 0008           | 0008
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6735147Z    0009           | 0009           | 0009
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6735612Z    0010           | 0010           | 0010
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6736077Z    0011           | 0011           | 0011
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6736542Z    0012           | 0012           | 0012
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6737020Z    0013           | 0013           | 0013
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6737501Z    0014           | 0014           | 0014
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6738643Z    0015           | 0015           | 0015
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6739120Z    0016           | 0016           | 0016
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6739586Z    0017           | 0017           | 0017
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6740052Z    0018           | 0018           | 0018
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6740509Z    0019           | 0019           | 0019
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6740966Z    0020           | 0020           | 0020
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6741429Z    0021           | 0021           | 0021
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6741933Z    0022           | 0022           | 0022
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6742504Z    0023           | 0023           | 0023
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6743090Z    0024           | 0024           | 0024
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6743961Z    0025           | 0025           | 0025
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6744586Z    0026           | 0026           | 0026
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6745214Z    0027           | 0027           | 0027
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6745792Z    0028           | 0028           | 0028
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6746421Z    20260821155317 | 20260821155317 | 2026-08-21 15:53:17
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6747041Z    20260821181501 | 20260821181501 | 2026-08-21 18:15:01
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6747651Z    20260822043055 | 20260822043055 | 2026-08-22 04:30:55
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6748696Z    20260822052500 | 20260822052500 | 2026-08-22 05:25:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6749318Z    20260823201500 | 20260823201500 | 2026-08-23 20:15:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6749915Z    20260823213000 | 20260823213000 | 2026-08-23 21:30:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6750507Z    20260823213100 | 20260823213100 | 2026-08-23 21:31:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6751110Z    20260824181500 | 20260824181500 | 2026-08-24 18:15:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6751743Z    20260824203000 | 20260824203000 | 2026-08-24 20:30:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6752364Z    20260824213753 | 20260824213753 | 2026-08-24 21:37:53
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6752947Z    20260825120000 | 20260825120000 | 2026-08-25 12:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6753539Z    20260825121000 | 20260825121000 | 2026-08-25 12:10:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6754148Z    20260825122000 | 20260825122000 | 2026-08-25 12:20:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6754756Z    20260825123000 | 20260825123000 | 2026-08-25 12:30:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6755349Z    20260825124000 | 20260825124000 | 2026-08-25 12:40:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6755941Z    20260826120000 | 20260826120000 | 2026-08-26 12:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6756567Z    20260826123000 | 20260826123000 | 2026-08-26 12:30:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6757170Z    20260827143000 | 20260827143000 | 2026-08-27 14:30:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6758059Z    20260827190000 | 20260827190000 | 2026-08-27 19:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6758686Z    20260831120000 | 20260831120000 | 2026-08-31 12:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6759303Z    20260831160000 | 20260831160000 | 2026-08-31 16:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6759906Z    20260831190000 | 20260831190000 | 2026-08-31 19:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6760478Z    20260831200000 | 20260831200000 | 2026-08-31 20:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6761118Z    20260831210000 | 20260831210000 | 2026-08-31 21:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6763321Z    20260831211000 | 20260831211000 | 2026-08-31 21:10:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6764236Z    20260831212000 | 20260831212000 | 2026-08-31 21:20:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6764886Z    20260831213000 | 20260831213000 | 2026-08-31 21:30:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6765509Z    20260831214000 | 20260831214000 | 2026-08-31 21:40:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6766569Z    20260831215000 | 20260831215000 | 2026-08-31 21:50:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6767348Z    20260831220000 | 20260831220000 | 2026-08-31 22:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6767984Z    20260831221000 | 20260831221000 | 2026-08-31 22:10:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6768890Z    20260831222000 | 20260831222000 | 2026-08-31 22:20:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6769705Z    20260831223000 | 20260831223000 | 2026-08-31 22:30:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6770777Z    20260901010000 | 20260901010000 | 2026-09-01 01:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6771518Z    20260901180000 | 20260901180000 | 2026-09-01 18:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6772253Z    20260907120000 | 20260907120000 | 2026-09-07 12:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6773099Z    20260907121000 | 20260907121000 | 2026-09-07 12:10:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6773804Z    20260907122000 | 20260907122000 | 2026-09-07 12:20:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6787626Z    20260907130000 | 20260907130000 | 2026-09-07 13:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6789118Z    20260907131000 | 20260907131000 | 2026-09-07 13:10:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6790058Z    20260907132000 | 20260907132000 | 2026-09-07 13:20:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6790701Z    20260907133000 | 20260907133000 | 2026-09-07 13:30:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6791322Z    20260907140000 | 20260907140000 | 2026-09-07 14:00:00
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:16.6791923Z
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:17.1769239Z A new version of Supabase CLI is available: v2.117.0 (currently installed v2.90.0)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:17.6783830Z We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:17.6785514Z supabase/tests/0004_shared_workspace_authority_test.sql ok (11 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:17.8572475Z supabase/tests/0005_crm_work_queue_test.sql ok (16 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:18.0037315Z supabase/tests/0006_connector_platform_foundation_test.sql ok (19 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:18.1919566Z supabase/tests/0007_rich_contact_lifecycle_test.sql ok (18 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:18.2873075Z supabase/tests/0008_connector_kek_rewrap_test.sql ok (14 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:18.4048838Z supabase/tests/0009_connector_live_disconnect_test.sql ok (16 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:18.6214439Z supabase/tests/0010_mailchimp_audience_sync_test.sql ok (25 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:18.7717334Z supabase/tests/0011_mailchimp_webhook_secret_authority_test.sql ok (22 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:18.9444592Z supabase/tests/0012_mailchimp_reconciliation_runs_test.sql ok (26 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:19.1342505Z supabase/tests/0013_mailchimp_outbound_backfill_test.sql ok (27 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:19.3398531Z supabase/tests/0014_google_connector_authority_test.sql ok (30 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:19.5600590Z supabase/tests/0015_twilio_compliant_texting_test.sql ok (26 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:19.7486989Z supabase/tests/0016_meta_inbound_business_messaging_test.sql ok (26 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:19.9352069Z supabase/tests/0017_twilio_activation_and_callback_routes_test.sql ok (18 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.0571301Z supabase/tests/0018_meta_page_access_token_authority_test.sql ok (18 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.1821501Z supabase/tests/0019_twilio_uat_meta_subscription_evidence_test.sql ok (21 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.2405586Z supabase/tests/0020_twilio_uat_post_stop_recovery_test.sql ok (8 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.3611674Z supabase/tests/0021_google_push_reconciliation_calendar_lifecycle_test.sql ok (30 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.4458473Z supabase/tests/0022_crm_navigation_pipeline_analytics_test.sql ok (8 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.5367365Z supabase/tests/0023_data_portability_operational_api_test.sql ok (16 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.6202095Z supabase/tests/0024_workspace_ai_settings_test.sql ok (14 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.7099650Z supabase/tests/0025_note_qualification_claude_test.sql ok (16 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:20.8157549Z supabase/tests/0026_contact_import_source_facts_test.sql ok (18 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:21.0526894Z supabase/tests/0027_contact_merge_foundation_test.sql ok (33 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:21.2946355Z supabase/tests/0028_contact_merge_activation_test.sql ok (27 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:21.3601784Z supabase/tests/20260823201500_connector_worker_least_privilege_test.sql ok (6 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:21.4539612Z supabase/tests/20260823213000_numbers_import_receipt_recovery_test.sql ok (11 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:21.5399055Z supabase/tests/20260825120000_canonical_owner_support_authority_test.sql ok (17 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:21.6620008Z supabase/tests/20260825121000_immutable_atomic_import_integrity_test.sql ok (28 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:21.7748888Z supabase/tests/20260825122000_legacy_acl_least_privilege_repair_test.sql ok (33 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:21.9341822Z supabase/tests/20260825123000_atomic_import_plan_test.sql ok (31 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:22.6552228Z supabase/tests/20260825124000_database_authority_pagination_repair_test.sql ok (40 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:22.7254122Z supabase/tests/20260826120000_mailchimp_owner_authorization_evidence_test.sql ok (5 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:22.7910710Z supabase/tests/20260826123000_google_capability_self_repair_test.sql ok (6 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:22.8990459Z supabase/tests/20260827143000_governed_mailchimp_campaigns_test.sql ok (11 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:22.9696784Z supabase/tests/20260827190000_omnix_governed_ai_budget_test.sql ok (8 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.0486349Z supabase/tests/20260831120000_omnix_operational_brain_test.sql ok (10 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.1369586Z supabase/tests/20260831160000_omnix_nurture_lifecycle_test.sql ok (10 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.2153829Z supabase/tests/20260831190000_omnix_response_and_transaction_deadlines_test.sql ok (7 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.2708286Z supabase/tests/20260831200000_google_insights_trigger_acl_hardening_test.sql ok (3 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.3819263Z supabase/tests/20260831210000_transaction_cockpit_and_parties_test.sql ok (24 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.4802065Z supabase/tests/20260831211000_florida_critical_dates_and_risk_test.sql ok (19 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.5504823Z supabase/tests/20260831212000_omnix_ai_service_budget_lint_hardening_test.sql ok (5 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.6436493Z supabase/tests/20260831213000_transaction_financial_authority_test.sql ok (15 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.7396283Z supabase/tests/20260831214000_versioned_florida_workflow_packs_test.sql ok (16 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.8370950Z supabase/tests/20260831215000_affordability_scenario_studio_test.sql ok (17 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:23.9370969Z supabase/tests/20260831220000_property_listing_bounded_context_test.sql ok (18 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.0470051Z supabase/tests/20260831221000_website_intake_attribution_test.sql ok (24 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.1417619Z supabase/tests/20260831222000_licensed_idx_reso_adapter_test.sql ok (20 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.2511938Z supabase/tests/20260831223000_property_behavior_grounded_cma_test.sql ok (17 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.3610355Z supabase/tests/20260901010000_sql_lint_warning_cleanup_test.sql ok (2 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.4776886Z supabase/tests/20260901180000_remote_lint_definition_reconciliation_test.sql ok (1 assertions)
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5656200Z Database assertion failed: supabase/tests/20260907120000_meeting_brief_snapshots_test.sql
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5668182Z 1..15
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5678827Z not ok 1 - direct inserts are denied
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5679716Z # Failed test 1: "direct inserts are denied"
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5680594Z not ok 2 - snapshots cannot be rewritten
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5681471Z # Failed test 2: "snapshots cannot be rewritten"
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5682408Z not ok 3 - prior evidence cannot be deleted
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5683275Z # Failed test 3: "prior evidence cannot be deleted"
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5684092Z ok 4 - anonymous generation is denied
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5684838Z 10100000-0000-4000-8000-000000000001
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5689716Z {"id":"50100000-0000-4000-8000-000000000001","workspaceId":"20100000-0000-4000-8000-000000000001","createdByMembershipId":"30100000-0000-4000-8000-000000000002","subjectContactId":"40100000-0000-4000-8000-000000000001","version":1,"deterministicRuleVersion":"meeting-brief.rules.v1","modelState":"not-requested","citations":[],"sections":[],"sourceHashes":{},"createdAt":"2026-09-07T12:00:00Z","expiresAt":"2026-09-07T12:15:00Z"}
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5693067Z authenticated
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5693686Z 10100000-0000-4000-8000-000000000002
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5694518Z ok 5 - active assistant can create a scoped brief
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5695469Z ok 6 - assistant reads the saved snapshot
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5696233Z 10100000-0000-4000-8000-000000000001
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5696994Z ok 7 - owner reads assistant evidence
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5697733Z 10100000-0000-4000-8000-000000000003
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5699233Z ok 8 - another workspace cannot read the snapshot
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5700200Z ok 9 - another actor cannot borrow assistant authority
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5700957Z 10100000-0000-4000-8000-000000000002
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5701718Z ok 10 - snapshot cannot override membership workspace
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5702564Z ok 11 - unsafe citation navigation is denied
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5703595Z ok 12 - unrelated source references are denied
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5704394Z ok 13 - permitted property behavior can be cited
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5705243Z ok 14 - restricted property behavior cannot be cited
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5706093Z ok 15 - revoked property behavior cannot be cited
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5706838Z # Looks like you failed 3 tests of 15
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:24.5707633Z NOTICE:  extension "pgtap" already exists, skipping
+Exact-SHA quality and security	Replay complete migration history and run database tests	2026-09-08T01:20:37.7151247Z ##[error]Process completed with exit code 1.

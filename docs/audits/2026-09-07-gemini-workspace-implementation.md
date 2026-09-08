@@ -23,3 +23,13 @@ Evidence: `docs/audits/evidence/2026-09-07-gemini-workspace/`. The source manife
 The deployed workspace has no canonical AI configuration row; authenticated Settings independently reports the key absent. The owner was asked to configure or identify the intended existing Gemini key through Settings. No secret was requested in chat and no alternate credential was substituted.
 
 Nine migrations remain unapplied in the production database: the baseline reconciliation migration plus eight Epic 10 files. A PR against current main has merge base `334291a76a48a5482089d5b7a62915802205e838`; its candidate migration recovery diff includes the reconciliation file and the eight new migrations. This avoids the omission that a comparison against local baseline HEAD alone would cause. Exact-candidate CI, live catalog/recovery evidence and the project's Production manifest remain distinct gates. Preview publication is not Production promotion.
+
+## Release corrections after candidate 8af588f
+
+The owner configured the canonical Gemini credential during the release. Existing-Production pipeline narration succeeded with a durable redacted usage receipt; attention narration failed response validation and retained verified facts. These observations do not bind to the new candidate. The cause of the rejected model response is not recoverable from its redacted receipt.
+
+Candidate CI 34175991645 caught inherited Supabase default privileges on meeting_brief_snapshots. The migration, containment rollback and forward repair now reset effective table/function permissions before restoring their allowlist. A new 13-assertion SQL suite checks all conversation tables, commands and internal helpers, including deliberately broad privilege containment. Production SQL was not applied.
+
+The narrator now requires a STOP finish, ignores thought parts, uses compact output constraints, and records bounded error categories. Router and narrator share the existing 600-token ceiling, count reported thoughts and preserve conservative labelled usage commitments when counters are absent or invalid. Server and CLI propagate that provenance. Independent QA corrected both rollback containment and usage accounting findings.
+
+Final local correction gates: 274 files / 1,461 tests passed; lint, TypeScript and build passed. The 123-file source manifest is source-sha256-promotion-candidate.json, and final logs use the -promotion-candidate suffix. The initial 8af588f Preview is READY and isolated in sample mode; authenticated health passes, while database readiness is intentionally unavailable. Corrected exact-SHA CI and a replacement Preview remain separately recorded release steps. Native physical-device, remote-equivalent recovery and the Production manifest remain open.

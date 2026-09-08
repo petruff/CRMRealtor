@@ -221,7 +221,7 @@ export async function askOmnixCopilotAction(
       inputTokens: modelRoute?.inputTokens ?? 0,
       outputTokens: modelRoute?.outputTokens ?? 0,
       actualCostMicrousd: OMNIX_AI_POLICY.perRunBudgetMicrousd,
-      errorCategory: 'run-aborted',
+      errorCategory: 'run-aborted.usage-estimated',
     }).catch(() => undefined);
   };
 
@@ -355,6 +355,7 @@ export async function askOmnixCopilotAction(
       ...(reservationId ? { reservation: { reservationId } } : {}),
       priorInputTokens: modelRoute?.inputTokens,
       priorOutputTokens: modelRoute?.outputTokens,
+      priorUsageEstimated: modelRoute?.usageEstimated,
     });
     let durableNarrative = narrative;
     let durableMapped = mapped;

@@ -154,7 +154,7 @@ describe('askOmnixCopilotAction', () => {
       apiKey: 'stored-server-key', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
     });
     vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({
-      state: 'available', model: 'gemini-3.5-flash-lite', query: 'pipeline',
+      state: 'available', model: 'gemini-3.5-flash-lite', query: 'pipeline', outputTokens: 140, usageEstimated: true,
     });
     vi.mocked(executeOmnixCopilot).mockImplementation(async (request) => ({
       ok: true,
@@ -183,7 +183,7 @@ describe('askOmnixCopilotAction', () => {
     expect(generateOmnixNarrative).toHaveBeenCalledWith(
       'How healthy is my sales funnel?',
       expect.any(Object),
-      expect.objectContaining({ reservation: { reservationId: '63000000-0000-4000-8000-000000000001' } }),
+      expect.objectContaining({ reservation: { reservationId: '63000000-0000-4000-8000-000000000001' }, priorOutputTokens: 140, priorUsageEstimated: true }),
     );
     expect(result.model).toMatchObject({
       state: 'available', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', routed: true, narrated: true,

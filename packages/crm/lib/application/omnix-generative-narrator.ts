@@ -42,6 +42,8 @@ export interface OmnixGenerativeResult {
   readonly inputTokens?: number;
   readonly outputTokens?: number;
   readonly estimatedCostMicrousd?: number;
+  /** True when terminal accounting retains a conservative commitment rather than measured usage. */
+  readonly usageEstimated?: boolean;
   /** Factual text is reconstructed only in fact-selection mode; drafts still require review. */
   readonly grounding?: 'fact-selection' | 'citation-checked';
 }
@@ -76,14 +78,19 @@ export interface OmnixGenerativeOptions {
   readonly reservation?: { readonly reservationId: string };
   readonly priorInputTokens?: number;
   readonly priorOutputTokens?: number;
+  readonly priorUsageEstimated?: boolean;
   readonly fetchImpl?: typeof fetch;
 }
 
 interface GeminiPayload {
-  readonly candidates?: readonly { readonly content?: { readonly parts?: readonly { readonly text?: string }[] } }[];
+  readonly candidates?: readonly {
+    readonly finishReason?: string;
+    readonly content?: { readonly parts?: readonly { readonly text?: string; readonly thought?: boolean }[] };
+  }[];
   readonly usageMetadata?: {
     readonly promptTokenCount?: number;
     readonly candidatesTokenCount?: number;
+    readonly thoughtsTokenCount?: number;
   };
 }
 
@@ -100,7 +107,22 @@ const FACT_SELECTION_INTENTS = new Set<string>([
   'workspace-overview', 'organization', 'client-status', 'transactions', 'properties', 'nurture', 'finances', 'proposals',
 ]);
 const FACT_SELECTION_VERSION = 'omnix-fact-selection.v1';
+const TEXT_LIMITS = Object.freeze({ summary: 700, highlight: 320, title: 100, proposal: 320, preview: 1_200, unknown: 240 });
+const PROPOSAL_RESPONSE_SCHEMA = {
+  type: 'ARRAY', maxItems: OMNIX_AI_POLICY.maxProposals,
+  items: { type: 'OBJECT', required: ['kind', 'title', 'text', 'preview', 'citationIds'], properties: {
+    kind: { type: 'STRING', enum: ['follow-up', 'email-draft', 'campaign-draft'] },
+    title: { type: 'STRING', maxLength: TEXT_LIMITS.title },
+    text: { type: 'STRING', maxLength: TEXT_LIMITS.proposal },
+    preview: { type: 'STRING', maxLength: TEXT_LIMITS.preview },
+    citationIds: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1, maxItems: 8 },
+  } },
+};
 interface SelectableFact extends OmnixGeneratedStatement { readonly id: string }
+
+function tokenCount(value: unknown, maximum: number): number | undefined {
+  return Number.isSafeInteger(value) && Number(value) >= 0 && Number(value) <= maximum ? Number(value) : undefined;
+}
 
 // Reuse the bounded provider-envelope pattern from meeting-brief narration.
 async function readBoundedPayload(response: Response): Promise<GeminiPayload> {
@@ -175,7 +197,7 @@ function parseNarrative(text: string, citations: readonly OmnixCopilotCitation[]
     return undefined;
   }
   const allowed = new Set(citations.map((citation) => citation.id));
-  const summaryText = cleanText(decoded.summary?.text, 700);
+  const summaryText = cleanText(decoded.summary?.text, TEXT_LIMITS.summary);
   const summaryCitations = boundedCitations(decoded.summary?.citationIds, allowed);
   if (!summaryText || !summaryCitations || EXECUTION_CLAIM.test(summaryText)) return undefined;
 
@@ -184,7 +206,7 @@ function parseNarrative(text: string, citations: readonly OmnixCopilotCitation[]
   for (const item of decoded.highlights) {
     if (!item || typeof item !== 'object') return undefined;
     const record = item as { text?: unknown; citationIds?: unknown };
-    const itemText = cleanText(record.text, 320);
+    const itemText = cleanText(record.text, TEXT_LIMITS.highlight);
     const citationIds = boundedCitations(record.citationIds, allowed);
     if (!itemText || !citationIds || EXECUTION_CLAIM.test(itemText)) return undefined;
     highlights.push({ text: itemText, citationIds });
@@ -197,9 +219,9 @@ function parseNarrative(text: string, citations: readonly OmnixCopilotCitation[]
     const record = item as { kind?: unknown; title?: unknown; text?: unknown; preview?: unknown; citationIds?: unknown };
     if (typeof record.kind !== 'string' || !PROPOSAL_KINDS.has(record.kind as OmnixProposalKind)) return undefined;
     const kind = record.kind as OmnixProposalKind;
-    const title = cleanText(record.title, 100);
-    const proposalText = cleanText(record.text, 320);
-    const preview = cleanText(record.preview, 1_200);
+    const title = cleanText(record.title, TEXT_LIMITS.title);
+    const proposalText = cleanText(record.text, TEXT_LIMITS.proposal);
+    const preview = cleanText(record.preview, TEXT_LIMITS.preview);
     const citationIds = boundedCitations(record.citationIds, allowed);
     if (!title || !proposalText || !preview || !citationIds || EXECUTION_CLAIM.test(`${title} ${proposalText} ${preview}`)) return undefined;
     proposals.push({
@@ -213,7 +235,7 @@ function parseNarrative(text: string, citations: readonly OmnixCopilotCitation[]
   }
 
   if (!Array.isArray(decoded.unknowns) || decoded.unknowns.length > 5) return undefined;
-  const unknowns = decoded.unknowns.map((item) => cleanText(item, 240));
+  const unknowns = decoded.unknowns.map((item) => cleanText(item, TEXT_LIMITS.unknown));
   if (unknowns.some((item) => !item)) return undefined;
   const allGenerated = [summaryText, ...highlights.map((item) => item.text), ...proposals.flatMap((item) => [item.title, item.text, item.preview]), ...unknowns];
   if (!scanOmnixPromptContent(allGenerated.join('\n')).safe) return undefined;
@@ -258,6 +280,12 @@ export async function generateOmnixNarrative(
   options: OmnixGenerativeOptions = {},
 ): Promise<OmnixGenerativeResult> {
   const base = { policyVersion: OMNIX_AI_POLICY_VERSION, highlights: [], proposals: [], unknowns: [] } as const;
+  const parsedPriorInput = tokenCount(options.priorInputTokens === undefined ? 0 : options.priorInputTokens, 100_000);
+  const parsedPriorOutput = tokenCount(options.priorOutputTokens === undefined ? 0 : options.priorOutputTokens, OMNIX_AI_POLICY.maxOutputTokens);
+  const invalidPriorUsage = parsedPriorInput === undefined || parsedPriorOutput === undefined;
+  const priorInputTokens = parsedPriorInput ?? 100_000;
+  const priorOutputTokens = parsedPriorOutput ?? OMNIX_AI_POLICY.maxOutputTokens;
+  const remainingOutputTokens = OMNIX_AI_POLICY.maxOutputTokens - priorOutputTokens;
   const closePreReservedFailure = async (
     result: OmnixGenerativeResult,
     errorCategory: string,
@@ -266,13 +294,17 @@ export async function generateOmnixNarrative(
     await options.budget.finalize({
       reservationId: options.reservation.reservationId,
       state: 'failed',
-      inputTokens: options.priorInputTokens ?? 0,
-      outputTokens: options.priorOutputTokens ?? 0,
+      inputTokens: priorInputTokens,
+      outputTokens: priorOutputTokens,
       actualCostMicrousd: OMNIX_AI_POLICY.perRunBudgetMicrousd,
-      errorCategory,
+      errorCategory: `${errorCategory}.usage-estimated`,
     }).catch(() => undefined);
-    return result;
+    return { ...result, usageEstimated: true };
   };
+  if (invalidPriorUsage || remainingOutputTokens <= 0) {
+    return closePreReservedFailure({ ...base, state: 'limited', reason: 'budget-exhausted', usageEstimated: true },
+      invalidPriorUsage ? 'invalid-prior-usage' : 'output-budget-exhausted');
+  }
   if (!options.credential?.apiKey.trim() || options.credential.dataPolicy !== 'paid-private') {
     return closePreReservedFailure({ ...base, state: 'unconfigured', reason: 'missing-credential' }, 'missing-credential');
   }
@@ -301,10 +333,10 @@ export async function generateOmnixNarrative(
     return closePreReservedFailure({ ...base, state: 'limited', model: options.credential.model, reason: 'guard-refused' }, 'guard-refused');
   }
 
-  const inputTokens = estimateOmnixTokens(context) + 350 + (options.priorInputTokens ?? 0);
-  const reservedOutputTokens = OMNIX_AI_POLICY.maxOutputTokens + (options.priorOutputTokens ?? 0);
+  const inputTokens = estimateOmnixTokens(context) + 350 + priorInputTokens;
+  const reservedOutputTokens = priorOutputTokens + remainingOutputTokens;
   const estimatedCostMicrousd = estimateOmnixCostMicrousd(inputTokens, reservedOutputTokens);
-  if (estimatedCostMicrousd > OMNIX_AI_POLICY.perRunBudgetMicrousd || !options.budget) {
+  if (inputTokens > 100_000 || estimatedCostMicrousd > OMNIX_AI_POLICY.perRunBudgetMicrousd || !options.budget) {
     return closePreReservedFailure(
       { ...base, state: 'limited', model: options.credential.model, reason: 'budget-unavailable', inputTokens, estimatedCostMicrousd },
       'budget-unavailable',
@@ -333,8 +365,11 @@ export async function generateOmnixNarrative(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), OMNIX_AI_POLICY.requestTimeoutMs);
   let terminal: 'succeeded' | 'failed' = 'failed';
-  let outputTokens = options.priorOutputTokens ?? 0;
+  // Dispatch may spend the full reservation even if no valid usage envelope comes back.
+  let outputTokens = reservedOutputTokens;
   let actualInputTokens = inputTokens;
+  let usageEstimated = true;
+  let invalidUsage = false;
   let errorCategory = 'provider-failed';
   let result: OmnixGenerativeResult;
   try {
@@ -352,38 +387,35 @@ export async function generateOmnixNarrative(
             'Do not claim an action was sent, scheduled, created, changed, or completed.',
             'Proposals are previews requiring separate human approval.',
             'Return only the requested JSON schema.',
+            `Keep the entire JSON compact within ${remainingOutputTokens} output tokens. Prefer a one-sentence summary and at most two short highlights; do not repeat facts.`,
+            'Return empty proposals unless the user asks for an action or draft. When requested, prefer one short draft. Empty highlights and unknowns are valid.',
+            'For prose, aim for 240 summary characters, 160 characters per highlight, and 240 preview characters; preserve complete JSON and exact citation IDs.',
             ...(factSelection ? ['Select summaryFactId and unique highlightFactIds from the supplied facts. Never write or alter factual text. Do not repeat the summary in highlights.'] : []),
           ].join('\n') }] },
           contents: [{ role: 'user', parts: [{ text: context }] }],
           generationConfig: {
             responseMimeType: 'application/json',
             temperature: 0.2,
-            maxOutputTokens: OMNIX_AI_POLICY.maxOutputTokens,
+            maxOutputTokens: remainingOutputTokens,
             responseSchema: factSelection ? {
               type: 'OBJECT', required: ['summaryFactId', 'highlightFactIds', 'proposals'],
               properties: {
                 summaryFactId: { type: 'STRING', enum: facts.map((fact) => fact.id) },
                 highlightFactIds: { type: 'ARRAY', maxItems: 5, items: { type: 'STRING', enum: facts.map((fact) => fact.id) } },
-                proposals: { type: 'ARRAY', maxItems: OMNIX_AI_POLICY.maxProposals, items: { type: 'OBJECT', required: ['kind', 'title', 'text', 'preview', 'citationIds'], properties: {
-                  kind: { type: 'STRING', enum: ['follow-up', 'email-draft', 'campaign-draft'] }, title: { type: 'STRING' }, text: { type: 'STRING' }, preview: { type: 'STRING' },
-                  citationIds: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1, maxItems: 8 },
-                } } },
+                proposals: PROPOSAL_RESPONSE_SCHEMA,
               },
             } : {
               type: 'OBJECT',
               required: ['summary', 'highlights', 'proposals', 'unknowns'],
               properties: {
                 summary: { type: 'OBJECT', required: ['text', 'citationIds'], properties: {
-                  text: { type: 'STRING' }, citationIds: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1, maxItems: 8 },
+                  text: { type: 'STRING', maxLength: TEXT_LIMITS.summary }, citationIds: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1, maxItems: 8 },
                 } },
                 highlights: { type: 'ARRAY', maxItems: 5, items: { type: 'OBJECT', required: ['text', 'citationIds'], properties: {
-                  text: { type: 'STRING' }, citationIds: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1, maxItems: 8 },
+                  text: { type: 'STRING', maxLength: TEXT_LIMITS.highlight }, citationIds: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1, maxItems: 8 },
                 } } },
-                proposals: { type: 'ARRAY', maxItems: OMNIX_AI_POLICY.maxProposals, items: { type: 'OBJECT', required: ['kind', 'title', 'text', 'preview', 'citationIds'], properties: {
-                  kind: { type: 'STRING', enum: ['follow-up', 'email-draft', 'campaign-draft'] }, title: { type: 'STRING' }, text: { type: 'STRING' }, preview: { type: 'STRING' },
-                  citationIds: { type: 'ARRAY', items: { type: 'STRING' }, minItems: 1, maxItems: 8 },
-                } } },
-                unknowns: { type: 'ARRAY', maxItems: 5, items: { type: 'STRING' } },
+                proposals: PROPOSAL_RESPONSE_SCHEMA,
+                unknowns: { type: 'ARRAY', maxItems: 5, items: { type: 'STRING', maxLength: TEXT_LIMITS.unknown } },
               },
             },
           },
@@ -392,14 +424,32 @@ export async function generateOmnixNarrative(
     );
     if (!providerResponse.ok) throw new Error('provider-failed');
     const payload = await readBoundedPayload(providerResponse);
-    actualInputTokens = (payload.usageMetadata?.promptTokenCount ?? (inputTokens - (options.priorInputTokens ?? 0)))
-      + (options.priorInputTokens ?? 0);
-    outputTokens = (payload.usageMetadata?.candidatesTokenCount ?? 0) + (options.priorOutputTokens ?? 0);
-    const text = payload.candidates?.[0]?.content?.parts?.map((part) => part.text ?? '').join('').trim();
+    const measuredInput = tokenCount(payload.usageMetadata?.promptTokenCount, 100_000 - priorInputTokens);
+    const measuredVisible = tokenCount(payload.usageMetadata?.candidatesTokenCount, remainingOutputTokens);
+    const measuredThoughts = payload.usageMetadata?.thoughtsTokenCount === undefined ? 0
+      : tokenCount(payload.usageMetadata.thoughtsTokenCount, remainingOutputTokens);
+    invalidUsage = (payload.usageMetadata?.promptTokenCount !== undefined && measuredInput === undefined)
+      || (payload.usageMetadata?.candidatesTokenCount !== undefined && measuredVisible === undefined)
+      || measuredThoughts === undefined
+      || (measuredVisible !== undefined && measuredThoughts !== undefined && measuredVisible + measuredThoughts > remainingOutputTokens);
+    actualInputTokens = measuredInput === undefined ? inputTokens : priorInputTokens + measuredInput;
+    outputTokens = invalidUsage || measuredVisible === undefined ? reservedOutputTokens
+      : priorOutputTokens + measuredVisible + (measuredThoughts ?? 0);
+    usageEstimated = invalidUsage || measuredInput === undefined || measuredVisible === undefined || options.priorUsageEstimated === true;
+    if (estimateOmnixCostMicrousd(actualInputTokens, outputTokens) > OMNIX_AI_POLICY.perRunBudgetMicrousd) {
+      invalidUsage = true; usageEstimated = true; actualInputTokens = inputTokens; outputTokens = reservedOutputTokens;
+    }
+    const candidate = payload.candidates?.[0];
+    // Never treat parseable partial/blocked content as a completed answer. Persist only fixed categories, not provider text.
+    const finishError = candidate?.finishReason === 'STOP' ? undefined
+      : candidate?.finishReason === 'MAX_TOKENS' ? 'provider-max-tokens'
+        : candidate?.finishReason ? 'provider-non-stop' : 'provider-finish-missing';
+    const text = finishError || invalidUsage ? undefined : candidate?.content?.parts?.filter((part) => part.thought !== true)
+      .map((part) => part.text ?? '').join('').trim();
     const allowedCitations = response.citations.slice(0, OMNIX_AI_POLICY.maxCitations);
     const narrative = text ? factSelection ? parseFactSelection(text, facts, allowedCitations) : parseNarrative(text, allowedCitations) : undefined;
     if (!narrative) {
-      errorCategory = 'invalid-response';
+      errorCategory = finishError ?? (invalidUsage ? 'invalid-provider-usage' : 'invalid-response');
       result = { ...base, state: 'failed', model: options.credential.model, reason: 'invalid-response', inputTokens: actualInputTokens, outputTokens, estimatedCostMicrousd };
     } else {
       terminal = 'succeeded';
@@ -420,14 +470,21 @@ export async function generateOmnixNarrative(
   } finally {
     clearTimeout(timer);
   }
+  // A reservation commitment is not a provider invoice. Keep uncertainty explicit in both result and durable category.
+  const committedCostMicrousd = invalidUsage ? OMNIX_AI_POLICY.perRunBudgetMicrousd
+    : Math.min(OMNIX_AI_POLICY.perRunBudgetMicrousd, usageEstimated
+      ? Math.max(estimatedCostMicrousd, estimateOmnixCostMicrousd(actualInputTokens, outputTokens))
+      : estimateOmnixCostMicrousd(actualInputTokens, outputTokens));
+  result = { ...result, usageEstimated, estimatedCostMicrousd: committedCostMicrousd };
+  const accountingCategory = usageEstimated ? errorCategory ? `${errorCategory}.usage-estimated` : 'usage-estimated' : errorCategory;
   try {
     await options.budget.finalize({
       reservationId: reservation.reservationId,
       state: terminal,
       inputTokens: actualInputTokens,
       outputTokens,
-      actualCostMicrousd: estimateOmnixCostMicrousd(actualInputTokens, outputTokens),
-      ...(errorCategory ? { errorCategory } : {}),
+      actualCostMicrousd: committedCostMicrousd,
+      ...(accountingCategory ? { errorCategory: accountingCategory } : {}),
     });
   } catch {
     return {
@@ -437,7 +494,8 @@ export async function generateOmnixNarrative(
       reason: 'budget-unavailable',
       inputTokens: actualInputTokens,
       outputTokens,
-      estimatedCostMicrousd,
+      estimatedCostMicrousd: committedCostMicrousd,
+      usageEstimated,
     };
   }
   return result;
