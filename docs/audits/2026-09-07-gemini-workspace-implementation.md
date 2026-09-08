@@ -6,7 +6,7 @@ New-intent factual summaries select server-defined fact IDs and reconstruct exac
 
 The shared chat is the primary Omnix surface, supports a selected client for follow-up questions, and preserves canonical identity even when names match or contacts have been merged. Alias-owned historical capture reviews have an explicit reopening limitation and safe canonical-client link; their immutable write guards were preserved. There is no new unrestricted agent loop, arbitrary SQL, persistent transcript or second credential store.
 
-## Validation
+## Initial local validation (8af588f)
 
 - Final package lint, TypeScript and production build passed.
 - Full test suite: **274 files, 1,429 tests passed**. Initial UI compatibility failures are retained in `tests.txt`; the passing rerun is `tests-final.txt`.
@@ -20,7 +20,7 @@ Evidence: `docs/audits/evidence/2026-09-07-gemini-workspace/`. The source manife
 
 ## Release state
 
-The deployed workspace has no canonical AI configuration row; authenticated Settings independently reports the key absent. The owner was asked to configure or identify the intended existing Gemini key through Settings. No secret was requested in chat and no alternate credential was substituted.
+The owner configured the canonical Gemini credential during validation. Authenticated Settings now reports it configured, and an existing-Production pipeline query succeeded with a durable usage receipt. This is provider evidence for the existing deployment, not for the new candidate. No secret was requested in chat and no alternate credential was substituted.
 
 Nine migrations remain unapplied in the production database: the baseline reconciliation migration plus eight Epic 10 files. A PR against current main has merge base `334291a76a48a5482089d5b7a62915802205e838`; its candidate migration recovery diff includes the reconciliation file and the eight new migrations. This avoids the omission that a comparison against local baseline HEAD alone would cause. Exact-candidate CI, live catalog/recovery evidence and the project's Production manifest remain distinct gates. Preview publication is not Production promotion.
 
@@ -33,3 +33,13 @@ Candidate CI 34175991645 caught inherited Supabase default privileges on meeting
 The narrator now requires a STOP finish, ignores thought parts, uses compact output constraints, and records bounded error categories. Router and narrator share the existing 600-token ceiling, count reported thoughts and preserve conservative labelled usage commitments when counters are absent or invalid. Server and CLI propagate that provenance. Independent QA corrected both rollback containment and usage accounting findings.
 
 Final local correction gates: 274 files / 1,461 tests passed; lint, TypeScript and build passed. The 123-file source manifest is source-sha256-promotion-candidate.json, and final logs use the -promotion-candidate suffix. The initial 8af588f Preview is READY and isolated in sample mode; authenticated health passes, while database readiness is intentionally unavailable. Corrected exact-SHA CI and a replacement Preview remain separately recorded release steps. Native physical-device, remote-equivalent recovery and the Production manifest remain open.
+
+## Captured-schema correction and latest local validation
+
+Candidate a25088c passed CI 34178322000, including complete migration replay, database tests, rollback/forward repair and build. Its isolated Preview passed health and rendered desktop/mobile assistant checks. The corresponding CI and Preview observations are recorded in the release evidence directory.
+
+A separately exported read-only catalog contained 749 verified objects and confirmed all nine Production migrations are still pending. The raw export stays in protected local evidence; tracked receipts contain only redacted diagnostics and checksums. Comparison found an actual Gmail lookup whose single-quoted literal did not match the reconciliation migration's doubled-quote pattern. A fresh database replay did not reproduce that pre-state.
+
+The reconciliation now uses literal quotes correctly, replaces validator assignments before removing their declarations, and supports replay of its temporary helper. An isolated PostgreSQL fixture contains 15 behavioral assertions, with four source-binding tests ensuring it executes the migration's actual transformation blocks. Independent QA approved this bounded source correction. Latest package gates passed: 275 files / 1,465 tests, lint, TypeScript and build. Evidence logs use the -reconciliation-candidate suffix; the matching source receipt is source-sha256-reconciliation-candidate.json.
+
+The corrected candidate still needs its own CI result. Catalog capture is not a customer-data backup or a successful recovery rehearsal. Restoring the captured function definitions, settings and privileges, replaying all nine pending migrations against that pre-state, authenticated new-candidate Gemini/provider acceptance, physical-device UAT and the immutable Production manifest remain open. No Production migration or promotion has been performed.

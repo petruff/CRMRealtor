@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists plpgsql_check with schema extensions;
 
-create function pg_temp.replace_function_fragment_flexible(target_signature text,target_pattern text,replacement text)
+create or replace function pg_temp.replace_function_fragment_flexible(target_signature text,target_pattern text,replacement text)
 returns void language plpgsql as $$
 declare definition text; reconciled text;
 begin
@@ -13,12 +13,14 @@ begin
 end;
 $$;
 
+-- Dollar-quoted patterns contain literal single quotes, not SQL string escapes.
+-- Replace assignments before declarations so each intermediate definition compiles.
+select pg_temp.replace_function_fragment_flexible('public.is_valid_contact_conversion_payload(jsonb,boolean)',$pattern$parsed_uuid[[:space:]]*:=[[:space:]]*\(target->>'referredById'\)::uuid[[:space:]]*;$pattern$,$replacement$perform (target->>'referredById')::uuid;$replacement$);
+select pg_temp.replace_function_fragment_flexible('public.is_valid_contact_conversion_payload(jsonb,boolean)',$pattern$parsed_timestamp[[:space:]]*:=[[:space:]]*\(target->>'lastContactedAt'\)::timestamptz[[:space:]]*;$pattern$,$replacement$perform (target->>'lastContactedAt')::timestamptz;$replacement$);
 select pg_temp.replace_function_fragment_flexible('public.is_valid_contact_conversion_payload(jsonb,boolean)',$pattern$\mparsed_uuid\M[[:space:]]+uuid[[:space:]]*;$pattern$,'');
 select pg_temp.replace_function_fragment_flexible('public.is_valid_contact_conversion_payload(jsonb,boolean)',$pattern$\mparsed_timestamp\M[[:space:]]+timestamptz[[:space:]]*;$pattern$,'');
-select pg_temp.replace_function_fragment_flexible('public.is_valid_contact_conversion_payload(jsonb,boolean)',$pattern$parsed_uuid[[:space:]]*:=[[:space:]]*\(target->>''referredById''\)::uuid[[:space:]]*;$pattern$,$replacement$perform (target->>'referredById')::uuid;$replacement$);
-select pg_temp.replace_function_fragment_flexible('public.is_valid_contact_conversion_payload(jsonb,boolean)',$pattern$parsed_timestamp[[:space:]]*:=[[:space:]]*\(target->>''lastContactedAt''\)::timestamptz[[:space:]]*;$pattern$,$replacement$perform (target->>'lastContactedAt')::timestamptz;$replacement$);
+select pg_temp.replace_function_fragment_flexible('public.is_valid_incomplete_conversion_plan(jsonb)',$pattern$matched_contact_id[[:space:]]*:=[[:space:]]*\(target->>'matchedContactId'\)::uuid[[:space:]]*;$pattern$,$replacement$perform (target->>'matchedContactId')::uuid;$replacement$);
 select pg_temp.replace_function_fragment_flexible('public.is_valid_incomplete_conversion_plan(jsonb)',$pattern$\mmatched_contact_id\M[[:space:]]+uuid[[:space:]]*;$pattern$,'');
-select pg_temp.replace_function_fragment_flexible('public.is_valid_incomplete_conversion_plan(jsonb)',$pattern$matched_contact_id[[:space:]]*:=[[:space:]]*\(target->>''matchedContactId''\)::uuid[[:space:]]*;$pattern$,$replacement$perform (target->>'matchedContactId')::uuid;$replacement$);
 
 select pg_temp.replace_function_fragment_flexible('public.create_connector_action_intent(uuid,text,text,uuid,text,uuid,integer,jsonb,uuid)',$pattern$\mtarget_payload\M[[:space:]]+connector_private\.connector_payload_envelopes%rowtype[[:space:]]*;$pattern$,'');
 select pg_temp.replace_function_fragment_flexible('public.create_connector_action_intent(uuid,text,text,uuid,text,uuid,integer,jsonb,uuid)',$pattern$\mtarget_policy\M[[:space:]]+public\.connector_automation_policies%rowtype[[:space:]]*;$pattern$,'');
@@ -47,7 +49,7 @@ begin
   if definition ~ $pattern$\mtarget_resource\M[[:space:]]+[A-Za-z0-9_.]+%rowtype[[:space:]]*;$pattern$ then
     canonical_select := regexp_replace(
       definition,
-      $pattern$select[[:space:]]+\*[[:space:]]+into[[:space:]]+strict[[:space:]]+target_resource[[:space:]]+from[[:space:]]+connector_private\.google_gmail_resources[[:space:]]+where[[:space:]]+workspace_id=target_job\.workspace_id[[:space:]]+and[[:space:]]+connection_id=target_job\.connection_id[[:space:]]+and[[:space:]]+resource_hash=target_resource_hash[[:space:]]+and[[:space:]]+direction=''incoming''[[:space:]]+and[[:space:]]+contact_id[[:space:]]+is[[:space:]]+not[[:space:]]+null;$pattern$,
+      $pattern$select[[:space:]]+\*[[:space:]]+into[[:space:]]+strict[[:space:]]+target_resource[[:space:]]+from[[:space:]]+connector_private\.google_gmail_resources[[:space:]]+where[[:space:]]+workspace_id=target_job\.workspace_id[[:space:]]+and[[:space:]]+connection_id=target_job\.connection_id[[:space:]]+and[[:space:]]+resource_hash=target_resource_hash[[:space:]]+and[[:space:]]+direction='incoming'[[:space:]]+and[[:space:]]+contact_id[[:space:]]+is[[:space:]]+not[[:space:]]+null;$pattern$,
       $replacement$perform 1 from connector_private.google_gmail_resources
     where workspace_id=target_job.workspace_id and connection_id=target_job.connection_id
       and resource_hash=target_resource_hash and direction='incoming' and contact_id is not null;

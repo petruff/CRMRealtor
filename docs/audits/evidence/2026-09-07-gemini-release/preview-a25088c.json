@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "crm-preview-observation.v1",
+  "candidateSha": "a25088c6dd8181767b2c34a8348f3a6eb0ec09ed",
+  "observedAt": "2026-09-08T02:01:49.0408430Z",
+  "deploymentId": "dpl_7U68LDjBMJWhLSyTfbMEZ6idLvcc",
+  "url": "https://crm-eewskt6vd-contact-70575058s-projects.vercel.app",
+  "readyState": "READY",
+  "target": "preview",
+  "evidenceMode": "isolated-sample",
+  "health": {
+    "ok": true,
+    "schemaVersion": "health.v1",
+    "process": "ready"
+  },
+  "readiness": {
+    "ok": false,
+    "schemaVersion": "readiness.v2",
+    "databaseConfigured": false,
+    "status": "unavailable",
+    "expectedForSample": true
+  },
+  "browserChecks": {
+    "workspaceOverview": "pass",
+    "clientCanonicalId": "c-okafor",
+    "clientStatusIsolation": "pass",
+    "crmCitationLinks": "pass",
+    "publicModeClearsPrivateContext": "pass",
+    "desktop": "pass",
+    "mobileViewport": {
+      "width": 390,
+      "height": 844,
+      "documentWidth": 375,
+      "composerBottom": 663.21875,
+      "horizontalOverflow": false
+    },
+    "viewportRestored": true
+  },
+  "liveDatabaseTested": false,
+  "liveGeminiTested": false,
+  "physicalDeviceTested": false,
+  "productionPromoted": false
+}

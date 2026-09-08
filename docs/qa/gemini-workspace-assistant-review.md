@@ -83,3 +83,23 @@ Independently verified `docs/audits/evidence/2026-09-07-gemini-workspace/source-
 Inspected the corresponding `*-promotion-candidate.txt` logs: **274 files / 1,461 tests PASS**, 52.22 seconds; zero-warning lint, TypeScript and production build PASS. The build completed all 23 static pages and generated the Omnix and approvals routes. These are retained local gate results, not remote SQL or deployment evidence.
 
 **Final corrected local source gate: APPROVED for staging, commit and exact-candidate CI.** Corrected SQL CI and migration/authority/recovery evidence remain pending; Production and full-story acceptance remain ungranted. The filename `promotion-candidate` does not itself authorize promotion.
+
+### Captured-prestate reconciliation correction — September 8, 2026 UTC
+
+Independently reviewed the bounded patch above `a25088c`. The protected captured catalog contains 749 objects and nine pending migration entries. Static comparison of its Gmail function body confirms the original dollar-quoted regex matches **zero** lookups, while the corrected literal single-quote pattern matches **one**. This check translated the whitespace regex subset locally; it is not PostgreSQL execution. Captured definitions and customer data were not copied into this report.
+
+- Corrected the Gmail literal and three analogous validator literals. Validator assignments are replaced before declaration removal, so intermediate function definitions remain compilable. `CREATE OR REPLACE` permits helper creation again in the same session. The other inspected captured connector payload/policy/membership variables occur only in unused declarations.
+- Gmail reconciliation preserves workspace, connection, resource-hash, incoming-direction and linked-contact predicates, plus an explicit `P0002` missing-resource exception. The captured `UNIQUE (connection_id, resource_hash)` constraint is validated and nondeferrable, supporting the preserved at-most-one lookup cardinality. Unknown lookup shapes still abort before the declaration is removed. The enclosing transaction remains intact; no privilege, owner or security-definer changes were introduced by this patch.
+- Independently reran the frozen source-binding suite at **22:06:02 local: 1 file / 4 tests PASS**. It binds the embedded helper, ordered validator transformations and Gmail block to the actual migration. The SQL fixture contains **15 authored PostgreSQL assertions**, including real-shape rewriting, invalid-cast rejection, missing-resource rejection, helper replay, byte-identical canonical replay and unknown-shape failure preserving the definition. These assertions have **not been executed by this reviewer**; source binding is not their runtime result.
+
+Frozen source SHA-256 bindings:
+
+| File under `packages/crm/` | SHA-256 |
+| --- | --- |
+| `supabase/migrations/20260901180000_remote_lint_definition_reconciliation.sql` | `980f3b465927afd26df74fcad778be53a464bca33f8e2ec0bd38df69a67dde15` |
+| `supabase/tests/20260907141500_remote_lint_reconciliation_test.sql` | `0c8f6b546f6ce4d70ebd5494183e386e24fdafdb6d63beeb92ce4c1f78826e5b` |
+| `scripts/remote-lint-reconciliation.test.ts` | `0974a4d321dc3924d4b3ee55e081edf03cac93854ef69ca767f2202770adb870` |
+
+**Bounded source verdict: APPROVED for the next exact-SHA CI run.** No unresolved source blocker was found in this correction. Earlier package results and CI run `34178322000` do not certify this subsequent patch.
+
+**Production/recovery disposition: NEEDS_WORK.** The existing reconciliation rollback and forward repair remain existence-check no-ops; they do not restore captured predefinitions, owners, settings or privileges. Fresh-schema CI and this sanitized fixture cannot establish remote equivalence. A disposable rehearsal of the captured schema/ACL/defaults/hooks and all nine pending migrations, actual restoration evidence and the final exact-candidate release manifest remain required before Production changes. No remote SQL, deployment or application edits were performed by this reviewer.

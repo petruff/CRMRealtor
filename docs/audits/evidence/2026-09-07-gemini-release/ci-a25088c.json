@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "crm-ci-observation.v1",
+  "candidateSha": "a25088c6dd8181767b2c34a8348f3a6eb0ec09ed",
+  "runId": 34178322000,
+  "url": "https://github.com/petruff/CRMRealtor/actions/runs/34178322000",
+  "status": "completed",
+  "conclusion": "success",
+  "observedAt": "2026-09-08T02:06:49.9952643Z",
+  "steps": [
+    {
+      "name": "Set up job",
+      "conclusion": "success"
+    },
+    {
+      "name": "Checkout exact candidate",
+      "conclusion": "success"
+    },
+    {
+      "name": "Assert exact clean candidate",
+      "conclusion": "success"
+    },
+    {
+      "name": "Setup Node.js",
+      "conclusion": "success"
+    },
+    {
+      "name": "Install dependencies",
+      "conclusion": "success"
+    },
+    {
+      "name": "Dependency audit",
+      "conclusion": "success"
+    },
+    {
+      "name": "Install pinned Gitleaks",
+      "conclusion": "success"
+    },
+    {
+      "name": "Secret scan",
+      "conclusion": "success"
+    },
+    {
+      "name": "Lint",
+      "conclusion": "success"
+    },
+    {
+      "name": "Typecheck",
+      "conclusion": "success"
+    },
+    {
+      "name": "Full tests",
+      "conclusion": "success"
+    },
+    {
+      "name": "Resolve migration comparison base",
+      "conclusion": "success"
+    },
+    {
+      "name": "Replay complete migration history and run database tests",
+      "conclusion": "success"
+    },
+    {
+      "name": "Validate any tracked release manifests",
+      "conclusion": "success"
+    },
+    {
+      "name": "Build",
+      "conclusion": "success"
+    },
+    {
+      "name": "Assert candidate remained clean",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Setup Node.js",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Checkout exact candidate",
+      "conclusion": "success"
+    },
+    {
+      "name": "Complete job",
+      "conclusion": "success"
+    }
+  ],
+  "productionRecoveryTested": false,
+  "productionPromoted": false
+}
