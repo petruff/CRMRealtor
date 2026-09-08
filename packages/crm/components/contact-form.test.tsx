@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ContactForm } from '@/components/contact-form';
 import type { ContactActionState } from '@/lib/application/contact-action-state';
 
@@ -12,6 +12,14 @@ async function action(state: ContactActionState): Promise<ContactActionState> {
 }
 
 describe('ContactForm relationship UX', () => {
+  // Vitest globals are disabled, so RTL cannot register its automatic cleanup.
+  // Unmount and finish React's pending work while the jsdom window still exists.
+  afterEach(async () => {
+    await act(async () => { cleanup(); });
+  });
+  beforeEach(() => {
+    expect(document.body.childElementCount).toBe(0);
+  });
   it('makes email optional and removes lead priority when Past client is selected', async () => {
     const user = userEvent.setup();
     render(
