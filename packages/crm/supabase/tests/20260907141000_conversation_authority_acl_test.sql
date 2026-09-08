@@ -80,6 +80,6 @@ select ok(not has_table_privilege('anon','public.meeting_brief_snapshots','SELEC
   and has_table_privilege('service_role','public.meeting_brief_snapshots','INSERT')
   and has_function_privilege('authenticated','public.create_meeting_brief_snapshot(uuid,uuid,jsonb)','EXECUTE')
   and not has_function_privilege('service_role','public.create_meeting_brief_snapshot(uuid,uuid,jsonb)','EXECUTE')
-),'forward repair restores only intended availability after poisoned privilege containment');
+,'forward repair restores only intended availability after poisoned privilege containment');
 select * from finish();
 rollback;

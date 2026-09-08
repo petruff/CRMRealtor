@@ -65,7 +65,7 @@ Corrected supporting artifact SHA-256 values (LF, one final newline):
 | --- | --- |
 | Meeting rollback | `6f5d3f222c1f419d2227c9e1696d9ce541c41ea901554520b55e59876f3a8791` |
 | Meeting forward repair | `5d2d67633409b4c2e4da9d984f2c615ed6d8e4c64a2560767307b639cd793ecf` |
-| Effective ACL pgTAP | `12eb44ccaea02570be556305671fef8d87dbf000227e62ca83b18bc491c022f4` |
+| Effective ACL pgTAP | `998985567490dcc0e688128de6b4bcf54453a41ab0e444b1fbd66267257f44f1` |
 | Targeted snapshot query source (not executed output) | `9429e48a878e1a986141b8c82357e77f7b57d32eeccf19ae6fd107338b5385d2` |
 
 ## Snapshot and recovery requirements
