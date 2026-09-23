@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { BellRing, CalendarRange, PhoneCall, Undo2, X } from 'lucide-react';
+import { BellRing, CalendarRange, PhoneCall, QrCode, Undo2, X } from 'lucide-react';
 
-export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-alerts';
+export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-lead-page';
 
 const ITEMS = [
+  { icon: QrCode, title: 'Your lead page', body: 'One link and QR code for your bio, signs and cards. Every inquiry becomes a lead with an instant alert.', href: '/lead-page' },
   { icon: PhoneCall, title: 'Log a call in one tap', body: 'After you call someone from Omnix, it offers to save how it went — with voice notes. You can turn this off.', href: undefined },
   { icon: Undo2, title: 'Undo after archiving', body: 'Archived someone by mistake? Tap Undo and you are right back where you were.', href: undefined },
   { icon: BellRing, title: 'Alerts you choose', body: 'New leads right away, deal dates 48 hours ahead, and quiet hours at night.', href: '/settings#morning-brief' },

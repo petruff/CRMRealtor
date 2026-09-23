@@ -16,6 +16,8 @@ const SESSION_PUBLIC_PREFIXES = [
   "/api/connectors/twilio",
   // Client portal: token-gated, read-only, never uses the CRM session.
   "/portal",
+  // Hosted lead page: public form, no CRM session, no CRM data.
+  "/l",
 ] as const;
 
 const SAFE_DESTINATIONS = [
@@ -34,6 +36,7 @@ const SAFE_DESTINATIONS = [
   "/power-hour",
   "/open-house",
   "/sphere",
+  "/lead-page",
 ] as const;
 
 function matchesSegment(pathname: string, prefix: string): boolean {

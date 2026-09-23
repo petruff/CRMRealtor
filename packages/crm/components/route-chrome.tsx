@@ -12,6 +12,7 @@ export function RouteChrome({ children }: { children: React.ReactNode }) {
   // Guest-facing kiosk: authenticated, but without any CRM navigation or data.
   // Client portal: a visitor's private page, never the CRM shell.
   if (pathname.startsWith('/portal/')) return <main id="main-content" className="ox-portal-shell">{children}</main>;
+  if (pathname.startsWith('/l/')) return <main id="main-content" className="ox-portal-shell">{children}</main>;
   if (pathname === '/open-house/kiosk') return <main id="main-content" className="ox-kiosk-shell">{children}</main>;
 
   return (
