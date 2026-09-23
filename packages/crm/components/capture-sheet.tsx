@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useId, useRef } from 'react';
-import { MessageSquarePlus, Upload, UserRoundPlus, X } from 'lucide-react';
+import { DoorOpen, MessageSquarePlus, Upload, UserRoundPlus, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface CaptureOption {
@@ -15,6 +15,7 @@ export interface CaptureOption {
 export const CAPTURE_OPTIONS: readonly CaptureOption[] = [
   { href: '/capture', label: 'Log a conversation', description: 'Call, showing or text — notes, next step and follow-up date', icon: MessageSquarePlus },
   { href: '/contacts/new', label: 'New contact', description: 'Add a lead, client or someone from your sphere', icon: UserRoundPlus },
+  { href: '/open-house', label: 'Open house sign-in', description: 'Turn this device into a guest sign-in kiosk', icon: DoorOpen },
   { href: '/contacts/import', label: 'Import contacts', description: 'Phone, spreadsheet, Mailchimp or another CRM', icon: Upload },
 ];
 

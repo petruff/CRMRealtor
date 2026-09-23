@@ -23,6 +23,9 @@ export function parentRouteNavigation(pathname: string): ParentRouteNavigation |
   if (pathname === '/power-hour') {
     return { href: '/', label: 'Today', currentLabel: 'Power Hour' };
   }
+  if (pathname === '/open-house') {
+    return { href: '/', label: 'Today', currentLabel: 'Open house' };
+  }
   if (pathname === '/capture') {
     return { href: '/', label: 'Today', currentLabel: 'Log a conversation' };
   }

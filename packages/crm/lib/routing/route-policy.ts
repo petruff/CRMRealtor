@@ -30,6 +30,7 @@ const SAFE_DESTINATIONS = [
   "/inbox",
   "/capture",
   "/power-hour",
+  "/open-house",
 ] as const;
 
 function matchesSegment(pathname: string, prefix: string): boolean {
