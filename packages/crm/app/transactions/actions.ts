@@ -6,6 +6,7 @@ import { TRANSACTION_MILESTONE_KINDS, TRANSACTION_MILESTONE_SOURCE_TYPES, TRANSA
 import { TRANSACTION_KINDS, TRANSACTION_PARTY_ROLES, TRANSACTION_SIDES, TRANSACTION_STATUSES, type TransactionKind, type TransactionPartyRole, type TransactionSide, type TransactionStatus } from '@/lib/domain/transaction';
 import { FINANCIAL_SOURCE_TYPES, FINANCIAL_VERIFICATION_STATES, type FinancialSourceType, type FinancialVerificationState } from '@/lib/domain/transaction-finance';
 import { WORKFLOW_STEP_STATES, type WorkflowStepState } from '@/lib/domain/workflow-pack';
+import { recordReadinessCommand } from '@/lib/application/florida-readiness-commands';
 
 const value = (data: FormData, key: string) => String(data.get(key) ?? '').trim();
 const cents = (data: FormData, key: string) => {
@@ -211,4 +212,20 @@ export async function archiveTransactionPartyAction(formData: FormData): Promise
     idempotencyKey: value(formData, 'idempotencyKey'),
   }, new Date().toISOString());
   revalidatePath('/transactions');
+}
+
+export async function recordReadinessAction(formData: FormData): Promise<void> {
+  const key = value(formData, 'key');
+  if (key !== 'buyer-agreement' && key !== 'flood-disclosure') throw new Error('Choose a readiness item.');
+  const context = await getRepository();
+  await recordReadinessCommand(context.operationalSignalRepository, context.workspaceScope, {
+    transactionId: value(formData, 'transactionId'),
+    key,
+    outcome: value(formData, 'outcome') === 'not-applicable' ? 'not-applicable' : 'on-file',
+    reference: value(formData, 'reference'),
+    sourceDate: value(formData, 'sourceDate'),
+    timeZone: process.env.OMNIX_TIME_ZONE?.trim() || 'America/New_York',
+    requestId: value(formData, 'requestId'),
+  });
+  revalidatePath('/transactions'); revalidatePath('/inbox'); revalidatePath('/');
 }

@@ -20,10 +20,10 @@
 | 4 | Voice capture | On-device dictation (browser speech recognition: no audio upload, no key, no cost) in capture recap, Power Hour, new note and note editing; hides itself where unsupported. Server-side Gemini audio transcription remains optional follow-up | Done |
 | 5 | Morning brief notifications | Opt-in Web Push per device (Settings → Morning brief), names off the lock screen by default, local preview; RLS-scoped `push_subscriptions` (pgTAP 8/8 on stub schema); daily cron `/api/internal/push/morning-brief` at 11:00 UTC (≈7 AM ET), once per device per local day, silent on quiet days, dead endpoints revoked. Activation: VAPID keys + CRON_SECRET + migration | Done (activation pending) |
 | 6 | Open House kiosk | `/open-house` setup (property from listings, optional staff PIN) → chrome-less `/open-house/kiosk` tablet sign-in: opt-in text/email consent stored with exact wording + version (TCPA), "working with an agent?" tagged `has-agent` and kept out of hot follow-up (NAR Art. 16), honeypot, returning visitors merged without downgrading consent, auto-reset thank-you, PIN-guarded exit; today's visitors list → Power Hour | Done |
-| 7 | Florida deal compliance | Buyer agreement before touring (NAR settlement), seller flood disclosure (Fla. law eff. 2025-10-01) tracked on deals with warnings | Planned |
-| 8 | Client portal | Private, expiring, read-only link per buyer/seller: timeline, next steps, key dates | Planned |
-| 9 | Referral engine | Past-client moments (homeaversary, birthday, market update) with ready-to-send drafts | Planned |
-| 10 | AI guardrails + bilingual | Fair Housing linter on generated marketing copy; EN/ES drafting for client messages | Planned |
+| 7 | Florida deal compliance | "Florida readiness" on every active deal: written buyer agreement (buyer/dual side) and seller flood disclosure (Fla. Stat. § 689.302) derived from sourced milestones; missing items are attention before contract and urgent once under contract; one-step "Record it" saves a verified, audited milestone (or "doesn't apply" with a reason); gaps flow into Inbox. New milestone kind `buyer-agreement` (additive enum migration, pgTAP 2/2 on stub). Operational reminder, not legal advice | Done (migration pending) |
+| 8 | Client portal | Per-deal private link (30/60/90 days, max 180 enforced in DB) shown once — only a SHA-256 hash is stored; copy / text / email share; view count and last opened; turn off anytime. Public `/portal/[token]`: property, status, countdown, what's next, timeline — never commission, notes or contact data; noindex + no-referrer. Anonymous access only through allowlisted `get_client_portal` RPC; RLS table (pgTAP 10/10 on stub) | Done (migration pending) |
+| 9 | Referral engine | `/sphere`: sphere pulse (size, % touched in 90 days, referrals received), home anniversaries and birthdays in the next 30 days, past clients quiet for 90+ days, top referrers (from Referred by) — each with a personal EN/ES draft, open in Messages/Mail, copy, and "Mark sent" that logs the touch; Today's Moments links to the drafts | Done |
+| 10 | AI guardrails + bilingual | Fair Housing linter (federal FHA § 3604(c), Fla. Stat. § 760.23, local source-of-income): live check in campaign composer and edit forms, server-side block on "must change" phrases before any campaign draft, findings shown on AI proposals in Approvals. English/Spanish drafts in the referral engine | Done |
 
 ## Definition of done per phase
 1. Implementation through existing layers (UI → Server Action → command → repository → DB).
@@ -31,3 +31,14 @@
 3. Unit/integration/interaction tests for behavior; full suite green.
 4. Visual validation desktop + mobile, light + dark.
 5. Plan table updated and phase committed locally.
+
+## Activation checklist (nothing below has been done in any live environment)
+1. Apply migrations in staging, run the full Supabase pgTAP suite, then production — in order:
+   `20260923120000_editable_contact_notes`, `20260923130000_push_morning_brief`,
+   `20260923140000_florida_deal_readiness`, `20260923150000_client_portal_links`.
+   Each has a rollback/containment script in `supabase/rollbacks/`.
+2. Morning brief: generate VAPID keys (`npx web-push generate-vapid-keys`) and set
+   `NEXT_PUBLIC_OMNIX_PUSH_PUBLIC_KEY`, `OMNIX_PUSH_PRIVATE_KEY`, `OMNIX_PUSH_SUBJECT`; set `CRON_SECRET` in Vercel.
+3. Client portal: set `NEXT_PUBLIC_SITE_URL` to the production origin so shared links never point at a preview URL.
+4. Time zone: set `OMNIX_TIME_ZONE` (defaults to `America/New_York`).
+5. Brokerage review: confirm the Florida readiness wording and Fair Housing phrase list with the broker of record.

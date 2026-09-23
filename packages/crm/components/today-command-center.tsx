@@ -222,6 +222,7 @@ export function TodayCommandCenter({
               <header className="ox-card-header">
                 <span className="ox-icon-chip ox-tone-task"><Gift className="size-4" aria-hidden /></span>
                 <h2 id="moments-title" className="ox-card-title">Moments to celebrate</h2>
+                <Link href="/sphere" className="ox-text-link">Drafts ready <ArrowRight className="size-3.5" aria-hidden /></Link>
               </header>
               {moments.length ? (
                 <ul className="ox-list">

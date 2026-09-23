@@ -12,7 +12,7 @@ export type IconKey =
   | 'today' | 'people' | 'deals' | 'inbox' | 'omnix'
   | 'pipeline' | 'transactions' | 'properties' | 'approvals' | 'alerts' | 'tasks'
   | 'insights' | 'nurture' | 'campaigns' | 'mailers' | 'connections' | 'data' | 'settings'
-  | 'review' | 'import' | 'workspaces' | 'openhouse';
+  | 'review' | 'import' | 'workspaces' | 'openhouse' | 'sphere';
 
 export interface NavLink {
   readonly href: string;
@@ -72,6 +72,7 @@ export const MORE_SECTIONS: readonly NavSection[] = [
   {
     label: 'Grow',
     links: [
+      { href: '/sphere', label: 'Referral engine', icon: 'sphere' },
       { href: '/open-house', label: 'Open house', icon: 'openhouse' },
       { href: '/nurture', label: 'Nurture plans', icon: 'nurture' },
       { href: '/campaigns', label: 'Email campaigns', icon: 'campaigns' },

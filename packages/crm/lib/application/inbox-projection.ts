@@ -2,6 +2,7 @@ import type { CrmTask } from '../domain/activity.ts';
 import type { OmnixCopilotAlert } from '../domain/omnix-copilot.ts';
 import type { OmnixActionProposal } from '../domain/omnix-operational-brain.ts';
 import type { InboundResponseSignal } from '../domain/operational-signal.ts';
+import type { ReadinessGap } from '../domain/florida-readiness.ts';
 
 /**
  * Inbox = everything that is waiting on the realtor's decision, as opposed to
@@ -45,6 +46,8 @@ export interface InboxSources {
   readonly proposals?: readonly OmnixActionProposal[];
   readonly tasks?: readonly CrmTask[];
   readonly alerts?: readonly OmnixCopilotAlert[];
+  /** Florida disclosures not yet on file for active deals. */
+  readonly readiness?: readonly ReadinessGap[];
   readonly contactNames?: Readonly<Record<string, string>>;
 }
 
@@ -158,13 +161,24 @@ export function buildInboxProjection(sources: InboxSources, now: Date): InboxPro
       }));
     })
     .sort((left, right) => Number(right.urgent) - Number(left.urgent));
+  const readiness = (sources.readiness ?? []).map((gap): InboxItem => ({
+    id: `readiness:${gap.transactionId}:${gap.key}`,
+    kind: 'alert',
+    title: `${gap.title} · ${gap.transactionTitle}`,
+    detail: gap.detail,
+    href: `/transactions#transaction-${gap.transactionId}`,
+    urgent: gap.tone === 'urgent',
+    contactId: gap.contactId,
+  }));
+  const dealAlerts = alerts === undefined && !readiness.length ? undefined
+    : [...readiness, ...(alerts ?? [])].sort((left, right) => Number(right.urgent) - Number(left.urgent));
 
   const sections = [
     section('reply', 'Replies waiting', 'No one is waiting on a reply.', '/activities', replies),
     section('approval', 'Needs your approval', 'Nothing to approve.', '/approvals', approvals),
     section('task', 'Tasks due', 'No tasks due today.', '/activities', tasks),
-    section('alert', 'Deal and mailer alerts', 'No deal or mailer alerts.', '/alerts', alerts),
+    section('alert', 'Deal and mailer alerts', 'No deal or mailer alerts.', '/alerts', dealAlerts),
   ];
-  const all = [replies, approvals, tasks, alerts].flatMap((items) => items ?? []);
+  const all = [replies, approvals, tasks, dealAlerts].flatMap((items) => items ?? []);
   return { total: all.length, urgent: all.filter((item) => item.urgent).length, sections };
 }

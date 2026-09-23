@@ -81,4 +81,17 @@ describe('inbox projection', () => {
     expect(inbox.sections[1]!.items[0]!.detail).toBe('For Ruth Hollings');
     expect(inbox.sections[3]!.items[0]!.title).toBe('Ruth Hollings · Alert d');
   });
+
+  it('puts Florida readiness gaps with deal alerts, urgent first, linked to the deal', () => {
+    const gap = (transactionId: string, tone: 'attention' | 'urgent') => ({
+      key: 'buyer-agreement' as const, transactionId, title: 'Written buyer agreement', state: 'missing' as const, tone,
+      detail: 'Needed before you tour homes together.', sourceUrl: 'https://www.nar.realtor/the-facts', milestoneKind: 'buyer-agreement' as const,
+      transactionTitle: `Deal ${transactionId}`, contactId: 'c-1',
+    });
+    const inbox = buildInboxProjection({ alerts: [alert('a', 'pipeline')], readiness: [gap('t-1', 'attention'), gap('t-2', 'urgent')] }, NOW);
+    const deals = inbox.sections[3]!;
+    expect(deals.items.map((item) => item.id)).toEqual(['readiness:t-2:buyer-agreement', 'readiness:t-1:buyer-agreement', 'alert:a']);
+    expect(deals.items[0]).toMatchObject({ urgent: true, href: '/transactions#transaction-t-2', title: 'Written buyer agreement · Deal t-2' });
+    expect(inbox.urgent).toBe(1);
+  });
 });

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { FairHousingNotice } from '@/components/fair-housing-notice';
 import { ArrowUpRight, Check, ChevronRight, Clock3, Gauge, MessageCircleReply, ShieldCheck, Sparkles, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { hashOmnixProposalPayload, listOmnixApprovalInboxCommand } from '@/lib/application/omnix-proposal-commands';
@@ -52,6 +53,7 @@ function ProposalPayload({ proposal, version }: { proposal: OmnixActionProposal;
           </div>
         ))}
       </dl>
+      <FairHousingNotice texts={['subject', 'previewText', 'body', 'message', 'description'].map((key) => payload[key]).filter((value): value is string => typeof value === 'string')} />
       {proposal.contactId ? <Link href={`/contacts/${encodeURIComponent(proposal.contactId)}`} className="mt-3 inline-flex min-h-11 items-center text-sm text-accent">Open target contact <ArrowUpRight className="ml-1 size-4" aria-hidden /></Link> : null}
       {unresolved ? (
         <div className="mt-4 border-t border-line pt-3 text-sm text-muted">

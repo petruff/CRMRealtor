@@ -14,6 +14,8 @@ const SESSION_PUBLIC_PREFIXES = [
   "/api/connectors/mailchimp/webhook",
   "/api/connectors/meta/webhook",
   "/api/connectors/twilio",
+  // Client portal: token-gated, read-only, never uses the CRM session.
+  "/portal",
 ] as const;
 
 const SAFE_DESTINATIONS = [
@@ -31,6 +33,7 @@ const SAFE_DESTINATIONS = [
   "/capture",
   "/power-hour",
   "/open-house",
+  "/sphere",
 ] as const;
 
 function matchesSegment(pathname: string, prefix: string): boolean {

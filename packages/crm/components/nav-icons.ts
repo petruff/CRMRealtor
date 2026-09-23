@@ -1,5 +1,5 @@
 import {
-  BarChart3, BellRing, DoorOpen, BriefcaseBusiness, CalendarCheck, CalendarClock, ClipboardCheck, Database,
+  BarChart3, BellRing, DoorOpen, HeartHandshake, BriefcaseBusiness, CalendarCheck, CalendarClock, ClipboardCheck, Database,
   Grid2X2, HandCoins, House, Inbox, KanbanSquare, ListChecks, Mail, Plug, Send, Settings, Sparkles, Upload, UserRoundSearch, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -28,5 +28,6 @@ export const NAV_ICONS: Record<IconKey, LucideIcon> = {
   import: Upload,
   workspaces: Grid2X2,
   openhouse: DoorOpen,
+  sphere: HeartHandshake,
 };
 

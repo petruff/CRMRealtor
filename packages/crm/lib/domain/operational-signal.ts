@@ -1,5 +1,5 @@
 export const TRANSACTION_MILESTONE_KINDS = [
-  'inspection', 'financing', 'appraisal', 'title', 'contingency', 'association', 'flood', 'closing', 'custom',
+  'inspection', 'financing', 'appraisal', 'title', 'contingency', 'association', 'flood', 'buyer-agreement', 'closing', 'custom',
 ] as const;
 export type TransactionMilestoneKind = (typeof TRANSACTION_MILESTONE_KINDS)[number];
 
