@@ -54,6 +54,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "twilio": "^6.1.0",
+    "web-push": "^3.6.7",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
@@ -64,6 +65,7 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9.36.0",
     "eslint-config-next": "^15.5.26",
     "jsdom": "^30.0.1",

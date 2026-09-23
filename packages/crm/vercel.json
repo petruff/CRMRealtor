@@ -4,6 +4,10 @@
     {
       "path": "/api/internal/connectors/drain",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/internal/push/morning-brief",
+      "schedule": "0 11 * * *"
     }
   ]
 }

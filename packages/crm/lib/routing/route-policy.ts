@@ -9,6 +9,7 @@ const SESSION_PUBLIC_PREFIXES = [
   "/api/intake",
   "/api/v1",
   "/api/internal/connectors/drain",
+  "/api/internal/push/morning-brief",
   "/api/connectors/google/gmail/push",
   "/api/connectors/mailchimp/webhook",
   "/api/connectors/meta/webhook",

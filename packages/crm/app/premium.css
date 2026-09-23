@@ -373,3 +373,14 @@
   .ox-dictation-status { min-height: 1.25rem; font-size: 0.8125rem; }
 }
 @keyframes ox-listen { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--omnix-hot) 35%, transparent); } 50% { box-shadow: 0 0 0 6px transparent; } }
+
+/* ---------- Settings cards ---------- */
+@layer components {
+  .ox-settings-card-body { display: flex; align-items: start; gap: 1rem; padding: 1.25rem; }
+  @media (min-width: 640px) { .ox-settings-card-body { padding: 1.5rem; } }
+  .ox-settings-hint { display: flex; align-items: start; gap: 0.5rem; margin-top: 0.75rem; border-radius: var(--sk-control-radius); background: var(--sk-fill-secondary-color); padding: 0.625rem 0.75rem; color: var(--sk-muted-text-color); font-size: 0.8125rem; line-height: 1.45; }
+  .ox-toggle-row { display: flex; align-items: start; gap: 0.75rem; margin-top: 1rem; cursor: pointer; }
+  .ox-toggle-row input { width: 1.25rem; height: 1.25rem; margin-top: 0.125rem; flex-shrink: 0; accent-color: var(--sk-accent-color); }
+  .ox-toggle-row strong { display: block; color: var(--sk-body-text-color); font-size: 0.875rem; font-weight: 600; }
+  .ox-toggle-row small { display: block; margin-top: 0.125rem; color: var(--sk-muted-text-color); font-size: 0.8125rem; }
+}
