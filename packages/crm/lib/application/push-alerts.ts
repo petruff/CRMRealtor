@@ -47,8 +47,8 @@ export function newLeadAlert(lead: { readonly contactId: string; readonly firstN
   const name = [lead.firstName, lead.lastName].filter(Boolean).join(' ').trim();
   return {
     title: showNames && name ? `New lead: ${name}` : 'New lead waiting',
-    body: `From ${from}. The first agent to call usually wins — tap to open and call.`,
-    url: `/contacts/${encodeURIComponent(lead.contactId)}`,
+    body: `From ${from}. The first agent to reply usually wins — tap to call or send a ready-made text.`,
+    url: `/contacts/${encodeURIComponent(lead.contactId)}?reply=new-lead`,
     tag: `omnix-new-lead-${lead.contactId}`,
   };
 }
