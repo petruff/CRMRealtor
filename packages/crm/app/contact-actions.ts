@@ -6,6 +6,7 @@ import {
   addContactNoteCommand,
   archiveContactNoteCommand,
   createContactCommand,
+  editContactNoteCommand,
   isContactCommandError,
   recordContactTouchCommand,
   restoreContactNoteCommand,
@@ -143,6 +144,28 @@ export async function archiveContactNoteAction(
   }
   revalidateContact(contactId);
   redirect(`/contacts/${encodeURIComponent(contactId)}?saved=note-archived#notes`);
+}
+
+export async function editContactNoteAction(
+  contactId: string,
+  noteId: string,
+  _state: ContactActionState,
+  formData: FormData,
+): Promise<ContactActionState> {
+  void _state;
+  try {
+    const { repository } = await getRepository();
+    const result = await editContactNoteCommand(repository, contactId, noteId, formData, randomUUID());
+    revalidateContact(contactId);
+    return {
+      status: 'success',
+      message: result.noOp ? 'No changes to save.' : 'Note updated.',
+    };
+  } catch (error) {
+    // Refresh the page data so a conflict shows the latest saved text beside the kept draft.
+    revalidateContact(contactId);
+    return actionError(error, 'edit-note', formData);
+  }
 }
 
 export async function restoreContactNoteAction(

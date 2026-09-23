@@ -1,5 +1,5 @@
 export interface ContactActionState {
-  status: 'idle' | 'error';
+  status: 'idle' | 'success' | 'error';
   message?: string;
   fieldErrors?: Record<string, string>;
   values?: Record<string, string>;

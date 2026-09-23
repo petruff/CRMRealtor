@@ -33,6 +33,7 @@ export default async function EditContactPage({
     source?: string;
     smartList?: string;
     page?: string;
+    from?: string;
   }>;
 }) {
   const { id } = await params;

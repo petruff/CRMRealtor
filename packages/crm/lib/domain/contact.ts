@@ -47,11 +47,42 @@ export interface Note {
   id: string;
   contactId: string;
   body: string;
-  /** ISO timestamp. Append-only — notes are never edited in place. */
+  /**
+   * ISO timestamp of creation. Identity (id, contact) and createdAt never change;
+   * body edits keep the note in place and preserve the replaced text as a revision.
+   */
   createdAt: string;
+  /** Optimistic-concurrency version: 1 until the first edit, then incremented per edit. */
+  revision?: number;
+  /** ISO timestamp of the latest edit. Absent for notes that were never edited. */
+  updatedAt?: string;
+  editedByMembershipId?: string;
   archivedAt?: string;
   archivedByMembershipId?: string;
   archiveReason?: string;
+}
+
+export interface NoteEditInput {
+  readonly noteId: string;
+  readonly body: string;
+  /** Revision the editor started from; a different current revision is a conflict. */
+  readonly expectedRevision: number;
+  /** Idempotency key: a replayed submission never creates a second revision. */
+  readonly correlationId: string;
+  readonly occurredAt?: string;
+}
+
+export type NoteEditErrorCode = 'conflict' | 'read-only' | 'not-found';
+
+/** Typed persistence outcome so callers can explain conflicts without parsing driver messages. */
+export class NoteEditError extends Error {
+  readonly code: NoteEditErrorCode;
+
+  constructor(code: NoteEditErrorCode, message: string) {
+    super(message);
+    this.name = 'NoteEditError';
+    this.code = code;
+  }
 }
 
 export interface BuyerCriteria {
@@ -200,6 +231,21 @@ export const DORMANT_STAGES: readonly PipelineStage[] = ['closed', 'lost'];
 
 export function displayName(contact: Contact): string {
   return `${contact.preferredName ?? contact.firstName} ${contact.lastName}`.trim();
+}
+
+/**
+ * The contact's own postal address (never a listing/`seller.propertyAddress`),
+ * split into display lines from whichever canonical parts exist. Free-text
+ * `mailingAddress` is shown as entered — no parsing or geocoding.
+ */
+export function contactAddressLines(
+  contact: Pick<Contact, 'mailingAddress' | 'city' | 'state' | 'postalCode'>,
+): string[] {
+  const clean = (value: string | undefined) => value?.trim() || undefined;
+  const street = clean(contact.mailingAddress);
+  const region = [clean(contact.state), clean(contact.postalCode)].filter(Boolean).join(' ');
+  const locality = [clean(contact.city), region || undefined].filter(Boolean).join(', ');
+  return [street, locality || undefined].filter((line): line is string => Boolean(line));
 }
 
 export function initials(contact: Contact): string {

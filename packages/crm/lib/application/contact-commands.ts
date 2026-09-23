@@ -1,5 +1,6 @@
 import {
   DORMANT_STAGES,
+  NoteEditError,
   type BuyerCriteria,
   type Contact,
   type Intent,
@@ -451,6 +452,64 @@ export async function archiveContactNoteCommand(
     });
   }
   return repository.archiveNote(noteId, reason, correlationId, now.toISOString());
+}
+
+export const NOTE_EDIT_CONFLICT_MESSAGE =
+  'This note was changed in another session. Your draft is still here — review the latest saved text below before saving again.';
+
+/**
+ * Corrects an active note in place. The browser supplies only the identifiers
+ * and the draft; membership, workspace, note↔contact linkage and the read-only
+ * rules are re-checked here and again inside the database RPC.
+ */
+export async function editContactNoteCommand(
+  repository: ContactRepository,
+  contactId: string,
+  noteId: string,
+  formData: FormData,
+  correlationId: string,
+  now = new Date(),
+) {
+  const contact = await repository.get(contactId);
+  if (!contact) throw new ContactCommandError('Contact not found.');
+  if (contact.archivedAt) throw new ContactCommandError('Restore this contact before editing its notes.');
+  if (!repository.editNote) throw new ContactCommandError('Note editing is unavailable in this workspace.');
+
+  // Browsers submit textarea line breaks as CRLF; store one canonical form.
+  const body = value(formData, 'body').replace(/\r\n?/g, '\n');
+  if (!body) {
+    throw new ContactCommandError('Write a note before saving.', {
+      body: 'A note cannot be blank.',
+    });
+  }
+  const expectedRevision = Number(value(formData, 'revision'));
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+    throw new ContactCommandError('Refresh this contact before editing the note.');
+  }
+
+  // Workspace-scoped read (RLS + merged-contact group) proves the note belongs here.
+  const note = (await repository.notesFor(contactId, { includeArchived: true }))
+    .find((entry) => entry.id === noteId);
+  if (!note) throw new ContactCommandError('That note was not found on this contact.');
+  if (note.archivedAt) throw new ContactCommandError('Restore this note before editing it.');
+  if ((note.revision ?? 1) !== expectedRevision) throw new ContactCommandError(NOTE_EDIT_CONFLICT_MESSAGE);
+
+  try {
+    return await repository.editNote({
+      noteId,
+      body,
+      expectedRevision,
+      correlationId,
+      occurredAt: now.toISOString(),
+    });
+  } catch (error) {
+    if (error instanceof NoteEditError) {
+      if (error.code === 'conflict') throw new ContactCommandError(NOTE_EDIT_CONFLICT_MESSAGE);
+      if (error.code === 'not-found') throw new ContactCommandError('That note was not found on this contact.');
+      throw new ContactCommandError('Archived notes and contacts are read only until restored.');
+    }
+    throw error;
+  }
 }
 
 export async function restoreContactNoteCommand(

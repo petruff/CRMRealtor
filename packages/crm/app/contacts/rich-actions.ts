@@ -24,6 +24,13 @@ import {
   updateContactPointCommand,
 } from '@/lib/application/rich-contact-commands';
 import { getRepository } from '@/lib/data';
+import {
+  contactListHref,
+  contactRecordHref,
+  parseSerializedBrowseContext,
+  resolveArchiveContinuation,
+  type ContactBrowseContext,
+} from '@/lib/application/contact-navigation';
 import type { RichContactRepository } from '@/lib/data/rich-contact-repository';
 import { RichContactError, type CustomFieldValue } from '@/lib/domain/rich-contact';
 import type { RichContactActionState } from '@/app/contacts/action-state';
@@ -227,17 +234,59 @@ export async function setCustomFieldValueAction(
   }, 'Custom value saved.', contactId);
 }
 
+function withSaved(href: string, saved: string): string {
+  const [path, query = ''] = href.split('?');
+  const params = new URLSearchParams(query);
+  params.set('saved', saved);
+  return `${path}?${params.toString()}`;
+}
+
+/**
+ * Where work continues after a confirmed archive. Every input from the browser
+ * is re-validated here: the list context is parsed against known filters, the
+ * Smart List is read through the workspace-scoped repository, and the successor
+ * is chosen from the server's own sequence. Only internal /contacts paths are
+ * ever produced, so no client value can redirect elsewhere.
+ */
+async function archiveDestination(contactId: string, listContext: ContactBrowseContext | undefined): Promise<string> {
+  if (!listContext) return '/contacts?saved=archived';
+  try {
+    const { repository, smartListRepository, workspaceScope } = await getRepository();
+    let definition;
+    if (listContext.smartList) {
+      const smartList = await smartListRepository.get(workspaceScope, listContext.smartList);
+      if (smartList?.status !== 'active') return withSaved(contactListHref(listContext), 'archived');
+      definition = smartList.definition;
+    }
+    const contacts = await repository.list({ includeArchived: true });
+    const continuation = resolveArchiveContinuation(contacts, contactId, listContext, definition);
+    if (continuation.kind === 'list') return withSaved(contactListHref(continuation.context), 'archived-end');
+    const params = new URLSearchParams({ archivedContact: contactId });
+    return `${contactRecordHref(continuation.contactId, continuation.context, 'archived-next')}&${params.toString()}`;
+  } catch (error) {
+    // The archive itself is already committed; only the continuation failed.
+    console.error('[rich-contact-action:archive-continuation]', error);
+    return withSaved(contactListHref(listContext), 'archived');
+  }
+}
+
 export async function archiveContactLifecycleAction(
   _state: RichContactActionState,
   formData: FormData,
 ): Promise<RichContactActionState> {
   const contactId = String(formData.get('contactId') ?? '');
+  const reason = typeof formData.get('reason') === 'string' ? String(formData.get('reason')) : '';
+  let listContext: ContactBrowseContext | undefined;
   const state = await run(async () => {
     const { repository, scope } = await context();
+    const { repository: contactRepository } = await getRepository();
+    const current = await contactRepository.get(contactId);
+    if (!current) throw new RichContactError('not-found', 'Contact was not found.');
+    listContext = parseSerializedBrowseContext(formData.get('returnContext'), current);
     await archiveContactCommand(repository, scope, contactId, formData.get('reason'));
   }, 'Contact archived.', contactId);
-  if (state.status === 'success') redirect(`/contacts/${encodeURIComponent(contactId)}?view=archived&saved=archived`);
-  return state;
+  if (state.status !== 'success') return { ...state, values: { reason } };
+  redirect(await archiveDestination(contactId, listContext));
 }
 
 export async function restoreContactLifecycleAction(

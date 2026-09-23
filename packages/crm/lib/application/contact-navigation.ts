@@ -1,4 +1,5 @@
 import {
+  CONTACT_PAGE_SIZE,
   parseContactPage,
   parseContactScope,
   parseLeadSource,
@@ -19,6 +20,11 @@ export interface ContactBrowseContext {
   readonly source?: LeadSource;
   readonly smartList?: string;
   readonly page?: number;
+  /**
+   * Set only when the record was opened from an active contact list (or moved
+   * through with Previous/Next). Direct links never claim a queue position.
+   */
+  readonly origin?: 'list';
 }
 
 export interface ContactRecordNavigation {
@@ -38,6 +44,7 @@ type BrowseSearchParams = Readonly<{
   source?: string;
   smartList?: string;
   page?: string;
+  from?: string;
 }>;
 
 function fallbackScope(contact: Contact): ContactScope {
@@ -93,6 +100,7 @@ export function parseContactBrowseContext(
     ...(source ? { source } : {}),
     ...(smartList ? { smartList } : {}),
     ...(page > 1 ? { page } : {}),
+    ...(params.from === 'list' ? { origin: 'list' as const } : {}),
   };
 }
 
@@ -152,7 +160,90 @@ function browseParams(context: ContactBrowseContext): URLSearchParams {
   if (context.source) params.set('source', context.source);
   if (!context.archived && context.smartList) params.set('smartList', context.smartList);
   if (context.page && context.page > 1) params.set('page', String(context.page));
+  if (!context.archived && context.origin === 'list') params.set('from', 'list');
   return params;
+}
+
+/** Serialized browse context for forms that must return to the same list. */
+export function contactBrowseQuery(context: ContactBrowseContext): string {
+  return browseParams(context).toString();
+}
+
+/** Reads an untrusted serialized browse context; anything without list origin is ignored. */
+export function parseSerializedBrowseContext(
+  raw: unknown,
+  current: Contact,
+): ContactBrowseContext | undefined {
+  if (typeof raw !== 'string' || !raw || raw.length > 1_000) return undefined;
+  const params = new URLSearchParams(raw);
+  if (params.get('from') !== 'list' || params.get('view') === 'archived') return undefined;
+  const single = (key: string) => params.get(key) ?? undefined;
+  const context = parseContactBrowseContext({
+    scope: single('scope'),
+    q: single('q'),
+    leadType: single('leadType'),
+    source: single('source'),
+    smartList: single('smartList'),
+    page: single('page'),
+    from: 'list',
+  }, { ...current, archivedAt: undefined });
+  return context.archived ? undefined : context;
+}
+
+export type ArchiveContinuation =
+  | { readonly kind: 'next'; readonly contactId: string; readonly context: ContactBrowseContext }
+  | { readonly kind: 'list'; readonly context: ContactBrowseContext };
+
+/**
+ * Chooses where work continues after a confirmed archive.
+ *
+ * The position is taken from the list as it was immediately before the archive
+ * (the archived record is projected back as active), and the successor must
+ * still be eligible in the list after the archive. That keeps A → B → C → D
+ * moving from B to C, skips records archived concurrently, and never wraps back
+ * to an earlier contact. The page number is recalculated from the successor's
+ * position after removal so the context stays valid across page boundaries.
+ */
+export function resolveArchiveContinuation(
+  contactsAfterArchive: readonly Contact[],
+  archivedContactId: string,
+  context: ContactBrowseContext,
+  smartListDefinition?: SmartListDefinitionV1,
+  pageSize = CONTACT_PAGE_SIZE,
+): ArchiveContinuation {
+  const beforeArchive = contactsAfterArchive.map((contact) => (contact.id === archivedContactId
+    ? { ...contact, archivedAt: undefined, archivedByMembershipId: undefined, archiveReason: undefined }
+    : contact));
+  const before = contactBrowseSequence(beforeArchive, context, smartListDefinition);
+  const after = contactBrowseSequence(contactsAfterArchive, context, smartListDefinition)
+    .filter((contact) => contact.id !== archivedContactId);
+  const afterIndex = new Map(after.map((contact, index) => [contact.id, index]));
+  const pageFor = (index: number) => Math.floor(index / pageSize) + 1;
+  const lastPage = Math.max(1, Math.ceil(after.length / pageSize));
+  const listContext: ContactBrowseContext = {
+    ...context,
+    page: Math.min(context.page ?? 1, lastPage) > 1 ? Math.min(context.page ?? 1, lastPage) : undefined,
+  };
+  const position = before.findIndex((contact) => contact.id === archivedContactId);
+  if (position < 0) return { kind: 'list', context: withoutEmptyPage(listContext) };
+  for (const candidate of before.slice(position + 1)) {
+    const index = afterIndex.get(candidate.id);
+    if (index === undefined) continue;
+    const page = pageFor(index);
+    return {
+      kind: 'next',
+      contactId: candidate.id,
+      context: withoutEmptyPage({ ...context, page: page > 1 ? page : undefined }),
+    };
+  }
+  return { kind: 'list', context: withoutEmptyPage(listContext) };
+}
+
+function withoutEmptyPage(context: ContactBrowseContext): ContactBrowseContext {
+  if (context.page !== undefined) return context;
+  const { page: _page, ...rest } = context;
+  void _page;
+  return rest;
 }
 
 function hrefWithParams(path: string, params: URLSearchParams): string {

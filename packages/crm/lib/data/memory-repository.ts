@@ -9,16 +9,27 @@
  * Supabase is unconfigured, and says so in the console.
  */
 
-import type { Contact, Note } from '../domain/contact.ts';
+import { NoteEditError, type Contact, type Note } from '../domain/contact.ts';
 import { applySmartListDefinition } from '../domain/smart-list.ts';
 import { queryArchivedContacts, queryContacts } from '../application/contact-query.ts';
 import type { ContactRepository } from './repository.ts';
 import { CONTACT_PAGE_SCOPES, type ContactPageScope } from './repository.ts';
 import { seedContacts, seedNotes } from './seed.ts';
 
+export interface MemoryNoteRevision {
+  readonly noteId: string;
+  readonly revision: number;
+  readonly body: string;
+  readonly replacedAt: string;
+  readonly replacedByMembershipId: string;
+  readonly correlationId: string;
+}
+
 interface Store {
   contacts: Contact[];
   notes: Note[];
+  /** Prior note bodies, append-only; mirrors public.note_revisions. */
+  noteRevisions?: MemoryNoteRevision[];
 }
 
 const CACHE_KEY = '__omnixMemoryStore__';
@@ -34,6 +45,11 @@ function store(): Store {
 
 function nextId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/** Read-only view of preserved note revisions (demo/test audit seam). */
+export function memoryNoteRevisions(noteId: string): readonly MemoryNoteRevision[] {
+  return structuredClone((store().noteRevisions ?? []).filter((entry) => entry.noteId === noteId));
 }
 
 export function memoryContactIsActive(id: string): boolean {
@@ -164,6 +180,38 @@ export function memoryRepository(): ContactRepository {
       note.archiveReason = reason;
       return { noOp: false };
     },
+    async editNote({ noteId, body, expectedRevision, correlationId, occurredAt }) {
+      const state = store();
+      const revisions = (state.noteRevisions ??= []);
+      const note = state.notes.find((entry) => entry.id === noteId);
+      if (!note) throw new NoteEditError('not-found', 'Note not found.');
+      const replay = revisions.find((entry) => entry.correlationId === correlationId);
+      if (replay) {
+        if (replay.noteId !== noteId) throw new Error('Divergent note edit replay.');
+        return { noOp: true, note: structuredClone(note) };
+      }
+      const contact = state.contacts.find((entry) => entry.id === note.contactId);
+      if (contact?.archivedAt || note.archivedAt) {
+        throw new NoteEditError('read-only', 'Archived notes and contacts are read only.');
+      }
+      const currentRevision = note.revision ?? 1;
+      if (expectedRevision !== currentRevision) {
+        throw new NoteEditError('conflict', 'This note was changed in another session.');
+      }
+      const nextBody = body.trim();
+      if (!nextBody) throw new Error('Note body cannot be blank.');
+      if (nextBody === note.body) return { noOp: true, note: structuredClone(note) };
+      const at = occurredAt ?? new Date().toISOString();
+      revisions.push({
+        noteId, revision: currentRevision, body: note.body, replacedAt: at,
+        replacedByMembershipId: 'sample-member', correlationId,
+      });
+      note.body = nextBody;
+      note.revision = currentRevision + 1;
+      note.updatedAt = at;
+      note.editedByMembershipId = 'sample-member';
+      return { noOp: false, note: structuredClone(note) };
+    },
     async restoreNote(noteId) {
       const note = store().notes.find((entry) => entry.id === noteId);
       if (!note) throw new Error('Note not found.');
@@ -177,11 +225,13 @@ export function memoryRepository(): ContactRepository {
       const state = store();
       const contactsBefore = structuredClone(state.contacts);
       const notesBefore = structuredClone(state.notes);
+      const revisionsBefore = structuredClone(state.noteRevisions ?? []);
       try {
         return await operation();
       } catch (error) {
         state.contacts = contactsBefore;
         state.notes = notesBefore;
+        state.noteRevisions = revisionsBefore;
         throw error;
       }
     },

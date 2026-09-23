@@ -146,6 +146,26 @@ describe('ContactsPage repository pagination', () => {
     expect(markup).toContain('749 activities · 649 open tasks · 549 completed');
     expect(markup).not.toContain('Contact 1000');
   });
+
+  it('opens records with the list context so archiving can continue in the same list', async () => {
+    const markup = renderToStaticMarkup(await ContactsPage({
+      searchParams: Promise.resolve({ q: 'Judith', leadType: 'hot', page: '2' }),
+    }));
+
+    expect(markup).toContain('href="/contacts/contact-a?q=Judith&amp;leadType=hot&amp;page=2&amp;from=list"');
+  });
+
+  it('confirms an archive that ended the list without implying another record was archived', async () => {
+    const markup = renderToStaticMarkup(await ContactsPage({
+      searchParams: Promise.resolve({ saved: 'archived-end' }),
+    }));
+
+    expect(markup).toContain('Contact archived. There are no more contacts after it in this list.');
+    const archivedView = renderToStaticMarkup(await ContactsPage({
+      searchParams: Promise.resolve({ view: 'archived', saved: 'archived-end' }),
+    }));
+    expect(archivedView).not.toContain('Contact archived.');
+  });
 });
 
 const CONTACT_PAGE_LIMIT = 50;

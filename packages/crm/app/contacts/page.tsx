@@ -112,9 +112,15 @@ export default async function ContactsPage({
     qualification?: string | string[];
     scope?: string | string[];
     page?: string | string[];
+    saved?: string | string[];
   }>;
 }) {
   const params = await searchParams;
+  const archiveNotice = params.saved === "archived-end"
+    ? "Contact archived. There are no more contacts after it in this list."
+    : params.saved === "archived"
+      ? "Contact archived. It stays available under Archived."
+      : undefined;
   const archivedView = params.view === "archived";
   const legacyNeedsReview = params.qualification === "needs-qualification";
   const rawScope = typeof params.scope === "string" ? params.scope : undefined;
@@ -269,7 +275,7 @@ export default async function ContactsPage({
       ...(source ? { source } : {}),
       ...(contactPage.page > 1 ? { page: contactPage.page } : {}),
     }
-    : viewState;
+    : { ...viewState, origin: "list" };
   const listContactAggregates = activityRepository.listContactAggregates?.bind(activityRepository);
   if (!listContactAggregates) {
     throw new Error("Exact contact activity counts are unavailable.");
@@ -345,6 +351,15 @@ export default async function ContactsPage({
         leadType={leadType}
         scope={scope}
       /> : null}
+
+      {archiveNotice && !archivedView ? (
+        <p
+          role="status"
+          className="mb-5 rounded-2xl border border-nurture-border bg-nurture-soft px-4 py-3 text-sm text-nurture"
+        >
+          {archiveNotice}
+        </p>
+      ) : null}
 
       {smartListError ? (
         <p role="alert" className="mb-5 text-sm text-hot">

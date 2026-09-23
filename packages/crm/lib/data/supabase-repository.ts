@@ -11,17 +11,18 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type {
-  BuyerCriteria,
-  Contact,
-  Intent,
-  LeadSource,
-  LeadType,
-  Note,
-  PipelineStage,
-  QualificationStatus,
-  Relationship,
-  SellerCriteria,
+import {
+  NoteEditError,
+  type BuyerCriteria,
+  type Contact,
+  type Intent,
+  type LeadSource,
+  type LeadType,
+  type Note,
+  type PipelineStage,
+  type QualificationStatus,
+  type Relationship,
+  type SellerCriteria,
 } from '../domain/contact.ts';
 import { validateWorkspaceScope, type WorkspaceScope } from '../domain/workspace.ts';
 import type { ContactIdentityMap } from './contact-identity-map.ts';
@@ -77,6 +78,43 @@ interface NoteRow {
   archived_at: string | null;
   archived_by_membership_id: string | null;
   archive_reason: string | null;
+  /** Added by 20260923120000_editable_contact_notes; absent on older schemas. */
+  revision?: number | null;
+  updated_at?: string | null;
+  edited_by_membership_id?: string | null;
+}
+
+const NOTE_COLUMNS = 'id, contact_id, body, created_at, archived_at, archived_by_membership_id, archive_reason';
+const NOTE_EDIT_COLUMNS = `${NOTE_COLUMNS}, revision, updated_at, edited_by_membership_id`;
+
+/** An application release may briefly precede the additive note-edit migration. */
+function missingNoteEditColumns(error: { code?: string; message?: string } | null): boolean {
+  return error?.code === '42703' && /revision|updated_at|edited_by_membership_id/u.test(error.message ?? '');
+}
+
+function noteFromRow(row: NoteRow): Note {
+  return {
+    id: row.id,
+    contactId: row.contact_id,
+    body: row.body,
+    createdAt: row.created_at,
+    revision: row.revision ?? 1,
+    updatedAt: undef(row.updated_at ?? null),
+    editedByMembershipId: undef(row.edited_by_membership_id ?? null),
+    archivedAt: undef(row.archived_at),
+    archivedByMembershipId: undef(row.archived_by_membership_id),
+    archiveReason: undef(row.archive_reason),
+  };
+}
+
+function noteEditFailure(error: { code?: string; message?: string }): Error {
+  if (error.code === '40001') return new NoteEditError('conflict', 'This note was changed in another session.');
+  if (error.code === '55000') return new NoteEditError('read-only', 'Archived notes and contacts are read only.');
+  if (error.code === 'P0002') return new NoteEditError('not-found', 'Note not found.');
+  if (error.code === '42883' || error.code === 'PGRST202') {
+    return new NoteEditError('read-only', 'Note editing is not enabled in this workspace yet.');
+  }
+  return new Error(`Failed to edit note: ${error.message ?? 'unknown error'}`);
 }
 
 /** Drop nulls so optional domain fields stay genuinely absent, not `null`. */
@@ -353,30 +391,24 @@ export function supabaseRepository(
 
     async notesFor(contactId, options) {
       const group = identityMap ? await identityMap.listGroupMembers(scope, contactId) : undefined;
-      let query = supabase
-        .from('notes')
-        .select('id, contact_id, body, created_at, archived_at, archived_by_membership_id, archive_reason')
-        .eq('workspace_id', scope.workspaceId);
-      query = group
-        ? query.in('contact_id', [...group.memberContactIds])
-        : query.eq('contact_id', contactId);
-      if (options?.archivedOnly) query = query.not('archived_at', 'is', null);
-      else if (!options?.includeArchived) query = query.is('archived_at', null);
-      const { data, error } = await query
-        .order('created_at', { ascending: false });
+      const read = async (columns: string) => {
+        let query = supabase
+          .from('notes')
+          .select(columns)
+          .eq('workspace_id', scope.workspaceId);
+        query = group
+          ? query.in('contact_id', [...group.memberContactIds])
+          : query.eq('contact_id', contactId);
+        if (options?.archivedOnly) query = query.not('archived_at', 'is', null);
+        else if (!options?.includeArchived) query = query.is('archived_at', null);
+        // Ordered by creation, so an edited note keeps its chronological place.
+        return query.order('created_at', { ascending: false });
+      };
+      let { data, error } = await read(NOTE_EDIT_COLUMNS);
+      if (missingNoteEditColumns(error)) ({ data, error } = await read(NOTE_COLUMNS));
 
       if (error) throw new Error(`Failed to load notes: ${error.message}`);
-      return (data as NoteRow[]).map(
-        (row): Note => ({
-          id: row.id,
-          contactId: row.contact_id,
-          body: row.body,
-          createdAt: row.created_at,
-          archivedAt: undef(row.archived_at),
-          archivedByMembershipId: undef(row.archived_by_membership_id),
-          archiveReason: undef(row.archive_reason),
-        }),
-      );
+      return (data as unknown as NoteRow[]).map(noteFromRow);
     },
 
     async addNote(contactId, body) {
@@ -404,6 +436,33 @@ export function supabaseRepository(
       });
       if (error) throw new Error(`Failed to archive note: ${error.message}`);
       return { noOp: Boolean((data as { noOp?: unknown } | null)?.noOp) };
+    },
+
+    async editNote({ noteId, body, expectedRevision, correlationId, occurredAt }) {
+      const { data, error } = await supabase.rpc('edit_contact_note', {
+        target_note_id: noteId,
+        target_expected_revision: expectedRevision,
+        target_body: body,
+        target_correlation_id: correlationId,
+        target_occurred_at: occurredAt ?? new Date().toISOString(),
+      });
+      if (error) throw noteEditFailure(error);
+      const result = data as {
+        noteId: string; contactId: string; body: string; createdAt: string; revision: number;
+        updatedAt: string | null; editedByMembershipId: string | null; noOp: boolean;
+      };
+      return {
+        noOp: Boolean(result.noOp),
+        note: {
+          id: result.noteId,
+          contactId: result.contactId,
+          body: result.body,
+          createdAt: result.createdAt,
+          revision: result.revision,
+          ...(result.updatedAt ? { updatedAt: result.updatedAt } : {}),
+          ...(result.editedByMembershipId ? { editedByMembershipId: result.editedByMembershipId } : {}),
+        },
+      };
     },
 
     async restoreNote(noteId, correlationId, occurredAt) {

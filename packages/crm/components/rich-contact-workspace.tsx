@@ -211,6 +211,7 @@ export function RichContactWorkspace({
   importedFacts,
   archived,
   isOwner,
+  archiveReturnContext,
 }: {
   contact: Contact;
   points: readonly ContactPoint[];
@@ -224,6 +225,8 @@ export function RichContactWorkspace({
   importedFacts: readonly ContactImportSourceFactRecord[];
   archived: boolean;
   isOwner: boolean;
+  /** Serialized list context; the server re-validates it before choosing the next contact. */
+  archiveReturnContext?: string;
 }) {
   const [pointState, pointAction] = useActionState(saveContactPointAction, INITIAL_RICH_CONTACT_ACTION_STATE);
   const [householdState, householdAction] = useActionState(createHouseholdAction, INITIAL_RICH_CONTACT_ACTION_STATE);
@@ -352,7 +355,8 @@ export function RichContactWorkspace({
         <details className="mt-5 rounded-[var(--sk-card-radius)] border border-hot-border bg-hot-soft p-5 sm:p-6">
           <summary className="inline-flex min-h-9 cursor-pointer items-center gap-2 text-sm font-medium text-hot"><Archive className="size-4" aria-hidden /> Archive contact</summary>
           <p className="mt-2 text-sm leading-relaxed text-muted">Archiving removes this person from active work surfaces while preserving the same ID, notes, tasks, mail and relationship history.</p>
-          <form action={archiveAction} className="mt-4 max-w-xl"><input type="hidden" name="contactId" value={contact.id} /><label className="sk-field"><span className="sk-label">Reason</span><input name="reason" required maxLength={240} className="sk-input" placeholder="No longer actively managed" /></label><div className="mt-3"><Submit tone="text"><Archive className="size-4" /> Archive record</Submit></div><Feedback state={archiveState} /></form>
+          <p className="mt-2 text-sm leading-relaxed text-muted">{archiveReturnContext ? 'After archiving, the next contact in this list opens.' : 'After archiving, you return to your contacts.'}</p>
+          <form key={archiveState.values ? JSON.stringify(archiveState.values) : 'archive'} action={archiveAction} className="mt-4 max-w-xl"><input type="hidden" name="contactId" value={contact.id} />{archiveReturnContext ? <input type="hidden" name="returnContext" value={archiveReturnContext} /> : null}<label className="sk-field"><span className="sk-label">Reason</span><input name="reason" required maxLength={240} defaultValue={archiveState.values?.reason} className="sk-input" placeholder="No longer actively managed" /></label><div className="mt-3"><Submit tone="text"><Archive className="size-4" /> Archive record</Submit></div><Feedback state={archiveState} /></form>
         </details>
       ) : null}
     </section>

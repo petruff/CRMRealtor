@@ -13,6 +13,8 @@ export interface RichContactActionState {
   status: 'idle' | 'success' | 'error';
   message?: string;
   fieldErrors?: Readonly<Record<string, string>>;
+  /** Submitted text returned on failure so a reset form can keep the user's draft. */
+  values?: Readonly<Record<string, string>>;
 }
 
 export const INITIAL_RICH_CONTACT_ACTION_STATE: RichContactActionState = { status: 'idle' };

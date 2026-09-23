@@ -33,17 +33,20 @@ import {
   parseDateOnly,
 } from "@/lib/domain/dates";
 import { Avatar, GroupedSurface, LeadBadge } from "@/components/ui";
-import { AddNoteForm, ArchiveNoteForm, RecordTouchForm, RestoreNoteForm } from "@/components/contact-mutations";
+import { AddNoteForm, ArchiveNoteForm, NoteEntry, RecordTouchForm, RestoreNoteForm } from "@/components/contact-mutations";
 import {
   addContactNoteAction,
   archiveContactNoteAction,
+  editContactNoteAction,
   recordContactTouchAction,
   restoreContactNoteAction,
 } from "@/app/contact-actions";
 import { ContactActivityHistory } from "@/components/contact-activity-history";
 import { ContactRecordNavigator } from "@/components/contact-record-navigation";
+import { ContactReachSummary } from "@/components/contact-reach-summary";
 import { ConversationActions } from "@/components/conversation-actions";
 import {
+  contactBrowseQuery,
   contactBrowseSequence,
   contactEditHref,
   contactListHref,
@@ -124,11 +127,13 @@ export default async function ContactDetailPage({
     source?: string;
     smartList?: string;
     page?: string;
+    from?: string;
+    archivedContact?: string;
   }>;
 }) {
   const { id } = await params;
   const browseParams = await searchParams;
-  const { saved, view } = browseParams;
+  const { saved, view, archivedContact } = browseParams;
   const now = new Date();
 
   const repositoryContext = await getRepository();
@@ -268,7 +273,17 @@ export default async function ContactDetailPage({
   const cadenceDays = isDormant(contact)
     ? null
     : effectiveCadenceDays(contact, now);
-  const notice = savedMessage(saved);
+  // The confirmation belongs to the record archived a moment ago, not to this one.
+  let notice = savedMessage(saved);
+  if (saved === "archived-next") {
+    const previous = archivedContact && archivedContact !== id ? await repository.get(archivedContact) : undefined;
+    notice = previous?.archivedAt
+      ? `${displayName(previous)} was archived. Showing the next contact in this list.`
+      : "Previous contact archived. Showing the next contact in this list.";
+  }
+  const archiveReturnContext = recordNavigation.context.origin === "list"
+    ? contactBrowseQuery(recordNavigation.context)
+    : undefined;
   const noteAction = addContactNoteAction.bind(null, id);
   const touchAction = recordContactTouchAction.bind(null, id);
   const omnichannelTimeline = projectOmnichannelTimeline({events,textMessages:textingSummary?.messages??[],...(textingSummary?.consent?{textingConsent:{status:textingSummary.consent.status,effectiveAt:textingSummary.consent.effectiveAt}}:{}),propertyBehaviors,attributions,consents:websiteConsents,responseSlas,pipelineStage:contact.pipelineStage,contactCreatedAt:contact.createdAt,now});
@@ -298,21 +313,24 @@ export default async function ContactDetailPage({
         </p>
       ) : null}
 
-      <header className="flex items-start gap-4 md:items-center">
-        <Avatar initials={initials(contact)} leadType={contact.leadType} relationship={contact.relationship} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-3xl leading-tight text-ink md:text-5xl">
-              {name}
-            </h1>
-            <LeadBadge leadType={contact.leadType} relationship={contact.relationship} />
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <header className="flex min-w-0 items-start gap-4 md:items-center lg:flex-1">
+          <Avatar initials={initials(contact)} leadType={contact.leadType} relationship={contact.relationship} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-3xl leading-tight text-ink md:text-5xl">
+                {name}
+              </h1>
+              <LeadBadge leadType={contact.leadType} relationship={contact.relationship} />
+            </div>
+            <p className="mt-1 text-sm text-muted">
+              {RELATIONSHIP_LABEL[contact.relationship]} ·{" "}
+              {INTENT_LABEL[contact.intent]}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-muted">
-            {RELATIONSHIP_LABEL[contact.relationship]} ·{" "}
-            {INTENT_LABEL[contact.intent]}
-          </p>
-        </div>
-      </header>
+        </header>
+        <ContactReachSummary contact={contact} callable={!archived} />
+      </div>
 
       {!archived && <div className="mt-5"><ConversationActions contactId={contact.id} /></div>}
 
@@ -552,6 +570,7 @@ export default async function ContactDetailPage({
           importedFacts={richData[6]}
           archived={archived}
           isOwner={workspaceScope.role === "owner"}
+          archiveReturnContext={archiveReturnContext}
         />
       ) : (
         <p role="status" className="mt-8 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-muted">Rich relationship data is not available in this workspace yet.</p>
@@ -572,12 +591,12 @@ export default async function ContactDetailPage({
             <ol className="grid gap-px">
               {notes.map((note) => (
                 <li key={note.id} className="bg-surface p-4 sm:p-5">
-                  <p className="text-sm leading-relaxed text-ink">
-                    {note.body}
-                  </p>
-                  <p className="mt-2 text-[11px] text-subtle">
-                    {formatHuman(note.createdAt)}
-                  </p>
+                  <NoteEntry
+                    note={note}
+                    createdLabel={formatHuman(note.createdAt)}
+                    editedLabel={note.updatedAt ? formatHuman(note.updatedAt) : undefined}
+                    editAction={!archived ? editContactNoteAction.bind(null, id, note.id) : undefined}
+                  />
                   {!archived ? <details className="mt-3"><summary className="cursor-pointer text-sm font-medium text-muted">Archive this note</summary>
                     <ArchiveNoteForm action={archiveContactNoteAction.bind(null, id, note.id)} />
                   </details> : null}
@@ -590,7 +609,7 @@ export default async function ContactDetailPage({
           <summary className="cursor-pointer font-medium text-ink">Archived notes ({archivedNotes.length})</summary>
           <ol className="mt-4 grid gap-3">
             {archivedNotes.map((note) => <li key={note.id} className="rounded-xl border border-line bg-surface p-4">
-              <p className="text-sm leading-relaxed text-ink">{note.body}</p>
+              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">{note.body}</p>
               <p className="mt-2 text-xs text-muted">Archived {note.archivedAt ? formatHuman(note.archivedAt) : "previously"} · {note.archiveReason}</p>
               {!archived ? <RestoreNoteForm action={restoreContactNoteAction.bind(null, id, note.id)} /> : null}
             </li>)}
