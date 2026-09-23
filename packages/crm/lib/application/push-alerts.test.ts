@@ -18,7 +18,7 @@ describe('quiet hours', () => {
 describe('new lead alerts', () => {
   it('keeps names off the lock screen unless allowed', () => {
     const lead = { contactId: 'c 1', firstName: 'Ana', lastName: 'Cruz', source: 'zillow' };
-    expect(newLeadAlert(lead, false)).toEqual({ title: 'New lead waiting', body: 'From Zillow. The first agent to call usually wins — tap to open and call.', url: '/contacts/c%201', tag: 'omnix-new-lead-c 1' });
+    expect(newLeadAlert(lead, false)).toEqual({ title: 'New lead waiting', body: 'From Zillow. The first agent to reply usually wins — tap to call or send a ready-made text.', url: '/contacts/c%201?reply=new-lead', tag: 'omnix-new-lead-c 1' });
     expect(newLeadAlert(lead, true).title).toBe('New lead: Ana Cruz');
   });
 

@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import {
   ArrowLeft,
   Phone,
-  MessageSquare,
   Mail,
   Cake,
   Home,
@@ -73,6 +72,7 @@ import type { RichContactRepository } from "@/lib/data/rich-contact-repository";
 import { RichContactWorkspace, type HouseholdView } from "@/components/rich-contact-workspace";
 import { GoogleEmailComposer } from "@/components/google-email-composer";
 import { TextingComposer } from "@/components/texting-composer";
+import { QuickTexts } from "@/components/quick-texts";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { supabaseGoogleOperationRepository } from "@/lib/data/supabase-google-operation-repository";
 import { googleEmailReadiness, type GoogleEmailReadiness } from "@/lib/application/google-email-readiness";
@@ -137,11 +137,12 @@ export default async function ContactDetailPage({
     page?: string;
     from?: string;
     archivedContact?: string;
+    reply?: string;
   }>;
 }) {
   const { id } = await params;
   const browseParams = await searchParams;
-  const { saved, view, archivedContact } = browseParams;
+  const { saved, view, archivedContact, reply } = browseParams;
   const now = new Date();
 
   const repositoryContext = await getRepository();
@@ -354,9 +355,7 @@ export default async function ContactDetailPage({
             <a href={`tel:${contact.phone}`} data-call-contact={contact.id} data-call-name={displayName(contact)} className="sk-primary-button">
               <Phone className="size-4" /> Call
             </a>
-            <a href={`sms:${contact.phone}`} className="sk-text-action">
-              <MessageSquare className="size-4" /> Text
-            </a>
+            <QuickTexts phone={contact.phone} initiallyOpen={reply === 'new-lead'} firstName={contact.preferredName ?? contact.firstName} {...(repositoryContext.userDisplayName ? { agentName: repositoryContext.userDisplayName } : {})} />
           </>
         )}
         {contact.email && (
