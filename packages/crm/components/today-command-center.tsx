@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { AlertCenterProps } from '@/components/alert-center';
 import { TodayQueueDisclosure } from '@/components/today-queue-disclosure';
+import { WhatsNew } from '@/components/whats-new';
 import { Avatar, LeadBadge } from '@/components/ui';
 import { buildFocusMoments, buildFocusQueue, type FocusItem } from '@/lib/application/focus-queue';
 import type { TodayOperatingProjection } from '@/lib/application/today-operating-projection';
@@ -141,6 +142,7 @@ export function TodayCommandCenter({
 
   return (
     <div className="ox-today">
+      {contacts.length ? <WhatsNew /> : null}
       <header className="ox-today-hero">
         <div className="min-w-0">
           <p className="ox-eyebrow">{dateLabel}</p>
