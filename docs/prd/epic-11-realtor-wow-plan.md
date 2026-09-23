@@ -15,9 +15,9 @@
 | # | Phase | Outcome | Status |
 |---|---|---|---|
 | 1 | Security hardening | Next 15.5.26 + sharp 0.35.4 (npm audit: 0 vulnerabilities); CSP + HSTS + frame/sniff/referrer/permissions headers; optimizer limited to WebP; sign out of all devices; incident response + restore runbook. Server Action body limit kept at 15 MB (only authenticated, same-origin actions reach it; moving workbook upload to a route handler is tracked as follow-up) | Done |
-| 2 | Premium design foundation + navigation | Refined tokens (type scale, elevation, warm neutrals), redesigned shell, five hubs, Inbox hub, mobile tab bar with central Capture, US date/time formatting, realtor language | Planned |
-| 3 | Today reimagined + Power Hour | One ordered focus queue with names and plain reasons, actionable first fold on mobile, no duplicated panels; Power Hour mode (one person at a time, call, capture, auto-next) | Planned |
-| 4 | Voice capture | Record after a call/showing → transcript → notes, tasks, next date and draft follow-up through the existing governed capture pipeline | Planned |
+| 2 | Premium design foundation + navigation | `premium.css` layer (elevation, rhythm, rail, sheets, lists) on the approved palette; five hubs (Today · People · Deals · Inbox · Omnix) + More; hub tabs; Inbox hub (replies, approvals, tasks, grouped deal/mailer alerts, never duplicating Today); raised Capture button + quick-capture sheet; `/capture` person picker; US date language | Done |
+| 3 | Today reimagined + Power Hour | One ordered "Reach out now" queue with names, plain-language reasons and one-tap Call/Text/Brief/Log; Waiting on you, Moments, Business pulse; five redundant Today panels removed; `/power-hour` focus mode (URL-held session, note + follow-up in one tap, skip, completion summary) | Done |
+| 4 | Voice capture | On-device dictation (browser speech recognition: no audio upload, no key, no cost) in capture recap, Power Hour, new note and note editing; hides itself where unsupported. Server-side Gemini audio transcription remains optional follow-up | Done |
 | 5 | Morning brief notifications | Opt-in Web Push "3 calls + today's deadlines" at the realtor's local morning, VAPID keys server-only | Planned |
 | 6 | Open House kiosk | QR/tablet sign-in with TCPA-grade consent record, instant thank-you, lead routed and classified | Planned |
 | 7 | Florida deal compliance | Buyer agreement before touring (NAR settlement), seller flood disclosure (Fla. law eff. 2025-10-01) tracked on deals with warnings | Planned |

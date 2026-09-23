@@ -4,6 +4,7 @@ import { useActionState, useEffect, useId, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Check, Pencil, Save, StickyNote } from 'lucide-react';
 import type { Note } from '@/lib/domain/contact';
+import { VoiceDictation } from '@/components/voice-dictation';
 import {
   INITIAL_CONTACT_ACTION_STATE,
   type ContactActionState,
@@ -61,6 +62,7 @@ export function AddNoteForm({ action }: { action: ContactMutationAction }) {
           <StickyNote className="size-4 text-accent" /> Add a note
         </span>
         <textarea
+          id="new-note-body"
           name="body"
           rows={4}
           defaultValue={state.values?.body}
@@ -78,7 +80,8 @@ export function AddNoteForm({ action }: { action: ContactMutationAction }) {
       {state.status === 'error' && state.message && !bodyError ? (
         <p role="alert" className="mt-2 text-sm text-hot">{state.message}</p>
       ) : null}
-      <div className="mt-3 flex justify-end">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <VoiceDictation targetId="new-note-body" />
         <PendingButton
           idleLabel="Save note"
           pendingLabel="Saving…"
@@ -154,6 +157,7 @@ function NoteEditor({
           <span id={`${fieldId}-help`} className="sk-help">Created {createdLabel}. The original date stays the same.</span>
         )}
       </div>
+      <div className="mt-2"><VoiceDictation targetId={fieldId} /></div>
       <input type="hidden" name="revision" value={revision} />
       {state.status === 'error' && state.message && !bodyError ? (
         <p role="alert" className="mt-2 text-sm text-hot">{state.message}</p>

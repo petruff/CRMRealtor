@@ -548,3 +548,51 @@ export async function recordContactTouchCommand(
   }, now);
   return updated;
 }
+
+export const FOLLOW_UP_CHOICES = ['cadence', 'tomorrow', 'three-days', 'next-week', 'two-weeks'] as const;
+export type FollowUpChoice = (typeof FOLLOW_UP_CHOICES)[number];
+
+const FOLLOW_UP_DAYS: Record<Exclude<FollowUpChoice, 'cadence'>, number> = {
+  tomorrow: 1,
+  'three-days': 3,
+  'next-week': 7,
+  'two-weeks': 14,
+};
+
+/**
+ * One tap after a call: optional note, touch recorded, next follow-up set.
+ * The note is saved first so a later failure never loses what she typed
+ * without telling her; the touch uses the canonical cadence unless she picked
+ * a specific follow-up, which is stored as a manual override.
+ */
+export async function recordConversationCommand(
+  repository: ContactRepository,
+  contactId: string,
+  formData: FormData,
+  now = new Date(),
+  activity?: ContactActivityContext,
+): Promise<Contact> {
+  const contact = await repository.get(contactId);
+  if (!contact) throw new ContactCommandError('Contact not found.');
+  if (contact.archivedAt) throw new ContactCommandError('Restore this contact before logging a conversation.');
+  const rawChoice = value(formData, 'followUp') || 'cadence';
+  if (!FOLLOW_UP_CHOICES.includes(rawChoice as FollowUpChoice)) {
+    throw new ContactCommandError('Choose when to follow up next.', { followUp: 'Pick one of the listed options.' });
+  }
+  const choice = rawChoice as FollowUpChoice;
+  const note = value(formData, 'note').replace(/\r\n?/g, '\n');
+  if (note.length > 5_000) {
+    throw new ContactCommandError('That note is too long for a quick log.', { note: 'Use 5,000 characters or fewer, or use Log full outcome.' });
+  }
+  if (note) {
+    const saved = await repository.addNote(contactId, note);
+    await appendContactActivity(activity, { type: 'note-added', contactId, idempotencyKey: `note-added:${saved.id}` }, now);
+  }
+  let updated = await recordContactTouchCommand(repository, contactId, now, activity);
+  if (choice !== 'cadence') {
+    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + FOLLOW_UP_DAYS[choice]));
+    const overridden = overrideNextTouch(updated, next.toISOString().slice(0, 10));
+    updated = await repository.update(contactId, { nextTouchAt: overridden.nextTouchAt, touchDateOverridden: true });
+  }
+  return updated;
+}

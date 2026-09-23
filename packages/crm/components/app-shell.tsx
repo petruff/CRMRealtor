@@ -2,166 +2,192 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  ArrowLeft,
-  BriefcaseBusiness,
-  BellRing,
-  CalendarCheck,
-  CalendarClock,
-  ClipboardCheck,
-  CheckSquare,
-  Grid2X2,
-  KanbanSquare,
-  Plug,
-  Database,
-  Mail,
-  Send,
-  Sparkles,
-  Settings,
-  LogOut,
-  Users,
-  Ellipsis,
-  House,
-} from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import {
-  BrandLockup,
-  BrandMark,
-  CyryxAttribution,
-} from "@/components/brand-lockup";
+import { ArrowLeft, ChevronDown, Ellipsis, Inbox, LogOut, Plus } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BrandLockup, BrandMark, CyryxAttribution } from "@/components/brand-lockup";
+import { CaptureSheet } from "@/components/capture-sheet";
+import { NAV_ICONS } from "@/components/nav-icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PRODUCT_NAME } from "@/lib/brand";
 import { CrmCommandPalette } from "@/components/crm-command-palette";
 import { OmnixAssistantLauncher } from "@/components/omnix-assistant-launcher";
 import { PwaInstallAction } from "@/components/pwa-provider";
 import { parentRouteNavigation } from "@/lib/application/route-navigation";
+import {
+  HUBS,
+  MOBILE_HUBS,
+  MORE_SECTIONS,
+  activeHub,
+  activeTab,
+  currentLabel as navigationLabel,
+  isLinkActive,
+  type Hub,
+} from "@/lib/application/app-navigation";
+import { inboxBadgeAction } from "@/app/inbox/actions";
 
-const CORE_NAV = [
-  { href: "/", label: "Today", icon: CalendarCheck },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/activities", label: "Activities", icon: CheckSquare },
-] as const;
+type InboxBadge = { total: number; urgent: number } | undefined;
 
-const BUSINESS_NAV = [
-  { href: "/alerts", label: "Alerts", icon: BellRing },
-  { href: "/approvals", label: "Approvals", icon: ClipboardCheck },
-  { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
-  { href: "/insights", label: "Insights", icon: BarChart3 },
-  { href: "/omnix", label: "Omnix AI", icon: Sparkles },
-] as const;
-
-const OPERATIONS_NAV = [
-  { href: "/nurture", label: "Nurture", icon: CalendarClock },
-  { href: "/transactions", label: "Transactions", icon: BriefcaseBusiness },
-  { href: "/properties", label: "Properties", icon: House },
-  { href: "/campaigns", label: "Campaigns", icon: Mail },
-  { href: "/mailers", label: "Mailers", icon: Send },
-  { href: "/connections", label: "Connections", icon: Plug },
-  { href: "/data", label: "Data tools", icon: Database },
-  { href: "/settings", label: "Settings", icon: Settings },
-] as const;
-
-const MOBILE_NAV = [...CORE_NAV, BUSINESS_NAV[4], OPERATIONS_NAV[4]] as const;
-const ALL_NAV = [...CORE_NAV, ...BUSINESS_NAV, ...OPERATIONS_NAV] as const;
-
-function isActive(pathname: string, href: string): boolean {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+function Badge({ badge, compact = false }: { badge: InboxBadge; compact?: boolean }) {
+  if (!badge || badge.total === 0) return null;
+  const label = badge.total > 99 ? "99+" : String(badge.total);
+  return (
+    <span
+      className={`ox-badge ${badge.urgent ? "is-urgent" : ""} ${compact ? "is-compact" : ""}`}
+      aria-label={`${badge.total} waiting${badge.urgent ? `, ${badge.urgent} urgent` : ""}`}
+    >
+      {label}
+    </span>
+  );
 }
 
 /**
- * Mobile-first shell: bottom tab bar on phones (thumb-reachable), a quiet
- * left rail from `lg` up. Tablets keep the full-width field layout and
- * measure and larger display type rather than stretching the phone view.
+ * Premium shell for an independent realtor.
+ *
+ * Desktop: a calm command rail with five hubs, a primary "New" capture action,
+ * global search, and a collapsible "More" drawer for everything that is not
+ * daily work. Nested hub pages get sibling tabs above the content.
+ * Phones: a focused top bar and a thumb-reachable tab bar built around a
+ * raised Capture button.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const parentRoute = parentRouteNavigation(pathname);
+  const hub = activeHub(pathname);
+  const tab = activeTab(pathname, hub);
+  const [moreOpen, setMoreOpen] = useState(() => MORE_SECTIONS.some((section) => section.links.some((link) => isLinkActive(pathname, link))));
   const [mobileUtilitiesOpen, setMobileUtilitiesOpen] = useState(false);
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [badge, setBadge] = useState<InboxBadge>(undefined);
   const mobileUtilitiesTriggerRef = useRef<HTMLButtonElement>(null);
   const mobileUtilitiesRef = useRef<HTMLElement>(null);
+  const captureTriggerRef = useRef<HTMLElement | null>(null);
   const currentLabel =
     parentRoute?.currentLabel ??
-    ALL_NAV.find(({ href }) => isActive(pathname, href))?.label ??
+    navigationLabel(pathname) ??
     (pathname.startsWith("/workspace") ? "Workspaces" : PRODUCT_NAME);
 
   useEffect(() => {
     setMobileUtilitiesOpen(false);
+    setCaptureOpen(false);
+  }, [pathname]);
+
+  const badgeCheckedAt = useRef(0);
+  useEffect(() => {
+    // The count is a hint, not a ledger: refresh at most once a minute, and
+    // always when the realtor is inside the Inbox hub.
+    const inInbox = activeHub(pathname)?.id === "inbox";
+    if (!inInbox && Date.now() - badgeCheckedAt.current < 60_000) return;
+    badgeCheckedAt.current = Date.now();
+    let active = true;
+    inboxBadgeAction().then((value) => { if (active) setBadge(value); }).catch(() => undefined);
+    return () => { active = false; };
   }, [pathname]);
 
   useEffect(() => {
     if (!mobileUtilitiesOpen) return;
-    mobileUtilitiesRef.current?.querySelector<HTMLElement>('a[href], button:not([disabled])')?.focus();
+    mobileUtilitiesRef.current?.querySelector<HTMLElement>("a[href], button:not([disabled])")?.focus();
   }, [mobileUtilitiesOpen]);
+
+  const openCapture = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    captureTriggerRef.current = event.currentTarget;
+    setCaptureOpen(true);
+  }, []);
+  const closeCapture = useCallback(() => {
+    setCaptureOpen(false);
+    queueMicrotask(() => captureTriggerRef.current?.focus());
+  }, []);
 
   const closeMobileUtilities = (returnFocus = true) => {
     setMobileUtilitiesOpen(false);
     if (returnFocus) queueMicrotask(() => mobileUtilitiesTriggerRef.current?.focus());
   };
 
-  const navGroup = (
-    label: string,
-    items: readonly {
-      href: string;
-      label: string;
-      icon: typeof CalendarCheck;
-    }[],
-  ) => (
-    <div>
-      <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-subtle">
-        {label}
-      </p>
-      <div className="grid gap-1">
-        {items.map(({ href, label: itemLabel, icon: Icon }) => {
-          const active = isActive(pathname, href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={active ? "page" : undefined}
-              className={`sk-nav-link relative flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm transition-colors ${
-                active
-                  ? "bg-accent-soft font-semibold text-accent"
-                  : "text-muted hover:bg-surface-2 hover:text-ink"
-              }`}
-            >
-              <Icon
-                className={`size-[18px] shrink-0 ${active ? "text-accent" : ""}`}
-                aria-hidden
-              />
-              {itemLabel}
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
+  const hubLink = (item: Hub) => {
+    const Icon = NAV_ICONS[item.icon];
+    const active = hub?.id === item.id;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        aria-current={active ? "page" : undefined}
+        className={`sk-nav-link ox-rail-link ${active ? "is-active bg-accent-soft font-semibold text-accent" : ""}`}
+        title={item.description}
+      >
+        <Icon className="size-[18px] shrink-0" aria-hidden />
+        <span className="flex-1">{item.label}</span>
+        {item.id === "inbox" ? <Badge badge={badge} /> : null}
+      </Link>
+    );
+  };
 
   return (
-    <div className="min-h-dvh lg:flex">
+    <div className="ox-app min-h-dvh lg:flex">
       <a
         href="#main-content"
         className="fixed left-4 top-4 z-50 -translate-y-24 rounded-[var(--sk-control-radius)] bg-accent px-4 py-2.5 text-sm font-medium text-white transition-transform focus:translate-y-0"
       >
         Skip to main content
       </a>
-      {/* Desktop rail */}
-      <aside className="sk-desktop-rail sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-line px-4 py-5 lg:flex">
-        <div className="px-2">
-          <BrandLockup />
+
+      {/* Desktop command rail */}
+      <aside className="sk-desktop-rail ox-rail sticky top-0 hidden h-dvh w-[17rem] shrink-0 flex-col lg:flex">
+        <div className="ox-rail-brand">
+          <Link href="/" aria-label={`${PRODUCT_NAME} — Today`} className="rounded-[var(--sk-control-radius)]">
+            <BrandLockup compact />
+          </Link>
         </div>
 
-        <nav
-          aria-label="Primary"
-          className="mt-8 flex flex-1 flex-col gap-6 overflow-y-auto pb-4"
-        >
+        <div className="ox-rail-actions">
+          <button type="button" className="sk-primary-button ox-new-button" onClick={openCapture} aria-haspopup="dialog">
+            <Plus className="size-4" aria-hidden /> New
+          </button>
           <CrmCommandPalette />
-          {navGroup("Core", CORE_NAV)}
-          {navGroup("Business", BUSINESS_NAV)}
-          {navGroup("Operations", OPERATIONS_NAV)}
+        </div>
+
+        <nav aria-label="Primary" className="ox-rail-nav">
+          <div className="grid gap-0.5">{HUBS.map(hubLink)}</div>
+
+          <div className="ox-rail-more">
+            <button
+              type="button"
+              className="ox-rail-more-toggle"
+              aria-expanded={moreOpen}
+              aria-controls="rail-more"
+              onClick={() => setMoreOpen((value) => !value)}
+            >
+              <span>More</span>
+              <ChevronDown className={`size-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} aria-hidden />
+            </button>
+            {moreOpen ? (
+              <div id="rail-more" className="grid gap-4 pt-2">
+                {MORE_SECTIONS.map((section) => (
+                  <div key={section.label}>
+                    <p className="ox-rail-section-label">{section.label}</p>
+                    <div className="grid gap-0.5">
+                      {section.links.map((link) => {
+                        const Icon = NAV_ICONS[link.icon];
+                        const active = isLinkActive(pathname, link);
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            aria-current={active ? "page" : undefined}
+                            className={`sk-nav-link ox-rail-link is-secondary ${active ? "is-active bg-accent-soft font-semibold text-accent" : ""}`}
+                          >
+                            <Icon className="size-4 shrink-0" aria-hidden />
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </nav>
 
-        <div className="flex items-center justify-between gap-2 border-t border-line px-2 pt-3">
+        <div className="ox-rail-footer">
           <CyryxAttribution />
           <div className="flex items-center gap-1">
             <form action="/auth/signout" method="post">
@@ -175,30 +201,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile header */}
-        <header
-          className="safe-top sticky top-0 z-20 flex min-h-16 items-center justify-between border-b border-line px-4 backdrop-blur-xl lg:hidden"
-          style={{ background: "var(--sk-nav-background)" }}
-        >
+        {/* Phone and tablet top bar */}
+        <header className="safe-top ox-topbar sticky top-0 z-20 flex min-h-16 items-center justify-between px-4 lg:hidden">
           <div className="flex min-w-0 items-center gap-2.5">
             {parentRoute ? (
-              <Link
-                href={parentRoute.href}
-                className="sk-icon-button shrink-0"
-                aria-label={`Back to ${parentRoute.label}`}
-              >
+              <Link href={parentRoute.href} className="sk-icon-button shrink-0" aria-label={`Back to ${parentRoute.label}`}>
                 <ArrowLeft className="size-[18px]" aria-hidden />
               </Link>
             ) : (
-              <BrandMark size={32} />
+              <BrandMark size={30} />
             )}
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-muted">
-                {PRODUCT_NAME}
-              </p>
-              <p className="truncate text-sm font-semibold leading-tight text-ink">
-                {currentLabel}
-              </p>
+              <p className="text-[11px] font-medium text-muted">{PRODUCT_NAME}</p>
+              <p className="truncate text-[15px] font-semibold leading-tight text-ink">{currentLabel}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
@@ -221,7 +236,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ref={mobileUtilitiesRef}
               id="mobile-utilities"
               aria-label="Mobile utilities"
-              className="pwa-mobile-utilities fixed inset-x-3 z-30 grid gap-1 rounded-[var(--sk-card-radius)] border border-line bg-surface p-2 shadow-[var(--sk-shadow-md)]"
+              className="pwa-mobile-utilities ox-mobile-more fixed inset-x-3 z-30 grid gap-3 rounded-[var(--sk-card-radius)] border border-line bg-surface p-3"
               onKeyDown={(event) => {
                 if (event.key === "Escape") {
                   event.preventDefault();
@@ -229,64 +244,66 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 }
               }}
             >
-              <Link href="/alerts" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/alerts") ? "page" : undefined}>
-                <BellRing className="size-[18px]" aria-hidden /> Alerts
-              </Link>
-              <Link href="/pipeline" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/pipeline") ? "page" : undefined}>
-                <KanbanSquare className="size-[18px]" aria-hidden /> Pipeline
-              </Link>
-              <Link href="/approvals" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/approvals") ? "page" : undefined}>
-                <ClipboardCheck className="size-[18px]" aria-hidden /> Approvals
-              </Link>
-              <Link href="/insights" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/insights") ? "page" : undefined}>
-                <BarChart3 className="size-[18px]" aria-hidden /> Insights
-              </Link>
-              <Link href="/campaigns" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/campaigns") ? "page" : undefined}>
-                <Mail className="size-[18px]" aria-hidden /> Campaigns
-              </Link>
-              <Link href="/nurture" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/nurture") ? "page" : undefined}>
-                <CalendarClock className="size-[18px]" aria-hidden /> Nurture
-              </Link>
-              <Link href="/transactions" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/transactions") ? "page" : undefined}>
-                <BriefcaseBusiness className="size-[18px]" aria-hidden /> Transactions
-              </Link>
-              <Link href="/properties" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/properties") ? "page" : undefined}>
-                <House className="size-[18px]" aria-hidden /> Properties
-              </Link>
-              <Link href="/mailers" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/mailers") ? "page" : undefined}>
-                <Send className="size-[18px]" aria-hidden /> Mailers
-              </Link>
-              <Link href="/connections" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/connections") ? "page" : undefined}>
-                <Plug className="size-[18px]" aria-hidden /> Connections
-              </Link>
-              <Link href="/data" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/data") ? "page" : undefined}>
-                <Database className="size-[18px]" aria-hidden /> Data tools
-              </Link>
-              <Link href="/settings" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink" aria-current={isActive(pathname, "/settings") ? "page" : undefined}>
-                <Settings className="size-[18px]" aria-hidden /> Settings
-              </Link>
-              <Link href="/workspace" className="sk-nav-link flex min-h-11 items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink">
-                <Grid2X2 className="size-[18px]" aria-hidden /> Workspaces
-              </Link>
-              <PwaInstallAction />
-              <div className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink">
-                <span>Theme</span><ThemeToggle />
+              <div>
+                <p className="ox-rail-section-label">Deals</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {(HUBS.find((item) => item.id === "deals")?.tabs ?? []).map((link) => {
+                    const Icon = NAV_ICONS[link.icon];
+                    return (
+                      <Link key={link.href} href={link.href} className="sk-nav-link ox-tile-link" aria-current={isLinkActive(pathname, link) ? "page" : undefined}>
+                        <Icon className="size-5" aria-hidden /> {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-              <form action="/auth/signout" method="post">
-                <button type="submit" className="sk-nav-link flex min-h-11 w-full items-center gap-3 rounded-[var(--sk-control-radius)] px-3 text-left text-sm text-ink">
-                  <LogOut className="size-[18px]" aria-hidden /> Sign out
-                </button>
-              </form>
+              {MORE_SECTIONS.map((section) => (
+                <div key={section.label}>
+                  <p className="ox-rail-section-label">{section.label}</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {section.links.map((link) => {
+                      const Icon = NAV_ICONS[link.icon];
+                      return (
+                        <Link key={link.href} href={link.href} className="sk-nav-link ox-rail-link is-secondary" aria-current={isLinkActive(pathname, link) ? "page" : undefined}>
+                          <Icon className="size-4 shrink-0" aria-hidden /> {link.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              <div className="grid gap-1 border-t border-line pt-2">
+                <PwaInstallAction />
+                <div className="flex min-h-11 items-center justify-between gap-3 rounded-[var(--sk-control-radius)] px-3 text-sm text-ink">
+                  <span>Theme</span><ThemeToggle />
+                </div>
+                <form action="/auth/signout" method="post">
+                  <button type="submit" className="sk-nav-link ox-rail-link is-secondary w-full text-left">
+                    <LogOut className="size-4" aria-hidden /> Sign out
+                  </button>
+                </form>
+              </div>
             </nav>
           ) : null}
         </header>
 
-        <main
-          id="main-content"
-          tabIndex={-1}
-          className="min-w-0 flex-1 px-4 pb-32 pt-6 sm:px-6 md:px-10 lg:px-14 lg:pb-28 lg:pt-12"
-        >
+        <main id="main-content" tabIndex={-1} className="ox-main min-w-0 flex-1">
           <div className="mx-auto w-full max-w-6xl">
+            {hub?.tabs && !parentRoute ? (
+              <nav aria-label={`${hub.label} sections`} className="ox-hub-tabs sk-overflow-rail">
+                {hub.tabs.map((item) => {
+                  const Icon = NAV_ICONS[item.icon];
+                  const active = tab?.href === item.href;
+                  return (
+                    <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={`ox-hub-tab ${active ? "is-active" : ""}`}>
+                      <Icon className="size-4" aria-hidden />
+                      {item.label}
+                      {item.href === "/inbox" ? <Badge badge={badge} compact /> : null}
+                    </Link>
+                  );
+                })}
+              </nav>
+            ) : null}
             {children}
             <div className="mt-16 flex justify-center lg:hidden">
               <CyryxAttribution />
@@ -294,35 +311,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </main>
 
-        {/* Mobile bottom tabs */}
-        <nav
-          aria-label="Primary"
-          className="safe-bottom fixed inset-x-0 bottom-0 z-20 grid min-h-[4.75rem] grid-cols-5 border-t border-line pt-1.5 backdrop-blur-xl lg:hidden"
-          style={{ background: "var(--sk-nav-background)" }}
-        >
-          {MOBILE_NAV.map(({ href, label, icon: Icon }) => {
-            const active = isActive(pathname, href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                aria-current={active ? "page" : undefined}
-                className={`sk-mobile-tab flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 overflow-hidden rounded-[var(--sk-control-radius)] px-0.5 text-[10px] transition-colors sm:px-1 sm:text-[11px] ${
-                  active ? "bg-accent-soft font-semibold text-accent" : "text-subtle hover:bg-surface-2 hover:text-ink"
-                }`}
-              >
-                <Icon
-                  className="size-[20px]"
-                  strokeWidth={active ? 2.2 : 1.8}
-                  aria-hidden
-                />
-                {label}
-              </Link>
-            );
-          })}
+        {/* Phone tab bar */}
+        <nav aria-label="Primary" className="safe-bottom ox-tabbar fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 lg:hidden">
+          {MOBILE_HUBS.slice(0, 2).map((id) => <MobileTab key={id} id={id} pathname={pathname} badge={badge} />)}
+          <div className="grid place-items-center">
+            <button type="button" className="ox-capture-fab" onClick={openCapture} aria-label="Quick capture" aria-haspopup="dialog">
+              <Plus className="size-6" aria-hidden />
+            </button>
+          </div>
+          {MOBILE_HUBS.slice(2).map((id) => <MobileTab key={id} id={id} pathname={pathname} badge={badge} />)}
         </nav>
       </div>
-      <OmnixAssistantLauncher suppressed={mobileUtilitiesOpen} />
+
+      <CaptureSheet open={captureOpen} onClose={closeCapture} />
+      <OmnixAssistantLauncher suppressed={mobileUtilitiesOpen || captureOpen} />
     </div>
+  );
+}
+
+function MobileTab({ id, pathname, badge }: { id: Hub["id"]; pathname: string; badge: InboxBadge }) {
+  const item = HUBS.find((entry) => entry.id === id);
+  if (!item) return null;
+  const Icon = id === "inbox" ? Inbox : NAV_ICONS[item.icon];
+  const active = activeHub(pathname)?.id === id;
+  return (
+    <Link
+      href={item.href}
+      aria-current={active ? "page" : undefined}
+      className={`sk-mobile-tab ox-mobile-tab ${active ? "is-active bg-accent-soft font-semibold text-accent" : ""}`}
+    >
+      <span className="relative">
+        <Icon className="size-[21px]" strokeWidth={active ? 2.2 : 1.8} aria-hidden />
+        {id === "inbox" ? <Badge badge={badge} compact /> : null}
+      </span>
+      {item.label}
+    </Link>
   );
 }

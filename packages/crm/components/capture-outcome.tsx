@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { VoiceDictation, appendDictation } from '@/components/voice-dictation';
 import { useRef, useState, useTransition } from 'react';
 import { CheckCircle2, ChevronLeft, FileText, NotebookPen, Plus, Sparkles } from 'lucide-react';
 import { CAPTURE_SOURCE_MAX, type CaptureOutcomeProposal, type CaptureOperationAfter, type CaptureOperationType } from '@/lib/domain/capture-outcome';
@@ -76,6 +77,7 @@ export function CaptureOutcome({ contactId, contactName, isLive, isOwner = false
       <form onSubmit={(event) => { event.preventDefault(); analyze(false); }} className="capture-editor">
         <label htmlFor="conversation-recap">What happened?</label><p id="recap-help">Include what your client wants, what changed, and who agreed to do what.</p>
         <textarea id="conversation-recap" value={source} onChange={(event) => { setSource(event.target.value); key.current = null; }} maxLength={CAPTURE_SOURCE_MAX} rows={10} required aria-describedby="recap-help recap-count" placeholder="We discussed their timeline and the homes they liked. I agreed to follow up…" />
+        <VoiceDictation label="Dictate the recap" onAppend={(spoken) => { setSource((current) => appendDictation(current, spoken).slice(0, CAPTURE_SOURCE_MAX)); key.current = null; }} />
         <small id="recap-count">{source.length.toLocaleString()} / {CAPTURE_SOURCE_MAX.toLocaleString()} characters</small>
         <button type="button" className="conversation-text-link" onClick={() => { setTask(!task); key.current = null; }} aria-expanded={task}><Plus className="size-4" aria-hidden />{task ? 'Remove task' : 'Add a task yourself'}</button>
         {task && <div className="capture-manual-task"><label>Task title<input value={title} onChange={(event) => { setTitle(event.target.value); key.current = null; }} maxLength={160} required /></label><label>Due date and time<input type="datetime-local" value={due} onChange={(event) => { setDue(event.target.value); key.current = null; }} required /></label><small>Uses your device timezone. The exact time will appear in your review.</small></div>}

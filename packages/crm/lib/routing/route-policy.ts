@@ -26,6 +26,9 @@ const SAFE_DESTINATIONS = [
   "/insights",
   "/omnix",
   "/settings",
+  "/inbox",
+  "/capture",
+  "/power-hour",
 ] as const;
 
 function matchesSegment(pathname: string, prefix: string): boolean {

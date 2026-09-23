@@ -3,6 +3,7 @@ import { RouteChrome } from '@/components/route-chrome';
 import { PwaProvider } from '@/components/pwa-provider';
 import { PRODUCT_DESCRIPTION, PRODUCT_NAME } from '@/lib/brand';
 import './globals.css';
+import './premium.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://127.0.0.1:3200'),

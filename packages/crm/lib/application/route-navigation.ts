@@ -20,6 +20,12 @@ export function parentRouteNavigation(pathname: string): ParentRouteNavigation |
     href: `/contacts/${conversation[1]}`, label: 'Contact',
     currentLabel: conversation[2] === 'brief' ? 'Meeting brief' : 'Capture outcome',
   };
+  if (pathname === '/power-hour') {
+    return { href: '/', label: 'Today', currentLabel: 'Power Hour' };
+  }
+  if (pathname === '/capture') {
+    return { href: '/', label: 'Today', currentLabel: 'Log a conversation' };
+  }
   if (pathname === '/contacts/new') {
     return { href: '/contacts', label: 'Contacts', currentLabel: 'Add contact' };
   }

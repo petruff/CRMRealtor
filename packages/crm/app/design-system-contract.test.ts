@@ -12,7 +12,9 @@ const dataOperationsSource = readFileSync(new URL('./data/page.tsx', import.meta
 const nextConfigSource = readFileSync(new URL('../next.config.ts', import.meta.url), 'utf8');
 const insightsSource = readFileSync(new URL('../components/insights-dashboard.tsx', import.meta.url), 'utf8');
 const propertiesSource = readFileSync(new URL('./properties/page.tsx', import.meta.url), 'utf8');
-const appShellSource = readFileSync(new URL('../components/app-shell.tsx', import.meta.url), 'utf8');
+const navigationSource = readFileSync(new URL('../lib/application/app-navigation.ts', import.meta.url), 'utf8');
+const premiumCss = readFileSync(new URL('./premium.css', import.meta.url), 'utf8');
+const layoutSource = readFileSync(new URL('./layout.tsx', import.meta.url), 'utf8');
 
 function cssBlock(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -145,11 +147,12 @@ describe('authenticated editorial design contract', () => {
     expect(insightsSource).toMatch(/aria-label="Exact pipeline stage contributors"/);
   });
 
-  it('reflows the Today operating brief and removes nonessential motion when requested', () => {
-    expect(globalCss).toMatch(/@container \(max-width: 47\.99rem\)[\s\S]*\.today-operating-layout,[\s\S]*\.today-workstream-grid\s*\{\s*grid-template-columns:\s*1fr;/);
-    expect(globalCss).toMatch(/\.today-priority-list a\s*\{[^}]*min-height:\s*5\.25rem;/s);
-    expect(globalCss).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.today-operating-briefing\s*\{\s*animation:\s*none;/);
-    expect(globalCss).toMatch(/\.today-operating-trust\s*\{[^}]*min-height:\s*2\.75rem;/s);
+  it('keeps the premium Today layer responsive, thumb-sized and calm under reduced motion', () => {
+    expect(premiumCss).toMatch(/@media \(min-width: 1100px\) \{ \.ox-today-grid \{ grid-template-columns: minmax\(0, 1\.75fr\) minmax\(18rem, 1fr\);/);
+    expect(premiumCss).toMatch(/\.ox-action-button \{[^}]*min-width: 2\.75rem; min-height: 2\.75rem;/s);
+    expect(premiumCss).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*\.ox-today-hero, \.ox-today-grid > \* \{ animation:/);
+    expect(premiumCss).toMatch(/\.ox-chip span \{[^}]*min-height: 2\.75rem;/s);
+    expect(layoutSource).toContain("import './premium.css';");
   });
 
   it('keeps property authority honest and reachable on desktop and mobile', () => {
@@ -157,8 +160,7 @@ describe('authenticated editorial design contract', () => {
     expect(propertiesSource).toContain('Unknown information stays unknown.');
     expect(propertiesSource).toContain('propertyFactCanDisplay');
     expect(propertiesSource).not.toContain('estimated value');
-    expect(appShellSource.match(/href="\/properties"/g)?.length).toBeGreaterThanOrEqual(1);
-    expect(appShellSource).toContain('label: "Properties"');
+    expect(navigationSource).toContain("{ href: '/properties', label: 'Properties', icon: 'properties' }");
   });
 
   it('keeps Connections cards on the centralized 12px radius contract', () => {
