@@ -25,7 +25,7 @@ function repository() {
 const base = {
   transactionId: transaction.id, key: 'buyer-agreement' as const, outcome: 'on-file' as const,
   reference: 'Exclusive buyer agreement in Dotloop', sourceDate: '2026-09-20', timeZone: 'America/New_York',
-  requestId: '6f1c1d2e-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+  requestId: '00000000-0000-4000-8000-000000000061',
 };
 
 describe('recordReadinessCommand', () => {
@@ -40,7 +40,7 @@ describe('recordReadinessCommand', () => {
     const scheduled = await repo.createMilestone(scope, {
       transactionId: transaction.id, kind: 'flood', label: 'Flood disclosure', dueAt: '2026-09-30T15:00:00.000Z', timezone: 'America/New_York',
       responsibleMembershipId: scope.membershipId, sourceType: 'contract', sourceReference: 'Contract', sourceDate: '2026-09-18',
-      verificationState: 'unverified', idempotencyKey: '7f1c1d2e-1a2b-4c3d-8e9f-0a1b2c3d4e5f',
+      verificationState: 'unverified', idempotencyKey: '00000000-0000-4000-8000-000000000071',
     }, NOW.toISOString());
     const saved = await recordReadinessCommand(repo, scope, { ...base, key: 'flood-disclosure' }, NOW);
     expect(saved.id).toBe(scheduled.id);
