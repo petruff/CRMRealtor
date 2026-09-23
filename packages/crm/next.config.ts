@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import path from 'node:path';
+import { securityHeaders } from './lib/security/http-headers';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -20,6 +21,18 @@ const nextConfig: NextConfig = {
   },
   images: {
     qualities: [90, 92],
+    // Omnix serves only its own images; never decode AVIF through the optimizer.
+    formats: ['image/webp'],
+  },
+  poweredByHeader: false,
+  async headers() {
+    return [{
+      source: '/:path*',
+      headers: securityHeaders({
+        supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+        development: process.env.NODE_ENV !== 'production',
+      }),
+    }];
   },
   experimental: {
     // XLS/XLSX imports accept 10 MB. Binary workbooks travel as base64, which

@@ -50,7 +50,7 @@
     "@supabase/supabase-js": "^2.112.3",
     "gsap": "^3.15.0",
     "lucide-react": "^0.544.0",
-    "next": "^15.5.4",
+    "next": "^15.5.26",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "twilio": "^6.1.0",
@@ -65,14 +65,14 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "eslint": "^9.36.0",
-    "eslint-config-next": "^15.5.4",
+    "eslint-config-next": "^15.5.26",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2",
+    "typescript": "5.8.2",
     "vitest": "^3.2.4"
   },
   "overrides": {
     "postcss": "8.5.26",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4"
   }
 }
