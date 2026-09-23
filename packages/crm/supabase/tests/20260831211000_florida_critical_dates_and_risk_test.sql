@@ -25,7 +25,7 @@ values('57100000-0000-4000-8000-000000000071','27100000-0000-4000-8000-000000000
 select has_column('public','transaction_milestones','source_reference','deadline source reference is canonical');
 select has_column('public','transaction_milestones','verification_state','deadline verification state is canonical');
 select enum_has_labels('public','transaction_milestone_kind',
-  array['inspection','financing','appraisal','title','contingency','closing','custom','association','flood'],
+  array['inspection','financing','appraisal','title','contingency','closing','custom','association','flood','buyer-agreement'],
   'Florida deadline catalog includes association and flood');
 select enum_has_labels('public','attention_subject_type',array['contact','task','connection','workspace','transaction'],
   'attention can point to the canonical transaction');

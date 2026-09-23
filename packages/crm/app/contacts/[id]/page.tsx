@@ -296,10 +296,11 @@ export default async function ContactDetailPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Link href={contactListHref(recordNavigation.context)} className="sk-text-action self-start">
-          <ArrowLeft className="size-4" />
-          Back to contacts
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Link href={contactListHref(recordNavigation.context)} className="sk-text-action" aria-label="Back to contacts">
+          <ArrowLeft className="size-4" aria-hidden />
+          <span className="sm:hidden">Back</span>
+          <span className="hidden sm:inline">Back to contacts</span>
         </Link>
         <ContactRecordNavigator navigation={recordNavigation} />
       </div>
