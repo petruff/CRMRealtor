@@ -1,6 +1,6 @@
 import {
   BarChart3, BellRing, DoorOpen, HeartHandshake, BriefcaseBusiness, CalendarCheck, CalendarClock, ClipboardCheck, Database,
-  Grid2X2, HandCoins, House, Inbox, KanbanSquare, ListChecks, Mail, Plug, Send, Settings, Sparkles, Upload, UserRoundSearch, Users,
+  Grid2X2, HandCoins, House, Inbox, KanbanSquare, ListChecks, Mail, Plug, QrCode, Send, Settings, Sparkles, Upload, UserRoundSearch, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { IconKey } from '@/lib/application/app-navigation';
@@ -29,5 +29,6 @@ export const NAV_ICONS: Record<IconKey, LucideIcon> = {
   workspaces: Grid2X2,
   openhouse: DoorOpen,
   sphere: HeartHandshake,
+  leadpage: QrCode,
 };
 
