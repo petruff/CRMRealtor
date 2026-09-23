@@ -9,10 +9,13 @@ import { contactAddressLines, type Contact } from '@/lib/domain/contact';
 export function ContactReachSummary({
   contact,
   callable,
+  callContact,
 }: {
   contact: Pick<Contact, 'phone' | 'mailingAddress' | 'city' | 'state' | 'postalCode'>;
   /** False for read-only (archived) records, where the phone is shown as text. */
   callable: boolean;
+  /** Lets Omnix offer to log the call after the realtor comes back. */
+  callContact?: { id: string; name: string };
 }) {
   const phone = contact.phone?.trim();
   const address = contactAddressLines(contact);
@@ -27,7 +30,7 @@ export function ContactReachSummary({
         </dt>
         <dd className="mt-1 break-words text-[15px] text-ink">
           {phone ? (
-            callable ? <a href={`tel:${phone}`} className="underline-offset-2 hover:underline">{phone}</a> : phone
+            callable ? <a href={`tel:${phone}`} {...(callContact ? { 'data-call-contact': callContact.id, 'data-call-name': callContact.name } : {})} className="underline-offset-2 hover:underline">{phone}</a> : phone
           ) : <span className="text-subtle">Not provided</span>}
         </dd>
       </div>

@@ -28,7 +28,7 @@ function PendingButton({
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className={className}>
+    <button type="submit" disabled={pending} aria-busy={pending || undefined} className={`${className}${pending ? ' ox-busy' : ''}`}>
       {icon}
       {pending ? pendingLabel : idleLabel}
     </button>

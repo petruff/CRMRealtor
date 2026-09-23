@@ -4,6 +4,7 @@ import { resolveServerWorkspaceScope } from '../data/automation-context.ts';
 import { supabaseRepository } from '../data/supabase-repository.ts';
 import { supabaseOperationalSignalRepository } from '../data/supabase-operational-signal-repository.ts';
 import type { Contact } from '../domain/contact.ts';
+import { urgentDeadlines, type UrgentDeadline } from './push-alerts.ts';
 
 export interface PushTarget {
   readonly id: string;
@@ -12,6 +13,9 @@ export interface PushTarget {
   readonly authSecret: string;
   readonly showNames: boolean;
   readonly lastSentOn?: string;
+  /** Device choice: include deal dates due within 48 hours (default on). */
+  readonly alertDeadlines?: boolean;
+  readonly workspaceId?: string;
 }
 
 export interface PushDelivery {
@@ -52,6 +56,7 @@ function isGone(error: unknown): boolean {
 export async function runMorningBrief(input: {
   readonly contacts: readonly Contact[];
   readonly openDeadlines: number;
+  readonly urgent?: readonly UrgentDeadline[];
   readonly store: MorningBriefStore;
   readonly deliver: PushDelivery;
   readonly now: Date;
@@ -61,7 +66,10 @@ export async function runMorningBrief(input: {
   const counts = { sent: 0, alreadySent: 0, nothingToSend: 0, revoked: 0, failed: 0 };
   for (const target of await input.store.listTargets()) {
     if (target.lastSentOn === day) { counts.alreadySent += 1; continue; }
-    const brief = buildMorningBrief(input.contacts, input.now, { showNames: target.showNames, openDeadlines: input.openDeadlines });
+    const brief = buildMorningBrief(input.contacts, input.now, {
+      showNames: target.showNames, openDeadlines: input.openDeadlines,
+      urgent: target.alertDeadlines === false ? [] : input.urgent ?? [],
+    });
     if (!brief) { counts.nothingToSend += 1; continue; }
     try {
       await input.deliver(target, brief);
@@ -84,12 +92,13 @@ function supabaseMorningBriefStore(client: SupabaseClient, workspaceId: string):
   return {
     async listTargets() {
       const { data, error } = await client.from('push_subscriptions')
-        .select('id, endpoint, p256dh, auth_secret, show_names, last_sent_on')
+        .select('id, endpoint, p256dh, auth_secret, show_names, last_sent_on, alert_deadlines')
         .eq('workspace_id', workspaceId).is('revoked_at', null).limit(100);
       if (error) throw new Error(`Failed to load notification devices: ${error.message}`);
       return (data ?? []).map((row) => ({
         id: String(row.id), endpoint: String(row.endpoint), p256dh: String(row.p256dh), authSecret: String(row.auth_secret),
-        showNames: Boolean(row.show_names), ...(row.last_sent_on ? { lastSentOn: String(row.last_sent_on) } : {}),
+        showNames: Boolean(row.show_names), alertDeadlines: row.alert_deadlines !== false,
+        ...(row.last_sent_on ? { lastSentOn: String(row.last_sent_on) } : {}),
       }));
     },
     async markSent(id, day) {
@@ -100,6 +109,13 @@ function supabaseMorningBriefStore(client: SupabaseClient, workspaceId: string):
       await client.from('push_subscriptions').update({ revoked_at: at, updated_at: at }).eq('id', id);
     },
   };
+}
+
+/** Workspaces with at least one active device; no environment binding needed. */
+async function workspacesWithDevices(client: SupabaseClient): Promise<string[]> {
+  const { data, error } = await client.from('push_subscriptions').select('workspace_id').is('revoked_at', null).limit(500);
+  if (error) throw new Error(`Failed to load notification devices: ${error.message}`);
+  return [...new Set((data ?? []).map((row) => String(row.workspace_id)))];
 }
 
 /** Production entry point for the daily cron. Fails closed when not configured. */
@@ -114,30 +130,45 @@ export async function sendConfiguredMorningBriefs(
   const publicKey = environment.NEXT_PUBLIC_OMNIX_PUSH_PUBLIC_KEY?.trim();
   const privateKey = environment.OMNIX_PUSH_PRIVATE_KEY?.trim();
   const subject = environment.OMNIX_PUSH_SUBJECT?.trim();
-  if (!url || !key || (!workspaceId && !ownerId) || !publicKey || !privateKey || !subject?.startsWith('mailto:')) {
+  if (!url || !key || !publicKey || !privateKey || !subject?.startsWith('mailto:')) {
     throw new Error('Morning brief notifications are not configured.');
   }
   const { default: webPush } = await import('web-push');
   webPush.setVapidDetails(subject, publicKey, privateKey);
   const client = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } });
-  const scope = await resolveServerWorkspaceScope(client, { workspaceId, ownerId });
-  const [contacts, milestones] = await Promise.all([
-    supabaseRepository(client, scope).list(),
-    supabaseOperationalSignalRepository(client).listMilestones(scope, { openOnly: true, limit: 500 }).catch(() => []),
-  ]);
-  const horizon = now.getTime() + 7 * 86_400_000;
-  return runMorningBrief({
-    contacts,
-    openDeadlines: milestones.filter((milestone) => Date.parse(milestone.dueAt) <= horizon).length,
-    store: supabaseMorningBriefStore(client, scope.workspaceId),
-    deliver: async (target, payload) => {
-      await webPush.sendNotification(
-        { endpoint: target.endpoint, keys: { p256dh: target.p256dh, auth: target.authSecret } },
-        JSON.stringify(payload),
-        { TTL: 6 * 60 * 60, urgency: 'normal', topic: 'omnix-morning-brief' },
-      );
-    },
-    now,
-    timeZone: environment.OMNIX_TIME_ZONE?.trim() || 'America/New_York',
-  });
+  const timeZone = environment.OMNIX_TIME_ZONE?.trim() || 'America/New_York';
+  const bindings = workspaceId || ownerId
+    ? [{ ...(workspaceId ? { workspaceId } : {}), ...(ownerId ? { ownerId } : {}) }]
+    : (await workspacesWithDevices(client)).map((id) => ({ workspaceId: id }));
+  const counts = { sent: 0, alreadySent: 0, nothingToSend: 0, revoked: 0, failed: 0 };
+  for (const binding of bindings) {
+    try {
+      const scope = await resolveServerWorkspaceScope(client, binding);
+      const [contacts, milestones] = await Promise.all([
+        supabaseRepository(client, scope).list(),
+        supabaseOperationalSignalRepository(client).listMilestones(scope, { openOnly: true, limit: 500 }).catch(() => []),
+      ]);
+      const horizon = now.getTime() + 7 * 86_400_000;
+      const result = await runMorningBrief({
+        contacts,
+        openDeadlines: milestones.filter((milestone) => Date.parse(milestone.dueAt) <= horizon).length,
+        urgent: urgentDeadlines(milestones, now, timeZone),
+        store: supabaseMorningBriefStore(client, scope.workspaceId),
+        deliver: async (target, payload) => {
+          await webPush.sendNotification(
+            { endpoint: target.endpoint, keys: { p256dh: target.p256dh, auth: target.authSecret } },
+            JSON.stringify(payload),
+            { TTL: 6 * 60 * 60, urgency: 'normal', topic: 'omnix-morning-brief' },
+          );
+        },
+        now,
+        timeZone,
+      });
+      for (const key of ['sent', 'alreadySent', 'nothingToSend', 'revoked', 'failed'] as const) counts[key] += result[key];
+    } catch {
+      counts.failed += 1;
+      console.error(JSON.stringify({ schemaVersion: 'morning-brief-workspace-error.v1', category: 'workspace-failed' }));
+    }
+  }
+  return { day: localCalendarDay(now, timeZone), ...counts };
 }

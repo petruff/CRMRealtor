@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { afterResponse } from '@/lib/application/after-response';
+import { notifyNewLeads } from '@/lib/application/new-lead-alert-sender';
 import { randomUUID } from 'node:crypto';
 import { ContactImportError, parseJsonContactImport } from '@/lib/application/contact-import';
 import { executeContactImport, previewContactImport } from '@/lib/application/contact-import-service';
@@ -146,6 +148,16 @@ export async function POST(request: NextRequest) {
     const terminal = validateStoredContactImportPlanResult(terminalReceipt.response);
     const result = importResultFromStoredPlan('automatic-intake', terminal);
     const statusCode = terminal.counts.rejected || terminal.counts.quarantined ? 207 : 200;
+    // Real-time lead feeds send a few contacts at a time; bulk syncs stay silent.
+    const createdLeads = terminal.rowOutcomes.filter((row) => row.outcome === 'created' && row.contactId);
+    if (createdLeads.length > 0 && createdLeads.length <= 5) {
+      const alertWorkspaceId = context.workspaceScope.workspaceId;
+      const leads = createdLeads.map((row) => {
+        const candidate = parsed.candidates.find((item) => item.rowNumber === row.rowNumber);
+        return { contactId: row.contactId as string, ...(candidate ? { firstName: candidate.firstName, lastName: candidate.lastName } : {}), source: input.source as string };
+      });
+      afterResponse(() => notifyNewLeads(alertWorkspaceId, leads));
+    }
     return NextResponse.json(result, { status: statusCode });
   } catch (error) {
     if (error instanceof ContactImportError) return json(error.message, 422);

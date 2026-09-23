@@ -2,15 +2,15 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { HeartHandshake, Share2, Sparkles, X, Zap } from 'lucide-react';
+import { BellRing, CalendarRange, PhoneCall, Undo2, X } from 'lucide-react';
 
-export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09';
+export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-alerts';
 
 const ITEMS = [
-  { icon: Sparkles, title: 'A calmer layout', body: 'Today, People, Deals, Inbox and Omnix. Everything else is under More — your contacts and notes are exactly where you left them.', href: undefined },
-  { icon: Zap, title: 'Power Hour', body: 'Work through who to reach, one person at a time.', href: '/power-hour' },
-  { icon: HeartHandshake, title: 'Referral engine', body: 'Birthdays, home anniversaries and past clients, with notes ready to send.', href: '/sphere' },
-  { icon: Share2, title: 'Client page', body: 'Share a private progress page from any deal.', href: '/transactions' },
+  { icon: PhoneCall, title: 'Log a call in one tap', body: 'After you call someone from Omnix, it offers to save how it went — with voice notes. You can turn this off.', href: undefined },
+  { icon: Undo2, title: 'Undo after archiving', body: 'Archived someone by mistake? Tap Undo and you are right back where you were.', href: undefined },
+  { icon: BellRing, title: 'Alerts you choose', body: 'New leads right away, deal dates 48 hours ahead, and quiet hours at night.', href: '/settings#morning-brief' },
+  { icon: CalendarRange, title: 'Contract timeline', body: 'Enter the Effective Date once and every Florida contract deadline is added for you.', href: '/transactions' },
 ] as const;
 
 /**
@@ -35,7 +35,7 @@ export function WhatsNew() {
       <header className="ox-whats-new-header">
         <div>
           <p className="ox-eyebrow">What’s new</p>
-          <h2 id="whats-new-title" className="ox-card-title">Omnix has a few new tools for you</h2>
+          <h2 id="whats-new-title" className="ox-card-title">A few time-savers were just added</h2>
         </div>
         <button type="button" className="ox-whats-new-close" onClick={dismiss} aria-label="Dismiss what’s new"><X className="size-4" aria-hidden /></button>
       </header>

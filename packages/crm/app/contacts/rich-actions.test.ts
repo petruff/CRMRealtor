@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import {
   addContactPointCommand,
   archiveContactCommand,
+  restoreContactCommand,
   listCustomFieldDefinitionsCommand,
   setContactCustomFieldValueCommand,
 } from '@/lib/application/rich-contact-commands';
@@ -11,6 +12,7 @@ import { SAMPLE_WORKSPACE_SCOPE } from '@/lib/domain/workspace';
 import { INITIAL_RICH_CONTACT_ACTION_STATE } from './action-state';
 import {
   archiveContactLifecycleAction,
+  undoArchiveContactAction,
   saveContactPointAction,
   setCustomFieldValueAction,
 } from './rich-actions';
@@ -154,12 +156,12 @@ describe('archive contact lifecycle continuation', () => {
 
     await archiveContactLifecycleAction(INITIAL_RICH_CONTACT_ACTION_STATE, form);
 
-    expect(redirect).toHaveBeenCalledWith('/contacts?saved=archived-end');
+    expect(redirect).toHaveBeenCalledWith('/contacts?saved=archived-end&archivedContact=d');
   });
 
   it('uses /contacts as the safe return for direct access without list context', async () => {
     await archiveContactLifecycleAction(INITIAL_RICH_CONTACT_ACTION_STATE, archiveForm());
-    expect(redirect).toHaveBeenCalledWith('/contacts?saved=archived');
+    expect(redirect).toHaveBeenCalledWith('/contacts?saved=archived&archivedContact=b');
     expect(list).not.toHaveBeenCalled();
   });
 
@@ -172,7 +174,7 @@ describe('archive contact lifecycle continuation', () => {
     );
 
     expect(smartListGet).toHaveBeenCalledWith(SAMPLE_WORKSPACE_SCOPE, 'other-workspace-list');
-    expect(redirect).toHaveBeenCalledWith('/contacts?smartList=other-workspace-list&saved=archived');
+    expect(redirect).toHaveBeenCalledWith('/contacts?smartList=other-workspace-list&saved=archived&archivedContact=b');
     expect(String(vi.mocked(redirect).mock.calls[0]?.[0])).not.toContain('evil');
   });
 
@@ -192,6 +194,50 @@ describe('archive contact lifecycle continuation', () => {
 
     await archiveContactLifecycleAction(INITIAL_RICH_CONTACT_ACTION_STATE, archiveForm('scope=leads&q=lead&from=list'));
 
-    expect(redirect).toHaveBeenCalledWith('/contacts?q=lead&saved=archived');
+    expect(redirect).toHaveBeenCalledWith('/contacts?q=lead&saved=archived&archivedContact=b');
+  });
+});
+
+describe('undo archive', () => {
+  const archivedAt = '2026-09-23T15:00:00.000Z';
+  const person = (id: string): Contact => ({
+    id, firstName: id.toUpperCase(), lastName: 'Lead', leadType: 'warm', relationship: 'lead',
+    intent: 'unknown', source: 'other', pipelineStage: 'new', tags: [], createdAt: '2026-09-01T12:00:00.000Z',
+  });
+  let contacts: Contact[];
+
+  function undoForm(contactId: string, returnContext?: string) {
+    const form = new FormData();
+    form.set('contactId', contactId);
+    if (returnContext !== undefined) form.set('returnContext', returnContext);
+    return form;
+  }
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    contacts = ['a', 'b'].map((id) => person(id));
+    contacts = contacts.map((contact) => (contact.id === 'b' ? { ...contact, archivedAt } : contact));
+    vi.mocked(getRepository).mockResolvedValue({
+      workspaceScope: SAMPLE_WORKSPACE_SCOPE,
+      richContactRepository: {},
+      repository: { get: async (id: string) => contacts.find((contact) => contact.id === id) },
+    } as unknown as Awaited<ReturnType<typeof getRepository>>);
+  });
+
+  it('restores the archived contact and returns to it inside the same list', async () => {
+    await undoArchiveContactAction(undoForm('b', 'q=lead&from=list'));
+    expect(restoreContactCommand).toHaveBeenCalledWith(expect.anything(), SAMPLE_WORKSPACE_SCOPE, 'b');
+    expect(redirect).toHaveBeenCalledWith('/contacts/b?q=lead&from=list&saved=restored');
+  });
+
+  it('falls back to the record when there is no list context', async () => {
+    await undoArchiveContactAction(undoForm('b', 'https://evil.example'));
+    expect(redirect).toHaveBeenCalledWith('/contacts/b?saved=restored');
+  });
+
+  it('never restores a contact that is not archived', async () => {
+    await undoArchiveContactAction(undoForm('a'));
+    expect(restoreContactCommand).not.toHaveBeenCalled();
+    expect(redirect).toHaveBeenCalledWith('/contacts/a');
   });
 });

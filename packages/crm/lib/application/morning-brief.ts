@@ -2,6 +2,7 @@ import { ensureNextTouch } from '../domain/cadence.ts';
 import type { Contact } from '../domain/contact.ts';
 import { buildTriage } from '../domain/triage.ts';
 import { buildFocusQueue } from './focus-queue.ts';
+import { deadlineLine, type UrgentDeadline } from './push-alerts.ts';
 
 export interface MorningBrief {
   readonly title: string;
@@ -19,8 +20,21 @@ export interface MorningBrief {
 export function buildMorningBrief(
   contacts: readonly Contact[],
   now: Date,
-  options: { readonly showNames?: boolean; readonly openDeadlines?: number } = {},
+  options: { readonly showNames?: boolean; readonly openDeadlines?: number; readonly urgent?: readonly UrgentDeadline[] } = {},
 ): MorningBrief | undefined {
+  const urgent = options.urgent ?? [];
+  if (urgent.length) {
+    const base = buildMorningBrief(contacts, now, { ...options, urgent: [] });
+    const line = deadlineLine(urgent, Boolean(options.showNames)) as string;
+    const first = urgent[0] as UrgentDeadline;
+    const headline = first.when === 'overdue' ? 'A deal date needs you' : `Deal date ${first.when === 'today' ? 'today' : 'tomorrow'}`;
+    return {
+      title: base ? `${headline} · ${base.title.replace(/^Good morning — /u, '')}` : `Good morning — ${headline.toLowerCase()}`,
+      body: base ? `${line} ${base.body}` : line,
+      url: first.when === 'tomorrow' && base ? base.url : '/transactions',
+      count: base?.count ?? 0,
+    };
+  }
   const active = contacts.filter((contact) => !contact.archivedAt).map((contact) => ensureNextTouch(contact, now));
   const queue = buildFocusQueue(buildTriage(active, now), now);
   const deadlines = options.openDeadlines ?? 0;

@@ -6,6 +6,8 @@ import { ArrowLeft, ChevronDown, Ellipsis, Inbox, LogOut, Plus } from "lucide-re
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BrandLockup, BrandMark, CyryxAttribution } from "@/components/brand-lockup";
 import { CaptureSheet } from "@/components/capture-sheet";
+import { CallFollowUp } from "@/components/call-follow-up";
+import { logCallOutcomeAction } from "@/app/calls/actions";
 import { NAV_ICONS } from "@/components/nav-icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { PRODUCT_NAME } from "@/lib/brand";
@@ -324,6 +326,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <CaptureSheet open={captureOpen} onClose={closeCapture} />
+      <CallFollowUp action={logCallOutcomeAction} />
       <OmnixAssistantLauncher suppressed={mobileUtilitiesOpen || captureOpen} />
     </div>
   );

@@ -58,7 +58,7 @@ export function ContactCard({
       <div className={`col-start-2 flex shrink-0 items-center gap-1.5 ${compact ? '' : 'sm:ml-auto'}`}>
         {contact.phone && (
           <>
-          <IconAction href={`tel:${contact.phone}`} label={`Call ${name}`}>
+          <IconAction href={`tel:${contact.phone}`} label={`Call ${name}`} callContact={{ id: contact.id, name }}>
             <Phone className="size-4" />
           </IconAction>
           <IconAction href={`sms:${contact.phone}`} label={`Text ${name}`}>

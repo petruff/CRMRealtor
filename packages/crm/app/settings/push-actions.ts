@@ -5,7 +5,9 @@ import {
   PushSubscriptionError,
   memoryPushSubscriptionRepository,
   supabasePushSubscriptionRepository,
+  validateAlertPreferences,
   validatePushSubscription,
+  type DeviceAlertPreferences,
   type PushSubscriptionRepository,
 } from '@/lib/data/push-subscription-repository';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -48,5 +50,43 @@ export async function removePushSubscriptionAction(endpoint: unknown): Promise<P
     return { ok: true, message: 'Morning brief is off for this device.' };
   } catch {
     return { ok: false, message: "We couldn't turn notifications off. Try again." };
+  }
+}
+
+function validEndpoint(endpoint: unknown): endpoint is string {
+  return typeof endpoint === 'string' && endpoint.startsWith('https://') && endpoint.length <= 2048;
+}
+
+export interface DevicePreferencesResult {
+  readonly found: boolean;
+  readonly preferences?: DeviceAlertPreferences & { readonly showNames: boolean };
+}
+
+/** Reads this device's alert choices (only the member's own devices are visible). */
+export async function loadPushPreferencesAction(endpoint: unknown): Promise<DevicePreferencesResult> {
+  if (!validEndpoint(endpoint)) return { found: false };
+  try {
+    const { repository, scope } = await devices();
+    const device = (await repository.listMine(scope)).find((item) => item.endpoint === endpoint);
+    if (!device) return { found: false };
+    const { endpoint: _endpoint, createdAt: _createdAt, ...preferences } = device;
+    void _endpoint; void _createdAt;
+    return { found: true, preferences };
+  } catch {
+    return { found: false };
+  }
+}
+
+export async function updatePushPreferencesAction(endpoint: unknown, input: unknown): Promise<PushActionResult> {
+  if (!validEndpoint(endpoint)) return { ok: false, message: 'That device could not be identified.' };
+  try {
+    const preferences = validateAlertPreferences(input);
+    const showNames = (input as { showNames?: unknown } | null)?.showNames === true;
+    const { repository, scope } = await devices();
+    await repository.updatePreferences(scope, endpoint, { ...preferences, showNames });
+    return { ok: true, message: 'Saved for this device.' };
+  } catch (error) {
+    if (error instanceof PushSubscriptionError) return { ok: false, message: error.message };
+    return { ok: false, message: "We couldn't save that. Nothing was changed." };
   }
 }

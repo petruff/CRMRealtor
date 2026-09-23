@@ -16,19 +16,19 @@ afterEach(() => { cleanup(); localStorage.clear(); });
 describe('WhatsNew', () => {
   it('shows once and stays dismissed in this browser', async () => {
     const { unmount } = render(<WhatsNew />);
-    expect(await screen.findByRole('heading', { name: 'Omnix has a few new tools for you' })).toBeInTheDocument();
-    expect(screen.getByText(/your contacts and notes are exactly where you left them/)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'A few time-savers were just added' })).toBeInTheDocument();
+    expect(screen.getByText(/You can turn this off/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Got it' }));
-    expect(screen.queryByRole('heading', { name: 'Omnix has a few new tools for you' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'A few time-savers were just added' })).not.toBeInTheDocument();
     expect(localStorage.getItem(WHATS_NEW_KEY)).toBe('seen');
     unmount();
     render(<WhatsNew />);
-    expect(screen.queryByRole('heading', { name: 'Omnix has a few new tools for you' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'A few time-savers were just added' })).not.toBeInTheDocument();
   });
 
   it('links to the new tools and dismisses from the close button', async () => {
     render(<WhatsNew />);
-    expect(await screen.findByRole('link', { name: 'Referral engine' })).toHaveAttribute('href', '/sphere');
+    expect(await screen.findByRole('link', { name: 'Alerts you choose' })).toHaveAttribute('href', '/settings#morning-brief');
     await userEvent.click(screen.getByRole('button', { name: 'Dismiss what’s new' }));
     expect(localStorage.getItem(WHATS_NEW_KEY)).toBe('seen');
   });
