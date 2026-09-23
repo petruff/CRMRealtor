@@ -67,7 +67,7 @@ function FocusRow({ item, position }: { item: FocusItem; position: number }) {
       <div className="ox-focus-actions">
         {item.phone ? (
           <>
-            <a href={`tel:${item.phone}`} className="ox-action-button is-primary" aria-label={`Call ${item.name}`} title={`Call ${item.phone}`}>
+            <a href={`tel:${item.phone}`} data-call-contact={item.contactId} data-call-name={item.name} className="ox-action-button is-primary" aria-label={`Call ${item.name}`} title={`Call ${item.phone}`}>
               <Phone className="size-4" aria-hidden /><span>Call</span>
             </a>
             <a href={`sms:${item.phone}`} className="ox-action-button" aria-label={`Text ${item.name}`} title="Text">

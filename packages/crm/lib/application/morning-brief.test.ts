@@ -28,4 +28,16 @@ describe('morning brief notification', () => {
   it('ignores archived contacts', () => {
     expect(buildMorningBrief([person('Gone', { archivedAt: '2026-09-01T00:00:00Z' })], NOW)).toBeUndefined();
   });
+
+  it('leads with a deal date due within 48 hours', () => {
+    const urgent = [{ label: 'Inspection period ends', propertyAddress: '1408 Bayshore Dr', when: 'tomorrow' as const }];
+    expect(buildMorningBrief([person('Ana')], NOW, { openDeadlines: 1, showNames: true, urgent })).toEqual({
+      title: 'Deal date tomorrow · 1 person to reach · 1 deal deadline',
+      body: 'Inspection period ends — due tomorrow (1408 Bayshore Dr). Start with Ana Lane.',
+      url: '/power-hour', count: 1,
+    });
+    expect(buildMorningBrief([], NOW, { openDeadlines: 0, urgent: [{ ...urgent[0]!, when: 'overdue' }] })).toEqual({
+      title: 'Good morning — a deal date needs you', body: '1 deal date needs attention now.', url: '/transactions', count: 0,
+    });
+  });
 });

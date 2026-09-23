@@ -58,7 +58,7 @@ self.addEventListener('fetch', (event) => {
   }
 });
 
-// Morning brief (Epic 11 P5). Payloads are end-to-end encrypted by the push
+// Morning brief and alerts (Epic 11). Payloads are end-to-end encrypted by the push
 // service; only same-origin paths are ever opened from a notification.
 function safeInternalUrl(value) {
   return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/';
@@ -73,8 +73,8 @@ self.addEventListener('push', (event) => {
     body,
     icon: '/pwa/icon-192.png',
     badge: '/pwa/icon-192.png',
-    tag: 'omnix-morning-brief',
-    renotify: false,
+    tag: typeof payload.tag === 'string' && /^omnix-[a-z0-9-]{1,80}$/.test(payload.tag) ? payload.tag : 'omnix-morning-brief',
+    renotify: typeof payload.tag === 'string' && payload.tag.startsWith('omnix-new-lead'),
     data: { url: safeInternalUrl(payload.url) },
   }));
 });

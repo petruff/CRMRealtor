@@ -2,9 +2,16 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { BellRing, BellOff, Eye, Smartphone } from 'lucide-react';
-import { removePushSubscriptionAction, savePushSubscriptionAction } from '@/app/settings/push-actions';
+import { loadPushPreferencesAction, removePushSubscriptionAction, savePushSubscriptionAction, updatePushPreferencesAction } from '@/app/settings/push-actions';
 
 type DeviceState = 'checking' | 'unsupported' | 'denied' | 'off' | 'on';
+
+const HOURS = Array.from({ length: 24 }, (_, index) => index);
+function hourLabel(value: number): string {
+  if (value === 0) return '12 AM';
+  if (value === 12) return '12 PM';
+  return value < 12 ? `${value} AM` : `${value - 12} PM`;
+}
 
 function base64UrlToBytes(value: string): Uint8Array {
   const padded = `${value}${'='.repeat((4 - (value.length % 4)) % 4)}`.replace(/-/g, '+').replace(/_/g, '/');
@@ -38,15 +45,41 @@ export function MorningBriefSettings({ publicKey, isLive }: { publicKey?: string
   const [showNames, setShowNames] = useState(false);
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string }>();
   const [pending, startTransition] = useTransition();
+  const [endpoint, setEndpoint] = useState<string>();
+  const [choices, setChoices] = useState({ alertNewLeads: true, alertDeadlines: true, quietStartHour: 21, quietEndHour: 7 });
 
   useEffect(() => {
     if (!pushSupported()) { setState('unsupported'); return; }
     if (Notification.permission === 'denied') { setState('denied'); return; }
     navigator.serviceWorker.getRegistration()
       .then((registration) => registration?.pushManager.getSubscription())
-      .then((subscription) => setState(subscription ? 'on' : 'off'))
+      .then(async (subscription) => {
+        setState(subscription ? 'on' : 'off');
+        if (!subscription) return;
+        setEndpoint(subscription.endpoint);
+        const saved = await loadPushPreferencesAction(subscription.endpoint);
+        if (saved.found && saved.preferences) {
+          const { showNames: names, ...rest } = saved.preferences;
+          setShowNames(names);
+          setChoices(rest);
+        }
+      })
       .catch(() => setState('off'));
   }, []);
+
+  /** On a registered device every change saves immediately; before that it just shapes the sign-up. */
+  const change = (next: Partial<typeof choices> & { showNames?: boolean }) => {
+    const { showNames: names, ...rest } = next;
+    const merged = { ...choices, ...rest };
+    const nextNames = names ?? showNames;
+    setChoices(merged);
+    if (names !== undefined) setShowNames(names);
+    if (state !== 'on' || !endpoint) return;
+    startTransition(async () => {
+      const result = await updatePushPreferencesAction(endpoint, { ...merged, showNames: nextNames });
+      setMessage({ tone: result.ok ? 'ok' : 'error', text: result.message });
+    });
+  };
 
   const turnOn = () => startTransition(async () => {
     setMessage(undefined);
@@ -61,7 +94,9 @@ export function MorningBriefSettings({ publicKey, isLive }: { publicKey?: string
         p256dh: bytesToBase64Url(subscription.getKey('p256dh')),
         auth: bytesToBase64Url(subscription.getKey('auth')),
         showNames,
+        ...choices,
       });
+      if (result.ok) setEndpoint(subscription.endpoint);
       if (!result.ok) await subscription.unsubscribe();
       setState(result.ok ? 'on' : 'off');
       setMessage({ tone: result.ok ? 'ok' : 'error', text: result.message });
@@ -102,19 +137,43 @@ export function MorningBriefSettings({ publicKey, isLive }: { publicKey?: string
         <span className="ox-icon-chip ox-tone-reply"><BellRing className="size-4" aria-hidden /></span>
         <div className="min-w-0 flex-1">
           <p className="ox-eyebrow">Notifications</p>
-          <h2 id="morning-brief-title" className="ox-card-title mt-1">Morning brief</h2>
+          <h2 id="morning-brief-title" className="ox-card-title mt-1">Morning brief &amp; alerts</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Around 7 AM, get one notification with how many people to reach and any deal dates this week. Nothing is sent on quiet days.
+            Around 7 AM, one notification with who to reach and any deal dates. Nothing is sent on quiet days. Choose below what else may reach this device.
           </p>
           {state === 'unsupported' ? (
             <p className="ox-settings-hint"><Smartphone className="size-4" aria-hidden /> This browser can’t receive notifications. On iPhone, add Omnix to your Home Screen first, then open it from there.</p>
           ) : state === 'denied' ? (
             <p className="ox-settings-hint"><BellOff className="size-4" aria-hidden /> Notifications are blocked for Omnix in this browser’s settings.</p>
           ) : null}
-          <label className="ox-toggle-row">
-            <input type="checkbox" checked={showNames} onChange={(event) => setShowNames(event.target.checked)} disabled={state === 'on' || pending} />
-            <span><strong>Show names on the lock screen</strong><small>Off by default — a lock screen is not a private place.</small></span>
-          </label>
+          <fieldset className="ox-alert-choices" disabled={pending}>
+            <legend className="sr-only">What this device receives</legend>
+            <label className="ox-toggle-row">
+              <input type="checkbox" checked={choices.alertNewLeads} onChange={(event) => change({ alertNewLeads: event.target.checked })} />
+              <span><strong>New leads, right away</strong><small>When a lead arrives from your website or a lead source — the first agent to call usually wins.</small></span>
+            </label>
+            <label className="ox-toggle-row">
+              <input type="checkbox" checked={choices.alertDeadlines} onChange={(event) => change({ alertDeadlines: event.target.checked })} />
+              <span><strong>Deal dates due in 48 hours</strong><small>Inspection, financing, appraisal and closing dates, in your morning brief.</small></span>
+            </label>
+            <label className="ox-toggle-row">
+              <input type="checkbox" checked={showNames} onChange={(event) => change({ showNames: event.target.checked })} />
+              <span><strong>Show names on the lock screen</strong><small>Off by default — a lock screen is not a private place.</small></span>
+            </label>
+            <div className="ox-quiet-hours">
+              <span className="sk-label">Quiet hours</span>
+              <label className="sr-only" htmlFor="quiet-start">Quiet hours start</label>
+              <select id="quiet-start" className="sk-input" value={choices.quietStartHour} onChange={(event) => change({ quietStartHour: Number(event.target.value) })}>
+                {HOURS.map((value) => <option key={value} value={value}>{hourLabel(value)}</option>)}
+              </select>
+              <span aria-hidden>to</span>
+              <label className="sr-only" htmlFor="quiet-end">Quiet hours end</label>
+              <select id="quiet-end" className="sk-input" value={choices.quietEndHour} onChange={(event) => change({ quietEndHour: Number(event.target.value) })}>
+                {HOURS.map((value) => <option key={value} value={value}>{hourLabel(value)}</option>)}
+              </select>
+            </div>
+            <p className="ox-settings-hint">During quiet hours new leads don’t ping you; they wait for your morning brief and are always first in line on Today.</p>
+          </fieldset>
           {!isLive ? <p className="ox-settings-hint">Sample workspace: delivery needs a live workspace, but you can preview the notification.</p> : null}
           <div className="mt-4 flex flex-wrap gap-2">
             {state === 'on' ? (

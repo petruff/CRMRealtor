@@ -7,6 +7,8 @@ import { classifyWebsiteLead, validateWebsiteLeadPayload, websiteImportContact }
 import { createAutomationContext } from '@/lib/data/automation-context';
 import { CONTACT_INTAKE_PENDING_STATUS, validateStoredContactImportPlanResult } from '@/lib/data/import-gateway';
 import { validIdempotencyKey } from '@/lib/application/intake-security';
+import { afterResponse } from '@/lib/application/after-response';
+import { notifyNewLeads } from '@/lib/application/new-lead-alert-sender';
 
 export const runtime = 'nodejs';
 
@@ -59,6 +61,8 @@ export async function POST(request: NextRequest) {
     const dueAt=new Date(Date.parse(claim.receivedAt)+claim.responseSlaMinutes*60_000).toISOString();
     const taskResult=await context.activityRepository.createTask(context.workspaceScope,{contactId:row.contactId,title:`Respond to ${payload.firstName} ${payload.lastName} website lead`,description:`Website ${payload.requestedAction.replaceAll('-',' ')} from ${payload.attribution.formId}. Review consent before choosing a channel.`,dueAt,creatorMembershipId:context.workspaceScope.membershipId,assigneeMembershipId:claim.responsibleMembershipId,createdAt:new Date().toISOString(),idempotencyKey:`website-response:${supportReference}`});
     await context.websiteIntakeRepository.finalize({workspaceId:context.workspaceScope.workspaceId,submissionId,contactId:row.contactId,taskId:taskResult.task.id,identityOutcome:row.outcome,attribution,consent,classification:classificationEvidence,completedAt:new Date().toISOString()});
+    const alertWorkspaceId=context.workspaceScope.workspaceId;const alertLead={contactId:row.contactId,firstName:payload.firstName,lastName:payload.lastName,source:'website'};
+    afterResponse(()=>notifyNewLeads(alertWorkspaceId,[alertLead]));
     return safe(200,'Your information was received. The realtor has a follow-up ready.',supportReference);
   }catch(error){const category=error instanceof ContactImportError||error instanceof SyntaxError||error instanceof TypeError?'payload-invalid':'downstream-unavailable';try{await context.websiteIntakeRepository.fail({workspaceId:context.workspaceScope.workspaceId,submissionId,failureCategory:category,failedAt:new Date().toISOString()});}catch(receiptError){console.error('Website intake failure receipt could not be recorded.',{supportReference,error:receiptError});}console.error('Website intake failed safely.',{supportReference,category});return safe(category==='payload-invalid'?422:503,category==='payload-invalid'?'The form information is invalid. Please review it and try again.':'Your information could not be finalized. Retry the exact same submission.',supportReference,{ 'Retry-After':category==='payload-invalid'?'0':'30' });}
 }

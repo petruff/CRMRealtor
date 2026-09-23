@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { SAMPLE_WORKSPACE_SCOPE } from '@/lib/domain/workspace';
-import { memoryPushSubscriptionRepository, validatePushSubscription } from './push-subscription-repository';
+import { DEFAULT_DEVICE_PREFERENCES, memoryPushSubscriptionRepository, validateAlertPreferences, validatePushSubscription } from './push-subscription-repository';
 
 const valid = { endpoint: 'https://fcm.googleapis.com/fcm/send/abc', p256dh: 'B'.repeat(87), auth: 'a'.repeat(22) };
 
 describe('push subscription validation', () => {
   it('accepts browser-issued https endpoints and base64url keys', () => {
-    expect(validatePushSubscription({ ...valid, showNames: true })).toEqual({ ...valid, showNames: true });
+    expect(validatePushSubscription({ ...valid, showNames: true })).toEqual({ ...valid, showNames: true, ...DEFAULT_DEVICE_PREFERENCES });
     expect(validatePushSubscription(valid).showNames).toBe(false);
   });
 
@@ -28,5 +28,17 @@ describe('push subscription validation', () => {
     expect(await repository.listMine(SAMPLE_WORKSPACE_SCOPE)).toHaveLength(1);
     await repository.remove(SAMPLE_WORKSPACE_SCOPE, valid.endpoint);
     expect(await repository.listMine(SAMPLE_WORKSPACE_SCOPE)).toHaveLength(0);
+  });
+
+  it('keeps alert choices per device with safe defaults', async () => {
+    expect(validateAlertPreferences({})).toEqual({ alertNewLeads: true, alertDeadlines: true, quietStartHour: 21, quietEndHour: 7 });
+    expect(validateAlertPreferences({ alertNewLeads: false, quietStartHour: '22', quietEndHour: 6 })).toMatchObject({ alertNewLeads: false, quietStartHour: 22, quietEndHour: 6 });
+    expect(() => validateAlertPreferences({ quietStartHour: 24 })).toThrow(/quiet hours/);
+    const repository = memoryPushSubscriptionRepository();
+    await repository.save(SAMPLE_WORKSPACE_SCOPE, validatePushSubscription(valid));
+    await repository.updatePreferences({ ...SAMPLE_WORKSPACE_SCOPE, membershipId: 'someone-else' }, valid.endpoint, { ...DEFAULT_DEVICE_PREFERENCES, alertNewLeads: false, showNames: true });
+    expect((await repository.listMine(SAMPLE_WORKSPACE_SCOPE))[0]).toMatchObject({ alertNewLeads: true, showNames: false });
+    await repository.updatePreferences(SAMPLE_WORKSPACE_SCOPE, valid.endpoint, { ...DEFAULT_DEVICE_PREFERENCES, alertNewLeads: false, showNames: true });
+    expect((await repository.listMine(SAMPLE_WORKSPACE_SCOPE))[0]).toMatchObject({ alertNewLeads: false, showNames: true });
   });
 });

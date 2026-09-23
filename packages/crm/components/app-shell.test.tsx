@@ -27,6 +27,8 @@ vi.mock('@/components/omnix-assistant-launcher', () => ({
   ),
 }));
 vi.mock('@/components/pwa-provider', () => ({ PwaInstallAction: () => <button type="button">Install Omnix</button> }));
+vi.mock('@/components/call-follow-up', () => ({ CallFollowUp: () => null }));
+vi.mock('@/app/calls/actions', () => ({ logCallOutcomeAction: vi.fn() }));
 const badge = vi.hoisted(() => ({ value: { total: 3, urgent: 1 } as { total: number; urgent: number } | undefined }));
 vi.mock('@/app/inbox/actions', () => ({ inboxBadgeAction: vi.fn(async () => badge.value) }));
 

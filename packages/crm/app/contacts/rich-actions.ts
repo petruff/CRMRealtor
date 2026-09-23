@@ -248,25 +248,32 @@ function withSaved(href: string, saved: string): string {
  * is chosen from the server's own sequence. Only internal /contacts paths are
  * ever produced, so no client value can redirect elsewhere.
  */
+function withArchived(href: string, saved: string, contactId: string): string {
+  const [path, query = ''] = withSaved(href, saved).split('?');
+  const params = new URLSearchParams(query);
+  params.set('archivedContact', contactId);
+  return `${path}?${params.toString()}`;
+}
+
 async function archiveDestination(contactId: string, listContext: ContactBrowseContext | undefined): Promise<string> {
-  if (!listContext) return '/contacts?saved=archived';
+  if (!listContext) return withArchived('/contacts', 'archived', contactId);
   try {
     const { repository, smartListRepository, workspaceScope } = await getRepository();
     let definition;
     if (listContext.smartList) {
       const smartList = await smartListRepository.get(workspaceScope, listContext.smartList);
-      if (smartList?.status !== 'active') return withSaved(contactListHref(listContext), 'archived');
+      if (smartList?.status !== 'active') return withArchived(contactListHref(listContext), 'archived', contactId);
       definition = smartList.definition;
     }
     const contacts = await repository.list({ includeArchived: true });
     const continuation = resolveArchiveContinuation(contacts, contactId, listContext, definition);
-    if (continuation.kind === 'list') return withSaved(contactListHref(continuation.context), 'archived-end');
+    if (continuation.kind === 'list') return withArchived(contactListHref(continuation.context), 'archived-end', contactId);
     const params = new URLSearchParams({ archivedContact: contactId });
     return `${contactRecordHref(continuation.contactId, continuation.context, 'archived-next')}&${params.toString()}`;
   } catch (error) {
     // The archive itself is already committed; only the continuation failed.
     console.error('[rich-contact-action:archive-continuation]', error);
-    return withSaved(contactListHref(listContext), 'archived');
+    return withArchived(contactListHref(listContext), 'archived', contactId);
   }
 }
 
@@ -300,4 +307,33 @@ export async function restoreContactLifecycleAction(
   }, 'Contact restored.', contactId);
   if (state.status === 'success') redirect(`/contacts/${encodeURIComponent(contactId)}?saved=restored`);
   return state;
+}
+
+/**
+ * "Undo" right after an archive: restores the contact and returns to it inside
+ * the same list the realtor was working through. Only a contact that is
+ * currently archived can be restored, and only internal /contacts paths result.
+ */
+export async function undoArchiveContactAction(formData: FormData): Promise<void> {
+  const contactId = String(formData.get('contactId') ?? '');
+  let destination = '/contacts';
+  try {
+    const { repository: contactRepository } = await getRepository();
+    const current = await contactRepository.get(contactId);
+    if (!current?.archivedAt) {
+      destination = current ? `/contacts/${encodeURIComponent(contactId)}` : '/contacts';
+    } else {
+      const { repository, scope } = await context();
+      await restoreContactCommand(repository, scope, contactId);
+      refresh(contactId);
+      const { archivedAt: _archivedAt, ...active } = current;
+      void _archivedAt;
+      const listContext = parseSerializedBrowseContext(formData.get('returnContext'), active);
+      destination = listContext ? contactRecordHref(contactId, listContext, 'restored') : `/contacts/${encodeURIComponent(contactId)}?saved=restored`;
+    }
+  } catch (error) {
+    console.error('[rich-contact-action:undo-archive]', error);
+    destination = `/contacts?saved=undo-failed`;
+  }
+  redirect(destination);
 }

@@ -45,7 +45,9 @@ import {
   type ContactScope,
 } from "@/lib/application/contact-query";
 import { contactViewHref, type ContactViewState } from "@/lib/application/contact-view-state";
-import { contactRecordHref, type ContactBrowseContext } from "@/lib/application/contact-navigation";
+import { contactBrowseQuery, contactRecordHref, type ContactBrowseContext } from "@/lib/application/contact-navigation";
+import { UndoArchiveNotice } from "@/components/undo-archive-notice";
+import { undoArchiveContactAction } from "@/app/contacts/rich-actions";
 import { formatHuman } from "@/lib/domain/dates";
 import {
   applySmartListCommand,
@@ -113,6 +115,7 @@ export default async function ContactsPage({
     scope?: string | string[];
     page?: string | string[];
     saved?: string | string[];
+    archivedContact?: string | string[];
   }>;
 }) {
   const params = await searchParams;
@@ -163,6 +166,9 @@ export default async function ContactsPage({
     workspaceScope,
     "all",
   );
+  const archivedContactId = typeof params.archivedContact === "string" ? params.archivedContact : undefined;
+  const undoCandidate = archiveNotice && archivedContactId ? await repository.get(archivedContactId).catch(() => undefined) : undefined;
+  const undoArchived = undoCandidate?.archivedAt ? undoCandidate : undefined;
   const selectedSmartList = !archivedView && rawSmartListId
     ? smartLists.find((list) => list.id === rawSmartListId && list.status === "active")
     : undefined;
@@ -352,7 +358,14 @@ export default async function ContactsPage({
         scope={scope}
       /> : null}
 
-      {archiveNotice && !archivedView ? (
+      {archiveNotice && !archivedView && undoArchived ? (
+        <UndoArchiveNotice
+          message={archiveNotice}
+          contactId={undoArchived.id}
+          {...(browseContext.origin === "list" ? { returnContext: contactBrowseQuery(browseContext) } : {})}
+          action={undoArchiveContactAction}
+        />
+      ) : archiveNotice && !archivedView ? (
         <p
           role="status"
           className="mb-5 rounded-2xl border border-nurture-border bg-nurture-soft px-4 py-3 text-sm text-nurture"
@@ -529,6 +542,7 @@ export default async function ContactsPage({
                             <IconAction
                               href={`tel:${contact.phone}`}
                               label={`Call ${displayName(contact)}`}
+                              callContact={{ id: contact.id, name: displayName(contact) }}
                             >
                               <Phone className="size-4" />
                             </IconAction>

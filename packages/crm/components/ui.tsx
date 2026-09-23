@@ -168,13 +168,17 @@ export function IconAction({
   href,
   label,
   children,
+  callContact,
 }: {
   href: string;
   label: string;
   children: React.ReactNode;
+  /** For tel: links — lets Omnix offer to log the call afterwards. */
+  callContact?: { id: string; name: string };
 }) {
   return (
-    <a href={href} aria-label={label} title={label} className="sk-icon-button">
+    <a href={href} aria-label={label} title={label} className="sk-icon-button"
+      {...(callContact ? { 'data-call-contact': callContact.id, 'data-call-name': callContact.name } : {})}>
       {children}
     </a>
   );

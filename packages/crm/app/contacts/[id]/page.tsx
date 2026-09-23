@@ -44,6 +44,8 @@ import {
 import { ContactActivityHistory } from "@/components/contact-activity-history";
 import { ContactRecordNavigator } from "@/components/contact-record-navigation";
 import { ContactReachSummary } from "@/components/contact-reach-summary";
+import { UndoArchiveNotice } from "@/components/undo-archive-notice";
+import { undoArchiveContactAction } from "@/app/contacts/rich-actions";
 import { ConversationActions } from "@/components/conversation-actions";
 import {
   contactBrowseQuery,
@@ -281,11 +283,13 @@ export default async function ContactDetailPage({
     : effectiveCadenceDays(contact, now);
   // The confirmation belongs to the record archived a moment ago, not to this one.
   let notice = savedMessage(saved);
+  let undoArchivedId: string | undefined;
   if (saved === "archived-next") {
     const previous = archivedContact && archivedContact !== id ? await repository.get(archivedContact) : undefined;
     notice = previous?.archivedAt
       ? `${displayName(previous)} was archived. Showing the next contact in this list.`
       : "Previous contact archived. Showing the next contact in this list.";
+    if (previous?.archivedAt) undoArchivedId = previous.id;
   }
   const archiveReturnContext = recordNavigation.context.origin === "list"
     ? contactBrowseQuery(recordNavigation.context)
@@ -305,7 +309,9 @@ export default async function ContactDetailPage({
         <ContactRecordNavigator navigation={recordNavigation} />
       </div>
 
-      {notice ? (
+      {notice && undoArchivedId ? (
+        <UndoArchiveNotice message={notice} contactId={undoArchivedId} returnContext={archiveReturnContext} action={undoArchiveContactAction} />
+      ) : notice ? (
         <p
           role="status"
           className="mb-5 rounded-2xl border border-nurture-border bg-nurture-soft px-4 py-3 text-sm text-nurture"
@@ -336,7 +342,7 @@ export default async function ContactDetailPage({
             </p>
           </div>
         </header>
-        <ContactReachSummary contact={contact} callable={!archived} />
+        <ContactReachSummary contact={contact} callable={!archived} callContact={{ id: contact.id, name: displayName(contact) }} />
       </div>
 
       {!archived && <div className="mt-5"><ConversationActions contactId={contact.id} /></div>}
@@ -345,7 +351,7 @@ export default async function ContactDetailPage({
       {!archived ? <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1">
         {contact.phone && (
           <>
-            <a href={`tel:${contact.phone}`} className="sk-primary-button">
+            <a href={`tel:${contact.phone}`} data-call-contact={contact.id} data-call-name={displayName(contact)} className="sk-primary-button">
               <Phone className="size-4" /> Call
             </a>
             <a href={`sms:${contact.phone}`} className="sk-text-action">
