@@ -113,6 +113,12 @@ function savedMessage(saved?: string): string | undefined {
   return undefined;
 }
 
+function ordinalNumber(value: number): string {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
+  return `${value}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[value % 10] ?? 'th'}`;
+}
+
 export default async function ContactDetailPage({
   params,
   searchParams,
@@ -471,9 +477,8 @@ export default async function ContactDetailPage({
             <div className="flex items-center gap-3 bg-surface p-4 sm:p-5">
               <Home className="size-[18px] shrink-0 text-nurture" />
               <div>
-                <p className="text-sm text-ink">
-                  {anniversaryOrdinal(contact.homePurchaseDate, now)} year
-                  homeaversary
+                <p className="text-sm font-medium text-ink">
+                  {ordinalNumber(anniversaryOrdinal(contact.homePurchaseDate, now))} home anniversary
                 </p>
                 <p className="text-xs text-muted">
                   Bought {formatHuman(contact.homePurchaseDate)} ·{" "}

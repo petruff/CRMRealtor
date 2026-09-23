@@ -547,3 +547,79 @@
   .ox-fh-category { color: var(--sk-muted-text-color); font-size: 0.75rem; }
   .ox-fh-why { margin-top: 0.125rem; color: var(--sk-muted-text-color); }
 }
+
+/*
+ * ---------- Harmony layer ----------
+ * Older screens were built before the premium system. Instead of rewriting
+ * each page, these unlayered rules (which win over Tailwind utilities) give
+ * every screen the same title scale, eyebrow, stat rhythm and one typeface.
+ */
+#main-content h1.font-display {
+  max-width: 48rem;
+  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+#main-content h1.font-display br { display: none; }
+#main-content h2.font-display.text-3xl,
+#main-content h2.font-display.text-2xl,
+#main-content h2.font-display.text-4xl {
+  font-size: clamp(1.25rem, 1.1rem + 0.6vw, 1.5rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+#main-content .eyebrow {
+  color: var(--sk-accent-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.dark #main-content .eyebrow { color: var(--sk-body-link-color); }
+#main-content p.text-\[16px\] { font-size: 0.9375rem; line-height: 1.55; }
+
+/* Stat strips: calm numbers, two columns on phones instead of a tall stack. */
+#main-content section.grid.bg-line,
+#main-content div.grid.bg-line { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) {
+  #main-content section.grid.bg-line.sm\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 1280px) {
+  #main-content section.grid.bg-line.xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+#main-content section.grid.bg-line > article.min-h-28 { min-height: 5.75rem; padding: 1rem 1.125rem; }
+@media (max-width: 639px) {
+  #main-content section.grid.bg-line > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+#main-content strong.font-display.text-4xl,
+#main-content strong.font-display.text-3xl {
+  font-size: clamp(1.5rem, 1.3rem + 0.8vw, 1.875rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+#main-content section.grid.bg-line p.uppercase { letter-spacing: 0.04em; font-size: 0.6875rem; }
+
+/* One typeface: the decorative serif remained only in Insights. */
+.insights-header h1,
+.insights-command-metric > strong,
+.insights-section-heading h2,
+.insights-current-value,
+.insights-temperature-ring strong,
+.insights-temperature-legend dd,
+.insights-work-stats strong,
+.insights-error h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.insights-header h1 { font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem); line-height: 1.1; letter-spacing: -0.03em; }
+.insights-section-heading h2 { font-size: clamp(1.25rem, 1.1rem + 0.8vw, 1.75rem); line-height: 1.2; }
+
+/* A lone last card in a two-column group spans the row instead of leaving a gap. */
+@media (min-width: 640px) {
+  .sk-group.sm\:grid-cols-2 > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
