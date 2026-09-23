@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "crm-browser-checks.v1",
+  "environment": "local sample Next.js preview",
+  "url": "http://127.0.0.1:3218/omnix",
+  "checkedAt": "2026-09-08T01:04:00Z",
+  "viewports": [
+    { "width": 390, "height": 844, "documentOverflow": false, "colorMode": "light", "composerBottom": 732.21875, "screenshotInspected": true },
+    { "width": 768, "height": 1024, "documentOverflow": false },
+    { "width": 1440, "height": 1000, "documentOverflow": false, "colorMode": "dark" }
+  ],
+  "journeys": [
+    "Workspace overview rendered real sample clients, task, plan and saved proposal states with citations.",
+    "Selected Daniel Okafor from a cited result, requested Client status, received fresh client/task/nurture/capture status at 2026-09-08T01:02:58.143Z.",
+    "Focused Public web and activated it using the Space key; aria-pressed and focus persisted, selected private client context was cleared.",
+    "Multiple responses had no duplicate DOM IDs.",
+    "Existing component tests verify global dialog focus, Escape return, reduced-motion-aware scrolling, source disclosure and progressive result display."
+  ],
+  "notVerified": ["Authenticated Gemini response", "Physical iPhone Safari/PWA", "Native browser zoom at 200 percent", "Live provider execution"],
+  "notes": "Screenshots were inspected inline; no screenshot file is claimed. Sample evidence is not production or provider acceptance."
+}

@@ -6,6 +6,7 @@ import {
   addContactNoteCommand,
   archiveContactNoteCommand,
   createContactCommand,
+  editContactNoteCommand,
   isContactCommandError,
   recordContactTouchCommand,
   restoreContactNoteCommand,
@@ -14,6 +15,11 @@ import {
 import type { ContactActionState } from '@/lib/application/contact-action-state';
 import { getRepository } from '@/lib/data';
 import { randomUUID } from 'node:crypto';
+import {
+  contactEditHref,
+  contactRecordHref,
+  type ContactBrowseContext,
+} from '@/lib/application/contact-navigation';
 
 function formValues(formData?: FormData): Record<string, string> | undefined {
   if (!formData) return undefined;
@@ -42,7 +48,9 @@ function actionError(
   console.error(`[contact-action:${operation}]`, error);
   return {
     status: 'error',
-    message: "We couldn't save that change. Nothing was updated — please try again.",
+    message: operation === 'update'
+      ? "We couldn't confirm the complete update. Refresh this contact before trying again."
+      : "We couldn't save that change. Nothing was updated — please try again.",
     values,
   };
 }
@@ -77,22 +85,30 @@ export async function createContactAction(
 
 export async function updateContactAction(
   id: string,
+  navigation: Readonly<{ context: ContactBrowseContext; nextContactId?: string }>,
   _state: ContactActionState,
   formData: FormData,
 ): Promise<ContactActionState> {
   void _state;
+  let destination = contactRecordHref(id, navigation.context, 'updated');
   try {
     const { repository, activityRepository, workspaceScope } = await getRepository();
     await updateContactCommand(repository, id, formData, new Date(), {
       repository: activityRepository,
       scope: workspaceScope,
     });
+    if (formData.get('reviewAction') === 'save-next' && navigation.nextContactId) {
+      const nextContact = await repository.get(navigation.nextContactId);
+      if (nextContact && !nextContact.archivedAt) {
+        destination = contactEditHref(nextContact.id, navigation.context);
+      }
+    }
   } catch (error) {
     return actionError(error, 'update', formData);
   }
 
   revalidateContact(id);
-  redirect(`/contacts/${encodeURIComponent(id)}?saved=updated`);
+  redirect(destination);
 }
 
 export async function addContactNoteAction(
@@ -128,6 +144,28 @@ export async function archiveContactNoteAction(
   }
   revalidateContact(contactId);
   redirect(`/contacts/${encodeURIComponent(contactId)}?saved=note-archived#notes`);
+}
+
+export async function editContactNoteAction(
+  contactId: string,
+  noteId: string,
+  _state: ContactActionState,
+  formData: FormData,
+): Promise<ContactActionState> {
+  void _state;
+  try {
+    const { repository } = await getRepository();
+    const result = await editContactNoteCommand(repository, contactId, noteId, formData, randomUUID());
+    revalidateContact(contactId);
+    return {
+      status: 'success',
+      message: result.noOp ? 'No changes to save.' : 'Note updated.',
+    };
+  } catch (error) {
+    // Refresh the page data so a conflict shows the latest saved text beside the kept draft.
+    revalidateContact(contactId);
+    return actionError(error, 'edit-note', formData);
+  }
 }
 
 export async function restoreContactNoteAction(

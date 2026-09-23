@@ -2,6 +2,7 @@
 set -euo pipefail
 
 SUPABASE_CLI_VERSION="2.90.0"
+SUPABASE_DATABASE_ONLY_EXCLUDES="gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor"
 MIGRATION_DIRECTORY="supabase/migrations"
 ROLLBACK_DIRECTORY="supabase/rollbacks"
 TEST_DIRECTORY="supabase/tests"
@@ -17,13 +18,34 @@ cleanup() {
 }
 trap cleanup EXIT
 
-ensure_local_database_ready() {
-  local attempt
+print_database_diagnostics() {
+  local database_container
+  database_container="$(docker ps -a --filter 'name=supabase_db_' --format '{{.ID}}' | head -n 1)"
+  echo "Supabase database test failed; collecting bounded database diagnostics." >&2
+  docker stats --no-stream >&2 || true
+  if [[ -n "${database_container}" ]]; then
+    docker logs --tail 200 "${database_container}" >&2 || true
+  fi
+}
 
-  # `supabase test db` runs pg_prove in a sibling container. On a cold hosted
-  # runner the local Postgres container can briefly stop when that container
-  # exits, so reassert the stack and wait before the recovery rehearsal.
-  npx --yes "supabase@${SUPABASE_CLI_VERSION}" start >/dev/null
+database_container_id() {
+  docker ps --filter 'name=supabase_db_' --format '{{.ID}}' | head -n 1
+}
+
+database_psql() {
+  local database_container
+  if command -v psql >/dev/null 2>&1; then
+    psql "${local_database_url}" "$@"
+    return
+  fi
+  database_container="$(database_container_id)"
+  if [[ -z "${database_container}" ]]; then
+    return 1
+  fi
+  docker exec -i "${database_container}" psql -U postgres -d postgres "$@"
+}
+
+refresh_local_database_url() {
   local_database_url="$(
     npx --yes "supabase@${SUPABASE_CLI_VERSION}" status -o json |
       node -e '
@@ -40,8 +62,85 @@ ensure_local_database_ready() {
         });
       '
   )"
+}
+
+run_database_tests() {
+  local assertion_count=0
+  local expected_assertions
+  local file_assertions
+  local file_count=0
+  local plan_line
+  local test_error
+  local test_file
+  local test_output
+
+  # The Supabase pg_prove helper container has repeatedly triggered a
+  # PostgreSQL 17 SIGSEGV on constrained hosted runners late in this suite.
+  # Execute every pgTAP file in its own deterministic session instead, disable
+  # JIT only for that session, and verify both its TAP plan and every assertion.
+  database_psql --no-psqlrc --set ON_ERROR_STOP=1 \
+    --command "create extension if not exists pgtap with schema extensions" >/dev/null
+  while IFS= read -r test_file; do
+    test_output="$(mktemp)"
+    test_error="$(mktemp)"
+    if ! {
+      printf '%s\n' "set jit = off;"
+      cat "${test_file}"
+    } | database_psql --no-psqlrc --quiet --tuples-only --no-align --set ON_ERROR_STOP=1 \
+      >"${test_output}" 2>"${test_error}"; then
+      echo "Database test failed: ${test_file}" >&2
+      cat "${test_output}" >&2
+      cat "${test_error}" >&2
+      print_database_diagnostics
+      return 1
+    fi
+    if grep -Eq '^not ok([[:space:]]|$)' "${test_output}"; then
+      echo "Database assertion failed: ${test_file}" >&2
+      cat "${test_output}" >&2
+      cat "${test_error}" >&2
+      return 1
+    fi
+    plan_line="$(grep -E '^1\.\.[0-9]+$' "${test_output}" | tail -n 1 || true)"
+    if [[ -z "${plan_line}" ]]; then
+      echo "Database test emitted no pgTAP plan: ${test_file}" >&2
+      cat "${test_output}" >&2
+      cat "${test_error}" >&2
+      return 1
+    fi
+    expected_assertions="${plan_line#1..}"
+    file_assertions="$(grep -Ec '^ok[[:space:]]+[0-9]+' "${test_output}" || true)"
+    if [[ "${file_assertions}" -ne "${expected_assertions}" ]]; then
+      echo "Database TAP plan mismatch in ${test_file}: expected ${expected_assertions}, observed ${file_assertions}." >&2
+      cat "${test_output}" >&2
+      cat "${test_error}" >&2
+      return 1
+    fi
+    file_count=$((file_count + 1))
+    assertion_count=$((assertion_count + file_assertions))
+    printf '%s ok (%d assertions)\n' "${test_file}" "${file_assertions}"
+    rm -f "${test_output}" "${test_error}"
+  done < <(find "${TEST_DIRECTORY}" -maxdepth 1 -type f -name '*.sql' -print | sort)
+
+  if (( file_count == 0 || assertion_count == 0 )); then
+    echo "Database test discovery returned no executable pgTAP assertions." >&2
+    return 1
+  fi
+  printf 'Database tests passed: %d files, %d assertions.\n' "${file_count}" "${assertion_count}"
+}
+
+ensure_local_database_ready() {
+  local attempt
+
+  # `supabase test db` runs pg_prove in a sibling container and can remove the
+  # database while the CLI still reports a running stack. Recreate the bounded
+  # database-only stack so recovery never depends on stale container state.
+  npx --yes "supabase@${SUPABASE_CLI_VERSION}" stop --no-backup >/dev/null 2>&1 || true
+  stack_started=false
+  npx --yes "supabase@${SUPABASE_CLI_VERSION}" start --exclude "${SUPABASE_DATABASE_ONLY_EXCLUDES}" >/dev/null
+  stack_started=true
+  refresh_local_database_url
   for attempt in $(seq 1 30); do
-    if psql "${local_database_url}" --set ON_ERROR_STOP=1 --command 'select 1' >/dev/null 2>&1; then
+    if database_psql --set ON_ERROR_STOP=1 --command 'select 1' >/dev/null 2>&1; then
       return 0
     fi
     sleep 2
@@ -140,9 +239,10 @@ if [[ "${SUPABASE_CI_RECOVERY_PLAN_ONLY:-false}" == "true" ]]; then
   exit 0
 fi
 
-npx --yes "supabase@${SUPABASE_CLI_VERSION}" start
+npx --yes "supabase@${SUPABASE_CLI_VERSION}" start --exclude "${SUPABASE_DATABASE_ONLY_EXCLUDES}"
 stack_started=true
 npx --yes "supabase@${SUPABASE_CLI_VERSION}" db reset --local
+refresh_local_database_url
 
 history_file="$(mktemp)"
 npx --yes "supabase@${SUPABASE_CLI_VERSION}" migration list --local | tee "${history_file}"
@@ -155,26 +255,26 @@ while IFS= read -r migration_path; do
   fi
 done < <(find "${MIGRATION_DIRECTORY}" -maxdepth 1 -type f -name '*.sql' -print | sort)
 
-npx --yes "supabase@${SUPABASE_CLI_VERSION}" test db "${TEST_DIRECTORY}" --local
+run_database_tests
 
 if (( ${#candidate_migrations[@]} > 0 )); then
   ensure_local_database_ready
   echo "Rehearsing containment rollback for ${#candidate_migrations[@]} candidate migration(s)."
   for (( index=${#candidate_migrations[@]}-1; index>=0; index-- )); do
     migration_name="$(basename "${candidate_migrations[index]}" .sql)"
-    psql "${local_database_url}" \
-      --set ON_ERROR_STOP=1 --file "${ROLLBACK_DIRECTORY}/${migration_name}.rollback.sql"
+    database_psql --set ON_ERROR_STOP=1 \
+      < "${ROLLBACK_DIRECTORY}/${migration_name}.rollback.sql"
   done
 
   echo "Rehearsing forward repair in migration order."
   for migration_path in "${candidate_migrations[@]}"; do
     migration_name="$(basename "${migration_path}" .sql)"
-    psql "${local_database_url}" \
-      --set ON_ERROR_STOP=1 --file "${ROLLBACK_DIRECTORY}/${migration_name}.forward-repair.sql"
+    database_psql --set ON_ERROR_STOP=1 \
+      < "${ROLLBACK_DIRECTORY}/${migration_name}.forward-repair.sql"
   done
 
   echo "Running pgTAP after rollback and forward-repair recovery."
-  npx --yes "supabase@${SUPABASE_CLI_VERSION}" test db "${TEST_DIRECTORY}" --local
+  run_database_tests
 else
   echo "No candidate migrations differ from MIGRATION_BASE_SHA; recovery rehearsal has no candidate target."
 fi

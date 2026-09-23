@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   ArrowLeft,
   Phone,
@@ -32,14 +33,26 @@ import {
   parseDateOnly,
 } from "@/lib/domain/dates";
 import { Avatar, GroupedSurface, LeadBadge } from "@/components/ui";
-import { AddNoteForm, ArchiveNoteForm, RecordTouchForm, RestoreNoteForm } from "@/components/contact-mutations";
+import { AddNoteForm, ArchiveNoteForm, NoteEntry, RecordTouchForm, RestoreNoteForm } from "@/components/contact-mutations";
 import {
   addContactNoteAction,
   archiveContactNoteAction,
+  editContactNoteAction,
   recordContactTouchAction,
   restoreContactNoteAction,
 } from "@/app/contact-actions";
 import { ContactActivityHistory } from "@/components/contact-activity-history";
+import { ContactRecordNavigator } from "@/components/contact-record-navigation";
+import { ContactReachSummary } from "@/components/contact-reach-summary";
+import { ConversationActions } from "@/components/conversation-actions";
+import {
+  contactBrowseQuery,
+  contactBrowseSequence,
+  contactEditHref,
+  contactListHref,
+  contactRecordNavigation,
+  parseContactBrowseContext,
+} from "@/lib/application/contact-navigation";
 import {
   listActivityEventsCommand,
   listTasksCommand,
@@ -65,8 +78,13 @@ import {
   supabaseTwilioOperationRepository,
   type TwilioReadinessState,
 } from "@/lib/data/twilio-operation-repository";
+import { projectOmnichannelTimeline } from "@/lib/application/omnichannel-timeline";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Contact relationship",
+  description: "Review one contact's follow-up, consent, source, and relationship history in Omnix.",
+};
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
@@ -75,6 +93,10 @@ function Fact({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 text-[15px] text-ink">{value}</dd>
     </div>
   );
+}
+
+function deadlineDay(value: string, timezone: string): string {
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: timezone }).format(new Date(value));
 }
 
 function savedMessage(saved?: string): string | undefined {
@@ -91,19 +113,37 @@ function savedMessage(saved?: string): string | undefined {
   return undefined;
 }
 
+function ordinalNumber(value: number): string {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
+  return `${value}${({ 1: 'st', 2: 'nd', 3: 'rd' } as Record<number, string>)[value % 10] ?? 'th'}`;
+}
+
 export default async function ContactDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string; view?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    view?: string;
+    scope?: string;
+    q?: string;
+    leadType?: string;
+    source?: string;
+    smartList?: string;
+    page?: string;
+    from?: string;
+    archivedContact?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { saved, view } = await searchParams;
+  const browseParams = await searchParams;
+  const { saved, view, archivedContact } = browseParams;
   const now = new Date();
 
   const repositoryContext = await getRepository();
-  const { repository, activityRepository, workspaceScope, workspaceRepository } = repositoryContext;
+  const { repository, activityRepository, workspaceScope, workspaceRepository, smartListRepository } = repositoryContext;
   const contact = await repository.get(id);
   if (!contact) notFound();
   const archived = Boolean(contact.archivedAt);
@@ -119,7 +159,7 @@ export default async function ContactDetailPage({
     repository.notesFor(id),
     repository.notesFor(id, { archivedOnly: true }),
   ]);
-  const [events, tasks, allContacts, members] = await Promise.all([
+  const [events, tasks, allContacts, members, contactMilestones, propertyBehaviors] = await Promise.all([
     listActivityEventsCommand(activityRepository, workspaceScope, {
       contactId: id,
       limit: 100,
@@ -131,6 +171,9 @@ export default async function ContactDetailPage({
     }),
     repository.list({ includeArchived: true }),
     workspaceRepository.listMemberships(workspaceScope),
+    repositoryContext.operationalSignalRepository.listMilestones(workspaceScope, { limit: 1000 })
+      .then((rows) => rows.filter((milestone) => milestone.contactId === id)),
+    repositoryContext.propertyBehaviorRepository.listBehaviors(workspaceScope, { contactId: id }),
   ]);
   const richData = richContactRepository ? await Promise.all([
     listContactPointsCommand(richContactRepository, workspaceScope, id, true),
@@ -181,6 +224,20 @@ export default async function ContactDetailPage({
       textingSummary = undefined;
     }
   }
+  let attributions: { id:string;touchType:string;source:string;medium?:string;campaign?:string;occurredAt:string }[] = [];
+  let websiteConsents: { id:string;channel:'email'|'sms'|'phone';state:string;occurredAt:string;policyVersion:string }[] = [];
+  let responseSlas: { id:string;status:string;dueAt:string;createdAt:string }[] = [];
+  if (repositoryContext.isLive) {
+    const evidenceClient = await createSupabaseServerClient();
+    const [attributionResult,consentResult,responseResult] = await Promise.all([
+      evidenceClient.from('contact_attribution_events').select('id,touch_type,source,medium,campaign,occurred_at').eq('workspace_id',workspaceScope.workspaceId).eq('contact_id',id).order('occurred_at',{ascending:false}).limit(100),
+      evidenceClient.from('contact_consent_events').select('id,channel,consent_state,policy_version,occurred_at').eq('workspace_id',workspaceScope.workspaceId).eq('contact_id',id).order('occurred_at',{ascending:false}).limit(100),
+      evidenceClient.from('website_response_slas').select('id,status,due_at,created_at').eq('workspace_id',workspaceScope.workspaceId).eq('contact_id',id).order('created_at',{ascending:false}).limit(50),
+    ]);
+    attributions=(attributionResult.data??[]).map((row)=>({id:String(row.id),touchType:String(row.touch_type),source:String(row.source),...(typeof row.medium==='string'?{medium:row.medium}:{}),...(typeof row.campaign==='string'?{campaign:row.campaign}:{}),occurredAt:String(row.occurred_at)}));
+    websiteConsents=(consentResult.data??[]).filter((row)=>['email','sms','phone'].includes(String(row.channel))).map((row)=>({id:String(row.id),channel:String(row.channel) as 'email'|'sms'|'phone',state:String(row.consent_state),occurredAt:String(row.occurred_at),policyVersion:String(row.policy_version)}));
+    responseSlas=(responseResult.data??[]).map((row)=>({id:String(row.id),status:String(row.status),dueAt:String(row.due_at),createdAt:String(row.created_at)}));
+  }
   let householdViews: HouseholdView[] = [];
   if (richContactRepository && richData) {
     householdViews = await Promise.all(richData[1].map(async (household) => ({
@@ -189,7 +246,17 @@ export default async function ContactDetailPage({
     })));
   }
 
+  const browseContext = parseContactBrowseContext(browseParams, contact);
+  const smartList = browseContext.smartList
+    ? await smartListRepository.get(workspaceScope, browseContext.smartList)
+    : undefined;
+  const browseSequence = contactBrowseSequence(
+    allContacts,
+    browseContext,
+    smartList?.status === "active" ? smartList.definition : undefined,
+  );
   const name = displayName(contact);
+  const recordNavigation = contactRecordNavigation(browseSequence, contact, browseContext);
   const money = (n?: number) =>
     n === undefined ? undefined : `$${n.toLocaleString("en-US")}`;
 
@@ -212,16 +279,31 @@ export default async function ContactDetailPage({
   const cadenceDays = isDormant(contact)
     ? null
     : effectiveCadenceDays(contact, now);
-  const notice = savedMessage(saved);
+  // The confirmation belongs to the record archived a moment ago, not to this one.
+  let notice = savedMessage(saved);
+  if (saved === "archived-next") {
+    const previous = archivedContact && archivedContact !== id ? await repository.get(archivedContact) : undefined;
+    notice = previous?.archivedAt
+      ? `${displayName(previous)} was archived. Showing the next contact in this list.`
+      : "Previous contact archived. Showing the next contact in this list.";
+  }
+  const archiveReturnContext = recordNavigation.context.origin === "list"
+    ? contactBrowseQuery(recordNavigation.context)
+    : undefined;
   const noteAction = addContactNoteAction.bind(null, id);
   const touchAction = recordContactTouchAction.bind(null, id);
+  const omnichannelTimeline = projectOmnichannelTimeline({events,textMessages:textingSummary?.messages??[],...(textingSummary?.consent?{textingConsent:{status:textingSummary.consent.status,effectiveAt:textingSummary.consent.effectiveAt}}:{}),propertyBehaviors,attributions,consents:websiteConsents,responseSlas,pipelineStage:contact.pipelineStage,contactCreatedAt:contact.createdAt,now});
 
   return (
     <div>
-      <Link href={archived ? "/contacts?view=archived" : "/"} className="sk-text-action mb-6">
-        <ArrowLeft className="size-4" />
-        {archived ? "Back to archived contacts" : "Back to today"}
-      </Link>
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-3 sm:justify-between">
+        {/* Phones already have a back arrow in the top bar. */}
+        <Link href={contactListHref(recordNavigation.context)} className="sk-text-action max-sm:!hidden">
+          <ArrowLeft className="size-4" aria-hidden />
+          Back to contacts
+        </Link>
+        <ContactRecordNavigator navigation={recordNavigation} />
+      </div>
 
       {notice ? (
         <p
@@ -238,21 +320,26 @@ export default async function ContactDetailPage({
         </p>
       ) : null}
 
-      <header className="flex items-start gap-4 md:items-center">
-        <Avatar initials={initials(contact)} leadType={contact.leadType} />
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-3xl leading-tight text-ink md:text-5xl">
-              {name}
-            </h1>
-            <LeadBadge leadType={contact.leadType} />
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <header className="flex min-w-0 items-start gap-4 md:items-center lg:flex-1">
+          <Avatar initials={initials(contact)} leadType={contact.leadType} relationship={contact.relationship} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="font-display text-3xl leading-tight text-ink md:text-5xl">
+                {name}
+              </h1>
+              <LeadBadge leadType={contact.leadType} relationship={contact.relationship} />
+            </div>
+            <p className="mt-1 text-sm text-muted">
+              {RELATIONSHIP_LABEL[contact.relationship]} ·{" "}
+              {INTENT_LABEL[contact.intent]}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-muted">
-            {RELATIONSHIP_LABEL[contact.relationship]} ·{" "}
-            {INTENT_LABEL[contact.intent]}
-          </p>
-        </div>
-      </header>
+        </header>
+        <ContactReachSummary contact={contact} callable={!archived} />
+      </div>
+
+      {!archived && <div className="mt-5"><ConversationActions contactId={contact.id} /></div>}
 
       {/* Actions kept large and thumb-reachable — this is the mobile lookup case she described. */}
       {!archived ? <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1">
@@ -271,15 +358,25 @@ export default async function ContactDetailPage({
             <Mail className="size-4" /> Email
           </a>
         )}
-        <Link href={`/contacts/${id}/edit`} className="sk-text-action">
+        <Link href={contactEditHref(id, recordNavigation.context)} className="sk-text-action">
           <Pencil className="size-4" /> Edit
         </Link>
       </div> : null}
 
+      {!archived && !googleEmailPoint && !contact.email ? (
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-line bg-surface-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-ink">No email on file</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-muted">This contact can stay email-free. Add an address only when Judith has one.</p>
+          </div>
+          <Link href={contactEditHref(id, recordNavigation.context)} className="sk-secondary-button shrink-0">Add email</Link>
+        </div>
+      ) : null}
+
       {!archived && googleConnection?.remoteAccountLabel && googleEmailPoint && gmailReadiness?.ready ? (
         <GoogleEmailComposer contactId={id} connectionId={googleConnection.id}
           contactPointId={googleEmailPoint.id} from={googleConnection.remoteAccountLabel}
-          to={googleEmailPoint.normalizedValue} />
+          to={googleEmailPoint.normalizedValue} isOwner={workspaceScope.role === "owner"} />
       ) : !archived && googleConnection && googleEmailPoint && gmailReadiness?.message ? (
         <p role="status" className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-sm text-warm">
           {gmailReadiness.message}{" "}
@@ -341,6 +438,25 @@ export default async function ContactDetailPage({
         </section>
       </GroupedSurface>
 
+      {contactMilestones.length ? (
+        <GroupedSurface className="mt-4">
+          <section className="bg-surface p-5 sm:p-6" aria-labelledby="contact-deadlines-title">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div><p className="eyebrow">Transaction dates</p><h2 id="contact-deadlines-title" className="mt-1 font-display text-2xl text-ink">Sourced deadlines</h2></div>
+              <Link href="/transactions" className="sk-text-action">Open transaction cockpit</Link>
+            </div>
+            <ul className="mt-4 grid gap-2">
+              {contactMilestones.slice(0, 8).map((milestone) => (
+                <li key={milestone.id} className="rounded-xl border border-line bg-surface-2 p-3">
+                  <div className="flex flex-wrap items-start justify-between gap-2"><div><strong className="text-sm text-ink">{milestone.label}</strong><p className="mt-1 text-xs text-muted">{milestone.sourceReference} · {milestone.verificationState}</p></div><span className="text-xs font-medium text-ink">{deadlineDay(milestone.dueAt, milestone.timezone)}</span></div>
+                </li>
+              ))}
+            </ul>
+            {contactMilestones.length > 8 ? <p className="mt-3 text-xs text-muted">Showing 8 of {contactMilestones.length} deadlines. Open Transactions for the complete history.</p> : null}
+          </section>
+        </GroupedSurface>
+      ) : null}
+
       {/* Dates worth remembering */}
       {(contact.birthdate || contact.homePurchaseDate) && (
         <GroupedSurface className="mt-4 grid gap-px sm:grid-cols-2">
@@ -362,9 +478,8 @@ export default async function ContactDetailPage({
             <div className="flex items-center gap-3 bg-surface p-4 sm:p-5">
               <Home className="size-[18px] shrink-0 text-nurture" />
               <div>
-                <p className="text-sm text-ink">
-                  {anniversaryOrdinal(contact.homePurchaseDate, now)} year
-                  homeaversary
+                <p className="text-sm font-medium text-ink">
+                  {ordinalNumber(anniversaryOrdinal(contact.homePurchaseDate, now))} home anniversary
                 </p>
                 <p className="text-xs text-muted">
                   Bought {formatHuman(contact.homePurchaseDate)} ·{" "}
@@ -461,12 +576,13 @@ export default async function ContactDetailPage({
           importedFacts={richData[6]}
           archived={archived}
           isOwner={workspaceScope.role === "owner"}
+          archiveReturnContext={archiveReturnContext}
         />
       ) : (
         <p role="status" className="mt-8 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-muted">Rich relationship data is not available in this workspace yet.</p>
       )}
 
-      <ContactActivityHistory events={events} tasks={tasks} />
+      <ContactActivityHistory events={events} tasks={tasks} timeline={omnichannelTimeline} />
 
       {/* Notes — she said this was her favourite thing about the old CRM. */}
       <section id="notes" className="mt-10 scroll-mt-24">
@@ -481,12 +597,12 @@ export default async function ContactDetailPage({
             <ol className="grid gap-px">
               {notes.map((note) => (
                 <li key={note.id} className="bg-surface p-4 sm:p-5">
-                  <p className="text-sm leading-relaxed text-ink">
-                    {note.body}
-                  </p>
-                  <p className="mt-2 text-[11px] text-subtle">
-                    {formatHuman(note.createdAt)}
-                  </p>
+                  <NoteEntry
+                    note={note}
+                    createdLabel={formatHuman(note.createdAt)}
+                    editedLabel={note.updatedAt ? formatHuman(note.updatedAt) : undefined}
+                    editAction={!archived ? editContactNoteAction.bind(null, id, note.id) : undefined}
+                  />
                   {!archived ? <details className="mt-3"><summary className="cursor-pointer text-sm font-medium text-muted">Archive this note</summary>
                     <ArchiveNoteForm action={archiveContactNoteAction.bind(null, id, note.id)} />
                   </details> : null}
@@ -499,7 +615,7 @@ export default async function ContactDetailPage({
           <summary className="cursor-pointer font-medium text-ink">Archived notes ({archivedNotes.length})</summary>
           <ol className="mt-4 grid gap-3">
             {archivedNotes.map((note) => <li key={note.id} className="rounded-xl border border-line bg-surface p-4">
-              <p className="text-sm leading-relaxed text-ink">{note.body}</p>
+              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink">{note.body}</p>
               <p className="mt-2 text-xs text-muted">Archived {note.archivedAt ? formatHuman(note.archivedAt) : "previously"} · {note.archiveReason}</p>
               {!archived ? <RestoreNoteForm action={restoreContactNoteAction.bind(null, id, note.id)} /> : null}
             </li>)}

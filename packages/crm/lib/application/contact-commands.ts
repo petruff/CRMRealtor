@@ -1,5 +1,6 @@
 import {
   DORMANT_STAGES,
+  NoteEditError,
   type BuyerCriteria,
   type Contact,
   type Intent,
@@ -287,22 +288,34 @@ export function parseContactForm(formData: FormData): EditableContactFields {
     });
   }
 
+  const relationship = oneOf(formData, 'relationship', RELATIONSHIPS);
+  const email = emailValue(formData);
+  const requestedLeadType = optionalOneOf(formData, 'leadType', LEAD_TYPES);
+  if (relationship !== 'past-client' && !requestedLeadType) {
+    throw new ContactCommandError('Review the highlighted fields.', {
+      leadType: 'Choose a follow-up priority.',
+    });
+  }
+
   return {
     firstName,
     lastName,
     preferredName: optional(formData, 'preferredName'),
     phone: optional(formData, 'phone'),
     secondaryPhone: optional(formData, 'secondaryPhone'),
-    email: emailValue(formData),
+    email,
     mailingAddress: optional(formData, 'mailingAddress'),
     city: optional(formData, 'city'),
     state: optional(formData, 'state'),
     postalCode: optional(formData, 'postalCode'),
     birthdate: dateValue(formData, 'birthdate'),
     homePurchaseDate: dateValue(formData, 'homePurchaseDate'),
-    leadType: oneOf(formData, 'leadType', LEAD_TYPES),
+    // Past clients are relationships, not active leads. The legacy database
+    // enum remains non-null, so Nurture is retained only as a compatibility
+    // value and is intentionally hidden from client-facing lead badges.
+    leadType: relationship === 'past-client' ? 'nurture' : requestedLeadType!,
     qualificationStatus: optionalOneOf(formData, 'qualificationStatus', QUALIFICATION_STATUSES) ?? 'qualified',
-    relationship: oneOf(formData, 'relationship', RELATIONSHIPS),
+    relationship,
     intent: oneOf(formData, 'intent', INTENTS),
     source: oneOf(formData, 'source', SOURCES),
     pipelineStage: oneOf(formData, 'pipelineStage', PIPELINE_STAGES),
@@ -311,7 +324,7 @@ export function parseContactForm(formData: FormData): EditableContactFields {
     referredById: optional(formData, 'referredById'),
     nextTouchAt: dateValue(formData, 'nextTouchAt'),
     tags: commaList(optional(formData, 'tags')),
-    emailSubscribed: formData.get('emailSubscribed') === 'on',
+    emailSubscribed: Boolean(email) && formData.get('emailSubscribed') === 'on',
   };
 }
 
@@ -388,14 +401,10 @@ export async function updateContactCommand(
     touchDateOverridden: next.touchDateOverridden,
   };
   const updated = await repository.update(id, patch);
-  const changedFields = Object.keys(patch)
-    .filter((field) => JSON.stringify(existing[field as keyof Contact]) !== JSON.stringify(updated[field as keyof Contact]))
-    .sort();
   await appendContactActivity(activity, {
     type: 'contact-updated',
     contactId: updated.id,
     idempotencyKey: `contact-updated:${updated.id}:${now.getTime()}`,
-    metadata: { changedFields: changedFields.join(',') },
   }, now);
   return updated;
 }
@@ -445,6 +454,64 @@ export async function archiveContactNoteCommand(
   return repository.archiveNote(noteId, reason, correlationId, now.toISOString());
 }
 
+export const NOTE_EDIT_CONFLICT_MESSAGE =
+  'This note was changed in another session. Your draft is still here — review the latest saved text below before saving again.';
+
+/**
+ * Corrects an active note in place. The browser supplies only the identifiers
+ * and the draft; membership, workspace, note↔contact linkage and the read-only
+ * rules are re-checked here and again inside the database RPC.
+ */
+export async function editContactNoteCommand(
+  repository: ContactRepository,
+  contactId: string,
+  noteId: string,
+  formData: FormData,
+  correlationId: string,
+  now = new Date(),
+) {
+  const contact = await repository.get(contactId);
+  if (!contact) throw new ContactCommandError('Contact not found.');
+  if (contact.archivedAt) throw new ContactCommandError('Restore this contact before editing its notes.');
+  if (!repository.editNote) throw new ContactCommandError('Note editing is unavailable in this workspace.');
+
+  // Browsers submit textarea line breaks as CRLF; store one canonical form.
+  const body = value(formData, 'body').replace(/\r\n?/g, '\n');
+  if (!body) {
+    throw new ContactCommandError('Write a note before saving.', {
+      body: 'A note cannot be blank.',
+    });
+  }
+  const expectedRevision = Number(value(formData, 'revision'));
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) {
+    throw new ContactCommandError('Refresh this contact before editing the note.');
+  }
+
+  // Workspace-scoped read (RLS + merged-contact group) proves the note belongs here.
+  const note = (await repository.notesFor(contactId, { includeArchived: true }))
+    .find((entry) => entry.id === noteId);
+  if (!note) throw new ContactCommandError('That note was not found on this contact.');
+  if (note.archivedAt) throw new ContactCommandError('Restore this note before editing it.');
+  if ((note.revision ?? 1) !== expectedRevision) throw new ContactCommandError(NOTE_EDIT_CONFLICT_MESSAGE);
+
+  try {
+    return await repository.editNote({
+      noteId,
+      body,
+      expectedRevision,
+      correlationId,
+      occurredAt: now.toISOString(),
+    });
+  } catch (error) {
+    if (error instanceof NoteEditError) {
+      if (error.code === 'conflict') throw new ContactCommandError(NOTE_EDIT_CONFLICT_MESSAGE);
+      if (error.code === 'not-found') throw new ContactCommandError('That note was not found on this contact.');
+      throw new ContactCommandError('Archived notes and contacts are read only until restored.');
+    }
+    throw error;
+  }
+}
+
 export async function restoreContactNoteCommand(
   repository: ContactRepository,
   contactId: string,
@@ -479,5 +546,53 @@ export async function recordContactTouchCommand(
     contactId: updated.id,
     idempotencyKey: `touch-recorded:${updated.id}:${touched.lastContactedAt}`,
   }, now);
+  return updated;
+}
+
+export const FOLLOW_UP_CHOICES = ['cadence', 'tomorrow', 'three-days', 'next-week', 'two-weeks'] as const;
+export type FollowUpChoice = (typeof FOLLOW_UP_CHOICES)[number];
+
+const FOLLOW_UP_DAYS: Record<Exclude<FollowUpChoice, 'cadence'>, number> = {
+  tomorrow: 1,
+  'three-days': 3,
+  'next-week': 7,
+  'two-weeks': 14,
+};
+
+/**
+ * One tap after a call: optional note, touch recorded, next follow-up set.
+ * The note is saved first so a later failure never loses what she typed
+ * without telling her; the touch uses the canonical cadence unless she picked
+ * a specific follow-up, which is stored as a manual override.
+ */
+export async function recordConversationCommand(
+  repository: ContactRepository,
+  contactId: string,
+  formData: FormData,
+  now = new Date(),
+  activity?: ContactActivityContext,
+): Promise<Contact> {
+  const contact = await repository.get(contactId);
+  if (!contact) throw new ContactCommandError('Contact not found.');
+  if (contact.archivedAt) throw new ContactCommandError('Restore this contact before logging a conversation.');
+  const rawChoice = value(formData, 'followUp') || 'cadence';
+  if (!FOLLOW_UP_CHOICES.includes(rawChoice as FollowUpChoice)) {
+    throw new ContactCommandError('Choose when to follow up next.', { followUp: 'Pick one of the listed options.' });
+  }
+  const choice = rawChoice as FollowUpChoice;
+  const note = value(formData, 'note').replace(/\r\n?/g, '\n');
+  if (note.length > 5_000) {
+    throw new ContactCommandError('That note is too long for a quick log.', { note: 'Use 5,000 characters or fewer, or use Log full outcome.' });
+  }
+  if (note) {
+    const saved = await repository.addNote(contactId, note);
+    await appendContactActivity(activity, { type: 'note-added', contactId, idempotencyKey: `note-added:${saved.id}` }, now);
+  }
+  let updated = await recordContactTouchCommand(repository, contactId, now, activity);
+  if (choice !== 'cadence') {
+    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + FOLLOW_UP_DAYS[choice]));
+    const overridden = overrideNextTouch(updated, next.toISOString().slice(0, 10));
+    updated = await repository.update(contactId, { nextTouchAt: overridden.nextTouchAt, touchDateOverridden: true });
+  }
   return updated;
 }

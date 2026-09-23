@@ -10,6 +10,11 @@ const assistantSource = readFileSync(new URL('../components/omnix-assistant-laun
 const welcomeMotionSource = readFileSync(new URL('../components/welcome-motion.tsx', import.meta.url), 'utf8');
 const dataOperationsSource = readFileSync(new URL('./data/page.tsx', import.meta.url), 'utf8');
 const nextConfigSource = readFileSync(new URL('../next.config.ts', import.meta.url), 'utf8');
+const insightsSource = readFileSync(new URL('../components/insights-dashboard.tsx', import.meta.url), 'utf8');
+const propertiesSource = readFileSync(new URL('./properties/page.tsx', import.meta.url), 'utf8');
+const navigationSource = readFileSync(new URL('../lib/application/app-navigation.ts', import.meta.url), 'utf8');
+const premiumCss = readFileSync(new URL('./premium.css', import.meta.url), 'utf8');
+const layoutSource = readFileSync(new URL('./layout.tsx', import.meta.url), 'utf8');
 
 function cssBlock(selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -134,6 +139,28 @@ describe('authenticated editorial design contract', () => {
     expect(globalCss).toMatch(/\.insights-stage-chart li > a\s*\{[^}]*min-height:\s*2\.75rem;/s);
     expect(globalCss).toMatch(/body\s*\{[^}]*min-width:\s*0;[^}]*overflow-x:\s*clip;/s);
     expect(nextConfigSource).toContain('qualities: [90, 92]');
+  });
+
+  it('reflows the operating-current rail instead of clipping stages on narrow mobile', () => {
+    expect(globalCss).toMatch(/@container \(max-width: 29\.99rem\)[\s\S]*\.insights-current-rail\s*{[\s\S]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\);[\s\S]*overflow:\s*visible;/);
+    expect(globalCss).toMatch(/\.insights-current-label\s*{[\s\S]*white-space:\s*normal;/);
+    expect(insightsSource).toMatch(/aria-label="Exact pipeline stage contributors"/);
+  });
+
+  it('keeps the premium Today layer responsive, thumb-sized and calm under reduced motion', () => {
+    expect(premiumCss).toMatch(/@media \(min-width: 1100px\) \{ \.ox-today-grid \{ grid-template-columns: minmax\(0, 1\.75fr\) minmax\(18rem, 1fr\);/);
+    expect(premiumCss).toMatch(/\.ox-action-button \{[^}]*min-width: 2\.75rem; min-height: 2\.75rem;/s);
+    expect(premiumCss).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{\s*\.ox-today-hero, \.ox-today-grid > \* \{ animation:/);
+    expect(premiumCss).toMatch(/\.ox-chip span \{[^}]*min-height: 2\.75rem;/s);
+    expect(layoutSource).toContain("import './premium.css';");
+  });
+
+  it('keeps property authority honest and reachable on desktop and mobile', () => {
+    expect(propertiesSource).toContain('MLS/IDX and licensed property feeds remain off');
+    expect(propertiesSource).toContain('Unknown information stays unknown.');
+    expect(propertiesSource).toContain('propertyFactCanDisplay');
+    expect(propertiesSource).not.toContain('estimated value');
+    expect(navigationSource).toContain("{ href: '/properties', label: 'Properties', icon: 'properties' }");
   });
 
   it('keeps Connections cards on the centralized 12px radius contract', () => {

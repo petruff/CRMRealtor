@@ -4,10 +4,12 @@ import { createMemoryAttentionRepository } from '../data/memory-attention-reposi
 import { createOmnixCopilotAlert, createOmnixCopilotCitation } from '../domain/omnix-copilot';
 import {
   attentionMaterializationsFromAlerts,
+  attentionMaterializationsFromMilestones,
   listAttentionCommand,
   reconcileAttentionCommand,
   transitionAttentionCommand,
 } from './attention-commands';
+import type { TransactionMilestone } from '../domain/operational-signal';
 
 const citation = createOmnixCopilotCitation({
   entityType: 'contact', recordId: 'contact-1', factKeys: ['nextTouchAt'],
@@ -26,6 +28,31 @@ describe('attention commands', () => {
     expect(mapped).toMatchObject({
       occurrenceKey: 'follow-up:contact-1', sourceFingerprint: 'a'.repeat(64), priority: 'p0',
     });
+  });
+
+  it('materializes one explainable canonical risk per milestone without inventing unknown dates', () => {
+    const base: TransactionMilestone = {
+      id: 'milestone-1', workspaceId: 'workspace-1', transactionId: 'transaction-1', contactId: 'contact-1',
+      contactName: 'Avery Buyer', propertyAddress: '1 Main Street', potentialValueCents: 900000,
+      kind: 'inspection', label: 'Inspection deadline', state: 'open', dueAt: '2026-09-02T17:00:00.000Z',
+      timezone: 'America/New_York', responsibleMembershipId: 'membership-1', source: 'manual', sourceType: 'contract',
+      sourceReference: 'Contract section 12', sourceDate: '2026-08-30', verificationState: 'verified',
+      currentVersion: 1, createdAt: '2026-08-30T12:00:00.000Z', updatedAt: '2026-08-30T12:00:00.000Z',
+    };
+    const approaching = attentionMaterializationsFromMilestones([base], new Date('2026-09-01T12:00:00.000Z'));
+    expect(approaching).toHaveLength(1);
+    expect(approaching[0]).toMatchObject({
+      rule: 'transaction-deadline-approaching', subjectType: 'transaction', subjectId: 'transaction-1',
+      occurrenceKey: 'transaction-milestone-risk:milestone-1', priority: 'p1', dismissAllowed: false,
+    });
+    expect(attentionMaterializationsFromMilestones([{ ...base, verificationState: 'unverified' }], new Date('2026-09-01T12:00:00.000Z'))[0])
+      .toMatchObject({ rule: 'transaction-deadline-unverified', priority: 'p1' });
+    const contradiction = attentionMaterializationsFromMilestones([
+      base, { ...base, id: 'milestone-2', dueAt: '2026-09-03T17:00:00.000Z' },
+    ], new Date('2026-09-01T12:00:00.000Z'));
+    expect(contradiction).toHaveLength(2);
+    expect(contradiction.every((item) => item.rule === 'transaction-deadline-contradictory')).toBe(true);
+    expect(attentionMaterializationsFromMilestones([{ ...base, state: 'completed' }], new Date('2026-09-01T12:00:00.000Z'))).toEqual([]);
   });
 
   it('reconciles, lists and completes through one repository contract', async () => {

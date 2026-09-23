@@ -52,6 +52,7 @@ import type { PipelineRepository } from './pipeline-repository';
 import { createMemoryPipelineRepository } from './memory-pipeline-repository';
 import { supabasePipelineRepository } from './supabase-pipeline-repository';
 import { supabaseContactIdentityMap } from './supabase-contact-identity-map';
+import type { ContactIdentityMap } from './contact-identity-map';
 import { selectedWorkspaceId } from './selected-workspace';
 import type { AttentionRepository } from './attention-repository';
 import { createMemoryAttentionRepository } from './memory-attention-repository';
@@ -59,13 +60,52 @@ import { supabaseAttentionRepository } from './supabase-attention-repository';
 import type { TransactionRepository } from './transaction-repository';
 import { createMemoryTransactionRepository } from './memory-transaction-repository';
 import { supabaseTransactionRepository } from './supabase-transaction-repository';
+import type { OmnixProposalRepository } from './omnix-proposal-repository';
+import { createMemoryOmnixProposalRepository } from './memory-omnix-proposal-repository';
+import { supabaseOmnixProposalRepository } from './supabase-omnix-proposal-repository';
+import type { NurturePlanRepository } from './nurture-plan-repository';
+import { createMemoryNurturePlanRepository } from './memory-nurture-plan-repository';
+import { supabaseNurturePlanRepository } from './supabase-nurture-plan-repository';
+import type { OperationalSignalRepository } from './operational-signal-repository';
+import { createMemoryOperationalSignalRepository } from './memory-operational-signal-repository';
+import { supabaseOperationalSignalRepository } from './supabase-operational-signal-repository';
+import type { AffordabilityRepository } from './affordability-repository';
+import { createMemoryAffordabilityRepository } from './memory-affordability-repository';
+import { supabaseAffordabilityRepository } from './supabase-affordability-repository';
+import type { PropertyRepository } from './property-repository';
+import { createMemoryPropertyRepository } from './memory-property-repository';
+import { supabasePropertyRepository } from './supabase-property-repository';
+import type { ListingProviderRepository } from './listing-provider-repository';
+import { createMemoryListingProviderRepository } from './memory-listing-provider-repository';
+import { supabaseListingProviderRepository } from './supabase-listing-provider-repository';
+import type { PropertyBehaviorRepository } from './property-behavior-repository';
+import { createMemoryPropertyBehaviorRepository } from './memory-property-behavior-repository';
+import { supabasePropertyBehaviorRepository } from './supabase-property-behavior-repository';
+import type { MeetingBriefRepository } from './meeting-brief-repository';
+import { createMemoryMeetingBriefRepository } from './memory-meeting-brief-repository';
+import { supabaseMeetingBriefRepository } from './supabase-meeting-brief-repository';
+import type { CaptureOutcomeRepository } from './capture-outcome-repository';
+import { createMemoryCaptureOutcomeRepository } from './memory-capture-outcome-repository';
+import { supabaseCaptureOutcomeRepository } from './supabase-capture-outcome-repository';
+import { createClient } from '@supabase/supabase-js';
+import { memoryClientPortalRepository, openSupabasePortal, supabaseClientPortalRepository, type ClientPortalRepository } from './client-portal-repository';
+import type { ClientPortalSnapshot } from '@/lib/domain/client-portal';
+import { requireSupabaseEnv } from '@/lib/supabase/env';
 
 // Sample work-queue repositories intentionally live for the lifetime of this
 // server process. Recreating them inside every request would make a successful
 // Smart List/task action disappear on the very next render.
 const sampleSmartListRepository = createMemorySmartListRepository();
 const sampleIncompleteRecordRepository = createMemoryIncompleteRecordRepository();
-const sampleActivityRepository = createMemoryActivityRepository({
+const sampleConversationCache = globalThis as typeof globalThis & {
+  __omnixConversationActivities?: ActivityRepository;
+  __omnixConversationProposals?: OmnixProposalRepository;
+  __omnixConversationCaptures?: CaptureOutcomeRepository;
+  __omnixConversationBriefs?: MeetingBriefRepository;
+  __omnixConversationNurture?: NurturePlanRepository;
+  __omnixClientPortalLinks?: ReturnType<typeof memoryClientPortalRepository>;
+};
+const sampleActivityRepository = sampleConversationCache.__omnixConversationActivities ??= createMemoryActivityRepository({
   activeMembershipIds: [SAMPLE_WORKSPACE_SCOPE.membershipId, SAMPLE_ASSISTANT_MEMBERSHIP_ID],
   isActiveContact: memoryContactIsActive,
 });
@@ -88,6 +128,29 @@ export const sampleAttentionRepository = createMemoryAttentionRepository({
   activeMembershipIds: [SAMPLE_WORKSPACE_SCOPE.membershipId, SAMPLE_ASSISTANT_MEMBERSHIP_ID],
 });
 const sampleTransactionRepository = createMemoryTransactionRepository(sampleContactRepository);
+const sampleOmnixProposalRepository = sampleConversationCache.__omnixConversationProposals ??= createMemoryOmnixProposalRepository();
+const sampleCaptureOutcomeRepository = sampleConversationCache.__omnixConversationCaptures ??= createMemoryCaptureOutcomeRepository(sampleContactRepository, sampleOmnixProposalRepository, sampleActivityRepository);
+const sampleNurturePlanRepository = sampleConversationCache.__omnixConversationNurture ??= createMemoryNurturePlanRepository();
+const sampleOperationalSignalRepository = createMemoryOperationalSignalRepository(sampleContactRepository, sampleTransactionRepository);
+// Shared across route bundles in development so a link created on Deals opens on /portal.
+const sampleClientPortalRepository = sampleConversationCache.__omnixClientPortalLinks ??= memoryClientPortalRepository({
+  scope: SAMPLE_WORKSPACE_SCOPE,
+  agentName: 'Your Omnix agent',
+  transactions: (scope) => sampleTransactionRepository.list(scope),
+  milestones: (scope) => sampleOperationalSignalRepository.listMilestones(scope, { limit: 500 }),
+});
+const sampleAffordabilityRepository = createMemoryAffordabilityRepository();
+const samplePropertyRepository = createMemoryPropertyRepository();
+const sampleListingProviderRepository = createMemoryListingProviderRepository();
+const samplePropertyBehaviorRepository = createMemoryPropertyBehaviorRepository();
+const sampleMeetingBriefSources = createMemoryMeetingBriefRepository({
+  contacts: sampleContactRepository, activities: sampleActivityRepository,
+  transactions: sampleTransactionRepository, nurturePlans: sampleNurturePlanRepository,
+  propertyBehavior: samplePropertyBehaviorRepository,
+});
+const sampleMeetingBriefHistory = sampleConversationCache.__omnixConversationBriefs ??= sampleMeetingBriefSources;
+// Keep prior snapshots across development reloads while using the current source adapters.
+const sampleMeetingBriefRepository: MeetingBriefRepository = { ...sampleMeetingBriefHistory, loadSources: sampleMeetingBriefSources.loadSources };
 const connectorConfiguration = loadConfiguredConnectorRuntimeConfiguration();
 const sampleConnectorRepository = createMemoryConnectorRepository({
   definitions: connectorConfiguration.definitions,
@@ -105,6 +168,10 @@ const sampleConnectorRepository = createMemoryConnectorRepository({
 });
 
 export interface RepositoryContext {
+  contactIdentityMap?: ContactIdentityMap;
+  meetingBriefRepository?: MeetingBriefRepository;
+  captureOutcomeRepository?: CaptureOutcomeRepository;
+  clientPortalRepository: ClientPortalRepository;
   repository: ContactRepository;
   importGateway: ImportGateway;
   mailerRepository: MailerRepository;
@@ -116,6 +183,13 @@ export interface RepositoryContext {
   connectorRepository: ConnectorRepository;
   attentionRepository: AttentionRepository;
   transactionRepository: TransactionRepository;
+  omnixProposalRepository: OmnixProposalRepository;
+  nurturePlanRepository: NurturePlanRepository;
+  operationalSignalRepository: OperationalSignalRepository;
+  affordabilityRepository: AffordabilityRepository;
+  propertyRepository: PropertyRepository;
+  listingProviderRepository: ListingProviderRepository;
+  propertyBehaviorRepository: PropertyBehaviorRepository;
   /** Unavailable only while the live database is missing Story 3.2 migration support. */
   richContactRepository?: RichContactRepository;
   workspaceScope: WorkspaceScope;
@@ -163,9 +237,19 @@ export async function getRepository(): Promise<RepositoryContext> {
       connectorRepository: sampleConnectorRepository,
       attentionRepository: sampleAttentionRepository,
       transactionRepository: sampleTransactionRepository,
+      omnixProposalRepository: sampleOmnixProposalRepository,
+      nurturePlanRepository: sampleNurturePlanRepository,
+      operationalSignalRepository: sampleOperationalSignalRepository,
+      affordabilityRepository: sampleAffordabilityRepository,
+      propertyRepository: samplePropertyRepository,
+      listingProviderRepository: sampleListingProviderRepository,
+      propertyBehaviorRepository: samplePropertyBehaviorRepository,
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
+      meetingBriefRepository: sampleMeetingBriefRepository,
+      captureOutcomeRepository: sampleCaptureOutcomeRepository,
+      clientPortalRepository: sampleClientPortalRepository,
     };
   }
 
@@ -189,9 +273,19 @@ export async function getRepository(): Promise<RepositoryContext> {
       connectorRepository: sampleConnectorRepository,
       attentionRepository: sampleAttentionRepository,
       transactionRepository: sampleTransactionRepository,
+      omnixProposalRepository: sampleOmnixProposalRepository,
+      nurturePlanRepository: sampleNurturePlanRepository,
+      operationalSignalRepository: sampleOperationalSignalRepository,
+      affordabilityRepository: sampleAffordabilityRepository,
+      propertyRepository: samplePropertyRepository,
+      listingProviderRepository: sampleListingProviderRepository,
+      propertyBehaviorRepository: samplePropertyBehaviorRepository,
       richContactRepository: sampleRichContactRepository,
       workspaceScope: SAMPLE_WORKSPACE_SCOPE,
       isLive: false,
+      meetingBriefRepository: sampleMeetingBriefRepository,
+      captureOutcomeRepository: sampleCaptureOutcomeRepository,
+      clientPortalRepository: sampleClientPortalRepository,
     };
   }
 
@@ -201,6 +295,7 @@ export async function getRepository(): Promise<RepositoryContext> {
   const contactIdentityMap = supabaseContactIdentityMap(supabase);
   const repository = supabaseRepository(supabase, workspaceScope, contactIdentityMap);
   return {
+    contactIdentityMap,
     repository,
     importGateway: supabaseImportGateway(supabase, workspaceScope, contactIdentityMap),
     mailerRepository: supabaseMailerRepository(supabase, workspaceScope),
@@ -212,10 +307,31 @@ export async function getRepository(): Promise<RepositoryContext> {
     connectorRepository: supabaseConnectorRepository(supabase, connectorConfiguration.definitions),
     attentionRepository: supabaseAttentionRepository(supabase),
     transactionRepository: supabaseTransactionRepository(supabase),
+    omnixProposalRepository: supabaseOmnixProposalRepository(supabase),
+    nurturePlanRepository: supabaseNurturePlanRepository(supabase),
+    operationalSignalRepository: supabaseOperationalSignalRepository(supabase),
+    affordabilityRepository: supabaseAffordabilityRepository(supabase),
+    propertyRepository: supabasePropertyRepository(supabase),
+    listingProviderRepository: supabaseListingProviderRepository(supabase),
+    propertyBehaviorRepository: supabasePropertyBehaviorRepository(supabase),
     richContactRepository: supabaseRichContactRepository(supabase, contactIdentityMap),
     workspaceScope,
     isLive: true,
+    meetingBriefRepository: supabaseMeetingBriefRepository(supabase),
+    captureOutcomeRepository: supabaseCaptureOutcomeRepository(supabase),
+    clientPortalRepository: supabaseClientPortalRepository(supabase),
     userEmail: user.email ?? undefined,
     userDisplayName: resolveUserDisplayName(user),
   };
+}
+
+/**
+ * Public, session-free portal read. Live: the anonymous allowlisted RPC (no
+ * cookies, no user session). Demo: the in-process sample links.
+ */
+export async function openClientPortal(token: string): Promise<ClientPortalSnapshot | undefined> {
+  if (!isSupabaseConfigured()) return sampleClientPortalRepository.open(token);
+  const { url, anonKey } = requireSupabaseEnv();
+  const anon = createClient(url, anonKey, { auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false } });
+  return openSupabasePortal(anon, token);
 }

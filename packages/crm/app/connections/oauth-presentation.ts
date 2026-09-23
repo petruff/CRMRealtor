@@ -8,7 +8,7 @@ export interface ConnectionNotice {
 const SUCCESS_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = {
   'google-workspace-core-connected': {
     title: 'Google is connected',
-    message: 'Gmail and Google Calendar permissions were saved. Omnix can now finish the guided setup.',
+    message: 'Gmail and Google Calendar permissions were saved and the account check passed.',
   },
   'google-workspace-core-partial': {
     title: 'Google saved the permissions you approved',
@@ -21,6 +21,10 @@ const SUCCESS_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> 
   'google-gmail-metadata-connected': {
     title: 'Gmail activity is connected',
     message: 'Omnix can now match email activity to the right contact without storing message bodies.',
+  },
+  'google-gmail-insights-connected': {
+    title: 'Gmail reply insights are authorized',
+    message: 'Omnix can now classify linked incoming replies. Message bodies are minimized, treated as untrusted data, and never stored.',
   },
   'google-calendar-app-created-connected': {
     title: 'Google Calendar is connected',
@@ -60,6 +64,10 @@ const ERROR_NOTICES: Readonly<Record<string, Omit<ConnectionNotice, 'tone'>>> = 
   'google-oauth-failed': {
     title: 'Google was not connected',
     message: 'The authorization was cancelled or could not be verified. Your existing data is safe; try again.',
+  },
+  'google-probe-failed': {
+    title: 'Google permissions were saved',
+    message: 'Omnix could not complete the account check. Return to Connections and click Check Google connection; reconnect only if the check still fails.',
   },
   'mailchimp-configuration-required': {
     title: 'Mailchimp connection needs developer attention',
@@ -136,6 +144,11 @@ export function connectionNotice(input: {
 export function googleWorkspaceConnectHref(connectionId?: string): string {
   const params = new URLSearchParams({ bundle: 'workspace-core' });
   if (connectionId) params.set('connectionId', connectionId);
+  return `/api/connectors/google/connect?${params.toString()}`;
+}
+
+export function googleInsightsConnectHref(connectionId: string): string {
+  const params = new URLSearchParams({ bundle: 'gmail-insights', connectionId });
   return `/api/connectors/google/connect?${params.toString()}`;
 }
 

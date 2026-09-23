@@ -1,5 +1,3 @@
-import 'server-only';
-
 import { createClient } from '@supabase/supabase-js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isCanonicalWorkspaceOwnerScope, type WorkspaceScope } from '../domain/workspace.ts';
@@ -36,6 +34,22 @@ export interface WorkspaceAiCredential {
   readonly dataPolicy: 'paid-private';
 }
 
+export interface WorkspaceAiCapabilityStatus {
+  readonly state: 'available' | 'unconfigured';
+  readonly provider?: WorkspaceAiProvider;
+  readonly model?: WorkspaceAiModel;
+}
+
+export interface WorkspaceAiUsageStatus {
+  readonly usageDay: string;
+  readonly committedMicrousd: number;
+  readonly runCount: number;
+  readonly succeeded: number;
+  readonly failed: number;
+  readonly reserved: number;
+  readonly lastRunAt?: string;
+}
+
 type ConfigurationRow = {
   provider: string;
   model: string;
@@ -70,7 +84,7 @@ function assertProviderModel(selectedProvider: WorkspaceAiProvider, selectedMode
   if (selectedProvider === 'anthropic-claude' && !selectedModel.startsWith('claude-')) throw new Error('Select a Claude model.');
 }
 
-function aad(scope: WorkspaceScope, version: number, selectedProvider: WorkspaceAiProvider) {
+function aad(scope: Pick<WorkspaceScope, 'workspaceId'>, version: number, selectedProvider: WorkspaceAiProvider) {
   return {
     workspaceId: scope.workspaceId,
     connectionId: `workspace-ai-${scope.workspaceId}`,
@@ -228,4 +242,137 @@ export async function loadWorkspaceGeminiCredential(scope: WorkspaceScope) {
   const credential = await loadWorkspaceAiCredential(scope);
   if (credential?.provider !== 'google-gemini') return undefined;
   return { apiKey: credential.apiKey, model: credential.model, dataPolicy: credential.dataPolicy };
+}
+
+/** Server-only runtime access for any active workspace member; configuration remains owner-managed. */
+export async function loadWorkspaceAiRuntimeCredential(scope: WorkspaceScope): Promise<WorkspaceAiCredential | undefined> {
+  if (scope.mode !== 'live') return undefined;
+  const { data, error } = await serviceClient().rpc('read_workspace_ai_runtime_envelope', {
+    target_workspace_id: scope.workspaceId,
+    target_authenticated_user_id: scope.authenticatedUserId,
+    target_membership_id: scope.membershipId,
+  });
+  if (error || !data) return undefined;
+  const record = data as {
+    enabled?: unknown; provider?: unknown; model?: unknown; dataPolicy?: unknown; secretVersion?: unknown; envelope?: unknown;
+  };
+  if (record.enabled !== true || record.dataPolicy !== 'paid-private'
+    || !Number.isInteger(record.secretVersion) || Number(record.secretVersion) < 1) return undefined;
+  const selectedModel = model(record.model);
+  const selectedProvider = provider(record.provider ?? 'google-gemini');
+  assertProviderModel(selectedProvider, selectedModel);
+  const version = Number(record.secretVersion);
+  return {
+    apiKey: decryptConnectorSecret(
+      record.envelope as ConnectorSecretEnvelope,
+      aad(scope, version, selectedProvider),
+      createEnvironmentKekResolver(),
+    ),
+    provider: selectedProvider,
+    model: selectedModel,
+    dataPolicy: 'paid-private',
+  };
+}
+
+/** Service-worker authority for bounded automated analysis. It resolves one canonical owner only for attribution. */
+export async function loadWorkspaceAiAutomationCredential(workspaceId: string): Promise<{
+  readonly credential: WorkspaceAiCredential;
+  readonly ownerMembershipId: string;
+} | undefined> {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(workspaceId)) return undefined;
+  const client = serviceClient();
+  const { data: owner, error: ownerError } = await client.from('workspace_members')
+    .select('id,user_id').eq('workspace_id', workspaceId).eq('role', 'owner').eq('status', 'active')
+    .order('created_at', { ascending: true }).limit(1).maybeSingle();
+  if (ownerError || !owner) return undefined;
+  const { data, error } = await client.rpc('read_workspace_ai_runtime_envelope', {
+    target_workspace_id: workspaceId,
+    target_authenticated_user_id: owner.user_id,
+    target_membership_id: owner.id,
+  });
+  if (error || !data) return undefined;
+  const record = data as { enabled?: unknown; provider?: unknown; model?: unknown; dataPolicy?: unknown; secretVersion?: unknown; envelope?: unknown };
+  if (record.enabled !== true || record.dataPolicy !== 'paid-private'
+    || !Number.isInteger(record.secretVersion) || Number(record.secretVersion) < 1) return undefined;
+  const selectedProvider = provider(record.provider ?? 'google-gemini');
+  const selectedModel = model(record.model);
+  assertProviderModel(selectedProvider, selectedModel);
+  const version = Number(record.secretVersion);
+  return {
+    credential: {
+      apiKey: decryptConnectorSecret(record.envelope as ConnectorSecretEnvelope,
+        aad({ workspaceId }, version, selectedProvider), createEnvironmentKekResolver()),
+      provider: selectedProvider, model: selectedModel, dataPolicy: 'paid-private',
+    },
+    ownerMembershipId: owner.id,
+  };
+}
+
+/** Safe member-facing capability projection. It never returns or fingerprints the workspace secret. */
+export async function readWorkspaceAiCapabilityStatus(scope: WorkspaceScope): Promise<WorkspaceAiCapabilityStatus> {
+  if (scope.mode !== 'live' || scope.supportGrant) return { state: 'unconfigured' };
+  const client = serviceClient();
+  const { data: membership, error: membershipError } = await client
+    .from('workspace_members')
+    .select('role,status')
+    .eq('id', scope.membershipId)
+    .eq('workspace_id', scope.workspaceId)
+    .eq('user_id', scope.authenticatedUserId)
+    .eq('status', 'active')
+    .maybeSingle();
+  if (membershipError) throw new Error('Workspace AI capability is unavailable.');
+  if (!membership || membership.status !== 'active' || membership.role !== scope.role) return { state: 'unconfigured' };
+
+  const { data, error } = await client
+    .from('workspace_ai_configurations')
+    .select('enabled,provider,model,secret_version')
+    .eq('workspace_id', scope.workspaceId)
+    .maybeSingle();
+  if (error) throw new Error('Workspace AI capability is unavailable.');
+  if (!data || data.enabled !== true || !Number.isInteger(data.secret_version) || Number(data.secret_version) < 1) {
+    return { state: 'unconfigured' };
+  }
+  const selectedProvider = provider(data.provider);
+  const selectedModel = model(data.model);
+  assertProviderModel(selectedProvider, selectedModel);
+  return { state: 'available', provider: selectedProvider, model: selectedModel };
+}
+
+/** Redacted operational projection. Prompts, responses, contact data and credentials are never queried. */
+export async function readWorkspaceAiUsageStatus(
+  client: SupabaseClient,
+  scope: WorkspaceScope,
+  now = new Date(),
+): Promise<WorkspaceAiUsageStatus | undefined> {
+  if (scope.mode !== 'live' || scope.supportGrant) return undefined;
+  const usageDay = now.toISOString().slice(0, 10);
+  const [usageResult, runsResult] = await Promise.all([
+    client.from('omnix_ai_usage_windows')
+      .select('usage_day,committed_microusd,run_count')
+      .eq('workspace_id', scope.workspaceId)
+      .eq('usage_day', usageDay)
+      .maybeSingle(),
+    client.from('omnix_ai_runs')
+      .select('state,created_at')
+      .eq('workspace_id', scope.workspaceId)
+      .gte('created_at', `${usageDay}T00:00:00.000Z`)
+      .order('created_at', { ascending: false })
+      .limit(100),
+  ]);
+  if (usageResult.error || runsResult.error) return undefined;
+  const usage = usageResult.data as { usage_day?: unknown; committed_microusd?: unknown; run_count?: unknown } | null;
+  const runs = (runsResult.data ?? []) as { state?: unknown; created_at?: unknown }[];
+  const numeric = (value: unknown) => {
+    const parsed = typeof value === 'number' ? value : Number(value ?? 0);
+    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
+  };
+  return {
+    usageDay: typeof usage?.usage_day === 'string' ? usage.usage_day : usageDay,
+    committedMicrousd: numeric(usage?.committed_microusd),
+    runCount: numeric(usage?.run_count),
+    succeeded: runs.filter((run) => run.state === 'succeeded').length,
+    failed: runs.filter((run) => run.state === 'failed').length,
+    reserved: runs.filter((run) => run.state === 'reserved').length,
+    ...(typeof runs[0]?.created_at === 'string' ? { lastRunAt: runs[0].created_at } : {}),
+  };
 }

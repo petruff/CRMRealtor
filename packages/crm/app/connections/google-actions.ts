@@ -12,6 +12,8 @@ import {
   prepareGoogleSyncIntent,
 } from '@/lib/application/google-operations';
 import { ConnectorError } from '@/lib/domain/connector';
+import { createGoogleProbeServerRepository } from '@/lib/data/google-probe-server-context';
+import { probeLiveGoogleConnection } from '@/lib/application/google-probe-service';
 
 function redirectWith(kind: 'success' | 'error', message: string): never {
   redirect(`/connections?${new URLSearchParams({ [kind]: message.slice(0, 180) }).toString()}`);
@@ -64,4 +66,29 @@ export async function prepareGoogleGmailSyncAction(formData: FormData) {
 
 export async function prepareGoogleCalendarSyncAction(formData: FormData) {
   return prepare(formData, 'calendar-sync');
+}
+
+export async function checkGoogleConnectionAction(formData: FormData) {
+  let healthy = false;
+  try {
+    const connectionId = String(formData.get('connectionId') ?? '').trim();
+    const context = await getRepository();
+    if (!context.isLive) throw new ConnectorError('forbidden', 'Sign in to a live workspace first.');
+    const authenticated = await createSupabaseServerClient();
+    const result = await probeLiveGoogleConnection({
+      repository: createGoogleProbeServerRepository({ authenticated }),
+      scope: context.workspaceScope,
+      connectionId,
+      correlationId: randomUUID(),
+    });
+    healthy = result.healthy;
+    revalidatePath('/connections');
+  } catch (error) {
+    redirectWith('error', error instanceof ConnectorError ? error.message
+      : 'Google permissions are saved, but Omnix could not verify the account. Try the connection check again.');
+  }
+  if (!healthy) {
+    redirectWith('error', 'Google permissions are saved, but the account check still needs attention. Reconnect Google and try once more.');
+  }
+  redirectWith('success', 'Google account verified. Gmail and Calendar health tracking is active.');
 }

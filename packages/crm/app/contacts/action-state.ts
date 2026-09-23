@@ -13,6 +13,8 @@ export interface RichContactActionState {
   status: 'idle' | 'success' | 'error';
   message?: string;
   fieldErrors?: Readonly<Record<string, string>>;
+  /** Submitted text returned on failure so a reset form can keep the user's draft. */
+  values?: Readonly<Record<string, string>>;
 }
 
 export const INITIAL_RICH_CONTACT_ACTION_STATE: RichContactActionState = { status: 'idle' };
@@ -27,6 +29,11 @@ export const INITIAL_TEXTING_ACTION_STATE: TextingActionState = { status: 'idle'
 export interface GoogleEmailActionState {
   readonly status: 'idle' | 'success' | 'error';
   readonly message?: string;
+  readonly phase?: 'draft-ready' | 'queued' | 'sent';
+  readonly intentId?: string;
+  readonly intentVersion?: number;
+  readonly recipient?: string;
+  readonly subject?: string;
 }
 
 export const INITIAL_GOOGLE_EMAIL_ACTION_STATE: GoogleEmailActionState = { status: 'idle' };

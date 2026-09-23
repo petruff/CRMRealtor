@@ -1,0 +1,1 @@
+-- PostgreSQL enum values are retained to preserve canonical history. Disable capture commands via the adapter containment rollback.

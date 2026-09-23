@@ -326,7 +326,7 @@ export function PipelineBoard({ initialContacts, evidence }: { initialContacts: 
                               <Link href={`/contacts/${encodeURIComponent(contact.id)}`} className="pipeline-card-name">{displayName(contact)}</Link>
                               <p>{contact.intent === 'unknown' ? 'Intent not set' : contact.intent.replace('-', ' ')}</p>
                             </div>
-                            <LeadBadge leadType={contact.leadType} />
+                            <LeadBadge leadType={contact.leadType} relationship={contact.relationship} />
                           </div>
                           <NextStep contact={contact} evidence={evidence.byContactId[contact.id]} availability={evidence.availability} />
                           <EvidenceDisclosure evidence={evidence.byContactId[contact.id]} availability={evidence.availability} />

@@ -5,6 +5,14 @@ const ENTITY_LABELS = {
   mailer: 'Mailer campaign',
   'mailer-send': 'Mailer delivery',
   connector: 'Connected service',
+  transaction: 'Transaction',
+  property: 'Property',
+  'nurture-plan': 'Follow-up plan',
+  'transaction-finance': 'Recorded finances',
+  proposal: 'Action proposal',
+  capture: 'Conversation review',
+  'workflow-step': 'Transaction checklist',
+  'property-fact': 'Sourced property fact',
 } as const;
 
 const ENTITY_LINK_LABELS = {
@@ -14,6 +22,14 @@ const ENTITY_LINK_LABELS = {
   mailer: 'Open mailer',
   'mailer-send': 'Open mailing details',
   connector: 'Open connection',
+  transaction: 'Open transaction',
+  property: 'Open property',
+  'nurture-plan': 'Open follow-up plan',
+  'transaction-finance': 'Open recorded finances',
+  proposal: 'Review proposal',
+  capture: 'Review conversation',
+  'workflow-step': 'Open transaction checklist',
+  'property-fact': 'Open property evidence',
 } as const;
 
 const FACT_LABELS: Record<string, string> = {

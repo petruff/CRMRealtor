@@ -13,6 +13,15 @@ export const OMNIX_COPILOT_SUPPORTED_EXAMPLES = [
   'alerts today',
   'find contact Alicia',
   'contact profile Alicia',
+  'workspace overview',
+  'organize my CRM',
+  'client status Alicia',
+  'transactions for Alicia',
+  'transactions',
+  'properties',
+  'nurture',
+  'finances',
+  'proposals',
   'pipeline',
   'tasks overdue',
   'tasks today',
@@ -61,6 +70,9 @@ export type OmnixCopilotIntent =
   | Readonly<{ kind: 'alerts'; date: OmnixCopilotDateReference }>
   | Readonly<{ kind: 'find-contact'; query: string }>
   | Readonly<{ kind: 'contact-profile'; query: string }>
+  | Readonly<{ kind: 'workspace-overview' | 'organization' }>
+  | Readonly<{ kind: 'client-status'; query: string }>
+  | Readonly<{ kind: 'transactions' | 'properties' | 'nurture' | 'finances' | 'proposals'; query?: string }>
   | Readonly<{ kind: 'pipeline' }>
   | Readonly<{ kind: 'tasks'; window: 'overdue' | 'today' | 'upcoming' }>
   | Readonly<{ kind: 'tasks-range'; from: string; to: string }>
@@ -82,6 +94,7 @@ export interface OmnixCopilotRequest {
 
 export const OMNIX_COPILOT_ENTITY_TYPES = [
   'contact', 'task', 'activity', 'mailer', 'mailer-send', 'connector',
+  'transaction', 'property', 'nurture-plan', 'transaction-finance', 'proposal', 'capture', 'workflow-step', 'property-fact',
 ] as const;
 export type OmnixCopilotEntityType = (typeof OMNIX_COPILOT_ENTITY_TYPES)[number];
 
@@ -336,6 +349,27 @@ export function parseOmnixCopilotQuestion(value: unknown): OmnixCopilotIntent {
 
   const activityAlias = /^show recent activity for ([a-z0-9_-]+)$/iu.exec(question);
   if (activityAlias?.[1]) return { kind: 'activity', contactId: identifier(activityAlias[1], 'contactId') };
+  if (/^(?:workspace overview|crm overview|show (?:my )?(?:workspace|crm)(?: overview)?|summarize my crm|resumo do crm|vis[aã]o geral do crm)$/iu.test(question)) return { kind: 'workspace-overview' };
+  if (/^(?:organization|organize (?:my |the )?(?:crm|workspace)|help me (?:stay organized|organize my crm)|organize meu crm|organizar meu crm)$/iu.test(question)) return { kind: 'organization' };
+  const portugueseStatus = /^(?:qual [eé] o status (?:de|do|da)|status (?:de|do|da)|como est[aá]) (.+)$/iu.exec(question);
+  if (portugueseStatus?.[1]) return { kind: 'client-status', query: printable(portugueseStatus[1], 'query', 200) };
+  const portugueseModule = /^(?:mostrar |mostre )?(transa[cç][oõ]es|im[oó]veis|nutri[cç][aã]o|finan[cç]as|propostas)(?: (?:de|do|da|para) (.+))?$/iu.exec(question);
+  if (portugueseModule) {
+    const name = portugueseModule[1]!.normalize('NFD').replace(/[\u0300-\u036f]/gu, '').toLowerCase();
+    const kind = ({ transacoes: 'transactions', imoveis: 'properties', nutricao: 'nurture', financas: 'finances', propostas: 'proposals' } as const)[name as 'transacoes'];
+    return { kind, ...(portugueseModule[2] ? { query: printable(portugueseModule[2], 'query', 200) } : {}) };
+  }
+  const clientStatus = /^(?:client status|contact status|status (?:of|for)|what(?:'s| is) the status (?:of|for)|how is) (.+?)(?: doing)?$/iu.exec(question);
+  const possessiveStatus = /^what(?:'s| is) (.+?)(?:'s|’s) (?:status|deal status)$/iu.exec(question);
+  const statusQuery = clientStatus?.[1] ?? possessiveStatus?.[1];
+  if (statusQuery) return { kind: 'client-status', query: printable(statusQuery, 'query', 200) };
+  const moduleQuery = /^(?:show (?:me )?(?:my )?)?(transactions|deals|properties|nurture|finances|financials|proposals|approvals)(?: for (.+))?$/iu.exec(question);
+  if (moduleQuery) {
+    const names = { deals: 'transactions', financials: 'finances', approvals: 'proposals' } as const;
+    const name = moduleQuery[1]!.toLowerCase();
+    const kind = (names[name as keyof typeof names] ?? name) as 'transactions' | 'properties' | 'nurture' | 'finances' | 'proposals';
+    return { kind, ...(moduleQuery[2] ? { query: printable(moduleQuery[2], 'query', 200) } : {}) };
+  }
 
   if (folded === 'brief') return { kind: 'brief', date: 'today' };
   const brief = /^brief (today|\d{4}-\d{2}-\d{2})$/iu.exec(question);

@@ -252,3 +252,90 @@ describe('supabaseRepository workspace scope', () => {
       .toThrow(/live workspace scope/i);
   });
 });
+
+describe('supabaseRepository note editing', () => {
+  const editedRow = {
+    id: 'note-a', contact_id: 'contact-a', body: 'Corrected', created_at: '2026-09-01T10:00:00.000Z',
+    archived_at: null, archived_by_membership_id: null, archive_reason: null,
+    revision: 2, updated_at: '2026-09-23T12:00:00.000Z', edited_by_membership_id: 'member-a',
+  };
+
+  function notesClient(responses: { data: unknown; error: { code?: string; message: string } | null }[], rpcResult?: unknown) {
+    const selects: unknown[] = [];
+    const rpcs: { name: string; args: Record<string, unknown> }[] = [];
+    const chain = {
+      select(columns: unknown) { selects.push(columns); return chain; },
+      eq() { return chain; },
+      in() { return chain; },
+      is() { return chain; },
+      not() { return chain; },
+      order() { return Promise.resolve(responses.shift()); },
+    };
+    const client = {
+      from() { return chain; },
+      rpc(name: string, args: Record<string, unknown>) {
+        rpcs.push({ name, args });
+        return Promise.resolve(rpcResult);
+      },
+    } as unknown as SupabaseClient;
+    return { client, selects, rpcs };
+  }
+
+  it('reads edit metadata while keeping creation order and defaults legacy rows to revision 1', async () => {
+    const legacy = { ...editedRow, id: 'note-b', body: 'Legacy', revision: null, updated_at: null, edited_by_membership_id: null };
+    const { client, selects } = notesClient([{ data: [editedRow, legacy], error: null }]);
+
+    const notes = await supabaseRepository(client, scope).notesFor('contact-a');
+
+    expect(String(selects[0])).toContain('revision, updated_at, edited_by_membership_id');
+    expect(notes[0]).toMatchObject({ id: 'note-a', body: 'Corrected', revision: 2, updatedAt: '2026-09-23T12:00:00.000Z', createdAt: '2026-09-01T10:00:00.000Z' });
+    expect(notes[1]).toMatchObject({ id: 'note-b', revision: 1 });
+    expect(notes[1]?.updatedAt).toBeUndefined();
+  });
+
+  it('keeps notes readable if the app is released before the additive migration', async () => {
+    const { client, selects } = notesClient([
+      { data: null, error: { code: '42703', message: 'column notes.revision does not exist' } },
+      { data: [{ ...editedRow, revision: undefined, updated_at: undefined, edited_by_membership_id: undefined }], error: null },
+    ]);
+
+    const notes = await supabaseRepository(client, scope).notesFor('contact-a');
+
+    expect(selects).toHaveLength(2);
+    expect(String(selects[1])).not.toContain('revision');
+    expect(notes[0]).toMatchObject({ id: 'note-a', revision: 1 });
+  });
+
+  it('edits through the audited RPC with the expected revision and idempotency key', async () => {
+    const { client, rpcs } = notesClient([], {
+      data: { noteId: 'note-a', contactId: 'contact-a', body: 'Corrected', createdAt: editedRow.created_at, revision: 2, updatedAt: editedRow.updated_at, editedByMembershipId: 'member-a', noOp: false },
+      error: null,
+    });
+
+    const result = await supabaseRepository(client, scope).editNote!({
+      noteId: 'note-a', body: 'Corrected', expectedRevision: 1, correlationId: 'corr-1', occurredAt: '2026-09-23T12:00:00.000Z',
+    });
+
+    expect(rpcs).toEqual([{ name: 'edit_contact_note', args: {
+      target_note_id: 'note-a', target_expected_revision: 1, target_body: 'Corrected',
+      target_correlation_id: 'corr-1', target_occurred_at: '2026-09-23T12:00:00.000Z',
+    } }]);
+    expect(result).toEqual({ noOp: false, note: { id: 'note-a', contactId: 'contact-a', body: 'Corrected', createdAt: editedRow.created_at, revision: 2, updatedAt: editedRow.updated_at, editedByMembershipId: 'member-a' } });
+  });
+
+  it.each([
+    ['40001', 'conflict'],
+    ['55000', 'read-only'],
+    ['P0002', 'not-found'],
+  ])('maps database error %s to a typed %s outcome', async (code, expected) => {
+    const { client } = notesClient([], { data: null, error: { code, message: 'db says no' } });
+    await expect(supabaseRepository(client, scope).editNote!({ noteId: 'note-a', body: 'x', expectedRevision: 1, correlationId: 'c' }))
+      .rejects.toMatchObject({ name: 'NoteEditError', code: expected });
+  });
+
+  it('does not disguise authorization failures as conflicts', async () => {
+    const { client } = notesClient([], { data: null, error: { code: '42501', message: 'active workspace membership required' } });
+    await expect(supabaseRepository(client, scope).editNote!({ noteId: 'note-a', body: 'x', expectedRevision: 1, correlationId: 'c' }))
+      .rejects.toThrow('Failed to edit note: active workspace membership required');
+  });
+});

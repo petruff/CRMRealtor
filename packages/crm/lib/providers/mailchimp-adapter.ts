@@ -37,8 +37,13 @@ function mapProviderError(error: unknown): ConnectorAdapterResult {
 
 export class MailchimpConnectorAdapter implements ConnectorAdapter {
   readonly provider = 'mailchimp' as const;
+  private readonly authority: MailchimpJobAuthorityLoader;
+  private readonly outboundGuard?: ContactOutboundGuard;
 
-  constructor(private readonly authority: MailchimpJobAuthorityLoader, private readonly outboundGuard?: ContactOutboundGuard) {}
+  constructor(authority: MailchimpJobAuthorityLoader, outboundGuard?: ContactOutboundGuard) {
+    this.authority = authority;
+    this.outboundGuard = outboundGuard;
+  }
 
   async execute(job: ConnectorJob): Promise<ConnectorAdapterResult> {
     if (job.provider !== 'mailchimp' || job.actionType !== 'audience.sync') {

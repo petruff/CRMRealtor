@@ -20,10 +20,12 @@ import {
 } from '../providers/google-client.ts';
 import type { GoogleGmailPushConfiguration } from '../config/google-gmail-push.ts';
 import { encryptedGoogleCursor, normalizedGoogleCounterpart } from './google-sync-service.ts';
+import { classifyGmailResponse } from './gmail-response-intelligence.ts';
+import type { OmnixAiBudgetAuthority } from './omnix-generative-narrator.ts';
 
 export interface GoogleGmailWakeupDrainResult {
   readonly scheduled: number; readonly claimed: number; readonly succeeded: number; readonly deferred: number;
-  readonly failed: number; readonly messages: number;
+  readonly failed: number; readonly messages: number; readonly classified: number;
 }
 
 function tokenEnvelope(envelope: ReturnType<typeof encryptConnectorSecret>, expiresAt: string) {
@@ -60,10 +62,16 @@ export async function drainGoogleGmailWakeups(input: {
   readonly fetcher?: GoogleFetch;
   readonly oauthConfiguration?: GoogleOAuthConfiguration;
   readonly gmailPush?: GoogleGmailPushConfiguration;
+  readonly intelligence?: {
+    loadCredential(workspaceId: string): Promise<{ readonly credential: {
+      readonly apiKey: string; readonly provider: string; readonly model: string; readonly dataPolicy: 'paid-private';
+    }; readonly ownerMembershipId: string } | undefined>;
+    createBudget(workspaceId: string, ownerMembershipId: string): OmnixAiBudgetAuthority;
+  };
 }) {
   const clock = input.now ?? (() => new Date());
   if (clock().getTime() >= input.deadlineMs) {
-    return { scheduled: 0, claimed: 0, succeeded: 0, deferred: 0, failed: 0, messages: 0 };
+    return { scheduled: 0, claimed: 0, succeeded: 0, deferred: 0, failed: 0, messages: 0, classified: 0 };
   }
   const scheduled = input.gmailPush
     ? await input.repository.schedule({ now: clock().toISOString(), horizonSeconds: 86_400, limit: 25 })
@@ -72,7 +80,7 @@ export async function drainGoogleGmailWakeups(input: {
     workerId: input.workerId, batchSize: input.configuration.worker.reconciliationBatchSize,
     leaseSeconds: input.configuration.worker.leaseSeconds, now: clock().toISOString(),
   });
-  const result = { scheduled, claimed: claimed.length, succeeded: 0, deferred: 0, failed: 0, messages: 0 };
+  const result = { scheduled, claimed: claimed.length, succeeded: 0, deferred: 0, failed: 0, messages: 0, classified: 0 };
   const resolver = input.resolver ?? createEnvironmentKekResolver();
   for (const leased of claimed) {
     if (clock().getTime() >= input.deadlineMs) break;
@@ -164,12 +172,37 @@ export async function drainGoogleGmailWakeups(input: {
           internalDate: metadata.internalDate, direction: counterpart.direction,
           counterpart: counterpart.email, labels: metadata.labels,
         });
-        await input.repository.bindMetadata({
+        const binding = await input.repository.bindMetadata({
           job, workerId: input.workerId, messageId: metadata.messageId, threadId: metadata.threadId,
           direction: counterpart.direction, counterpartEmail: counterpart.email,
           counterpartKind: counterpart.counterpartKind, labels: metadata.labels,
           providerOccurredAt: metadata.internalDate, resourceHash, occurredAt: clock().toISOString(),
         });
+        if (counterpart.direction === 'incoming' && binding.linkState === 'linked'
+          && authority.grantedScopes.includes('https://www.googleapis.com/auth/gmail.readonly')
+          && input.intelligence) {
+          const automation = await input.intelligence.loadCredential(job.workspaceId);
+          if (automation?.credential.provider === 'google-gemini') {
+            try {
+              const content = await client.getGmailMinimizedContent(messageId);
+              const classification = await classifyGmailResponse({
+                plainText: content.plainText,
+                credential: automation.credential,
+                budget: input.intelligence.createBudget(job.workspaceId, automation.ownerMembershipId),
+                ...(input.fetcher ? { fetchImpl: input.fetcher } : {}),
+              });
+              await input.repository.recordIntelligence({
+                job, workerId: input.workerId, resourceHash, result: classification,
+                occurredAt: clock().toISOString(),
+              });
+              result.classified += classification.state === 'classified' ? 1 : 0;
+            } catch (error) {
+              // Content intelligence is additive. Metadata sync remains authoritative when a
+              // message has no supported inline body or the restricted provider call fails.
+              if (!(error instanceof ConnectorError)) throw error;
+            }
+          }
+        }
         result.messages += 1;
         lastProviderEventAt = metadata.internalDate;
       }

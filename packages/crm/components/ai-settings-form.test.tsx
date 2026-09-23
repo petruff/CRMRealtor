@@ -24,4 +24,27 @@ describe('AiSettingsForm', () => {
     expect(html).toContain('Disable routing');
     expect(html).toContain('Remove key');
   });
+
+  it('renders only redacted operational AI usage', () => {
+    const html = renderToStaticMarkup(<AiSettingsForm status={{
+      configured: true,
+      enabled: true,
+      provider: 'google-gemini',
+      model: 'gemini-3.5-flash-lite',
+      secretVersion: 3,
+      keyFingerprint: 'abcdef123456',
+    }} usage={{
+      usageDay: '2026-08-30',
+      committedMicrousd: 12500,
+      runCount: 4,
+      succeeded: 2,
+      failed: 1,
+      reserved: 1,
+      lastRunAt: '2026-08-30T15:00:00.000Z',
+    }} />);
+    expect(html).toContain('Today’s AI activity');
+    expect(html).toContain('$0.0125');
+    expect(html).toContain('Redacted operational receipts only');
+    expect(html).not.toContain('2026-08-30T15:00:00.000Z');
+  });
 });

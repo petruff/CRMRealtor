@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { requireSupabaseEnv } from './env';
+import { cookies } from 'next/headers.js';
+import { requireSupabaseEnv } from './env.ts';
 
 /**
  * Server-side Supabase client, cookie-backed so the session survives navigation.

@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { randomUUID } from 'node:crypto';
 import Link from 'next/link';
-import { CheckCircle2, Mail, ShieldCheck, Sparkles, Users, XCircle } from 'lucide-react';
+import { FairHousingCheck } from '@/components/fair-housing-check';
+import { CheckCircle2, ChevronLeft, ChevronRight, Mail, ShieldCheck, Sparkles, Users, XCircle } from 'lucide-react';
 import { getRepository } from '@/lib/data';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createMailchimpServerRepository } from '@/lib/data/mailchimp-operation-server-context';
@@ -9,7 +10,7 @@ import { isCanonicalWorkspaceOwnerScope } from '@/lib/domain/workspace';
 import { createCampaignDraftAction, createInMailchimpAction, sendMailchimpCampaignAction,
   updateCampaignDraftAction } from './actions';
 
-export const metadata: Metadata = { title: 'Email campaigns · Omnix' };
+export const metadata: Metadata = { title: 'Email campaigns' };
 
 const STATE_LABELS = {
   draft: 'Draft in Omnix', create_approved: 'Creating in Mailchimp', created: 'Ready in Mailchimp',
@@ -56,6 +57,7 @@ export default async function CampaignsPage({ searchParams }: {
             <label className="grid gap-2 text-sm font-medium text-ink">From name<input name="fromName" required maxLength={100} defaultValue={owner ? context.userDisplayName : ''} placeholder="Your business name" className="min-h-12 rounded-[var(--sk-control-radius)] border border-control bg-surface px-3" /></label>
             <label className="grid gap-2 text-sm font-medium text-ink">Replies go to<input type="email" name="replyTo" required defaultValue={owner ? context.userEmail : ''} placeholder="you@example.com" className="min-h-12 rounded-[var(--sk-control-radius)] border border-control bg-surface px-3" /></label>
             <label className="grid gap-2 text-sm font-medium text-ink sm:col-span-2">Message<textarea name="message" required maxLength={100000} rows={10} className="min-h-48 resize-y rounded-[var(--sk-control-radius)] border border-control bg-surface p-3 leading-7" placeholder="Write the update Judith wants her contacts to receive…" /></label>
+            <div className="sm:col-span-2"><FairHousingCheck fields={['subject', 'previewText', 'message']} /></div>
           </div>
           <button type="submit" className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[var(--sk-control-radius)] bg-accent px-5 font-semibold text-white hover:bg-accent-hover"><Mail className="size-5" />Prepare audience preview</button>
         </form>
@@ -79,6 +81,7 @@ export default async function CampaignsPage({ searchParams }: {
               <label className="grid gap-1.5 text-sm font-medium text-ink">From name<input name="fromName" required maxLength={100} defaultValue={campaign.content.fromName} className="min-h-11 rounded-[var(--sk-control-radius)] border border-control bg-surface px-3" /></label>
               <label className="grid gap-1.5 text-sm font-medium text-ink">Replies go to<input type="email" name="replyTo" required defaultValue={campaign.content.replyTo} className="min-h-11 rounded-[var(--sk-control-radius)] border border-control bg-surface px-3" /></label>
               <label className="grid gap-1.5 text-sm font-medium text-ink sm:col-span-2">Message<textarea name="message" required maxLength={100000} rows={7} defaultValue={campaign.content.plainText} className="min-h-40 resize-y rounded-[var(--sk-control-radius)] border border-control bg-surface p-3 leading-6" /></label>
+              <div className="sm:col-span-2"><FairHousingCheck fields={['subject', 'previewText', 'message']} /></div>
               <button className="min-h-11 rounded-[var(--sk-control-radius)] bg-ink px-4 text-sm font-semibold text-white sm:col-span-2">Save changes and refresh audience</button>
             </form>
           </details> : null}
@@ -93,8 +96,13 @@ export default async function CampaignsPage({ searchParams }: {
           </div></article>;
       })}</div>
       {page > 1 || hasMore ? <nav aria-label="Campaign history pages" className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-5">
-        {page > 1 ? <Link href={`/campaigns?page=${page - 1}`} className="inline-flex min-h-11 items-center rounded-[var(--sk-control-radius)] border border-control px-4 text-sm font-semibold text-ink">Previous</Link> : <span />}
-        {hasMore ? <Link href={`/campaigns?page=${page + 1}`} className="inline-flex min-h-11 items-center rounded-[var(--sk-control-radius)] bg-ink px-4 text-sm font-semibold text-white">Next</Link> : null}
+        {page > 1
+          ? <Link rel="prev" href={`/campaigns?page=${page - 1}`} className="sk-secondary-button px-4"><ChevronLeft className="size-4" aria-hidden />Previous</Link>
+          : <span aria-disabled="true" className="sk-secondary-button px-4 opacity-50"><ChevronLeft className="size-4" aria-hidden />Previous</span>}
+        <span className="text-sm tabular-nums text-muted" aria-live="polite">Page {page}</span>
+        {hasMore
+          ? <Link rel="next" href={`/campaigns?page=${page + 1}`} className="sk-secondary-button px-4">Next<ChevronRight className="size-4" aria-hidden /></Link>
+          : <span aria-disabled="true" className="sk-secondary-button px-4 opacity-50">Next<ChevronRight className="size-4" aria-hidden /></span>}
       </nav> : null}
     </section>
   </div>;

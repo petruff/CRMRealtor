@@ -155,17 +155,17 @@ export function InsightsContributorExplorer({
       <div className="insights-contributor-controls">
         <label className="insights-contributor-metric">
           <span>Metric detail</span>
-          <select value={selected.id} className="sk-input" onChange={(event) => changeMetric(event.target.value)}>
+          <select id="insights-metric-detail" name="insightsMetricDetail" value={selected.id} className="sk-input" onChange={(event) => changeMetric(event.target.value)}>
             {drilldowns.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
           </select>
         </label>
         <label className="insights-contributor-search">
           <span>Find a contributor</span>
-          <span><Search className="size-4" aria-hidden /><input value={query} maxLength={120} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Search name or context" /></span>
+          <span><Search className="size-4" aria-hidden /><input id="insights-contributor-search" name="insightsContributorSearch" autoComplete="off" value={query} maxLength={120} onChange={(event) => { setQuery(event.target.value); setPage(1); }} placeholder="Search name or context" /></span>
         </label>
         <label>
           <span>Record type</span>
-          <select value={entityFilter} className="sk-input" onChange={(event) => { setEntityFilter(event.target.value as EntityFilter); setPage(1); }}>
+          <select id="insights-record-type" name="insightsRecordType" value={entityFilter} className="sk-input" onChange={(event) => { setEntityFilter(event.target.value as EntityFilter); setPage(1); }}>
             <option value="all">All records</option>
             <option value="contact">Contacts</option>
             <option value="task">Tasks</option>
@@ -173,7 +173,7 @@ export function InsightsContributorExplorer({
         </label>
         <label>
           <span>Order</span>
-          <select value={sort} className="sk-input" onChange={(event) => { setSort(event.target.value as ContributorSort); setPage(1); }}>
+          <select id="insights-contributor-order" name="insightsContributorOrder" value={sort} className="sk-input" onChange={(event) => { setSort(event.target.value as ContributorSort); setPage(1); }}>
             <option value="metric-order">Metric order</option>
             <option value="name-ascending">Name A–Z</option>
             <option value="name-descending">Name Z–A</option>

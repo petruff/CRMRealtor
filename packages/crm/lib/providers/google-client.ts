@@ -48,6 +48,13 @@ export interface GoogleAccessTokenRefresh {
   readonly grantedScopes?: readonly string[];
 }
 
+export interface GoogleGmailMinimizedContent {
+  readonly messageId: string;
+  readonly threadId: string;
+  readonly plainText: string;
+  readonly truncated: boolean;
+}
+
 function configured(value: string | undefined, name: string): string {
   const clean = value?.trim();
   if (!clean || clean.length > 4_096 || /[\u0000-\u001f\u007f]/.test(clean)) {
@@ -490,6 +497,55 @@ export class GoogleWorkspaceClient {
       labels: payload.labelIds.flatMap((label) => typeof label === 'string' && label.length <= 128 ? [label] : []),
       from, to, ...(messageIdHeader ? { messageIdHeader } : {}),
     };
+  }
+
+  async getGmailMinimizedContent(messageId: string): Promise<GoogleGmailMinimizedContent> {
+    if (!/^[A-Za-z0-9_-]{1,256}$/.test(messageId)) {
+      throw new ConnectorError('invalid-input', 'Google Gmail message ID is invalid.');
+    }
+    const url = new URL(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}`);
+    url.searchParams.set('format', 'full');
+    const message = await this.request(url.toString(), 'Google Gmail content');
+    if (message.id !== messageId || typeof message.threadId !== 'string'
+      || !message.payload || typeof message.payload !== 'object' || Array.isArray(message.payload)) {
+      throw new ConnectorError('provider-disabled', 'Google Gmail content response is invalid.');
+    }
+    const candidates: Array<{ mimeType: string; data: string }> = [];
+    const visit = (value: unknown, depth = 0): void => {
+      if (depth > 12 || !value || typeof value !== 'object' || Array.isArray(value)) return;
+      const part = value as Record<string, unknown>;
+      const mimeType = typeof part.mimeType === 'string' ? part.mimeType.toLowerCase() : '';
+      const body = part.body && typeof part.body === 'object' && !Array.isArray(part.body)
+        ? part.body as Record<string, unknown> : undefined;
+      if ((mimeType === 'text/plain' || mimeType === 'text/html')
+        && typeof body?.data === 'string' && body.data.length <= 500_000) {
+        candidates.push({ mimeType, data: body.data });
+      }
+      if (Array.isArray(part.parts)) part.parts.slice(0, 100).forEach((child) => visit(child, depth + 1));
+    };
+    visit(message.payload);
+    const selected = candidates.find((candidate) => candidate.mimeType === 'text/plain') ?? candidates[0];
+    if (!selected) throw new ConnectorError('conflict', 'Gmail message has no supported inline text content.');
+    let decoded: string;
+    try { decoded = Buffer.from(selected.data, 'base64url').toString('utf8'); }
+    catch { throw new ConnectorError('provider-disabled', 'Google Gmail content encoding is invalid.'); }
+    if (selected.mimeType === 'text/html') {
+      decoded = decoded
+        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/giu, ' ')
+        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/giu, ' ')
+        .replace(/<[^>]+>/gu, ' ')
+        .replace(/&nbsp;/giu, ' ')
+        .replace(/&amp;/giu, '&')
+        .replace(/&lt;/giu, '<')
+        .replace(/&gt;/giu, '>');
+    }
+    const normalized = decoded.replace(/\r\n?/gu, '\n').replace(/[\t ]+/gu, ' ')
+      .replace(/\n{3,}/gu, '\n\n').trim();
+    if (!normalized || /\u0000/u.test(normalized)) {
+      throw new ConnectorError('conflict', 'Gmail message has no supported inline text content.');
+    }
+    const plainText = normalized.slice(0, 12_000);
+    return { messageId, threadId: message.threadId, plainText, truncated: plainText.length < normalized.length };
   }
 
   async createOmnixCalendar(summary = 'Omnix CRM'): Promise<{ readonly calendarId: string; readonly etag?: string }> {

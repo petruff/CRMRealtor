@@ -406,6 +406,7 @@ function DefinitionForm({
         <input
           required
           name="name"
+          autoComplete="off"
           maxLength={80}
           defaultValue={list?.name}
           className="sk-input"

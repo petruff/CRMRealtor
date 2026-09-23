@@ -4,6 +4,7 @@ export const GOOGLE_FEATURE_BUNDLES = [
   'workspace-core',
   'gmail-send',
   'gmail-metadata',
+  'gmail-insights',
   'calendar-app-created',
 ] as const;
 
@@ -45,6 +46,9 @@ export const GOOGLE_BUNDLE_SCOPES: Readonly<Record<GoogleFeatureBundle, readonly
   ],
   'gmail-send': ['https://www.googleapis.com/auth/gmail.send'],
   'gmail-metadata': ['https://www.googleapis.com/auth/gmail.metadata'],
+  // Restricted scope. It is requested only through a dedicated owner opt-in flow.
+  // Omnix never adds it to workspace-core or identity sign-in.
+  'gmail-insights': ['https://www.googleapis.com/auth/gmail.readonly'],
   'calendar-app-created': ['https://www.googleapis.com/auth/calendar.app.created'],
 };
 

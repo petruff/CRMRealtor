@@ -1,0 +1,358 @@
+[
+  {
+    "path": "packages/crm/app/contacts/[id]/brief/actions.ts",
+    "sha256": "69d3124b7604edd6de48d736273ce9a699f247d6c3a0ba6e8e52d9c74d42dba7"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/brief/loading.tsx",
+    "sha256": "09d5af63a99925c2ae3c7ca229913bdea46b1dfdd268b2ea335ac0cc4d4faca1"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/brief/page.test.ts",
+    "sha256": "eda52fc5a75e52c1f175122e1453f1a1e2e3246f242387fd1a2507eeef33f5f1"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/brief/page.tsx",
+    "sha256": "17161836e425bd38f3262dd319521344e72ef26fad1a4b0868d1f4295aad1295"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/outcome/actions.test.ts",
+    "sha256": "b194e639adca192395bb8e8b9b11e88c91c422b5ee1fdd155f9fefca59b52b0c"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/outcome/actions.ts",
+    "sha256": "579e4f015e69be7893ab6af3df18f1a36fe68dcca1247f9d5d0cea899ceafffb"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/outcome/export/route.ts",
+    "sha256": "83beb0232651c81998f83eae39ee1eafcb7e77a27f389c17eabf43b30aae387c"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/outcome/page.tsx",
+    "sha256": "5dfea44acff49ebbc436ef3991e499eb59889ba2eb8c0d80995248a47ae4fd5f"
+  },
+  {
+    "path": "packages/crm/app/contacts/[id]/page.tsx",
+    "sha256": "32ab0b14b5f344999b249255cbc23011210f3d48224a37e15e39df915c96bb70"
+  },
+  {
+    "path": "packages/crm/app/globals.css",
+    "sha256": "43060be73dcd3f3b8610d81ebf4cdfebf346a21ec4531103fc0102bfc0b5aafb"
+  },
+  {
+    "path": "packages/crm/app/transactions/page.tsx",
+    "sha256": "9c1c46e6e494833b1875bea2c38ab7565f8c5a2cfa6aed3a214a4453dafebdac"
+  },
+  {
+    "path": "packages/crm/components/brief-source-link.tsx",
+    "sha256": "4caa64e38c362cc879e30029d2009f56dadcbf7ee280bbdc276fc1d76caf23f2"
+  },
+  {
+    "path": "packages/crm/components/capture-operation-fields.tsx",
+    "sha256": "4b63fbf9b02889bda6edea51cae34b4d3c9a9c27c94e7f1e690fc06a78d05997"
+  },
+  {
+    "path": "packages/crm/components/capture-outcome.test.tsx",
+    "sha256": "f302e65a043afbd86e3a3f4c5ec1f75f7bb8b7403e7ad69ac3962f69d0a463a0"
+  },
+  {
+    "path": "packages/crm/components/capture-outcome.tsx",
+    "sha256": "35ea404ade1618eaeb1824268d2a39c6e97797fd2eeaeaabfde4d0ef5d620061"
+  },
+  {
+    "path": "packages/crm/components/conversation-actions.tsx",
+    "sha256": "a19046f0f4731f1fb6f4d5b2214986f4d394cbd17536c65a3ca0d1d7b390d079"
+  },
+  {
+    "path": "packages/crm/components/meeting-brief-highlights.test.tsx",
+    "sha256": "8f7a8c0f59a2a16e501f27e3a5f10737f792ab8e74b3aeb6c7a17ef6636d9f41"
+  },
+  {
+    "path": "packages/crm/components/meeting-brief-highlights.tsx",
+    "sha256": "94cb5f6be726d40106c2b247447269a289aa81220d7a0563cd7360742846715a"
+  },
+  {
+    "path": "packages/crm/components/meeting-brief.tsx",
+    "sha256": "1111f33674a88d978f4fd31a32cd9b35b6195f9631c0f30d8dd8ecf2558f543d"
+  },
+  {
+    "path": "packages/crm/components/today-command-center.tsx",
+    "sha256": "776c5081197f9cee1f6cf46db408631b2bf536bde9571380ebdaa9579077010c"
+  },
+  {
+    "path": "packages/crm/components/today-conversations.tsx",
+    "sha256": "692d080c731babe2054c855971bb921e343be4a3e12010feefcff23835918d3d"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-export.test.ts",
+    "sha256": "b5973a700bc83364b09b754a110e00d1d7610386c4640ed1dc8cc8d78148fd12"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-export.ts",
+    "sha256": "48aa81bdcd22cfa7d82492ffbef52ea2ca41f434ac852d4811d0df35fd311387"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-extraction.test.ts",
+    "sha256": "37419f31cc571035c59ca8622b88316a03dec1df4b0c94ee9ae2b899ed94c4d1"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-extraction.ts",
+    "sha256": "4a111fad42fe24d512d3e54314d3ed7b19373fadb5917886cf1ed3388a5fccd3"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-observed-extraction.ts",
+    "sha256": "04a67aefb15f5c9d4ae863c2d5731ea28e610d521d35151c8a4702c590326cdd"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-operations.ts",
+    "sha256": "2a0ad8128876228d0d2da385fdd3d8e044bc30da75c9de5a16ff035dbfe818af"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-provider.test.ts",
+    "sha256": "21e8785a31dd6232ed88bd71c85d2969fcafbbc760ff427eb56a190cd6404edd"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-service.test.ts",
+    "sha256": "2baf212b71c81b07d96f80220d6140ec186e6a48c8ff891ae3431ad4d4e0525d"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-service.ts",
+    "sha256": "ecaa298c169da656f0158dd86d9fbf4fdd77c5c24b20f99ab05010718a71ad34"
+  },
+  {
+    "path": "packages/crm/lib/application/capture-outcome-telemetry.test.ts",
+    "sha256": "1cece65323e0f8e285273357f452ac12b98fb5b61433bda7317e6f0312fc6f01"
+  },
+  {
+    "path": "packages/crm/lib/application/meeting-brief-narration.test.ts",
+    "sha256": "36ca17a57282d2a938a727f9a50c4ba0fa4ef6f7b5f66238ad38dd505c9a16da"
+  },
+  {
+    "path": "packages/crm/lib/application/meeting-brief-narration.ts",
+    "sha256": "70b9f2deac502b914e64117b9695d079d645c38d6cb681869aee61381851f552"
+  },
+  {
+    "path": "packages/crm/lib/application/meeting-brief-service.test.ts",
+    "sha256": "504a88cb5cac701f9b533826b2b84d0bdc00c8ff7dabf92c1a753371177a365a"
+  },
+  {
+    "path": "packages/crm/lib/application/meeting-brief-service.ts",
+    "sha256": "5af787bcd2e2ecb28033039fb4ebf2f2d9a3350a2831d52d50407de252c44fb5"
+  },
+  {
+    "path": "packages/crm/lib/application/omnix-proposal-executor.ts",
+    "sha256": "b89dfce37c1653d5135b89b6afcba7f346b605d495026f7c57e0f130f74e7882"
+  },
+  {
+    "path": "packages/crm/lib/application/omnix-provider-gateway.test.ts",
+    "sha256": "dc7b0f9c5fc28c0b120344813774f7e4a7b68fc542d733aa666429e421be3949"
+  },
+  {
+    "path": "packages/crm/lib/application/omnix-provider-gateway.ts",
+    "sha256": "4d90c8cf65012c38353a6247f7d7848c9917059073fb87bd532097fcd2731fb8"
+  },
+  {
+    "path": "packages/crm/lib/application/omnix-provider-server-gateway.ts",
+    "sha256": "f8c0d5b2ea325662de96cf1a22ca4d15a2402120444d94f04ecad35d5bf95820"
+  },
+  {
+    "path": "packages/crm/lib/application/route-navigation.test.ts",
+    "sha256": "8325b779a9664ab6c2c113b98aa7064e09149fe59e0bed777659bb1cf4e31fa2"
+  },
+  {
+    "path": "packages/crm/lib/application/route-navigation.ts",
+    "sha256": "2e2a2e654075677353c4f8a17251a587c67b7639dbaf33137feb23c5ba9274bc"
+  },
+  {
+    "path": "packages/crm/lib/data/capture-export-receipt.ts",
+    "sha256": "49b7ba25be2563fbaae3969aea205ede83fda6b695e77821ddfa6c5667585c35"
+  },
+  {
+    "path": "packages/crm/lib/data/capture-outcome-repository.ts",
+    "sha256": "9d910477c515138d1d65c84cdddc4ea5e5c52e9c26e596be5d95b5fa2e2b6c7f"
+  },
+  {
+    "path": "packages/crm/lib/data/capture-run-telemetry.ts",
+    "sha256": "49fc335a72c286360475dc00b15ea72ba5db6227e39772bbb0be6d15dfab5ab5"
+  },
+  {
+    "path": "packages/crm/lib/data/index.ts",
+    "sha256": "33afffbdc05c4fbb35324637cd643ee1576d59309a729662283068c8d1a01e43"
+  },
+  {
+    "path": "packages/crm/lib/data/meeting-brief-repository.ts",
+    "sha256": "fc52a8b9aa6717eeab685a51afbbe778af3110e80c2b7d89c57943156d60ed58"
+  },
+  {
+    "path": "packages/crm/lib/data/memory-capture-outcome-repository.ts",
+    "sha256": "6acef9cc1a9e59d4510b0a2a8cf5ab552a23aa643bd8473dd3a33fd5b2373f9c"
+  },
+  {
+    "path": "packages/crm/lib/data/memory-meeting-brief-repository.ts",
+    "sha256": "d88a879000bddadcf93a0f7acde451e7e8b8f29c800e2e01d8f5ddc1b1e3a0bd"
+  },
+  {
+    "path": "packages/crm/lib/data/memory-nurture-plan-repository.ts",
+    "sha256": "9b44798a203aa92e2fdbcd971d615b80f817c20d4c69cc942304ce34e7c8643d"
+  },
+  {
+    "path": "packages/crm/lib/data/supabase-capture-outcome-repository.ts",
+    "sha256": "f1571e9d46e6647d6fbab62b7a0bca8f9e0424067fa76995acb9a5c6e43c1d0f"
+  },
+  {
+    "path": "packages/crm/lib/data/supabase-meeting-brief-repository.test.ts",
+    "sha256": "bc139e8527fe326bfef152e4f820a37ed1841dcc6df516cbf00f9c7333825cac"
+  },
+  {
+    "path": "packages/crm/lib/data/supabase-meeting-brief-repository.ts",
+    "sha256": "7f02df109c8a74a0dd6fab764148529e1bae3326e15d48be515c4ea88de392a8"
+  },
+  {
+    "path": "packages/crm/lib/domain/capture-outcome.ts",
+    "sha256": "366d3871828bd83668408bf4ef26dfff443be480bcff148346c14b478853c2fc"
+  },
+  {
+    "path": "packages/crm/lib/domain/capture-run-telemetry.ts",
+    "sha256": "00d73ae3af294ad5757d9297f7bb6295d590d033e78d2b78d94af2b70aa8fe2d"
+  },
+  {
+    "path": "packages/crm/lib/domain/meeting-brief.ts",
+    "sha256": "96fcbd0ed2721a71796665b72fea59fe9f033b6040f81efcdd42a68182f8df29"
+  },
+  {
+    "path": "packages/crm/lib/domain/omnix-operational-brain.ts",
+    "sha256": "1247007f1c3130eb4bacdfe0c67e1b8b0f90cfd60e10bdef4206d4a55d0c445e"
+  },
+  {
+    "path": "packages/crm/package.json",
+    "sha256": "78b15755b168d6ba7761450f87f1d8955121720e4bc94944a6b90c82b0267f1a"
+  },
+  {
+    "path": "packages/crm/scripts/capture-outcome.test.ts",
+    "sha256": "adc9c4f1e2e7054a2bed9e7275579345823389e43a47acfde4b80d3be83fa8fa"
+  },
+  {
+    "path": "packages/crm/scripts/capture-outcome.ts",
+    "sha256": "087555f637d7bfaa7ac141c5afef7c5097e5c22483097458635f71437d7dd64d"
+  },
+  {
+    "path": "packages/crm/scripts/export-capture-outcome.ts",
+    "sha256": "5d51c669e694ce2aa0f4b62b51ef340ec5ad050f050050ceade1c2d894e3aa81"
+  },
+  {
+    "path": "packages/crm/scripts/meeting-brief.ts",
+    "sha256": "35773870274b86182b6c61475d644c7033ea1f2b6d0aedb9daf0b4a28da0101e"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907120000_meeting_brief_snapshots.sql",
+    "sha256": "03be35f73445048fb626cc96696b4c01b838e8280c4cc5e98b311e518c99591b"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907121000_capture_note_kind.sql",
+    "sha256": "e6761a766960016686ff1847fb1945bc0fb20a5fac97405db5b08fbbaadc4929"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907122000_capture_outcome.sql",
+    "sha256": "fd4fbdc92dfc6e86b635f6b9548f737d984c2080e61001579456c20dc6ebdf63"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907130000_capture_nurture_transition_kind.sql",
+    "sha256": "3596b558b4c9ff53b60af5b4b40e0e92713b266a7ee7e607ca13f462abe6fea7"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907131000_capture_operation_adapters.sql",
+    "sha256": "104bcf6dee8e43595db77bb9178317e60cca57a07303756cdbb5e41eeb0ae132"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907132000_capture_calendar_intent_receipts.sql",
+    "sha256": "f036396280b1f12498aaf977bac12e209a202b382feba7dd6f7c276ebb9e91f1"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907133000_capture_nurture_replay_binding.sql",
+    "sha256": "a766b07367a2143c68a1cba7437cfc70a806855a82f3700d311bab2bb12b9ef4"
+  },
+  {
+    "path": "packages/crm/supabase/migrations/20260907140000_capture_export_telemetry.sql",
+    "sha256": "bc379543463a0b71ed78c0d8c9f6b170065971f5ce879ce04c3f2179210ffd2c"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907120000_meeting_brief_snapshots.forward-repair.sql",
+    "sha256": "1010821ab16989df4037657d52b363ae5c39913be5d81087777d2214f5893224"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907120000_meeting_brief_snapshots.rollback.sql",
+    "sha256": "b57dad298999b04d55f59fbba5b1143d228093ec630cbe0200963c47154de5af"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907121000_capture_note_kind.forward-repair.sql",
+    "sha256": "434df2c38b77365d2d77420e563318ef6c0aab52b0f9f79fc57fcd39a479be0e"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907121000_capture_note_kind.rollback.sql",
+    "sha256": "1a1d0a28efbb18d93ff52fa5ea7331ca20c812fc111aea407f6a33523fd93121"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907122000_capture_outcome.forward-repair.sql",
+    "sha256": "8c31f600ee05e08d3057b9c70a2fe96f8dc99852da6d5c6e1702129e844cbf7d"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907122000_capture_outcome.rollback.sql",
+    "sha256": "0599541204c87c3577a26b288f3806972636feee075310e266668fd0d5b12ae5"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907130000_capture_nurture_transition_kind.forward-repair.sql",
+    "sha256": "d659a5509845bfc51574750d1ced377ea47e210666d66bb07308728e90adacfd"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907130000_capture_nurture_transition_kind.rollback.sql",
+    "sha256": "ab1810023e5ecc3a6e8120e885b5d86d2d846d73c3960ab4110cd478dec27c1d"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907131000_capture_operation_adapters.forward-repair.sql",
+    "sha256": "b420035c093ed7dd1ef370eb23f2b4ae0287a4464cc0a798592edd142dc1376f"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907131000_capture_operation_adapters.rollback.sql",
+    "sha256": "bb63011d1635bbe2c70e373e7857e55f510c57d6bc7ffdab6861b270a5b3072e"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907132000_capture_calendar_intent_receipts.forward-repair.sql",
+    "sha256": "3b3f41c3190aa2b546178b70f8601efca3ad54dc818df8beb724d8c0b7a04d4c"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907132000_capture_calendar_intent_receipts.rollback.sql",
+    "sha256": "10a4b82eaa65739078d5ca039493cdc0ee9e42218cc9ec9c101a85a2374943cd"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907133000_capture_nurture_replay_binding.forward-repair.sql",
+    "sha256": "6b485eb3f9f7b9c106e78877994259d276b6e7eb2fb12bf7953af7ba8978d279"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907133000_capture_nurture_replay_binding.rollback.sql",
+    "sha256": "cabc31f207d772cce7365874222d7d2f5a9d1c2b293d193724b6e99108ede91c"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907140000_capture_export_telemetry.forward-repair.sql",
+    "sha256": "4820dd744018697fa98bf3062e36bdd7a835aae794206650152f3de009dbdde7"
+  },
+  {
+    "path": "packages/crm/supabase/rollbacks/20260907140000_capture_export_telemetry.rollback.sql",
+    "sha256": "37afeb986a581b0919432ae4e1111afe9ed1d974bf31850226c1c3d257435836"
+  },
+  {
+    "path": "packages/crm/supabase/tests/20260907120000_meeting_brief_snapshots_test.sql",
+    "sha256": "b609b6d869632012c0d8c8d3030662b29ffa39bde3120f11e1db4942c183580c"
+  },
+  {
+    "path": "packages/crm/supabase/tests/20260907122000_capture_outcome_test.sql",
+    "sha256": "195a4dffa7a5820aa95a6f9263dc02df763c5f951a8b0c684f6f58aaeb4eabb8"
+  },
+  {
+    "path": "packages/crm/supabase/tests/20260907132000_capture_adapter_binding_test.sql",
+    "sha256": "4b9b8ca752cc08bc87915762d6d70234d3e80287e0272a09317531d14ad06dab"
+  },
+  {
+    "path": "packages/crm/supabase/tests/20260907140000_capture_export_telemetry_test.sql",
+    "sha256": "4812ff6f24646ec502f6be4536c2117de534c039cb87c6fafbc3cb866b35b2a7"
+  }
+]

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "crm-schema-capture.v1",
+  "candidateSha": "a25088c6dd8181767b2c34a8348f3a6eb0ec09ed",
+  "observedAt": "2026-09-08T01:56:53.7756204Z",
+  "source": "authenticated Supabase SQL Editor, read-only catalogue query",
+  "objectCount": 749,
+  "captureSha256": "24c9fc6125fa3479a50b569070b6423d37ca54ee029e6f0a9e67ccb204eb6993",
+  "querySourcePath": "docs/audits/evidence/2026-09-07-gemini-release/targeted-schema-snapshot.sql",
+  "querySourceSha256": "9429e48a878e1a986141b8c82357e77f7b57d32eeccf19ae6fd107338b5385d2",
+  "queryVariant": "same catalogue CTEs with a final count and JSON aggregation for one-row export",
+  "categories": [
+    {
+      "category": "default-acl",
+      "count": 12
+    },
+    {
+      "category": "dependency",
+      "count": 231
+    },
+    {
+      "category": "effective-table-acl",
+      "count": 138
+    },
+    {
+      "category": "enum",
+      "count": 74
+    },
+    {
+      "category": "event-trigger",
+      "count": 7
+    },
+    {
+      "category": "extension",
+      "count": 6
+    },
+    {
+      "category": "function",
+      "count": 65
+    },
+    {
+      "category": "metadata",
+      "count": 1
+    },
+    {
+      "category": "migration-history",
+      "count": 62
+    },
+    {
+      "category": "pending-history",
+      "count": 9
+    },
+    {
+      "category": "relation",
+      "count": 46
+    },
+    {
+      "category": "required-function",
+      "count": 18
+    },
+    {
+      "category": "required-relation",
+      "count": 19
+    },
+    {
+      "category": "role",
+      "count": 31
+    },
+    {
+      "category": "role-membership",
+      "count": 25
+    },
+    {
+      "category": "schema",
+      "count": 5
+    }
+  ],
+  "customerRowsIncluded": false,
+  "restorationTested": false,
+  "productionMutationsPerformed": false,
+  "limitations": [
+    "Targeted catalog snapshot, not a data backup",
+    "SQL replay against remote-equivalent state and exact-SHA release acceptance remain open"
+  ]
+}

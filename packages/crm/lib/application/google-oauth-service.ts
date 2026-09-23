@@ -51,7 +51,7 @@ function returnPath(value: string): string {
 }
 
 function bundleFromScope(value: string): GoogleFeatureBundle {
-  const match = /^google\.(workspace-core|gmail-send|gmail-metadata|calendar-app-created)\.v1$/.exec(value);
+  const match = /^google\.(workspace-core|gmail-send|gmail-metadata|gmail-insights|calendar-app-created)\.v1$/.exec(value);
   if (!match) throw new ConnectorError('forbidden', 'Google OAuth scope bundle binding failed.');
   return parseGoogleFeatureBundle(match[1]);
 }

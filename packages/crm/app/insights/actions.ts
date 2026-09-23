@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getRepository } from '@/lib/data';
-import { TRANSACTION_SIDES, TRANSACTION_STATUSES, type TransactionSide, type TransactionStatus } from '@/lib/domain/transaction';
+import { TRANSACTION_KINDS, TRANSACTION_SIDES, TRANSACTION_STATUSES, type TransactionKind, type TransactionSide, type TransactionStatus } from '@/lib/domain/transaction';
 
 function text(formData: FormData, key: string): string {
   return String(formData.get(key) ?? '').trim();
@@ -41,7 +41,7 @@ function idempotencyKey(formData: FormData): string {
 
 function friendlyFailure(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
-  if (/contact|close date|closed date|property address|dollar amount|choose a|form expired/i.test(message)) return message;
+  if (/contact|transaction title|transaction type|close date|closed date|property address|dollar amount|choose a|form expired/i.test(message)) return message;
   if (/ledger is unavailable|schema cache|relation/i.test(message)) {
     return 'Financial setup is still finishing. Nothing was saved; please try again shortly.';
   }
@@ -53,11 +53,13 @@ export async function createTransactionAction(formData: FormData): Promise<never
   try {
     const status = text(formData, 'status') as TransactionStatus;
     const side = text(formData, 'side') as TransactionSide;
+    const kind = text(formData, 'kind') as TransactionKind;
     if (!TRANSACTION_STATUSES.includes(status)) throw new Error('Choose a transaction status.');
     if (!TRANSACTION_SIDES.includes(side)) throw new Error('Choose a representation side.');
+    if (!TRANSACTION_KINDS.includes(kind)) throw new Error('Choose a transaction type.');
     const context = await getRepository();
     await context.transactionRepository.create(context.workspaceScope, {
-      contactId: text(formData, 'contactId'), status, side,
+      contactId: text(formData, 'contactId'), kind, title: text(formData, 'title'), status, side,
       propertyAddress: text(formData, 'propertyAddress'),
       expectedCloseDate: date(formData, 'expectedCloseDate'), closedAt: date(formData, 'closedAt'),
       salePriceCents: money(formData, 'salePrice'), grossCommissionCents: money(formData, 'grossCommission'),

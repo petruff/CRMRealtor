@@ -88,6 +88,46 @@ Initial classes:
 
 ## White-label bounded context
 
+### Commercialization modes
+
+White-label commercialization is progressive rather than a single tenant switch. The same
+workspace authority remains canonical in every mode:
+
+1. **Omnix SaaS** — the shared Omnix product identity, platform authentication and managed
+   application domain. This is the first commercially supportable mode.
+2. **Branded workspace** — workspace-approved business name, logo, constrained palette,
+   support identity and communication presentation inside the shared Omnix application.
+   Authentication and provider consent continue to identify the trusted platform operator.
+3. **Full white-label** — a verified customer-facing application domain and tenant brand.
+   Tenant-specific provider consent, sender infrastructure or install identity is a separate
+   operational capability, not an automatic consequence of changing UI tokens.
+
+These modes are capability packages, not authorization roles. A workspace cannot gain data,
+connector or administrative authority through its brand or hostname.
+
+### Authentication and domain boundary
+
+The standard SaaS and branded-workspace modes use one platform-controlled authentication
+domain such as `auth.<platform-domain>`. Google and other identity-provider branding identifies
+the platform application and operator consistently; it cannot be dynamically relabeled from an
+untrusted request hostname.
+
+An application custom domain resolves to a workspace only after server-side ownership
+verification. The resolver returns an immutable workspace binding plus brand-profile version;
+it never accepts a browser-supplied workspace ID. Unknown, pending, disabled or conflicting
+hosts fail closed to the shared Omnix identity and cannot expose tenant data.
+
+Full tenant-specific OAuth branding requires an explicitly provisioned provider application or
+credential set, verified callback domains, revocation ownership and support procedures for that
+workspace. Shared Gmail, Calendar, Mailchimp or social connector credentials must not be reused
+silently for tenant login branding. Provider consent branding remains truthful even when the CRM
+presentation is white-labeled.
+
+Host-derived branding must be included in cache keys or rendered dynamically with private/no-store
+semantics. Metadata, manifests, icons, login copy, support links and legal links may be tenant-aware
+only after the same verified host resolution; static assets and service-worker caches must not leak
+one realtor's identity into another workspace.
+
 ### Tenant model
 
 Each realtor organization is one workspace. Every tenant-owned row continues to carry canonical `workspace_id`; branding, entitlement and future billing records are no exception. Custom domains resolve to a workspace only through a server-maintained verified-domain binding.
@@ -120,6 +160,11 @@ Judith's workspace requirements are explicit:
 
 The billing provider is introduced later behind a separate adapter. Provider customer IDs, subscription IDs and webhook receipts do not become tenant authority and do not appear in authorization predicates.
 
+Initial packaging remains provider-neutral. `early_access`, `manual` and future `billing` grants
+authorize typed capabilities; product names, prices, trials, annual discounts and usage limits are
+not inferred by the application. Judith's non-expiring early-access grant is evaluated before any
+paid-plan presentation and is independently regression-tested.
+
 ### Commercial isolation gates
 
 Before selling the product to another realtor:
@@ -141,6 +186,28 @@ Before selling the product to another realtor:
 4. Workspace brand profiles and verified host resolution.
 5. Entitlement registry with Judith early-access seed/operation.
 6. Billing-provider adapter, plans and monthly/annual checkout only after commercial requirements and support operations are approved.
+
+### Commercialization sequencing verdict — 2026-08-28
+
+The current workspace/RLS foundation makes the white-label direction feasible, but commercial
+implementation is **not yet admitted**. Story 6.1 and the Epic 6 Wave 0 operational/UAT gates still
+contain open CLI, persistence, scheduler, second-workspace isolation and authenticated Judith
+evidence. Starting billing, custom-domain activation or tenant branding UI before those gates would
+create a second release surface on top of unresolved core operations.
+
+The admitted work at this stage is architecture and test-contract preparation only. The first
+implementation story for workspace brand profiles, verified host resolution and early-access
+entitlements may move from Draft to Ready only when:
+
+- the current Judith owner and assistant journeys pass authenticated production UAT;
+- Story 6.1 closes its CLI, persistence, scheduler, repository and two-workspace isolation criteria;
+- public homepage, privacy, terms and support links required by identity-provider branding are
+  reviewed and available;
+- support access, export, retention, closure and recovery ownership are approved; and
+- the Product Owner approves the standard SaaS versus branded-workspace packaging boundary.
+
+Billing remains a later story even after that foundation. No checkout, price, trial, invoice or
+payment-provider dependency is introduced by the brand-profile/entitlement foundation.
 
 ## Explicit non-decisions
 

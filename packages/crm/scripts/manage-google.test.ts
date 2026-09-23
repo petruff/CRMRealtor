@@ -24,11 +24,14 @@ describe('Google connector CLI', () => {
     const capture = output();
     expect(await runGoogleCli(['scopes'], capture.deps)).toBe(0);
     const result = JSON.parse(capture.stdout[0]!).result;
-    expect(result.featureBundles).toHaveLength(4);
+    expect(result.featureBundles).toHaveLength(5);
     expect(result.featureBundles).toEqual(expect.arrayContaining([
       expect.objectContaining({ bundle: 'workspace-core' }),
     ]));
-    expect(JSON.stringify(result.featureBundles)).not.toContain('gmail.readonly');
+    expect(result.featureBundles).toEqual(expect.arrayContaining([
+      expect.objectContaining({ bundle: 'gmail-insights', scopes: ['https://www.googleapis.com/auth/gmail.readonly'] }),
+    ]));
+    expect(result.restrictedOptIn).toEqual(['gmail-insights']);
   });
 
   it('starts one injected live feature authorization without leaking credentials', async () => {

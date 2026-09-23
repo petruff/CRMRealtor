@@ -7,16 +7,20 @@ import {
   BookOpen,
   CircleAlert,
   CircleHelp,
+  Database,
+  Globe2,
   LoaderCircle,
   MessageCircle,
   Send,
   ShieldCheck,
   Sparkles,
   Trash2,
+  X,
 } from 'lucide-react';
-import { useEffect, useRef, useState, useTransition, type FormEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useTransition, type FormEvent } from 'react';
 import {
   isSafeInProductTarget,
+  isSafeExternalSourceTarget,
   validateCopilotQuestion,
   type OmnixCopilotAction,
   type OmnixCopilotCitationView,
@@ -31,21 +35,26 @@ import {
 } from '@/lib/presentation/crm-evidence';
 
 const SUPPORTED_PROMPTS = [
+  'Workspace overview',
   'What should I do today?',
   'Who needs attention?',
-  "Show today's tasks",
-  'Show upcoming dates',
-  'Show pipeline',
+  'Organize my CRM',
+  'Show transactions',
+  'Show properties',
+  'Show nurture plans',
 ] as const;
+const WEB_PROMPTS = ['Research current Florida real estate trends', 'Compare public homebuyer resources'] as const;
 
 const INLINE_SOURCE_LIMIT = 3;
 const SOURCE_BATCH_SIZE = 12;
 const ATTENTION_BATCH_SIZE = 6;
+const RESULT_BATCH_SIZE = 6;
 
 function intentLabel(intent?: string): string {
   if (intent === 'alerts') return 'Attention brief';
   if (intent === 'brief') return 'Daily brief';
-  return intent ?? '';
+  if (intent === 'web-research') return 'Web research';
+  return intent?.replaceAll('-', ' ') ?? '';
 }
 
 interface TranscriptEntry {
@@ -68,27 +77,39 @@ function CitationLinks({
   if (!sources.length) return null;
   const visibleSources = sources.slice(0, INLINE_SOURCE_LIMIT);
   const remaining = sources.length - visibleSources.length;
+  const sourceKind = visibleSources.some((citation) => citation.entityType === 'web') ? 'Web source:' : 'CRM source:';
   return (
     <p className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] leading-relaxed text-subtle">
-      <span>CRM source:</span>
-      {visibleSources.map((citation) => isSafeInProductTarget(citation.target) ? (
-        <Link key={citation.id} href={citation.target} className="break-words text-accent hover:underline">
-          {citation.displayLabel ?? evidenceEntityLabel(citation.entityType)}
-        </Link>
-      ) : null)}
+      <span>{sourceKind}</span>
+      {visibleSources.map((citation) => citation.entityType === 'web'
+        ? isSafeExternalSourceTarget(citation.target) ? (
+          <a key={citation.id} href={citation.target} target="_blank" rel="noopener noreferrer" className="break-words text-accent hover:underline">
+            {citation.displayLabel ?? 'Public source'}
+          </a>
+        ) : null
+        : isSafeInProductTarget(citation.target) ? (
+          <Link key={citation.id} href={citation.target} className="break-words text-accent hover:underline">
+            {citation.displayLabel ?? evidenceEntityLabel(citation.entityType)}
+          </Link>
+        ) : null)}
       {remaining > 0 ? <span>+{remaining} more in the source list</span> : null}
     </p>
   );
 }
 
 function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
+  const responseId = useId();
   const [visibleSourceCount, setVisibleSourceCount] = useState(SOURCE_BATCH_SIZE);
   const [visibleAttentionCount, setVisibleAttentionCount] = useState(ATTENTION_BATCH_SIZE);
+  const [visibleAlertCount, setVisibleAlertCount] = useState(RESULT_BATCH_SIZE);
+  const [visibleBlockCounts, setVisibleBlockCounts] = useState<Record<string, number>>({});
   const isProblem = result.status === 'error';
   const isLimited = result.status === 'unsupported' || result.status === 'unavailable';
   const Icon = isProblem ? CircleAlert : isLimited ? CircleHelp : Sparkles;
   const itemIds = new Set(result.answerBlocks.flatMap((block) => block.items.map((item) => item.id)));
-  const visibleAlerts = result.alerts.filter((alert) => !itemIds.has(alert.id));
+  const availableAlerts = result.alerts.filter((alert) => !itemIds.has(alert.id));
+  const visibleAlerts = availableAlerts.slice(0, visibleAlertCount);
+  const remainingAlerts = Math.max(0, availableAlerts.length - visibleAlerts.length);
   const visibleCitations = result.citations.slice(0, visibleSourceCount);
   const remainingSources = result.citations.length - visibleCitations.length;
   const attentionItems = result.answerBlocks
@@ -113,9 +134,19 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">
               {result.intent ? `Omnix · ${intentLabel(result.intent)}` : 'Omnix'}
             </p>
-            {result.dataMode ? (
+            {result.dataMode && !result.model?.researched ? (
               <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-subtle">
                 {result.dataMode === 'live' ? 'Live CRM' : 'Sample data'}
+              </span>
+            ) : null}
+            {result.model?.narrated ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                <Sparkles className="size-3" aria-hidden /> AI grounded
+              </span>
+            ) : null}
+            {result.model?.researched ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+                <BookOpen className="size-3" aria-hidden /> Web researched
               </span>
             ) : null}
           </div>
@@ -126,9 +157,13 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
           ) : null}
           {result.answerBlocks.map((block) => {
             const isAttentionList = block.kind === 'list' && block.id.startsWith('attention-');
+            const visibleBlockCount = visibleBlockCounts[block.id] ?? RESULT_BATCH_SIZE;
             const visibleItems = isAttentionList
               ? block.items.filter((item) => visibleAttentionIds.has(item.id))
-              : block.items;
+              : block.items.slice(0, visibleBlockCount);
+            const remainingBlockItems = isAttentionList
+              ? 0
+              : Math.max(0, block.items.length - visibleItems.length);
             if (isAttentionList && !visibleItems.length) return null;
             return (
             <section
@@ -136,10 +171,10 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
               className={block.id === 'attention-summary'
                 ? 'mt-3 rounded-2xl border border-line bg-surface-2 p-4 first:mt-1'
                 : 'mt-4 first:mt-1'}
-              aria-labelledby={`${block.id}-title`}
+              aria-labelledby={`${responseId}-${block.id}-title`}
             >
               {block.title ? (
-                <h3 id={`${block.id}-title`} className="text-sm font-semibold text-ink">
+                <h3 id={`${responseId}-${block.id}-title`} className="text-sm font-semibold text-ink">
                   {block.title}
                 </h3>
               ) : null}
@@ -176,7 +211,33 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                   ))}
                 </ul>
               ) : null}
-              <CitationLinks ids={block.citationIds} citations={result.citations} />
+              <CitationLinks ids={block.citationIds.filter((id) => !visibleItems.some((item) => item.citationIds.includes(id)))} citations={result.citations} />
+              {!isAttentionList && block.items.length > RESULT_BATCH_SIZE ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-line pt-3">
+                  <button
+                    type="button"
+                    className="sk-secondary-button text-xs"
+                    aria-disabled={remainingBlockItems === 0}
+                    onClick={() => {
+                      if (!remainingBlockItems) return;
+                      setVisibleBlockCounts((current) => ({
+                        ...current,
+                        [block.id]: Math.min(
+                          (current[block.id] ?? RESULT_BATCH_SIZE) + RESULT_BATCH_SIZE,
+                          block.items.length,
+                        ),
+                      }));
+                    }}
+                  >
+                    {remainingBlockItems > 0
+                      ? `Show next ${Math.min(RESULT_BATCH_SIZE, remainingBlockItems)}`
+                      : 'All items shown'}
+                  </button>
+                  <span className="text-[11px] text-subtle">
+                    Showing {visibleItems.length} of {block.items.length}
+                  </span>
+                </div>
+              ) : null}
             </section>
             );
           })}
@@ -235,6 +296,29 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                   </li>
                 ))}
               </ul>
+              {availableAlerts.length > RESULT_BATCH_SIZE ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    className="sk-secondary-button text-xs"
+                    aria-disabled={remainingAlerts === 0}
+                    onClick={() => {
+                      if (!remainingAlerts) return;
+                      setVisibleAlertCount((current) => Math.min(
+                        current + RESULT_BATCH_SIZE,
+                        availableAlerts.length,
+                      ));
+                    }}
+                  >
+                    {remainingAlerts > 0
+                      ? `Show next ${Math.min(RESULT_BATCH_SIZE, remainingAlerts)} alerts`
+                      : 'All alerts shown'}
+                  </button>
+                  <span className="text-[11px] text-subtle">
+                    Showing {visibleAlerts.length} of {availableAlerts.length} alerts
+                  </span>
+                </div>
+              ) : null}
             </section>
           ) : null}
 
@@ -245,6 +329,21 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
               </summary>
               <ul className="mt-3 grid gap-2" aria-label="Answer sources">
                 {visibleCitations.map((citation) => {
+                  if (citation.entityType === 'web') {
+                    return (
+                      <li key={citation.id} className="min-w-0 rounded-xl bg-surface-2 p-3">
+                        <p className="break-words text-xs font-medium text-ink">{citation.displayLabel ?? 'Public web source'}</p>
+                        <p className="mt-1 break-words text-[11px] leading-relaxed text-muted">
+                          Public source returned by Gemini Google Search grounding.
+                        </p>
+                        {isSafeExternalSourceTarget(citation.target) ? (
+                          <a href={citation.target} target="_blank" rel="noopener noreferrer" className="sk-secondary-button mt-2 text-xs">
+                            Open source <ArrowUpRight className="size-3.5" aria-hidden />
+                          </a>
+                        ) : null}
+                      </li>
+                    );
+                  }
                   const updatedAt = evidenceTimestamp(citation.sourceTimestamp);
                   return (
                     <li key={citation.id} className="min-w-0 rounded-xl bg-surface-2 p-3">
@@ -319,10 +418,18 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
 
           {result.asOf ? (
             <p className="mt-3 text-[11px] text-subtle">
-              CRM checked {new Date(result.asOf).toLocaleString()} · Read-only response
+              {result.model?.researched ? 'Web researched' : 'CRM checked'} {new Date(result.asOf).toLocaleString()} · Read-only response
             </p>
           ) : null}
-          {result.model?.routed ? (
+          {result.model?.researched ? (
+            <p className="mt-2 text-[11px] text-subtle" role="status">
+              Gemini researched public sources. Web content cannot change CRM records or authorize actions · {result.model.policyVersion}
+            </p>
+          ) : result.model?.narrated ? (
+            <p className="mt-2 text-[11px] text-subtle" role="status">
+              Gemini organized the answer from the cited CRM records · {result.model.policyVersion}
+            </p>
+          ) : result.model?.routed ? (
             <p className="mt-2 text-[11px] text-subtle" role="status">
               I understood the question and checked the matching CRM records.
             </p>
@@ -333,12 +440,12 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
   );
 }
 
-function PendingResponse() {
+function PendingResponse({ source }: { source: 'crm' | 'public-web' }) {
   return (
     <div className="max-w-[88%] rounded-2xl rounded-tl-md border border-line bg-surface p-4 text-sm text-muted" role="status">
       <span className="flex items-center gap-2">
         <LoaderCircle className="size-4 animate-spin text-accent" aria-hidden />
-        Checking your CRM…
+        {source === 'crm' ? 'Checking the latest CRM records…' : 'Researching public sources…'}
       </span>
     </div>
   );
@@ -355,24 +462,29 @@ export function OmnixCopilot({
 }) {
   const [question, setQuestion] = useState('');
   const [entries, setEntries] = useState<TranscriptEntry[]>([]);
+  const [source, setSource] = useState<'crm' | 'public-web'>('crm');
+  const [selectedContact, setSelectedContact] = useState<{ id: string; name: string } | undefined>();
   const [composerError, setComposerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
-  const conversationEndRef = useRef<HTMLDivElement>(null);
+  const conversationRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLFormElement>(null);
   const sequence = useRef(0);
   const compact = mode === 'assistant';
   const questionId = compact ? 'omnix-assistant-question' : 'omnix-question';
   const conversationId = compact ? 'omnix-assistant-conversation' : 'omnix-page-conversation';
 
-  const scrollToLatest = () => {
+  const scrollToLatest = useCallback(() => {
     const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    conversationEndRef.current?.scrollIntoView?.({ block: 'end', behavior: reduceMotion ? 'auto' : 'smooth' });
-  };
+    const behavior = reduceMotion ? 'auto' : 'smooth';
+    conversationRef.current?.scrollTo?.({ top: conversationRef.current.scrollHeight, behavior });
+    if (!compact) composerRef.current?.scrollIntoView?.({ block: 'end', behavior: 'instant' });
+  }, [compact]);
 
   useEffect(() => {
     if (!entries.length && !isPending) return;
     scrollToLatest();
-  }, [entries.length, isPending]);
+  }, [entries.length, isPending, scrollToLatest]);
 
   const sendQuestion = (rawQuestion: string) => {
     const nextQuestion = rawQuestion.trim();
@@ -394,7 +506,8 @@ export function OmnixCopilot({
 
     startTransition(async () => {
       try {
-        const result = await action(nextQuestion);
+        const result = await action(nextQuestion, { source, ...(source === 'crm' && selectedContact ? { contactId: selectedContact.id } : {}) });
+        if (result.selectedContact) setSelectedContact(result.selectedContact);
         sequence.current += 1;
         setEntries((current) => [
           ...current,
@@ -432,6 +545,7 @@ export function OmnixCopilot({
     setEntries([]);
     setQuestion('');
     setComposerError(null);
+    setSelectedContact(undefined);
     inputRef.current?.focus();
   };
 
@@ -452,7 +566,7 @@ export function OmnixCopilot({
               {compact && greetingName ? `Hi ${greetingName}, I'm Omnix` : 'Ask Omnix'}
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-              I check your CRM records behind each answer and show you where the information came from.
+              Find client details, understand deal status, and prepare your next steps. Every answer links to its sources.
             </p>
           </div>
         </div>
@@ -484,10 +598,11 @@ export function OmnixCopilot({
 
       <div className={compact ? 'grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden' : 'grid min-h-[24rem] grid-rows-[minmax(0,1fr)_auto] overflow-hidden'}>
         <div
+          ref={conversationRef}
           id={conversationId}
           className={compact
             ? 'omnix-conversation-scroll min-w-0 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-5'
-            : 'omnix-conversation-scroll min-w-0 space-y-4 overflow-y-auto overscroll-contain p-4 sm:max-h-[38rem] sm:p-6'}
+            : 'omnix-conversation-scroll max-h-[min(38rem,55dvh)] min-w-0 space-y-4 overflow-y-auto overscroll-contain p-4 sm:p-6'}
           tabIndex={0}
           role={entries.length || isPending ? 'log' : undefined}
           aria-live={entries.length || isPending ? 'polite' : undefined}
@@ -504,10 +619,12 @@ export function OmnixCopilot({
                 {greetingName ? `What should we focus on, ${greetingName}?` : 'What should we focus on?'}
               </h3>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-                Ask about today, people who need attention, tasks, dates or pipeline. I cite the records and never act without you.
+                {source === 'crm'
+                  ? 'Your clients, transactions, properties, and follow-up plans in one conversation. Choose a client from an answer to keep the next question in context.'
+                  : 'Ask a public research question. Client context stays in CRM mode.'}
               </p>
               <div className="mt-5 flex max-w-full flex-wrap justify-center gap-2" aria-label="Supported prompt examples">
-                {SUPPORTED_PROMPTS.map((prompt) => (
+                {(source === 'crm' ? SUPPORTED_PROMPTS : WEB_PROMPTS).map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
@@ -526,15 +643,46 @@ export function OmnixCopilot({
                 <p className="break-words">{entry.question}</p>
               </article>
             ) : entry.result ? (
-              <AssistantResult key={entry.id} result={entry.result} />
+              <div key={entry.id}>
+                <AssistantResult result={entry.result} />
+                {entry.result.citations.some((citation) => citation.entityType === 'contact') ? (
+                  <div className="mt-3 flex flex-wrap gap-2 pl-1" aria-label="Choose a client for follow-up questions">
+                    {entry.result.citations.filter((citation, index, all) => citation.entityType === 'contact'
+                      && all.findIndex((other) => other.entityType === 'contact' && other.recordId === citation.recordId) === index).slice(0, 6).map((citation) => (
+                      <button key={citation.recordId} type="button" disabled={isPending} className="sk-secondary-button min-h-11 text-xs"
+                        onClick={() => { setSource('crm'); setSelectedContact({ id: citation.recordId, name: citation.displayLabel ?? 'Selected client' }); inputRef.current?.focus(); }}>
+                        Ask about {citation.displayLabel ?? 'this client'}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ) : null)
           )}
-          {isPending ? <PendingResponse /> : null}
-          <div ref={conversationEndRef} className="h-px" aria-hidden />
+          {isPending ? <PendingResponse source={source} /> : null}
         </div>
 
-        <form onSubmit={submit} className="omnix-copilot-composer border-t border-line bg-surface-2 p-4 sm:p-5" aria-busy={isPending}>
-          <label htmlFor={questionId} className="sr-only">Ask Omnix a supported question</label>
+        <form ref={composerRef} onSubmit={submit} className="omnix-copilot-composer scroll-mb-28 scroll-mt-24 border-t border-line bg-surface-2 p-4 sm:p-5" aria-busy={isPending}>
+          <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="Answer source">
+            {([{ value: 'crm', label: 'CRM', icon: Database }, { value: 'public-web', label: 'Public web', icon: Globe2 }] as const).map((item) => (
+              <button key={item.value} type="button" aria-pressed={source === item.value} disabled={isPending}
+                onClick={() => { setSource(item.value); setComposerError(null); if (item.value === 'public-web') setSelectedContact(undefined); }}
+                className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-3 text-xs font-medium ${source === item.value ? 'border-accent bg-accent-soft text-accent' : 'border-line bg-surface text-muted'}`}>
+                <item.icon className="size-3.5" aria-hidden />{item.label}
+              </button>
+            ))}
+            {source === 'crm' && selectedContact ? (
+              <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-line bg-surface pl-3 text-xs text-ink">
+                <span className="max-w-48 truncate">{selectedContact.name}</span>
+                <button type="button" disabled={isPending} onClick={() => setSelectedContact(undefined)} className="sk-icon-button" aria-label="Clear selected client"><X className="size-3.5" aria-hidden /></button>
+              </span>
+            ) : null}
+          </div>
+          {source === 'crm' && selectedContact ? <div className="mb-3 flex flex-wrap gap-2 text-xs">
+            <button type="button" className="sk-secondary-button min-h-11" disabled={isPending} onClick={() => sendQuestion('Show this client status')}>Client status</button>
+            <Link className="sk-secondary-button min-h-11" href={`/contacts/${encodeURIComponent(selectedContact.id)}/outcome`}>Organize notes & next steps<ArrowUpRight className="size-3.5" aria-hidden /></Link>
+          </div> : null}
+          <label htmlFor={questionId} className="sr-only">Ask Omnix about the CRM or research a topic</label>
           <div className="flex min-w-0 items-center gap-2 rounded-[1.15rem] border border-line bg-surface p-2 focus-within:border-accent focus-within:ring-3 focus-within:ring-accent-soft">
             <input
               ref={inputRef}
@@ -549,10 +697,10 @@ export function OmnixCopilot({
               maxLength={200}
               disabled={isPending}
               autoComplete="off"
-              placeholder="Ask about today's priorities…"
+              placeholder={source === 'crm' ? 'Ask about a client, a deal, or your next steps…' : 'Ask a public research question…'}
               className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-base text-ink outline-none placeholder:text-subtle disabled:cursor-wait"
               aria-invalid={composerError ? true : undefined}
-              aria-describedby={composerError ? 'omnix-question-error' : 'omnix-question-help'}
+              aria-describedby={composerError ? `${questionId}-error` : `${questionId}-help`}
             />
             <button
               type="submit"
@@ -565,11 +713,11 @@ export function OmnixCopilot({
           </div>
           <div className="mt-2 flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-1 px-1">
             {composerError ? (
-              <p id="omnix-question-error" role="alert" className="text-xs text-hot">{composerError}</p>
+              <p id={`${questionId}-error`} role="alert" className="text-xs text-hot">{composerError}</p>
             ) : (
-              <p id="omnix-question-help" className="flex items-center gap-1.5 text-xs text-muted">
+              <p id={`${questionId}-help`} className="flex items-center gap-1.5 text-xs text-muted">
                 <ShieldCheck className="size-3.5 shrink-0" aria-hidden />
-                Private to this page · Nothing changes without you
+                {source === 'crm' ? 'Latest CRM records · Review before changes' : 'Public sources only · Keep client details in CRM'}
               </p>
             )}
             <p className="tabular text-xs text-subtle" aria-label={`${question.length} of 200 characters`}>

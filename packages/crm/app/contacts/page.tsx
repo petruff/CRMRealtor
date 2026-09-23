@@ -45,6 +45,7 @@ import {
   type ContactScope,
 } from "@/lib/application/contact-query";
 import { contactViewHref, type ContactViewState } from "@/lib/application/contact-view-state";
+import { contactRecordHref, type ContactBrowseContext } from "@/lib/application/contact-navigation";
 import { formatHuman } from "@/lib/domain/dates";
 import {
   applySmartListCommand,
@@ -111,9 +112,15 @@ export default async function ContactsPage({
     qualification?: string | string[];
     scope?: string | string[];
     page?: string | string[];
+    saved?: string | string[];
   }>;
 }) {
   const params = await searchParams;
+  const archiveNotice = params.saved === "archived-end"
+    ? "Contact archived. There are no more contacts after it in this list."
+    : params.saved === "archived"
+      ? "Contact archived. It stays available under Archived."
+      : undefined;
   const archivedView = params.view === "archived";
   const legacyNeedsReview = params.qualification === "needs-qualification";
   const rawScope = typeof params.scope === "string" ? params.scope : undefined;
@@ -136,6 +143,7 @@ export default async function ContactsPage({
   } catch {
     leadType = undefined;
   }
+  if (!archivedView && scope === "past-clients") leadType = undefined;
   const rawSource = typeof params.source === "string" ? params.source : undefined;
   let source: LeadSource | undefined;
   try {
@@ -229,6 +237,27 @@ export default async function ContactsPage({
     ])) as Record<LeadType, number>;
   }
   const visibleContacts = contactPage.items;
+  const pastClients = visibleContacts.filter((contact) => contact.relationship === "past-client");
+  const contactGroups = [
+    ...(pastClients.length > 0 ? [{
+      key: "past-clients",
+      title: "Past clients",
+      blurb: "Relationships you have already served. Kept separate from lead priority.",
+      count: scope === "past-clients" ? contactPage.total : pastClients.length,
+      tone: "neutral" as const,
+      contacts: pastClients,
+    }] : []),
+    ...ORDER.map((candidate) => ({
+      key: candidate,
+      title: LEAD_TYPE_LABEL[candidate],
+      blurb: BLURB[candidate],
+      count: !archivedView && (scope === "leads" || scope === "active-clients")
+        ? leadTypeCounts[candidate]
+        : visibleContacts.filter((contact) => contact.relationship !== "past-client" && contact.leadType === candidate).length,
+      tone: candidate,
+      contacts: visibleContacts.filter((contact) => contact.relationship !== "past-client" && contact.leadType === candidate),
+    })).filter((group) => group.contacts.length > 0),
+  ];
   const viewState: ContactViewState = {
     scope,
     ...(query ? { query } : {}),
@@ -237,6 +266,16 @@ export default async function ContactsPage({
     ...(rawSmartListId ? { smartList: rawSmartListId } : {}),
     ...(contactPage.page > 1 ? { page: contactPage.page } : {}),
   };
+  const browseContext: ContactBrowseContext = archivedView
+    ? {
+      archived: true,
+      scope: "all",
+      ...(query ? { query } : {}),
+      ...(leadType ? { leadType } : {}),
+      ...(source ? { source } : {}),
+      ...(contactPage.page > 1 ? { page: contactPage.page } : {}),
+    }
+    : { ...viewState, origin: "list" };
   const listContactAggregates = activityRepository.listContactAggregates?.bind(activityRepository);
   if (!listContactAggregates) {
     throw new Error("Exact contact activity counts are unavailable.");
@@ -313,6 +352,15 @@ export default async function ContactsPage({
         scope={scope}
       /> : null}
 
+      {archiveNotice && !archivedView ? (
+        <p
+          role="status"
+          className="mb-5 rounded-2xl border border-nurture-border bg-nurture-soft px-4 py-3 text-sm text-nurture"
+        >
+          {archiveNotice}
+        </p>
+      ) : null}
+
       {smartListError ? (
         <p role="alert" className="mb-5 text-sm text-hot">
           {smartListError}
@@ -360,21 +408,27 @@ export default async function ContactsPage({
         {source ? <input type="hidden" name="source" value={source} /> : null}
         {!archivedView && scope !== "leads" ? <input type="hidden" name="scope" value={scope} /> : null}
         {archivedView ? <input type="hidden" name="view" value="archived" /> : null}
-        <label className="bg-surface">
-          <span className="sr-only">Filter by follow-up group</span>
-          <select
-            name="leadType"
-            defaultValue={leadType ?? ""}
-            className="sk-input min-h-14 rounded-none border-0 bg-surface"
-          >
-            <option value="">All follow-up groups</option>
-            {CONTACT_LEAD_TYPES.map((value) => (
-              <option key={value} value={value}>
-                {LEAD_TYPE_LABEL[value]}
-              </option>
-            ))}
-          </select>
-        </label>
+        {!archivedView && scope === "past-clients" ? (
+          <div className="flex min-h-14 items-center bg-surface px-4 text-xs leading-relaxed text-muted">
+            Past clients are organized by relationship, not lead priority.
+          </div>
+        ) : (
+          <label className="bg-surface">
+            <span className="sr-only">Filter by follow-up group</span>
+            <select
+              name="leadType"
+              defaultValue={leadType ?? ""}
+              className="sk-input min-h-14 rounded-none border-0 bg-surface"
+            >
+              <option value="">All follow-up groups</option>
+              {CONTACT_LEAD_TYPES.map((value) => (
+                <option key={value} value={value}>
+                  {LEAD_TYPE_LABEL[value]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="flex min-h-14 items-center gap-1 bg-surface px-2">
           <button
             type="submit"
@@ -423,21 +477,17 @@ export default async function ContactsPage({
 
       {contactPage.total ? (
         <div className="space-y-12">
-          {ORDER.map((leadType) => {
-            const group = visibleContacts.filter((c) => c.leadType === leadType);
-            const exactGroupCount = leadTypeCounts[leadType];
-            if (group.length === 0) return null;
-            return (
-              <section key={leadType}>
+          {contactGroups.map((group) => (
+              <section key={group.key}>
                 <SectionHeader
-                  title={LEAD_TYPE_LABEL[leadType]}
-                  blurb={BLURB[leadType]}
-                  count={exactGroupCount}
-                  tone={leadType}
+                  title={group.title}
+                  blurb={group.blurb}
+                  count={group.count}
+                  tone={group.tone}
                 />
 
                 <ul className="sk-group sk-list-grid grid gap-px lg:grid-cols-2">
-                  {group.map((contact) => (
+                  {group.contacts.map((contact) => (
                     <li
                       key={contact.id}
                       className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-3 bg-surface p-4 sm:flex sm:p-5"
@@ -445,11 +495,12 @@ export default async function ContactsPage({
                       <Avatar
                         initials={initials(contact)}
                         leadType={contact.leadType}
+                        relationship={contact.relationship}
                       />
 
                       <div className="min-w-0 flex-1">
                         <Link
-                          href={`/contacts/${contact.id}${archivedView ? "?view=archived" : ""}`}
+                          href={contactRecordHref(contact.id, browseContext)}
                           className="flex min-h-11 items-center truncate font-medium text-ink underline-offset-2 hover:underline"
                         >
                           {displayName(contact)}
@@ -502,8 +553,7 @@ export default async function ContactsPage({
                   ))}
                 </ul>
               </section>
-            );
-          })}
+          ))}
           <ContactPagination
             page={contactPage}
             hrefForPage={(page) => archivedView ? archivedPageHref(page) : contactViewHref(viewState, { page })}

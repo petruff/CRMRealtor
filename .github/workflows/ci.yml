@@ -17,6 +17,8 @@ jobs:
     name: Exact-SHA quality and security
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      CANDIDATE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     defaults:
       run:
         working-directory: packages/crm
@@ -24,14 +26,14 @@ jobs:
       - name: Checkout exact candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ env.CANDIDATE_SHA }}
           fetch-depth: 0
 
       - name: Assert exact clean candidate
         shell: bash
         working-directory: .
         run: |
-          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
           test -z "$(git status --porcelain=v1 --untracked-files=all)"
 
       - name: Setup Node.js
@@ -90,11 +92,27 @@ jobs:
       - name: Full tests
         run: npm test
 
+      - name: Resolve migration comparison base
+        shell: bash
+        working-directory: .
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            migration_base_sha="$(git merge-base "${PR_BASE_SHA}" "${CANDIDATE_SHA}")"
+          else
+            migration_base_sha="${PUSH_BEFORE_SHA}"
+          fi
+          git cat-file -e "${migration_base_sha}^{commit}"
+          git merge-base --is-ancestor "${migration_base_sha}" "${CANDIDATE_SHA}"
+          echo "MIGRATION_BASE_SHA=${migration_base_sha}" >> "${GITHUB_ENV}"
+
       - name: Replay complete migration history and run database tests
         shell: bash
         env:
-          MIGRATION_BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-          MIGRATION_CANDIDATE_SHA: ${{ github.sha }}
+          MIGRATION_CANDIDATE_SHA: ${{ env.CANDIDATE_SHA }}
         run: bash scripts/run-supabase-ci.sh
 
       - name: Validate any tracked release manifests

@@ -1,0 +1,58 @@
+{
+  "kind": "release-readiness-observation",
+  "observedAt": "2026-09-08T00:34:00Z",
+  "result": "not-ready",
+  "baselineSha": "eedc12eec250535946405671577e356f5f24c8e9",
+  "candidateFrozen": false,
+  "branch": "codex/epic-10-meeting-outcomes",
+  "production": {
+    "deploymentId": "dpl_GDHBv2TMX3ZB1B5dFFaeCyUvVU5r",
+    "url": "https://crm-chi-teal-22.vercel.app",
+    "state": "READY",
+    "metadataCommitSha": "eedc12eec250535946405671577e356f5f24c8e9",
+    "metadataGitDirty": "1",
+    "healthStatus": 200,
+    "readinessStatus": 200,
+    "databaseReadiness": "available",
+    "vercelPlan": "hobby"
+  },
+  "database": {
+    "projectRef": "kpcqcrskqygkthrcmamd",
+    "observationMethod": "Authenticated Supabase SQL Editor; SELECT only",
+    "migrationCount": 62,
+    "versions": [
+      "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010",
+      "0011", "0012", "0013", "0014", "0015", "0016", "0017", "0018", "0019", "0020",
+      "0021", "0022", "0023", "0024", "0025", "0026", "0027", "0028", "20260821155317",
+      "20260821181501", "20260822043055", "20260822052500", "20260823201500", "20260823213000",
+      "20260823213100", "20260824181500", "20260824203000", "20260824213753", "20260825120000",
+      "20260825121000", "20260825122000", "20260825123000", "20260825124000", "20260826120000",
+      "20260826123000", "20260827143000", "20260827190000", "20260831120000", "20260831160000",
+      "20260831190000", "20260831200000", "20260831210000", "20260831211000", "20260831212000",
+      "20260831213000", "20260831214000", "20260831215000", "20260831220000", "20260831221000",
+      "20260831222000", "20260831223000", "20260901010000"
+    ],
+    "savedAiConfigurationCount": 0,
+    "briefSnapshotsExist": false,
+    "captureOutcomesExist": false,
+    "scheduledBackupsShown": false,
+    "branchesShown": false
+  },
+  "access": {
+    "githubCli": "authenticated-correct-account",
+    "vercelCli": "authenticated-correct-account",
+    "supabaseCli": "wrong-account-project-403",
+    "supabaseBrowser": "authenticated-correct-project",
+    "crmBrowser": "authenticated-settings-accessible",
+    "dockerEngine": "unavailable",
+    "vercelSensitiveEnvDownload": "redacted-placeholders-temporary-file-removed"
+  },
+  "latestObservedCi": {
+    "runId": "34167959748",
+    "headSha": "121a8f9367c25533f25d213c4315be1e9c3c9f46",
+    "conclusion": "success",
+    "acceptsCurrentCandidate": false
+  },
+  "remoteWritesPerformed": false,
+  "releaseAuthorizedByThisEvidence": false
+}

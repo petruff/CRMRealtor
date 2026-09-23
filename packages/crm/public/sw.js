@@ -57,3 +57,34 @@ self.addEventListener('fetch', (event) => {
     );
   }
 });
+
+// Morning brief (Epic 11 P5). Payloads are end-to-end encrypted by the push
+// service; only same-origin paths are ever opened from a notification.
+function safeInternalUrl(value) {
+  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/';
+}
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
+  const title = typeof payload.title === 'string' && payload.title ? payload.title.slice(0, 120) : 'Omnix';
+  const body = typeof payload.body === 'string' ? payload.body.slice(0, 240) : 'Open Omnix to see today.';
+  event.waitUntil(self.registration.showNotification(title, {
+    body,
+    icon: '/pwa/icon-192.png',
+    badge: '/pwa/icon-192.png',
+    tag: 'omnix-morning-brief',
+    renotify: false,
+    data: { url: safeInternalUrl(payload.url) },
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(safeInternalUrl(event.notification.data && event.notification.data.url), self.location.origin).href;
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+    const existing = windows.find((client) => client.url.startsWith(self.location.origin));
+    if (existing) return existing.navigate(target).then((client) => (client || existing).focus());
+    return self.clients.openWindow(target);
+  }));
+});

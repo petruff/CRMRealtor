@@ -44,6 +44,26 @@ const responseWithSource: OmnixCopilotUiResult = {
   }],
 };
 
+const webResearchResponse: OmnixCopilotUiResult = {
+  status: 'success',
+  question: 'Research Florida market trends',
+  intent: 'web-research',
+  asOf: '2026-09-01T20:00:00.000Z',
+  answerBlocks: [{
+    id: 'web-research-answer', kind: 'summary', title: 'Research answer',
+    detail: 'Current conditions vary by local market.', items: [], citationIds: ['web-source-1'],
+  }],
+  citations: [{
+    id: 'web-source-1', entityType: 'web', recordId: 'web-source-1', factKeys: ['public web source'],
+    asOf: '2026-09-01T20:00:00.000Z', target: 'https://www.floridarealtors.org/research', displayLabel: 'Florida Realtors Research',
+  }],
+  suggestions: [], alerts: [], warnings: [],
+  model: {
+    state: 'available', provider: 'google-gemini', model: 'gemini-3.5-flash-lite',
+    routed: false, narrated: false, researched: true, policyVersion: 'omnix-ai-policy.v1',
+  },
+};
+
 describe('OmnixAssistantLauncher', () => {
   afterEach(() => {
     cleanup();
@@ -62,7 +82,7 @@ describe('OmnixAssistantLauncher', () => {
     await user.click(open);
     expect(await screen.findByRole('dialog', { name: 'Omnix AI' })).toBeInTheDocument();
     expect(await screen.findByRole('heading', { name: "Hi Judith, I'm Omnix" })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Ask Omnix a supported question' })).toHaveFocus());
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'Ask Omnix about the CRM or research a topic' })).toHaveFocus());
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -81,7 +101,7 @@ describe('OmnixAssistantLauncher', () => {
     await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
     await user.click(await screen.findByRole('button', { name: 'What should I do today?' }));
 
-    await waitFor(() => expect(action).toHaveBeenCalledWith('What should I do today?'));
+    await waitFor(() => expect(action).toHaveBeenCalledWith('What should I do today?', { source: 'crm' }));
     expect(await screen.findByText('Two people need attention.')).toBeInTheDocument();
     expect(screen.getByText('Live CRM')).toBeInTheDocument();
   });
@@ -106,6 +126,26 @@ describe('OmnixAssistantLauncher', () => {
     expect(screen.queryByText(/5cfc13f8-844c-4f4c-a992-f02c060939c8/)).not.toBeInTheDocument();
     expect(screen.queryByText(/pipelineStage|lastContactedAt|createdAt|leadType/)).not.toBeInTheDocument();
     expect(screen.queryByText(/2026-08-20T17:54:45.764Z/)).not.toBeInTheDocument();
+  });
+
+  it('distinguishes grounded web research and opens public sources safely', async () => {
+    const user = userEvent.setup();
+    render(<OmnixAssistantLauncher
+      action={vi.fn().mockResolvedValue(webResearchResponse)}
+      loadProfile={vi.fn().mockResolvedValue({ available: true, firstName: 'Judith', dataMode: 'live' })}
+    />);
+
+    await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
+    await user.type(await screen.findByRole('textbox', { name: 'Ask Omnix about the CRM or research a topic' }), 'Research Florida market trends');
+    await user.click(screen.getByRole('button', { name: 'Public web' }));
+    await user.click(screen.getByRole('button', { name: 'Ask Omnix' }));
+
+    expect(await screen.findByText('Web researched')).toBeInTheDocument();
+    const link = await screen.findByRole('link', { name: 'Florida Realtors Research' });
+    expect(link).toHaveAttribute('href', 'https://www.floridarealtors.org/research');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    expect(screen.queryByText('Live CRM')).not.toBeInTheDocument();
   });
 
   it('renders who needs attention as a bounded people-first decision brief', async () => {
@@ -208,12 +248,63 @@ describe('OmnixAssistantLauncher', () => {
     expect(screen.getByText('All 20 sources shown')).toBeInTheDocument();
   });
 
+  it('keeps large CRM result collections bounded until the member asks for more', async () => {
+    const user = userEvent.setup();
+    const largeResponse: OmnixCopilotUiResult = {
+      ...response,
+      answerBlocks: [{
+        id: 'mailer-history',
+        kind: 'list',
+        title: 'Mailer history',
+        detail: 'Recent printed mailers recorded in the CRM.',
+        items: Array.from({ length: 14 }, (_, index) => ({
+          id: `mailer-${index + 1}`,
+          label: `Mailer ${index + 1}`,
+          citationIds: [],
+        })),
+        citationIds: [],
+      }],
+      alerts: Array.from({ length: 14 }, (_, index) => ({
+        id: `alert-${index + 1}`,
+        category: 'upcoming-follow-up',
+        priority: 'planned',
+        reason: `Follow-up ${index + 1}`,
+        recordId: `contact-${index + 1}`,
+        href: `/contacts/contact-${index + 1}`,
+        citationIds: [],
+      })),
+    };
+
+    render(<OmnixAssistantLauncher
+      action={vi.fn().mockResolvedValue(largeResponse)}
+      loadProfile={vi.fn().mockResolvedValue({ available: true, firstName: 'Judith', dataMode: 'live' })}
+    />);
+
+    await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
+    await user.click(await screen.findByRole('button', { name: 'What should I do today?' }));
+
+    expect(await screen.findByText('Mailer 6')).toBeInTheDocument();
+    expect(screen.queryByText('Mailer 7')).not.toBeInTheDocument();
+    expect(screen.getByText('Showing 6 of 14')).toBeInTheDocument();
+    expect(screen.getByText('Follow-up 6')).toBeInTheDocument();
+    expect(screen.queryByText('Follow-up 7')).not.toBeInTheDocument();
+    expect(screen.getByText('Showing 6 of 14 alerts')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show next 6' }));
+    expect(screen.getByText('Mailer 12')).toBeInTheDocument();
+    expect(screen.queryByText('Mailer 13')).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Show next 6 alerts' }));
+    expect(screen.getByText('Follow-up 12')).toBeInTheDocument();
+    expect(screen.queryByText('Follow-up 13')).not.toBeInTheDocument();
+  });
+
   it('contains page scrolling and exposes keyboard and latest-message navigation', async () => {
     const user = userEvent.setup();
-    const scrollIntoView = vi.fn();
-    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+    const scrollTo = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
       configurable: true,
-      value: scrollIntoView,
+      value: scrollTo,
     });
     document.body.style.overflow = 'clip';
 
@@ -233,9 +324,9 @@ describe('OmnixAssistantLauncher', () => {
 
     const jump = await screen.findByRole('button', { name: 'Jump to latest message' });
     expect(jump).toHaveAttribute('aria-controls', activeConversation.id);
-    scrollIntoView.mockClear();
+    scrollTo.mockClear();
     await user.click(jump);
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'end', behavior: 'smooth' });
+    expect(scrollTo).toHaveBeenCalledWith({ top: activeConversation.scrollHeight, behavior: 'smooth' });
 
     await user.keyboard('{Escape}');
     expect(document.body.style.overflow).toBe('clip');
@@ -250,11 +341,11 @@ describe('OmnixAssistantLauncher', () => {
     expect(css).toMatch(/\.omnix-assistant-dialog \.omnix-copilot-composer\s*{[^}]*safe-area-inset-bottom/s);
   });
 
-  it('uses a collision-safe 56px phone launcher while preserving the desktop avatar', () => {
+  it('removes the floating launcher from mobile content and preserves the desktop avatar', () => {
     const css = readFileSync(join(process.cwd(), 'app', 'globals.css'), 'utf8');
-    expect(css).toMatch(/\.omnix-assistant-launcher\s*{[^}]*width:\s*3\.5rem;[^}]*height:\s*3\.5rem;/s);
+    expect(css).toMatch(/\.omnix-assistant-launcher\s*{[^}]*display:\s*none;/s);
     expect(css).toMatch(/@media \(max-width:\s*63\.999rem\)[\s\S]*\.omnix-assistant-label\s*{[^}]*clip-path:\s*inset\(50%\)/s);
-    expect(css).toMatch(/@media \(min-width:\s*64rem\)[\s\S]*\.omnix-assistant-launcher\s*{[^}]*width:\s*5\.25rem;[^}]*height:\s*5\.25rem;/s);
+    expect(css).toMatch(/@media \(min-width:\s*64rem\)[\s\S]*\.omnix-assistant-launcher\s*{[^}]*display:\s*grid;[^}]*width:\s*5\.25rem;[^}]*height:\s*5\.25rem;/s);
   });
 
   it('suppresses the closed launcher while a competing shell disclosure is open', () => {

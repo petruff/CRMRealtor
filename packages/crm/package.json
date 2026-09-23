@@ -16,8 +16,14 @@
     "contacts:search": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/search-contacts.ts",
     "contacts:dedupe:audit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/audit-contact-duplicates.ts",
     "contacts:dedupe:plan": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-contact-merges.ts",
+    "omnix:meeting-brief": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/meeting-brief.ts",
+    "omnix:capture": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/capture-outcome.ts",
+    "omnix:capture:export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/export-capture-outcome.ts",
     "omnix:brief": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/omnix-brief.ts",
     "omnix:copilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/omnix-copilot.ts",
+    "omnix:ai": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/omnix-ai.ts",
+    "omnix:ai:eval": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/evaluate-omnix-ai.ts",
+    "omnix:actions": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-omnix-actions.ts",
     "contacts:import": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/import-contacts.ts",
     "mailers": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-mailers.ts",
     "workspace": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-workspace.ts",
@@ -32,6 +38,9 @@
     "meta": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-meta.ts",
     "contacts:lifecycle": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-rich-contacts.ts",
     "crm": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-crm.ts",
+    "transactions": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-transactions.ts",
+    "florida-workflows": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-transactions.ts",
+    "affordability": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-affordability.ts",
     "data": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/manage-data.ts"
   },
   "dependencies": {
@@ -41,10 +50,11 @@
     "@supabase/supabase-js": "^2.112.3",
     "gsap": "^3.15.0",
     "lucide-react": "^0.544.0",
-    "next": "^15.5.4",
+    "next": "^15.5.26",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "twilio": "^6.1.0",
+    "web-push": "^3.6.7",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
@@ -55,15 +65,16 @@
     "@types/node": "^22.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9.36.0",
-    "eslint-config-next": "^15.5.4",
+    "eslint-config-next": "^15.5.26",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4.1.13",
-    "typescript": "^5.9.2",
+    "typescript": "5.8.2",
     "vitest": "^3.2.4"
   },
   "overrides": {
     "postcss": "8.5.26",
-    "sharp": "0.35.3"
+    "sharp": "0.35.4"
   }
 }

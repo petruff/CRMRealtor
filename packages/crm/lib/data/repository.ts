@@ -11,6 +11,7 @@ import type {
   Contact,
   LeadType,
   Note,
+  NoteEditInput,
   QualificationStatus,
   Relationship,
 } from '../domain/contact.ts';
@@ -72,6 +73,12 @@ export interface ContactRepository {
   addNote(contactId: string, body: string): Promise<Note>;
   archiveNote?(noteId: string, reason: string, correlationId: string, occurredAt?: string): Promise<{ readonly noOp: boolean }>;
   restoreNote?(noteId: string, correlationId: string, occurredAt?: string): Promise<{ readonly noOp: boolean }>;
+  /**
+   * Replaces an active note's body in place (same id, contact and createdAt),
+   * preserving the previous body as a revision. Throws NoteEditError for stale
+   * revisions and archived notes/contacts.
+   */
+  editNote?(input: NoteEditInput): Promise<{ readonly noOp: boolean; readonly note: Note }>;
   /** Memory-only rollback boundary; live imports use the database RPC instead. */
   runTransaction?<T>(operation: () => Promise<T>): Promise<T>;
 }

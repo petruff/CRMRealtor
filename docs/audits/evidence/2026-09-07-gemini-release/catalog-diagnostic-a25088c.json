@@ -1,0 +1,186 @@
+{
+  "schemaVersion": "crm-live-catalog-diagnostic.v1",
+  "candidate": "a25088c6dd8181767b2c34a8348f3a6eb0ec09ed",
+  "capturedAt": "2026-09-08T01:56:53.7756204Z",
+  "captureIntegrity": {
+    "sha256Matches": true,
+    "objectCount": 749,
+    "all65FunctionHashesMatch": true
+  },
+  "scope": "Redacted catalog comparison only; no customer rows, raw function bodies, owner identifiers or secrets",
+  "history": {
+    "count": 62,
+    "last": "20260901010000",
+    "allNinePendingAbsent": true
+  },
+  "prestate": {
+    "sixNewTablesAbsent": true,
+    "newCaptureFunctionsAbsent": true,
+    "proposalKindsAbsent": true,
+    "transitionRequestColumnAbsent": true,
+    "exportChecksMatchOldAllowedValues": true,
+    "plpgsqlCheckInstalled": false
+  },
+  "reconciliation": {
+    "method": "Static PostgreSQL-ARE subset translated to JS word/space regex; not PostgreSQL execution",
+    "functions": [
+      {
+        "function": "is_valid_contact_conversion_payload",
+        "capturedDefinitionHash": "106c6db14531e4f0ce96ee520f331b928f5cf759b2c3404611380717cd139c35",
+        "definitionChanges": true,
+        "matchingTransformations": 2,
+        "execute": {
+          "anon": true,
+          "service_role": true,
+          "authenticated": true
+        },
+        "securityDefiner": false,
+        "searchPath": null
+      },
+      {
+        "function": "is_valid_incomplete_conversion_plan",
+        "capturedDefinitionHash": "7161dce84a1817f513294bd49fa2e268471cacfabfa7aa0e1a79d6a6330c010d",
+        "definitionChanges": true,
+        "matchingTransformations": 1,
+        "execute": {
+          "anon": true,
+          "service_role": true,
+          "authenticated": true
+        },
+        "securityDefiner": false,
+        "searchPath": null
+      },
+      {
+        "function": "create_connector_action_intent",
+        "capturedDefinitionHash": "25cebf3d255884084923e8c453a33c24b28bd6c6964ec0656ae732584c2710f6",
+        "definitionChanges": true,
+        "matchingTransformations": 2,
+        "execute": {
+          "anon": true,
+          "service_role": true,
+          "authenticated": true
+        },
+        "securityDefiner": true,
+        "searchPath": [
+          "search_path=\"\""
+        ]
+      },
+      {
+        "function": "revise_connector_action_intent",
+        "capturedDefinitionHash": "6e1b2d09d1691b63014db1694d53f7ce1763805f557597dd138c2ca47a5281e3",
+        "definitionChanges": true,
+        "matchingTransformations": 2,
+        "execute": {
+          "anon": true,
+          "service_role": true,
+          "authenticated": true
+        },
+        "securityDefiner": true,
+        "searchPath": [
+          "search_path=\"\""
+        ]
+      },
+      {
+        "function": "approve_and_enqueue_connector_action",
+        "capturedDefinitionHash": "7731a9dce562adc26750e8dd280d51a036e4e7a49bb9696034f114f712e76ab0",
+        "definitionChanges": true,
+        "matchingTransformations": 2,
+        "execute": {
+          "anon": true,
+          "service_role": true,
+          "authenticated": true
+        },
+        "securityDefiner": true,
+        "searchPath": [
+          "search_path=\"\""
+        ]
+      },
+      {
+        "function": "create_connector_oauth_transaction",
+        "capturedDefinitionHash": "0546e0a8a56dace60cdcdc857dd972a4e2b08d41a9cf2aa93df08f446fd187a4",
+        "definitionChanges": true,
+        "matchingTransformations": 1,
+        "execute": {
+          "anon": true,
+          "service_role": true,
+          "authenticated": true
+        },
+        "securityDefiner": true,
+        "searchPath": [
+          "search_path=\"\""
+        ]
+      },
+      {
+        "function": "resolve_contact_import_identity",
+        "capturedDefinitionHash": "01fa6ee60329a28cb8e66531d33ccdb86c17c8bb53a5ab21475b0b4e3898df97",
+        "definitionChanges": true,
+        "matchingTransformations": 1,
+        "execute": {
+          "anon": true,
+          "service_role": true,
+          "authenticated": true
+        },
+        "securityDefiner": true,
+        "searchPath": [
+          "search_path=\"\""
+        ]
+      },
+      {
+        "function": "register_and_apply_twilio_callback",
+        "capturedDefinitionHash": "02bb517f46a335003d2c3052838d5784e21d0e79a0845fd18ec30831e0f9390e",
+        "definitionChanges": true,
+        "matchingTransformations": 1,
+        "execute": {
+          "anon": false,
+          "service_role": true,
+          "authenticated": false
+        },
+        "securityDefiner": true,
+        "searchPath": [
+          "search_path=\"\""
+        ]
+      }
+    ],
+    "gmail": {
+      "capturedDefinitionHash": "378ef7ddfd315e03c57feafcaaabd705d2070b2f9e86e39df6ff18f8c87d9bea",
+      "unusedDeclarationPresent": true,
+      "originalPatternMatches": 0,
+      "singleQuotePatternMatches": 1,
+      "blocking": "Dollar-quoted regex uses doubled apostrophes around incoming; captured SQL has single apostrophes. DO enters then raises because replacement did not change definition.",
+      "uniqueConnectionResourceHashVerified": true
+    }
+  },
+  "permissions": {
+    "defaultPublicTableAllForApplicationRoles": true,
+    "defaultPublicFunctionExecuteForApplicationRoles": true,
+    "nurtureTransition": {
+      "anon": false,
+      "service_role": false,
+      "authenticated": true
+    },
+    "nurtureTransitionSettings": [
+      "search_path=pg_catalog, public"
+    ],
+    "note": "Existing connector creation/approval/OAuth/import RPCs grant EXECUTE to anon and service as well as authenticated; new reconciliation preserves live ACLs. This is not by itself authorization bypass: canonical actor checks require separate role regression."
+  },
+  "ddlHooks": {
+    "enabledCount": 7,
+    "effects": [
+      "Public CREATE TABLE auto-enables RLS",
+      "PostgREST DDL/drop watchers issue schema reload NOTIFY",
+      "Extension access hooks conditional on pg_cron/pg_graphql/pg_net; pending plpgsql_check does not name these extensions"
+    ],
+    "sourceInspectionOnly": true
+  },
+  "gaps": [
+    "Fix and rehearse Gmail quoted-fragment mismatch against sanitized actual-shape fixture before Production application.",
+    "Install plpgsql_check in disposable matching PostgreSQL17 environment and run actual reconciled definitions through it.",
+    "Reproduce captured definitions/owners/settings/default and effective ACLs, event hooks and dependencies; fresh code replay does not reproduce this live prestate.",
+    "Existing reconciliation rollback/repair are no-op existence checks; restoration requires protected captured pre-definitions, owner/settings/ACL and full nine-pending rehearsal.",
+    "Validate future command role checks against preserved live RPC ACLs; do not assume fresh CI grants match live grants.",
+    "Rehearse historical rows preservation and application rollback availability; catalog contains no customer-data backup.",
+    "Bind eventual recovery/post-state evidence and full release manifest to final corrected candidate."
+  ],
+  "restorationTested": false,
+  "productionMutationsPerformed": false
+}

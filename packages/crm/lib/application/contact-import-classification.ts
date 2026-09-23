@@ -2,7 +2,7 @@ import {
   hasImportedContactSuppression,
   type ContactImportCandidate,
   type ContactImportSourceFact,
-} from '@/lib/application/contact-import';
+} from './contact-import.ts';
 
 export const CONTACT_IMPORT_CLASSIFICATION_POLICY_VERSION = 'omnix.import-classification.v1';
 

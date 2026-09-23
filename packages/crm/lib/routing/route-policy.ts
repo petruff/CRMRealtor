@@ -9,10 +9,13 @@ const SESSION_PUBLIC_PREFIXES = [
   "/api/intake",
   "/api/v1",
   "/api/internal/connectors/drain",
+  "/api/internal/push/morning-brief",
   "/api/connectors/google/gmail/push",
   "/api/connectors/mailchimp/webhook",
   "/api/connectors/meta/webhook",
   "/api/connectors/twilio",
+  // Client portal: token-gated, read-only, never uses the CRM session.
+  "/portal",
 ] as const;
 
 const SAFE_DESTINATIONS = [
@@ -26,6 +29,11 @@ const SAFE_DESTINATIONS = [
   "/insights",
   "/omnix",
   "/settings",
+  "/inbox",
+  "/capture",
+  "/power-hour",
+  "/open-house",
+  "/sphere",
 ] as const;
 
 function matchesSegment(pathname: string, prefix: string): boolean {

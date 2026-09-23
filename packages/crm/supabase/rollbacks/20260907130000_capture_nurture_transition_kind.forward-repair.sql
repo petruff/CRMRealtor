@@ -1,0 +1,1 @@
+-- Enum is additive and retained. Restore guarded adapter commands after QA.

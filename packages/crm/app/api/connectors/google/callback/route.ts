@@ -10,6 +10,8 @@ import { loadGoogleConfiguredRuntimeConfiguration } from '@/lib/config/connector
 import { safeInternalPath } from '@/lib/routing/route-policy';
 import { randomUUID } from 'node:crypto';
 import { recordConnectorOAuthRouteEvent } from '@/lib/observability/connector-oauth-route-telemetry';
+import { createGoogleProbeServerRepository } from '@/lib/data/google-probe-server-context';
+import { probeLiveGoogleConnection } from '@/lib/application/google-probe-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +66,27 @@ export async function GET(request: Request) {
       actorUserId: user.id, sessionSecret, state, code, configuration: loadGoogleOAuthConfiguration(),
     });
     const partial = completed.bundle === 'workspace-core' && completed.missingScopes.length > 0;
+    if (!partial) {
+      stage = 'connection-probe';
+      const probe = await probeLiveGoogleConnection({
+        repository: createGoogleProbeServerRepository({ authenticated }),
+        scope,
+        connectionId: completed.connectionId,
+        correlationId,
+      });
+      if (!probe.healthy) {
+        recordConnectorOAuthRouteEvent({
+          provider: 'google', operation: 'oauth-callback', stage,
+          outcome: 'failed', correlationId,
+        });
+        return redirectWithNotice(
+          url.origin,
+          completed.safeReturnPath,
+          'error',
+          'google-probe-failed',
+        );
+      }
+    }
     recordConnectorOAuthRouteEvent({
       provider: 'google', operation: 'oauth-callback', stage: partial ? 'partial-consent' : 'completed',
       outcome: 'succeeded', correlationId,

@@ -1,0 +1,422 @@
+
+> @omnix/web@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.7 C:/Projetos/CRMRealtor/packages/crm
+
+ ✓ lib/domain/smart-list.test.ts (6 tests) 34ms
+ ✓ lib/providers/twilio-adapter.test.ts (7 tests) 34ms
+ ✓ scripts/evaluate-omnix-ai-script.test.ts (1 test) 291ms
+ ✓ lib/domain/texting.test.ts (5 tests) 103ms
+stdout | app/import-actions.test.ts > contact import actions > previews existing import organization without applying changes
+{"event":"contact_import_organization_previewed","policyVersion":"omnix.import-classification.v1","counts":{"scanned":140,"eligible":138,"wouldUpdate":138,"needsReview":12}}
+
+stdout | app/import-actions.test.ts > contact import actions > fails receipt preflight before applying the first contact mutation
+{"event":"contact_import_commit_stage","stage":"authority-resolved","elapsedMs":0}
+
+stdout | app/import-actions.test.ts > contact import actions > fails receipt preflight before applying the first contact mutation
+{"event":"contact_import_commit_stage","stage":"parsed","elapsedMs":1,"format":"numbers","counts":{"rows":1},"supportReference":"4D2AF532"}
+
+stdout | app/import-actions.test.ts > contact import actions > fails receipt preflight before applying the first contact mutation
+{"event":"contact_import_commit_stage","stage":"failed","elapsedMs":3,"format":"numbers","supportReference":"4D2AF532","databaseCode":"42883"}
+
+stdout | app/import-actions.test.ts > contact import actions > returns a durable aggregate replay before parsing or previewing mutable contact state
+{"event":"contact_import_commit_stage","stage":"authority-resolved","elapsedMs":0}
+
+stdout | app/import-actions.test.ts > contact import actions > returns a durable aggregate replay before parsing or previewing mutable contact state
+{"event":"contact_import_commit_stage","stage":"receipt-recovered","elapsedMs":1,"counts":{"rows":1,"created":1,"updated":0},"supportReference":"387331D4"}
+
+stdout | app/import-actions.test.ts > contact import actions > recovers an exact prior import without replaying contact mutations
+{"event":"contact_import_commit_stage","stage":"authority-resolved","elapsedMs":0}
+
+stdout | app/import-actions.test.ts > contact import actions > recovers an exact prior import without replaying contact mutations
+{"event":"contact_import_commit_stage","stage":"parsed","elapsedMs":1,"format":"numbers","counts":{"rows":2},"supportReference":"A2D68829"}
+
+stdout | app/import-actions.test.ts > contact import actions > recovers an exact prior import without replaying contact mutations
+{"event":"contact_import_commit_stage","stage":"receipt-recovered","elapsedMs":2,"format":"numbers","counts":{"rows":2,"created":1,"updated":1,"unchanged":0},"supportReference":"A2D68829"}
+
+ ✓ app/import-actions.test.ts (8 tests) 84ms
+ ✓ lib/application/google-probe-service.test.ts (3 tests) 42ms
+ ✓ lib/application/google-operations.test.ts (6 tests) 53ms
+ ✓ lib/application/mailchimp-commands.test.ts (11 tests) 53ms
+ ✓ app/server-action-exports.test.ts (1 test) 383ms
+   ✓ server action module exports > exports only async functions or erased TypeScript types from use-server modules  381ms
+ ✓ app/omnix/actions.test.ts (7 tests) 38ms
+ ✓ components/contact-activity-history.test.tsx (1 test) 44ms
+ ✓ components/ai-settings-form.test.tsx (2 tests) 46ms
+ ✓ lib/application/google-gmail-wakeup-worker.test.ts (4 tests) 50ms
+ ✓ app/api/data/templates/contacts/route.test.ts (1 test) 113ms
+ ✓ lib/data/memory-operational-signal-repository.test.ts (1 test) 49ms
+stderr | app/api/intake/contacts/route.test.ts > POST /api/intake/contacts > rolls back the complete intake and leaves no terminal receipt on an injected RPC failure
+Automatic contact intake failed. Error: provider unavailable
+    at Object.create (C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.test.ts:16:35)
+    at Object.applyContactImportGroup (C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.test.ts:94:77)
+    at Object.applyContactImportPlan (C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.test.ts:145:49)
+    at executeContactImport (C:\Projetos\CRMRealtor\packages\crm\lib\application\contact-import-service.ts:738:35)
+    at Module.POST (C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.ts:135:11)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at C:\Projetos\CRMRealtor\packages\crm\app\api\intake\contacts\route.test.ts:370:22
+    at file:///C:/Projetos/CRMRealtor/packages/crm/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+ ✓ app/api/intake/contacts/route.test.ts (7 tests) 68ms
+ ✓ lib/application/contact-import-service.test.ts (27 tests) 125ms
+ ✓ components/relationship-queue.test.tsx (17 tests) 274ms
+ ✓ lib/application/mailer-commands.test.ts (6 tests) 41ms
+ ✓ app/api/connectors/mailchimp/webhook/[endpointKey]/handler.test.ts (3 tests) 44ms
+ ✓ lib/application/texting-commands.test.ts (4 tests) 50ms
+ ✓ lib/application/mailchimp-webhook-service.test.ts (4 tests) 49ms
+ ✓ lib/application/contact-import.test.ts (31 tests) 90ms
+ ✓ lib/application/contact-commands.test.ts (17 tests) 35ms
+ ✓ lib/application/capture-outcome-provider.test.ts (2 tests) 44ms
+ ✓ lib/application/capture-outcome-service.test.ts (11 tests) 81ms
+ ✓ components/today-command-center.test.tsx (4 tests) 133ms
+ ✓ lib/application/connector-commands.test.ts (8 tests) 39ms
+ ✓ lib/domain/operating-insights.test.ts (7 tests) 37ms
+ ✓ lib/domain/operational-signal.test.ts (4 tests) 38ms
+ ✓ app/contacts/page.integration.test.ts (4 tests) 75ms
+ ✓ lib/application/mailchimp-campaign-service.test.ts (4 tests) 38ms
+ ✓ lib/application/meeting-brief-narration.test.ts (18 tests) 82ms
+ ✓ lib/application/meta-revocation-service.test.ts (1 test) 30ms
+ ✓ lib/application/workspace-cli.test.ts (10 tests) 41ms
+ ✓ lib/application/connector-worker.test.ts (3 tests) 32ms
+ ✓ app/api/intake/website/route.test.ts (4 tests) 34ms
+ ✓ lib/application/imported-contact-organization.test.ts (4 tests) 38ms
+ ✓ lib/application/capture-outcome-extraction.test.ts (17 tests) 46ms
+ ✓ lib/application/meeting-brief-service.test.ts (11 tests) 34ms
+ ✓ lib/providers/mailchimp-client.test.ts (12 tests) 34ms
+ ✓ lib/application/meta-asset-setup-service.test.ts (1 test) 35ms
+ ✓ app/api/connectors/meta/webhook/[endpointKey]/handler.test.ts (3 tests) 41ms
+ ✓ lib/presentation/crm-evidence.test.ts (3 tests) 32ms
+ ✓ lib/application/connector-lifecycle-projection.test.ts (8 tests) 30ms
+ ✓ lib/application/omnix-proposal-commands.test.ts (3 tests) 29ms
+ ✓ lib/application/connector-revocation-worker.test.ts (6 tests) 39ms
+ ✓ app/api/connectors/twilio/handler.test.ts (2 tests) 34ms
+ ✓ lib/providers/google-client.test.ts (12 tests) 87ms
+ ✓ lib/application/smart-list-commands.test.ts (4 tests) 31ms
+ ✓ lib/application/activity-commands.test.ts (3 tests) 33ms
+ ✓ lib/application/google-oauth-service.test.ts (4 tests) 27ms
+ ✓ lib/providers/meta-client.test.ts (5 tests) 34ms
+ ✓ lib/application/rich-contact-commands.test.ts (6 tests) 31ms
+ ✓ lib/application/mailchimp-reconciliation-service.test.ts (6 tests) 42ms
+ ✓ lib/data/memory-workspace-repository.test.ts (7 tests) 31ms
+ ✓ scripts/manage-texting.test.ts (4 tests) 40ms
+ ✓ lib/application/operating-insights-service.test.ts (2 tests) 30ms
+ ✓ lib/application/mailchimp-oauth-service.test.ts (4 tests) 34ms
+ ✓ lib/application/omnix-copilot-service.test.ts (31 tests) 258ms
+ ✓ lib/domain/mailchimp-campaign.test.ts (4 tests) 32ms
+ ✓ lib/application/capture-outcome-telemetry.test.ts (3 tests) 28ms
+ ✓ scripts/capture-outcome.test.ts (3 tests) 701ms
+   ✓ Capture Outcome CLI boundary > runs the actual Node strip-types CLI help without runtime syntax errors  696ms
+ ✓ lib/domain/meta.test.ts (4 tests) 33ms
+ ✓ components/today-operating-briefing.test.tsx (2 tests) 35ms
+ ✓ lib/application/twilio-webhook-service.test.ts (2 tests) 28ms
+ ✓ lib/application/google-sync-service.test.ts (2 tests) 31ms
+ ✓ lib/application/workspace-commands.test.ts (6 tests) 39ms
+ ✓ lib/application/omnix-provider-proposal-handoff.test.ts (2 tests) 31ms
+ ✓ lib/data/google-draft-repository.test.ts (1 test) 36ms
+ ✓ lib/providers/google-adapter.test.ts (5 tests) 34ms
+ ✓ scripts/manage-rich-contacts.test.ts (3 tests) 25ms
+ ✓ lib/application/omnix-generative-narrator.test.ts (7 tests) 29ms
+ ✓ lib/application/connector-service-worker.test.ts (10 tests) 50ms
+ ✓ lib/domain/activity.test.ts (4 tests) 24ms
+ ✓ lib/domain/omnix-copilot.test.ts (55 tests) 29ms
+ ✓ lib/domain/transaction-finance.test.ts (3 tests) 23ms
+ ✓ lib/domain/pipeline-analytics.test.ts (6 tests) 25ms
+ ✓ lib/application/omnix-generated-proposal-persistence.test.ts (1 test) 28ms
+ ✓ lib/application/crm-search-service.test.ts (2 tests) 30ms
+ ✓ scripts/manage-connectors.test.ts (7 tests) 55ms
+ ✓ components/contact-scope-navigation.test.tsx (2 tests) 26ms
+ ✓ lib/application/omnix-provider-gateway.test.ts (13 tests) 41ms
+ ✓ components/today-visual-dashboard.test.tsx (2 tests) 29ms
+ ✓ lib/application/omnix-proposal-executor.test.ts (2 tests) 29ms
+ ✓ lib/application/omnix-gemini-research.test.ts (5 tests) 26ms
+ ✓ lib/application/twilio-uat-service.test.ts (4 tests) 25ms
+ ✓ lib/application/omnix-operational-materializer.test.ts (4 tests) 29ms
+ ✓ lib/data/memory-repository.test.ts (1 test) 26ms
+ ✓ lib/application/nurture-materializer.test.ts (1 test) 26ms
+ ✓ lib/application/meta-review-service.test.ts (2 tests) 25ms
+ ✓ lib/presentation/activity-feed.test.ts (2 tests) 26ms
+ ✓ scripts/manage-mailchimp.test.ts (10 tests) 28ms
+ ✓ lib/application/omnichannel-timeline.test.ts (3 tests) 24ms
+ ✓ lib/domain/omnix-operational-brain.test.ts (3 tests) 21ms
+ ✓ lib/domain/rich-contact.test.ts (3 tests) 25ms
+ ✓ lib/data/supabase-activity-repository.test.ts (7 tests) 21ms
+ ✓ lib/application/connector-lifecycle-orchestrator.test.ts (10 tests) 22ms
+ ✓ lib/application/incomplete-record-commands.test.ts (5 tests) 15ms
+ ✓ components/today-focus-timeline.test.tsx (2 tests) 23ms
+stderr | app/api/workspace/health/route.test.ts > GET /api/workspace/health > refuses assistants and fails safely without provider detail
+Workspace health check failed. Error: provider unavailable
+    at Object.health (C:\Projetos\CRMRealtor\packages\crm\app\api\workspace\health\route.test.ts:16:33)
+    at Module.GET (C:\Projetos\CRMRealtor\packages\crm\app\api\workspace\health\route.ts:26:46)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at C:\Projetos\CRMRealtor\packages\crm\app\api\workspace\health\route.test.ts:68:22
+    at file:///C:/Projetos/CRMRealtor/packages/crm/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+ ✓ app/api/workspace/health/route.test.ts (3 tests) 18ms
+ ✓ components/contact-pagination.test.tsx (2 tests) 22ms
+ ✓ lib/providers/twilio-client.test.ts (6 tests) 19ms
+ ✓ lib/data/supabase-repository.test.ts (5 tests) 17ms
+ ✓ lib/application/gmail-response-intelligence.test.ts (2 tests) 27ms
+ ✓ lib/data/supabase-import-gateway.test.ts (5 tests) 16ms
+ ✓ components/ui.test.tsx (3 tests) 19ms
+ ✓ lib/application/workbook-portability.test.ts (16 tests) 6253ms
+   ✓ workbook portability > accepts more than five thousand real rows with CSV and XLSX parity  1063ms
+   ✓ workbook portability > ignores an inflated used range and empty styled tail rows  2719ms
+   ✓ workbook portability > retains workbook column and cell-length safety limits  374ms
+   ✓ workbook portability > rejects an XLSX package that advertises zip-bomb expansion before SheetJS reads it  364ms
+stdout | app/api/internal/connectors/drain/route.test.ts > connector drain route > returns only bounded aggregate results for an authorized drain
+{"schemaVersion":"connector-drain-result.v1","result":{"claimed":2,"reconciliationClaimed":1,"succeeded":2,"deferred":1,"failed":0,"swept":0,"revocations":{"claimed":1,"confirmed":1,"deferred":0,"unconfirmed":0},"mailchimpWebhooks":{"claimed":1,"succeeded":1,"deferred":0,"review":0}}}
+
+ ✓ lib/application/meta-review-conversion-service.test.ts (3 tests) 17ms
+ ✓ lib/application/workspace-ai-settings.test.ts (9 tests) 23ms
+ ✓ app/api/internal/connectors/drain/route.test.ts (3 tests) 18ms
+ ✓ lib/application/crm-work-queue-cli.test.ts (7 tests) 23ms
+ ✓ lib/config/connector-runtime.test.ts (10 tests) 18ms
+ ✓ lib/data/memory-transaction-repository.test.ts (4 tests) 20ms
+ ✓ lib/application/omnix-gemini-router.test.ts (5 tests) 15ms
+ ✓ lib/application/google-gmail-push-service.test.ts (2 tests) 17ms
+ ✓ app/error.test.ts (1 test) 18ms
+ ✓ lib/data/supabase-rich-contact-repository.test.ts (6 tests) 17ms
+ ✓ lib/domain/mailchimp.test.ts (5 tests) 27ms
+ ✓ lib/data/supabase-workspace-repository.test.ts (8 tests) 21ms
+ ✓ scripts/omnix-ai.test.ts (4 tests) 23ms
+ ✓ lib/data/supabase-mailchimp-operation-repository.test.ts (3 tests) 18ms
+ ✓ lib/data/supabase-mailchimp-webhook-repository.test.ts (2 tests) 16ms
+ ✓ lib/application/mailchimp-outbound-backfill-service.test.ts (2 tests) 15ms
+ ✓ app/api/connectors/google/gmail/push/[endpointKey]/handler.test.ts (2 tests) 16ms
+ ✓ lib/data/operational-api-server-context.test.ts (3 tests) 15ms
+ ✓ lib/data/memory-property-repository.test.ts (2 tests) 15ms
+ ✓ lib/application/omnix-claude-router.test.ts (2 tests) 14ms
+ ✓ lib/data/memory-mailer-repository.test.ts (1 test) 23ms
+ ✓ lib/data/supabase-mailchimp-oauth-repository.test.ts (3 tests) 17ms
+ ✓ lib/data/supabase-mailchimp-reconciliation-repository.test.ts (4 tests) 14ms
+ ✓ lib/application/contact-import-classification.test.ts (15 tests) 13ms
+ ✓ lib/data/index.test.ts (4 tests) 20ms
+ ✓ lib/data/authenticated-cli-context.test.ts (4 tests) 13ms
+ ✓ components/incomplete-record-workspace.test.tsx (1 test) 27ms
+ ✓ lib/application/contact-query.test.ts (16 tests) 13ms
+ ✓ components/alert-center.test.tsx (4 tests) 127ms
+ ✓ app/contacts/[id]/brief/page.test.ts (2 tests) 18ms
+ ✓ lib/domain/transaction.test.ts (4 tests) 13ms
+ ✓ lib/providers/mailchimp-adapter.test.ts (6 tests) 14ms
+ ✓ lib/security/connector-oauth.test.ts (3 tests) 11ms
+ ✓ lib/data/import-gateway.test.ts (5 tests) 11ms
+ ✓ app/api/v1/contacts/route.test.ts (4 tests) 15ms
+ ✓ lib/application/connector-kek-rewrap.test.ts (2 tests) 12ms
+ ✓ components/rich-contact-workspace.test.tsx (2 tests) 19ms
+ ✓ lib/data/supabase-smart-list-repository.test.ts (3 tests) 11ms
+ ✓ lib/data/supabase-contact-identity-map.test.ts (5 tests) 13ms
+ ✓ app/api/readiness/route.test.ts (2 tests) 13ms
+ ✓ lib/security/connector-webhook.test.ts (3 tests) 11ms
+ ✓ lib/data/supabase-workspace-scope.test.ts (9 tests) 11ms
+ ✓ app/api/v1/webhooks/[endpointKey]/route.test.ts (2 tests) 13ms
+ ✓ lib/providers/supabase-mailchimp-authority-loader.test.ts (2 tests) 15ms
+ ✓ scripts/manage-transactions.test.ts (2 tests) 15ms
+ ✓ lib/data/memory-activity-repository.test.ts (5 tests) 13ms
+ ✓ app/design-system-contract.test.ts (14 tests) 17ms
+ ✓ lib/application/capture-outcome-export.test.ts (8 tests) 20ms
+ ✓ lib/domain/attention.test.ts (6 tests) 11ms
+ ✓ lib/application/attention-commands.test.ts (3 tests) 12ms
+ ✓ lib/data/supabase-meeting-brief-repository.test.ts (4 tests) 15ms
+ ✓ app/contacts/smart-list-form.test.ts (4 tests) 10ms
+ ✓ app/data/actions.test.ts (3 tests) 15ms
+ ✓ lib/application/omnix-prompt-guard.test.ts (6 tests) 12ms
+ ✓ lib/providers/mailchimp-webhook.test.ts (2 tests) 10ms
+ ✓ lib/domain/workspace-intelligence.test.ts (3 tests) 10ms
+ ✓ lib/domain/cadence.test.ts (15 tests) 12ms
+ ✓ lib/application/omnix-ai-evaluation.test.ts (3 tests) 11ms
+ ✓ lib/data/supabase-incomplete-record-repository.test.ts (4 tests) 11ms
+ ✓ lib/domain/triage.test.ts (16 tests) 12ms
+ ✓ lib/data/supabase-mailchimp-outbound-backfill-repository.test.ts (2 tests) 10ms
+ ✓ lib/data/memory-incomplete-record-repository.test.ts (2 tests) 10ms
+ ✓ lib/application/contact-duplicate-audit.test.ts (3 tests) 10ms
+ ✓ lib/domain/workspace.test.ts (8 tests) 11ms
+ ✓ lib/data/memory-attention-repository.test.ts (3 tests) 11ms
+ ✓ lib/data/memory-affordability-repository.test.ts (2 tests) 10ms
+ ✓ lib/security/connector-secret-envelope.test.ts (3 tests) 10ms
+ ✓ lib/application/today-operating-projection.test.ts (3 tests) 10ms
+ ✓ lib/data/google-operation-server-context.test.ts (1 test) 11ms
+ ✓ app/contacts/actions.test.ts (1 test) 10ms
+ ✓ lib/domain/property-behavior.test.ts (4 tests) 8ms
+ ✓ lib/domain/affordability.test.ts (5 tests) 10ms
+ ✓ lib/domain/licensed-listing-provider.test.ts (4 tests) 10ms
+ ✓ lib/data/supabase-connector-repository.test.ts (3 tests) 9ms
+ ✓ lib/domain/property.test.ts (4 tests) 11ms
+ ✓ lib/application/pipeline-commands.test.ts (2 tests) 13ms
+ ✓ lib/domain/incomplete-record.test.ts (5 tests) 9ms
+ ✓ lib/data/website-intake-repository.test.ts (2 tests) 10ms
+ ✓ app/contacts/rich-actions.test.ts (2 tests) 10ms
+ ✓ scripts/manage-google.test.ts (4 tests) 12ms
+ ✓ lib/application/mailchimp-guided-setup-service.test.ts (4 tests) 9ms
+ ✓ lib/domain/nurture-plan.test.ts (3 tests) 10ms
+ ✓ lib/data/memory-property-behavior-repository.test.ts (1 test) 8ms
+ ✓ app/api/health/route.test.ts (1 test) 9ms
+ ✓ app/connections/mailchimp-presentation.test.ts (4 tests) 8ms
+ ✓ lib/domain/connector-lifecycle.test.ts (17 tests) 11ms
+ ✓ lib/observability/omnix-copilot-telemetry.test.ts (4 tests) 8ms
+ ✓ lib/data/supabase-google-operation-repository.test.ts (2 tests) 9ms
+ ✓ lib/data/automation-context.test.ts (4 tests) 9ms
+ ✓ app/omnix/omnix-copilot-view-model.test.ts (7 tests) 11ms
+ ✓ lib/config/google-gmail-push.test.ts (4 tests) 9ms
+ ✓ lib/application/twilio-reconciliation-service.test.ts (2 tests) 8ms
+ ✓ lib/data/memory-listing-provider-repository.test.ts (1 test) 9ms
+ ✓ app/connections/connection-status.test.ts (11 tests) 8ms
+ ✓ lib/domain/website-intake.test.ts (3 tests) 8ms
+ ✓ lib/domain/google-connector.test.ts (3 tests) 9ms
+ ✓ scripts/manage-affordability.test.ts (2 tests) 9ms
+ ✓ lib/data/supabase-connector-revocation-repository.test.ts (2 tests) 10ms
+ ✓ lib/application/omnix-ai-budget.test.ts (2 tests) 7ms
+ ✓ lib/application/contact-merge-plan.test.ts (2 tests) 9ms
+ ✓ lib/data/supabase-contact-outbound-guard.test.ts (4 tests) 7ms
+ ✓ lib/application/pipeline-evidence.test.ts (2 tests) 9ms
+ ✓ lib/application/intake-security.test.ts (4 tests) 7ms
+ ✓ lib/data/supabase-connector-rewrap-repository.test.ts (1 test) 9ms
+ ✓ scripts/validate-gitleaks-report.test.ts (3 tests) 6ms
+ ✓ lib/security/operational-api.test.ts (2 tests) 6ms
+ ✓ lib/application/import-receipt-recovery.test.ts (4 tests) 7ms
+ ✓ lib/observability/connector-telemetry.test.ts (2 tests) 10ms
+ ✓ lib/application/route-navigation.test.ts (10 tests) 7ms
+ ✓ lib/routing/route-policy.test.ts (13 tests) 7ms
+ ✓ lib/domain/workflow-pack.test.ts (2 tests) 7ms
+ ✓ app/workspace/page.test.ts (2 tests) 8ms
+ ✓ lib/application/website-intake-security.test.ts (3 tests) 7ms
+ ✓ lib/data/supabase-mailer-repository.test.ts (1 test) 7ms
+ ✓ scripts/manage-meta.test.ts (3 tests) 7ms
+ ✓ lib/application/contact-navigation.test.ts (4 tests) 8ms
+ ✓ lib/data/supabase-google-oauth-repository.test.ts (1 test) 7ms
+ ✓ lib/data/memory-smart-list-repository.test.ts (1 test) 7ms
+ ✓ app/connections/oauth-presentation.test.ts (2 tests) 7ms
+ ✓ app/pwa-contract.test.ts (3 tests) 6ms
+ ✓ lib/application/omnix-ai-policy.test.ts (2 tests) 5ms
+ ✓ lib/domain/mailer.test.ts (2 tests) 4ms
+ ✓ lib/domain/crm-search.test.ts (2 tests) 6ms
+ ✓ lib/security/connector-cron-auth.test.ts (2 tests) 6ms
+ ✓ lib/observability/connector-oauth-route-telemetry.test.ts (1 test) 5ms
+ ✓ app/connections/google-presentation.test.ts (3 tests) 5ms
+ ✓ lib/security/generic-webhook.test.ts (1 test) 5ms
+ ✓ lib/application/governed-export.test.ts (2 tests) 5ms
+ ✓ lib/application/contact-view-state.test.ts (3 tests) 5ms
+ ✓ lib/application/google-email-readiness.test.ts (3 tests) 5ms
+ ✓ lib/domain/dates.test.ts (4 tests) 5ms
+ ✓ app/contacts/import/page.test.ts (2 tests) 9ms
+ ✓ app/settings/actions.test.ts (1 test) 6ms
+ ✓ lib/data/attention-automation-server-context.test.ts (2 tests) 6ms
+ ✓ app/transactions/scenarios/page.test.ts (2 tests) 4ms
+ ✓ lib/data/mailchimp-oauth-server-context.test.ts (1 test) 4ms
+ ✓ scripts/release-manifest-supabase-ci.test.ts (8 tests) 29428ms
+   ✓ Supabase candidate recovery planning > selects candidate migrations and requires paired rollback plus forward repair  4907ms
+   ✓ Supabase candidate recovery planning > fails closed when a candidate migration has no forward repair  3891ms
+   ✓ Supabase candidate recovery planning > rejects equal, descendant, and sibling recovery bases  5886ms
+   ✓ Supabase candidate recovery planning > fails closed on deleted and renamed migrations  5363ms
+   ✓ Supabase candidate recovery planning > fails when the migration tree differs without a candidate migration SQL file  9309ms
+ ✓ components/connector-activity-ledger.test.tsx (2 tests) 341ms
+   ✓ ConnectorActivityLedger > groups repeated technical events into a people-first connection history  305ms
+ ✓ components/contact-form.test.tsx (2 tests) 828ms
+   ✓ ContactForm relationship UX > makes email optional and removes lead priority when Past client is selected  673ms
+ ✓ components/route-chrome.test.tsx (4 tests) 311ms
+ ✓ components/google-sign-in.test.tsx (1 test) 348ms
+   ✓ GoogleSignIn > requires explicit account selection before starting the owner session  346ms
+ ✓ components/today-focus-timeline.interaction.test.tsx (1 test) 380ms
+   ✓ TodayFocusTimeline stable focus > keeps the chosen priority stable and does not expose automatic-motion controls  379ms
+ ✓ app/activities/route-states.test.ts (2 tests) 399ms
+ ✓ components/pwa-provider.test.tsx (3 tests) 492ms
+   ✓ PwaProvider > offers clear manual installation guidance when a native prompt is unavailable  398ms
+ ✓ components/meeting-brief-highlights.test.tsx (4 tests) 569ms
+   ✓ opt-in brief highlights > does not spend on mount and retains a useful unavailable state  342ms
+ ✓ components/crm-command-palette.test.tsx (2 tests) 614ms
+   ✓ CrmCommandPalette > portals the dialog above shell stacking contexts and restores focus  460ms
+ ✓ components/workspace-assignment-panel.test.tsx (2 tests) 1083ms
+   ✓ WorkspaceAssignmentPanel > shows human role labels and never exposes user identifiers  335ms
+   ✓ WorkspaceAssignmentPanel > keeps large workspaces bounded and supports search plus progressive disclosure  747ms
+ ✓ components/today-queue-disclosure.test.tsx (1 test) 599ms
+   ✓ TodayQueueDisclosure > keeps the queue unmounted until explicitly opened and deterministically resets after closing  597ms
+ ✓ components/app-shell.test.tsx (7 tests) 1036ms
+   ✓ AppShell account controls > reveals every mobile utility, focuses the first action and restores focus on Escape  651ms
+ ✓ components/activity-workspace.test.tsx (4 tests) 1228ms
+   ✓ ActivityWorkspace responsive task authority > renders one canonical task collection and preserves every row and bulk action  858ms
+   ✓ ActivityWorkspace responsive task authority > keeps selection canonical and exposes a 44px checkbox hit-area contract  314ms
+ ✓ components/capture-outcome.test.tsx (6 tests) 1141ms
+   ✓ Capture outcome review > adds a manual pipeline change to review without executing it  626ms
+ ✓ components/contact-import-workspace.test.tsx (7 tests) 1634ms
+   ✓ ContactImportWorkspace automatic organization > explains and applies the bounded existing-import cleanup in one action  579ms
+ ✓ components/pipeline-board.test.tsx (10 tests) 1880ms
+   ✓ PipelineBoard > prioritizes next action and keeps readable activity evidence behind disclosure  580ms
+   ✓ PipelineBoard > filters authorized contacts and progressively reveals a large stage  384ms
+ ✓ components/google-email-composer.test.tsx (2 tests) 1949ms
+   ✓ GoogleEmailComposer > gives the workspace owner an inline final review and send action  1330ms
+   ✓ GoogleEmailComposer > keeps assistant-created drafts waiting for owner approval  617ms
+ ✓ components/omnix-assistant-launcher.test.tsx (12 tests) 3204ms
+   ✓ OmnixAssistantLauncher > opens an accessible personalized dialog and returns focus on Escape  503ms
+   ✓ OmnixAssistantLauncher > presents CRM evidence without exposing database language to the member  303ms
+   ✓ OmnixAssistantLauncher > distinguishes grounded web research and opens public sources safely  747ms
+   ✓ OmnixAssistantLauncher > renders who needs attention as a bounded people-first decision brief  369ms
+   ✓ OmnixAssistantLauncher > keeps large source sets calm and progressively reveals every citation  366ms
+   ✓ OmnixAssistantLauncher > keeps large CRM result collections bounded until the member asks for more  393ms
+ ✓ components/insights-dashboard.test.tsx (8 tests) 2528ms
+   ✓ Insights dashboard > mounts exact period-preserving drilldowns instead of generic destination links  820ms
+   ✓ Insights dashboard > keeps large exact sets bounded, searchable, filterable, and paginated  732ms
+ ✓ components/relationship-queue.interaction.test.tsx (5 tests) 5832ms
+   ✓ RelationshipQueue mounted interactions > reveals populated batches 12 → 24 → 36 → final and focuses terminal status  1298ms
+   ✓ RelationshipQueue mounted interactions > reaches all 109 entries and resets to 12 after real lead, scope, and context clicks  2867ms
+   ✓ RelationshipQueue mounted interactions > preserves last valid rendered results after invalid submit and exposes alert semantics  985ms
+   ✓ RelationshipQueue mounted interactions > recovers populated no-results through Clear search and updates the live region  603ms
+ ✓ components/alert-center.interaction.test.tsx (7 tests) 5168ms
+   ✓ AlertCenter mounted progressive disclosure > renders 88 canonical alerts with exact tiles, only Act now open, and a bounded default DOM  599ms
+   ✓ AlertCenter mounted progressive disclosure > AND-composes search, group, category, and priority while OR-composing selections within a dimension  806ms
+   ✓ AlertCenter mounted progressive disclosure > keeps Expand all bounded, preserves per-group progress through disclosure, and resets batches on criteria changes  1303ms
+   ✓ AlertCenter mounted progressive disclosure > reaches every record in canonical group order with final partial batches and no duplicates  1751ms
+   ✓ AlertCenter mounted progressive disclosure > clears criteria after filtered-zero and restores the canonical result with 12-item limits  519ms
+ ✓ scripts/release-manifest.test.ts (32 tests) 92739ms
+   ✓ release manifest validation > accepts complete exact-SHA evidence from a clean evidence checkout  3706ms
+   ✓ release manifest validation > accepts the supported Hobby daily fallback only with live connector promotion blocked  4186ms
+   ✓ release manifest validation > rejects a two-minute Hobby schedule that Vercel would reject at deployment  4023ms
+   ✓ release manifest validation > keeps the Hobby daily fallback fail-closed for live connector promotion  3533ms
+   ✓ release manifest validation > creates the immutable manifest for an explicit candidate Git object  4250ms
+   ✓ release manifest validation > fails closed on a dirty evidence checkout  10044ms
+   ✓ release manifest validation > rejects an expected candidate SHA mismatch  3525ms
+   ✓ release manifest validation > rejects migration checksum drift  8068ms
+   ✓ release manifest validation > rejects missing migration replay evidence  1947ms
+   ✓ release manifest validation > rejects deployment evidence bound to another deployment  2089ms
+   ✓ release manifest validation > rejects missing rollback rehearsal evidence  2709ms
+   ✓ release manifest validation > rejects equal, descendant, and sibling rollback targets instead of accepting any different commit  4748ms
+   ✓ release manifest validation > binds rollback recovery to declared known-good prior deployment evidence  2467ms
+   ✓ release manifest validation > rejects provider evidence from a non-owner actor  2220ms
+   ✓ release manifest validation > rejects an omitted applicable provider and its evidence record  1855ms
+   ✓ release manifest validation > rejects duplicate evidence records for one provider  1930ms
+   ✓ release manifest validation > rejects missing Google-specific facts  2236ms
+   ✓ release manifest validation > rejects missing Mailchimp-specific facts  2118ms
+   ✓ release manifest validation > rejects generic lifecycle receipts for Twilio readiness  2963ms
+   ✓ release manifest validation > rejects incomplete or false-green Twilio-specific readiness facts  2444ms
+   ✓ release manifest validation > rejects generic lifecycle receipts and incomplete facts for Meta readiness  2544ms
+   ✓ release manifest validation > rejects stale provider evidence  2163ms
+   ✓ release manifest validation > rejects incomplete authenticated responsive UAT  1886ms
+   ✓ release manifest validation > rejects a UAT cell without outcome, health, readiness, and bound evidence  1892ms
+   ✓ release manifest validation > rejects UAT cells without explicit browser, device, safe-area, and overflow evidence  1928ms
+   ✓ release manifest validation > requires separate iPhone 11 Safari browser and installed-PWA proof  1803ms
+   ✓ release manifest validation > fails required manifest-tree validation when no canonical manifest is tracked  1430ms
+   ✓ release manifest validation > does not let a valid historical manifest satisfy an exact expected-SHA CI gate  2491ms
+   ✓ release manifest validation > accepts only the canonical exact-SHA manifest path  1438ms
+   ✓ release manifest validation > rejects receipt traversal even when it resolves inside the repository  1938ms
+   ✓ release manifest validation > reports all failures as a fail-closed validation error  2147ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  app/contacts/[id]/outcome/actions.test.ts [ app/contacts/[id]/outcome/actions.test.ts ]
+Error: Cannot find package 'server-only' imported from 'C:/Projetos/CRMRealtor/packages/crm/lib/application/omnix-provider-server-gateway.ts'
+ ❯ lib/application/omnix-provider-server-gateway.ts:1:1
+      1| import 'server-only';
+       | ^
+      2| export { createOmnixProviderServerGateway, omnixProviderDraftId } from…
+      3|
+
+Caused by: Error: Failed to load url server-only (resolved id: server-only) in C:/Projetos/CRMRealtor/packages/crm/lib/application/omnix-provider-server-gateway.ts. Does the file exist?
+ ❯ loadAndTransform node_modules/vite/dist/node/chunks/config.js:22739:33
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 267 passed (268)
+      Tests  1334 passed (1334)
+   Start at  20:07:01
+   Duration  94.32s (transform 63.07s, setup 0ms, collect 439.07s, tests 167.57s, environment 429.85s, prepare 61.48s)

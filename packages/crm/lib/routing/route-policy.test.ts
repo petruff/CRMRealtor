@@ -14,6 +14,8 @@ describe("route policy", () => {
     expect(isPublicPagePath("/welcome-more")).toBe(false);
     expect(isSessionPublicPath("/manifest.webmanifest")).toBe(true);
     expect(isSessionPublicPath("/sw.js")).toBe(true);
+    expect(isSessionPublicPath("/portal/abc")).toBe(true);
+    expect(isSessionPublicPath("/portals")).toBe(false);
     expect(isSessionPublicPath("/auth/callback")).toBe(true);
     expect(isSessionPublicPath("/api/health")).toBe(true);
     expect(isSessionPublicPath("/api/readiness")).toBe(true);

@@ -31,6 +31,7 @@ import {
   prepareGoogleCalendarCreationAction,
   prepareGoogleCalendarSyncAction,
   prepareGoogleGmailSyncAction,
+  checkGoogleConnectionAction,
 } from './google-actions';
 import { supabaseMetaOperationRepository, type MetaConnectionState, type MetaReviewItem } from '@/lib/data/meta-operation-repository';
 import { readMetaEnquiryReviewContext } from '@/lib/application/meta-review-service';
@@ -48,7 +49,7 @@ import {
   otherConnectionCardStatus,
   type ConnectionCardStatus,
 } from './connection-status';
-import { connectionNotice, googleWorkspaceConnectHref, mailchimpConnectHref } from './oauth-presentation';
+import { connectionNotice, googleInsightsConnectHref, googleWorkspaceConnectHref, mailchimpConnectHref } from './oauth-presentation';
 import {
   mailchimpConnectionNeedsAttention,
   mailchimpConnectionRequiresReauthorization,
@@ -650,6 +651,10 @@ export default async function ConnectionsPage({
             <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs leading-relaxed text-warm">
               Authorization has started, but no Google permission has been saved yet. Click Finish Google connection and complete the Google consent window.
             </p>
+          ) : googleWorkspaceAuthorized ? (
+            <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs leading-relaxed text-warm">
+              Google permissions are connected. The workspace owner still needs to run a connection check so Omnix can verify the account and start Gmail and Calendar health tracking.
+            </p>
           ) : (
             <p className="mt-4 rounded-2xl border border-warm-border bg-warm-soft px-4 py-3 text-xs text-warm">
               Omnix could not confirm the connection status. Reconnect Google or try again in a few minutes.
@@ -670,8 +675,33 @@ export default async function ConnectionsPage({
               );
             })}
           </div>
+          <div className="mt-4 rounded-2xl border border-line bg-surface-2 p-4 sm:flex sm:items-center sm:justify-between sm:gap-5">
+            <div>
+              <p className="text-sm font-medium text-ink">AI reply insights</p>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted">
+                Optional: Omnix can summarize intent, urgency, and sentiment for incoming replies linked to a contact.
+                The message is minimized, treated as untrusted data, and not stored. Google classifies this as restricted access.
+              </p>
+              <p className={`mt-2 text-[11px] ${googleLifecycle.grantedScopes.includes('https://www.googleapis.com/auth/gmail.readonly') ? 'text-nurture' : 'text-subtle'}`}>
+                {googleLifecycle.grantedScopes.includes('https://www.googleapis.com/auth/gmail.readonly')
+                  ? 'Authorized by the workspace owner'
+                  : 'Off until the workspace owner explicitly authorizes it'}
+              </p>
+            </div>
+            {canonicalOwner && !googleLifecycle.grantedScopes.includes('https://www.googleapis.com/auth/gmail.readonly') ? (
+              <a href={googleInsightsConnectHref(googleConnection.id)} className="sk-button-secondary mt-3 shrink-0 sm:mt-0">
+                Enable reply insights
+              </a>
+            ) : null}
+          </div>
           {canonicalOwner && (
             <div className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+              {!googleCapabilityState ? (
+                <form action={checkGoogleConnectionAction}>
+                  <input type="hidden" name="connectionId" value={googleConnection.id} />
+                  <button type="submit" className="sk-button-primary">Check Google connection</button>
+                </form>
+              ) : null}
               <a href={googleWorkspaceConnectHref(googleConnection.id)} className={googleWorkspaceAuthorized ? 'sk-button-secondary' : 'sk-button-primary'}>
                 {googleWorkspaceAuthorized ? 'Reconnect Google' : 'Finish Google connection'}
               </a>
@@ -852,7 +882,7 @@ export default async function ConnectionsPage({
       )}
 
       {isLive && canonicalOwner && (realConnections.length > 0 || intents.length > 0 || jobs.length > 0) && (
-        <section className="mb-8 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="connector-operations">
+        <section id="pending-approvals" className="mb-8 scroll-mt-6 rounded-[var(--sk-card-radius)] border border-line bg-surface p-5 sm:p-6" aria-labelledby="connector-operations">
           <h2 id="connector-operations" className="font-display text-2xl text-ink">Connection controls</h2>
           <p className="mt-1 text-sm text-muted">Review connected accounts, approve pending actions, and resolve anything that needs attention.</p>
 

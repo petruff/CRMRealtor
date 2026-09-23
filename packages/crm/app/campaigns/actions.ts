@@ -11,6 +11,7 @@ import { MailchimpMarketingClient } from '@/lib/providers/mailchimp-client';
 import { createMailchimpCampaignDraftCommand, executeMailchimpCampaignActionCommand,
   updateMailchimpCampaignDraftCommand } from '@/lib/application/mailchimp-campaign-service';
 import { ConnectorError } from '@/lib/domain/connector';
+import { blockingFairHousingFindings, fairHousingBlockMessage } from '@/lib/domain/fair-housing';
 
 function field(formData: FormData, name: string): string {
   const value = formData.get(name);
@@ -31,6 +32,8 @@ function escapeHtml(value: string): string {
 function draftInput(formData: FormData) {
   const segmentValue = field(formData, 'segment');
   const message = field(formData, 'message');
+  const blocking = blockingFairHousingFindings(field(formData, 'subject'), field(formData, 'previewText'), message);
+  if (blocking.length) throw new ConnectorError('invalid-input', fairHousingBlockMessage(blocking));
   return {
     segment: segmentValue === 'all-subscribers'
       ? { kind: 'all-subscribers' as const }

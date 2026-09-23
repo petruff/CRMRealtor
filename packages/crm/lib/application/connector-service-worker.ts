@@ -49,6 +49,8 @@ import {
   type ConnectorTelemetrySink,
 } from '../observability/connector-telemetry.ts';
 import { drainGoogleGmailWakeups } from './google-gmail-wakeup-worker.ts';
+import { createSupabaseOmnixServiceAiBudgetAuthority } from './omnix-ai-budget.ts';
+import { loadWorkspaceAiAutomationCredential } from './workspace-ai-settings.ts';
 import { supabaseGoogleGmailWakeupRepository } from '../data/supabase-google-gmail-wakeup-repository.ts';
 import { loadOptionalGoogleGmailPushConfiguration } from '../config/google-gmail-push.ts';
 
@@ -472,6 +474,11 @@ export async function drainConfiguredConnectorServiceJobs(
     ? await drainGoogleGmailWakeups({
         repository: supabaseGoogleGmailWakeupRepository(client), configuration,
         workerId, deadlineMs, gmailPush: googleGmailPush,
+        intelligence: {
+          loadCredential: loadWorkspaceAiAutomationCredential,
+          createBudget: (workspaceId, ownerMembershipId) =>
+            createSupabaseOmnixServiceAiBudgetAuthority(client, workspaceId, ownerMembershipId),
+        },
       }) : undefined;
   if (!mailchimp?.enabled) return {
     ...result,

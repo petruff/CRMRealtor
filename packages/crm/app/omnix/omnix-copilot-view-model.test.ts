@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isSafeInProductTarget,
+  isSafeExternalSourceTarget,
   mapOmnixCopilotEnvelope,
   validateCopilotQuestion,
 } from '@/components/omnix-copilot-view-model';
@@ -26,6 +27,15 @@ describe('isSafeInProductTarget', () => {
     expect(isSafeInProductTarget('/contacts/c-1')).toBe(true);
     expect(isSafeInProductTarget('//example.com')).toBe(false);
     expect(isSafeInProductTarget('https://example.com')).toBe(false);
+  });
+});
+
+describe('isSafeExternalSourceTarget', () => {
+  it('allows only credential-free HTTPS links', () => {
+    expect(isSafeExternalSourceTarget('https://example.gov/report')).toBe(true);
+    expect(isSafeExternalSourceTarget('http://example.gov/report')).toBe(false);
+    expect(isSafeExternalSourceTarget('https://user:secret@example.gov/report')).toBe(false);
+    expect(isSafeExternalSourceTarget('/contacts/c-1')).toBe(false);
   });
 });
 
@@ -89,13 +99,13 @@ describe('mapOmnixCopilotEnvelope', () => {
       dataMode: 'sample',
       asOf: '2026-08-11T15:00:00.000Z',
       code: 'unsupported-intent',
-      message: 'That request is outside the deterministic grammar.',
+      message: 'Choose Public web to research this topic.',
       supportedExamples: ['brief today', 'pipeline'],
       warnings: [],
     });
 
     expect(result.status).toBe('unsupported');
-    expect(result.message).toBe("I couldn't match that wording yet. Nothing was changed.");
+    expect(result.message).toBe('Choose Public web to research this topic.');
     expect(result.answerBlocks[0]).toMatchObject({
       title: 'Try asking in one of these ways',
       items: [

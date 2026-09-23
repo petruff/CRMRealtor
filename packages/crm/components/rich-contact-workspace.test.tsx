@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { ContactImportSourceFactRecord } from '@/lib/domain/rich-contact';
-import { ImportedContactProfile } from './rich-contact-workspace';
+import type { Contact } from '@/lib/domain/contact';
+import { ImportedContactProfile, RichContactWorkspace } from './rich-contact-workspace';
 
 function fact(
   id: string,
@@ -46,5 +47,31 @@ describe('ImportedContactProfile', () => {
 
   it('renders nothing when no authorized facts were loaded', () => {
     expect(renderToStaticMarkup(<ImportedContactProfile facts={[]} />)).toBe('');
+  });
+});
+
+describe('RichContactWorkspace archive continuation', () => {
+  const contact: Contact = {
+    id: 'contact-b', firstName: 'Bea', lastName: 'Lead', leadType: 'warm', relationship: 'lead',
+    intent: 'unknown', source: 'other', pipelineStage: 'new', tags: [], createdAt: '2026-09-01T12:00:00.000Z',
+  };
+  const render = (archiveReturnContext?: string, archived = false) => renderToStaticMarkup(
+    <RichContactWorkspace contact={contact} points={[]} households={[]} relationships={[]} assignments={[]}
+      members={[]} contacts={[contact]} definitions={[]} customValues={[]} importedFacts={[]}
+      archived={archived} isOwner archiveReturnContext={archiveReturnContext} />,
+  );
+
+  it('submits the list context with the archive form and explains where work continues', () => {
+    const html = render('q=Bea&from=list');
+    expect(html).toContain('name="returnContext" value="q=Bea&amp;from=list"');
+    expect(html).toContain('After archiving, the next contact in this list opens.');
+  });
+
+  it('omits list context for direct access and keeps the restore path for archived records', () => {
+    expect(render()).not.toContain('returnContext');
+    expect(render()).toContain('After archiving, you return to your contacts.');
+    const archivedHtml = render(undefined, true);
+    expect(archivedHtml).toContain('Restore contact');
+    expect(archivedHtml).not.toContain('Archive record');
   });
 });
