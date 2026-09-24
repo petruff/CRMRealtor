@@ -74,6 +74,10 @@ import { GoogleEmailComposer } from "@/components/google-email-composer";
 import { TextingComposer } from "@/components/texting-composer";
 import { QuickTexts } from "@/components/quick-texts";
 import { RelationshipMemoryCard } from "@/components/relationship-memory-card";
+import { SellerUpdateCard } from "@/components/seller-update-card";
+import { sellerUpdateItem } from "@/lib/application/ready-to-send";
+import { summarizeSellerWeek } from "@/lib/domain/seller-update";
+import { markReadyTextSentAction } from "@/app/ready-to-send-actions";
 import { VoiceUpdate } from "@/components/voice-update";
 import { applyVoiceUpdateAction, reviewVoiceUpdateAction } from "@/app/contacts/voice-update-actions";
 import { extractMemoryFacts } from "@/lib/domain/relationship-memory";
@@ -167,6 +171,8 @@ export default async function ContactDetailPage({
     repository.notesFor(id, { archivedOnly: true }),
   ]);
   const memoryFacts = extractMemoryFacts(notes);
+  const sellerUpdate = archived ? undefined : sellerUpdateItem(contact, notes, now, repositoryContext.userDisplayName, true);
+  const sellerLastUpdate = sellerUpdate ? summarizeSellerWeek(notes, now).lastUpdateAt : undefined;
   const [events, tasks, allContacts, members, contactMilestones, propertyBehaviors] = await Promise.all([
     listActivityEventsCommand(activityRepository, workspaceScope, {
       contactId: id,
@@ -410,6 +416,8 @@ export default async function ContactDetailPage({
           Business texting is not ready yet. The workspace owner still needs to finish carrier registration and one final delivery test. Device Messages remains available separately.
         </p>
       ) : null}
+
+      {sellerUpdate ? <div className="mt-6"><SellerUpdateCard item={sellerUpdate} markSent={markReadyTextSentAction} {...(sellerLastUpdate ? { lastSentLabel: new Date(sellerLastUpdate).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: process.env.OMNIX_TIME_ZONE ?? "America/New_York" }) } : {})} /></div> : null}
 
       <RelationshipMemoryCard facts={memoryFacts} firstName={contact.preferredName ?? contact.firstName} />
 

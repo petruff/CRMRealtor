@@ -2,17 +2,18 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Heart, MessageSquareText, Mic, QrCode, Send, Sparkles, X } from 'lucide-react';
+import { Heart, Home, Mic, PenLine, QrCode, Send, Sparkles, X } from 'lucide-react';
 
-export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-daily-agent';
+export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-listing-seller';
 
 const ITEMS = [
+  { icon: PenLine, title: 'Listing writer', body: 'Enter the home’s facts once and get MLS remarks, Instagram and Facebook posts, an email blast and an open-house text — in English or Spanish, Fair Housing checked.', href: '/listing-writer' },
+  { icon: Home, title: 'Weekly seller update', body: 'Every Friday, a short update for each active seller is ready to send — also on each seller’s page.', href: undefined },
   { icon: Send, title: 'Ready to send', body: 'Each morning Omnix prepares today’s texts — new leads, follow-ups, birthdays. Review, send from your phone, tap Mark sent.', href: undefined },
   { icon: Mic, title: 'Voice update', body: 'On a contact, tap Voice update and say what happened. Budget, beds, areas and the next follow-up update in one step.', href: undefined },
   { icon: Heart, title: 'What matters to them', body: 'Pets, work, moves and how they like to be reached — pulled from your notes onto each contact.', href: undefined },
   { icon: Sparkles, title: 'A smarter Omnix assistant', body: 'Ask in your own words — “hot buyers I haven’t called in a week”, “remind me to call Ana tomorrow”.', href: '/omnix' },
   { icon: QrCode, title: 'Your lead page', body: 'One link and QR code for your bio, signs and cards. Every inquiry becomes a lead with an instant alert.', href: '/lead-page' },
-  { icon: MessageSquareText, title: 'Quick texts', body: 'Tap Text on a contact for ready-made messages in English or Spanish.', href: undefined },
 ] as const;
 
 /**

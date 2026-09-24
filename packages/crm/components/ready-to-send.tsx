@@ -11,7 +11,7 @@ import { Avatar } from './ui';
 type MarkSent = (contactId: string, body: string) => Promise<MarkSentResult>;
 
 const KIND_LABEL: Record<ReadyItem['kind'], string> = {
-  'new-lead': 'New lead', 'follow-up': 'Follow-up', birthday: 'Birthday', homeaversary: 'Home anniversary',
+  'new-lead': 'New lead', 'follow-up': 'Follow-up', birthday: 'Birthday', homeaversary: 'Home anniversary', 'seller-update': 'Seller update',
 };
 
 function skipKey(day: string): string {
@@ -22,7 +22,7 @@ function readSkipped(day: string): Set<string> {
   try { return new Set(JSON.parse(window.localStorage.getItem(skipKey(day)) ?? '[]') as string[]); } catch { return new Set(); }
 }
 
-function ReadyRow({ item, onDone, onSkip, markSent }: { item: ReadyItem; onDone: () => void; onSkip: () => void; markSent: MarkSent }) {
+export function ReadyRow({ item, onDone, onSkip, markSent }: { item: ReadyItem; onDone: () => void; onSkip: () => void; markSent: MarkSent }) {
   const [body, setBody] = useState(item.body);
   const [editing, setEditing] = useState(false);
   const [opened, setOpened] = useState(false);
