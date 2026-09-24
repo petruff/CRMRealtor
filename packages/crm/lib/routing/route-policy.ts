@@ -38,6 +38,7 @@ const SAFE_DESTINATIONS = [
   "/sphere",
   "/lead-page",
   "/listing-writer",
+  "/revive",
 ] as const;
 
 function matchesSegment(pathname: string, prefix: string): boolean {
