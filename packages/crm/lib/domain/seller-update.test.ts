@@ -17,6 +17,9 @@ describe('seller update', () => {
   it('knows who is an active seller', () => {
     expect(isActiveSeller(seller())).toBe(true);
     expect(isActiveSeller(seller({ intent: 'both', relationship: 'lead', pipelineStage: 'under-contract' }))).toBe(true);
+    expect(isActiveSeller(seller({ intent: 'both', relationship: 'lead', pipelineStage: 'under-contract', seller: undefined }))).toBe(false);
+    expect(isActiveSeller(seller({ seller: { propertyAddress: '123 Palm Ave', listingStatus: 'Sold' } }))).toBe(false);
+    expect(isActiveSeller(seller({ seller: { propertyAddress: '123 Palm Ave', listingStatus: 'Withdrawn' } }))).toBe(false);
     expect(isActiveSeller(seller({ intent: 'buyer' }))).toBe(false);
     expect(isActiveSeller(seller({ pipelineStage: 'closed' }))).toBe(false);
     expect(isActiveSeller(seller({ relationship: 'lead', pipelineStage: 'contacted' }))).toBe(false);
