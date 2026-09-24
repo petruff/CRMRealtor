@@ -207,6 +207,7 @@ export async function researchWithGemini(
           generationConfig: {
             temperature: 0.2,
             maxOutputTokens: OMNIX_AI_POLICY.maxOutputTokens,
+            thinkingConfig: { thinkingLevel: 'minimal' },
           },
         }),
       },

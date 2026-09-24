@@ -33,6 +33,7 @@ export interface OmnixCopilotAnswerItemView {
   detail?: string;
   value?: string | number;
   href?: string;
+  contact?: { id: string; name: string; firstName: string; phone?: string };
   citationIds: string[];
 }
 
@@ -69,6 +70,8 @@ export interface OmnixCopilotUiResult {
   warnings: string[];
   message?: string;
   selectedContact?: { id: string; name: string };
+  /** A reviewable action (draft text, follow-up, note). Nothing is saved until the realtor taps Save. */
+  action?: OmnixActionPreview;
   model?: {
     state: 'available' | 'unconfigured' | 'limited' | 'failed';
     provider: 'google-gemini' | 'anthropic-claude';
@@ -137,12 +140,13 @@ export function mapOmnixCopilotEnvelope(
         id: 'supported-examples',
         kind: 'list',
         title: 'Try asking in one of these ways',
-        detail: 'I can help with today’s priorities, follow-ups, people who need attention, and your pipeline.',
+        detail: 'I can find people, summarize a client, recap your week, and prepare texts, follow-ups and notes for you to review.',
         items: [
-          'What are my priorities today?',
-          'Who needs my attention?',
-          'Which tasks are overdue?',
-          'Show me my pipeline',
+          'Who should I call first?',
+          'Hot buyers I haven’t talked to in 2 weeks',
+          'Tell me about Alicia',
+          'Remind me to call Alicia tomorrow at 10',
+          'What happened this week?',
         ].map((example) => ({
           id: `example-${example}`,
           label: example,
@@ -174,6 +178,7 @@ export function mapOmnixCopilotEnvelope(
       detail: item.detail,
       value: item.value,
       href: item.href,
+      ...(item.contact ? { contact: { ...item.contact } } : {}),
       citationIds: item.citations.map((citation) => citation.id),
     })),
     citationIds: block.citations.map((citation) => citation.id),
@@ -228,3 +233,4 @@ export function mapOmnixCopilotEnvelope(
   };
 }
 import type { OmnixCopilotEnvelope } from '@/lib/domain/omnix-copilot';
+import type { OmnixActionPreview } from '@/lib/application/omnix-assistant-actions';

@@ -6,15 +6,19 @@ import { MessageCircle, X } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import {
   askOmnixCopilotAction,
+  confirmOmnixActionAction,
   getOmnixAssistantProfileAction,
+  recordOmnixFeedbackAction,
   type OmnixAssistantProfile,
 } from '@/app/omnix/actions';
+import type { OmnixConfirmAction } from '@/components/omnix-action-preview';
 import { OmnixCopilot } from '@/components/omnix-copilot';
 import type { OmnixCopilotAction } from '@/components/omnix-copilot-view-model';
 
 interface OmnixAssistantLauncherProps {
   readonly action?: OmnixCopilotAction;
-  readonly loadProfile?: () => Promise<OmnixAssistantProfile>;
+  readonly confirm?: OmnixConfirmAction;
+  readonly loadProfile?: (contactId?: string) => Promise<OmnixAssistantProfile>;
   readonly suppressed?: boolean;
 }
 
@@ -28,14 +32,18 @@ const focusableSelector = [
 
 export function OmnixAssistantLauncher({
   action = askOmnixCopilotAction,
+  confirm = confirmOmnixActionAction,
   loadProfile = getOmnixAssistantProfileAction,
   suppressed = false,
 }: OmnixAssistantLauncherProps) {
   const pathname = usePathname();
+  const contactId = /^\/contacts\/([^/]+)$/u.exec(pathname)?.[1];
+  const onContact = contactId && !['new', 'import', 'incomplete'].includes(contactId) ? decodeURIComponent(contactId) : undefined;
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<OmnixAssistantProfile | null>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  const requestedFor = useRef<string | null>(null);
 
   const close = () => {
     setOpen(false);
@@ -51,8 +59,10 @@ export function OmnixAssistantLauncher({
     const previousBodyOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     let active = true;
-    if (!profile) {
-      void loadProfile().then((result) => {
+    const key = onContact ?? '';
+    if (!profile || requestedFor.current !== key) {
+      requestedFor.current = key;
+      void loadProfile(onContact).then((result) => {
         if (active) setProfile(result);
       });
     }
@@ -64,7 +74,7 @@ export function OmnixAssistantLauncher({
       cancelAnimationFrame(frame);
       document.body.style.overflow = previousBodyOverflow;
     };
-  }, [loadProfile, open, profile]);
+  }, [loadProfile, onContact, open, profile]);
 
   if (pathname.startsWith('/omnix') || suppressed) return null;
 
@@ -137,7 +147,14 @@ export function OmnixAssistantLauncher({
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-hidden">
-              <OmnixCopilot action={action} mode="assistant" greetingName={profile?.firstName} />
+              <OmnixCopilot
+                action={action}
+                confirm={confirm}
+                feedback={recordOmnixFeedbackAction}
+                mode="assistant"
+                greetingName={profile?.firstName}
+                {...(onContact && profile?.contact?.id === onContact ? { contextContact: profile.contact } : {})}
+              />
             </div>
           </div>
         </div>

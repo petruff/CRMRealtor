@@ -593,13 +593,13 @@ describe('executeOmnixCopilot', () => {
     });
 
     expect(response.answerBlocks.map((block) => block.title)).toEqual([
-      'Judith Serna', 'Contact points, relationships and custom fields', 'Notes', 'Tasks and activity',
+      'Judith Serna', 'Notes', 'Follow-ups and activity',
     ]);
     expect(response.answerBlocks[0]?.items).toEqual(expect.arrayContaining([
-      expect.objectContaining({ label: 'Contact', detail: expect.stringContaining('judith@example.com') }),
-      expect.objectContaining({ label: 'Preferences', detail: expect.stringContaining('Vero Beach') }),
+      expect.objectContaining({ label: 'Phone & email', detail: expect.stringContaining('judith@example.com') }),
+      expect.objectContaining({ label: 'Looking for', detail: expect.stringContaining('Vero Beach') }),
     ]));
-    expect(response.answerBlocks[3]?.items).toHaveLength(2);
+    expect(response.answerBlocks[2]?.items).toHaveLength(2);
     expect(response.citations.length).toBeGreaterThan(0);
   });
 
@@ -615,7 +615,7 @@ describe('executeOmnixCopilot', () => {
 
     const noMatch = await executeOmnixCopilot(request('find contact nobody'), { getRepository });
     expect(noMatch.answerBlocks[0]).toMatchObject({ kind: 'empty' });
-    expect(noMatch.answerBlocks[0]?.detail).toContain('no authorized record matched');
+    expect(noMatch.answerBlocks[0]?.detail).toContain('No one matches');
   });
 
   it('keeps two workspaces and a forbidden ID indistinguishable from no match', async () => {
@@ -760,5 +760,60 @@ describe('executeOmnixCopilot', () => {
       ...Object.values(fixture.activities.writes),
       ...Object.values(fixture.mailers.writes),
     ]) expect(write).not.toHaveBeenCalled();
+  });
+});
+
+describe('executeOmnixCopilot segments and recaps', () => {
+  beforeEach(() => { vi.spyOn(console, 'info').mockImplementation(() => undefined); });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('lists a segment with plain reasons, Call/Text data and a count headline', async () => {
+    const fixture = context({ contacts: [
+      contact('c-quiet', { leadType: 'hot', intent: 'buyer', phone: '(512) 555-0100', lastContactedAt: '2026-07-20T12:00:00.000Z' }),
+      contact('c-fresh', { leadType: 'hot', intent: 'buyer', lastContactedAt: '2026-08-10T12:00:00.000Z' }),
+      contact('c-warm', { leadType: 'warm', intent: 'buyer', lastContactedAt: '2026-07-01T12:00:00.000Z' }),
+    ] });
+    const response = await executeOmnixCopilot(request('segment leadType=hot; intent=buyer; noContactDays=14'), {
+      getRepository: async () => fixture.repositoryContext, timeZone: 'America/Chicago',
+    });
+    expect(response.resolvedIntent).toMatchObject({ kind: 'segment' });
+    const block = response.answerBlocks[0]!;
+    expect(block.detail).toBe('You have 1 hot buyer not contacted in 14+ days.');
+    expect(block.items).toHaveLength(1);
+    expect(block.items[0]).toMatchObject({
+      label: 'First c-quiet Contact',
+      contact: { id: 'c-quiet', firstName: 'First c-quiet', phone: '(512) 555-0100' },
+    });
+    expect(block.items[0]?.detail).toContain('Last talked 22 days ago');
+    expect(fixture.contacts.writes.update).not.toHaveBeenCalled();
+  });
+
+  it('answers an empty segment kindly', async () => {
+    const fixture = context({ contacts: [contact('c-1')] });
+    const response = await executeOmnixCopilot(request('segment birthdayWithinDays=7'), { getRepository: async () => fixture.repositoryContext });
+    expect(response.answerBlocks[0]).toMatchObject({ kind: 'empty', detail: 'No people with a birthday in the next 7 days right now.' });
+  });
+
+  it('recaps a week from contacts and recorded activity', async () => {
+    const note: ActivityEvent = { ...event('e-note', 'c-new'), type: 'note-added', occurredAt: '2026-08-10T15:00:00.000Z' };
+    const done: ActivityEvent = { ...event('e-done', 'c-new'), type: 'task-completed', occurredAt: '2026-08-09T15:00:00.000Z' };
+    const old: ActivityEvent = { ...event('e-old', 'c-new'), type: 'note-added', occurredAt: '2026-07-01T15:00:00.000Z' };
+    const fixture = context({
+      contacts: [
+        contact('c-new', { createdAt: '2026-08-09T12:00:00.000Z', lastContactedAt: '2026-08-10T12:00:00.000Z' }),
+        contact('c-older', { lastContactedAt: '2026-07-01T12:00:00.000Z' }),
+      ],
+      events: [note, done, old],
+    });
+    const response = await executeOmnixCopilot(request('recap week'), { getRepository: async () => fixture.repositoryContext, timeZone: 'America/Chicago' });
+    const metrics = Object.fromEntries(response.answerBlocks[0]!.items.map((item) => [item.label, item.value]));
+    expect(metrics).toMatchObject({ 'New contacts': 1, Conversations: 1, Notes: 1, 'Follow-ups done': 1 });
+    expect(response.answerBlocks[1]?.items.map((item) => item.label)).toEqual(['First c-new Contact']);
+  });
+
+  it('opens a full profile by contact id for questions about the contact in context', async () => {
+    const fixture = context({ contacts: [contact('c-1', { firstName: 'Ana' }), contact('c-2', { firstName: 'Ana' })] });
+    const response = await executeOmnixCopilot(request('contact profile c-2'), { getRepository: async () => fixture.repositoryContext });
+    expect(response.answerBlocks[0]).toMatchObject({ id: 'contact-profile', title: 'Ana Contact' });
   });
 });

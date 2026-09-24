@@ -12,6 +12,8 @@ import {
   LoaderCircle,
   MessageCircle,
   Send,
+  ThumbsDown,
+  ThumbsUp,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -33,16 +35,57 @@ import {
   evidenceFactSummary,
   evidenceTimestamp,
 } from '@/lib/presentation/crm-evidence';
+import { OmnixActionPreviewCard, OmnixPersonActions, type OmnixConfirmAction } from './omnix-action-preview';
+import { appendDictation, VoiceDictation } from './voice-dictation';
 
 const SUPPORTED_PROMPTS = [
-  'Workspace overview',
   'What should I do today?',
   'Who needs attention?',
-  'Organize my CRM',
-  'Show transactions',
-  'Show properties',
-  'Show nurture plans',
+  'Hot leads I haven’t talked to in a week',
+  'New leads this week',
+  'Birthdays this month',
+  'What happened this week?',
 ] as const;
+
+function contactPrompts(name: string): string[] {
+  const first = name.split(' ')[0] ?? name;
+  return [`Tell me about ${first}`, `What’s next with ${first}?`, `Draft a text to ${first}`, `Remind me to call ${first} tomorrow`];
+}
+
+const NO_CONFIRM: OmnixConfirmAction = async () => ({ status: 'error', message: 'Saving is not available here.' });
+export type OmnixFeedbackAction = (input: { correlationId?: string; intent?: string; helpful: boolean }) => Promise<void>;
+const NO_FEEDBACK: OmnixFeedbackAction = async () => undefined;
+
+function FeedbackButtons({ result, feedback }: { result: OmnixCopilotUiResult; feedback: OmnixFeedbackAction }) {
+  const [sent, setSent] = useState<boolean | null>(null);
+  if (sent !== null) return <p className="mt-2 text-[11px] text-subtle" role="status">{sent ? 'Thanks — glad that helped.' : 'Thanks — this helps Omnix improve.'}</p>;
+  const send = (helpful: boolean) => { setSent(helpful); void feedback({ ...(result.correlationId ? { correlationId: result.correlationId } : {}), ...(result.intent ? { intent: result.intent } : {}), helpful }).catch(() => undefined); };
+  return (
+    <div className="mt-2 flex items-center gap-1 text-[11px] text-subtle">
+      <span>Helpful?</span>
+      <button type="button" className="sk-icon-button size-8" aria-label="Yes, this helped" onClick={() => send(true)}><ThumbsUp className="size-3.5" aria-hidden /></button>
+      <button type="button" className="sk-icon-button size-8" aria-label="No, this didn’t help" onClick={() => send(false)}><ThumbsDown className="size-3.5" aria-hidden /></button>
+    </div>
+  );
+}
+
+/** Keeps the conversation while the realtor moves between pages (memory only, never stored on the device). */
+interface CopilotMemory {
+  entries: TranscriptEntry[];
+  source: 'crm' | 'public-web';
+  selectedContact?: { id: string; name: string };
+}
+const copilotMemory: Record<'page' | 'assistant', CopilotMemory> = {
+  page: { entries: [], source: 'crm' },
+  assistant: { entries: [], source: 'crm' },
+};
+const MEMORY_LIMIT = 30;
+
+/** Test hook: forget the in-memory conversation. */
+export function resetOmnixCopilotMemory() {
+  copilotMemory.page = { entries: [], source: 'crm' };
+  copilotMemory.assistant = { entries: [], source: 'crm' };
+}
 const WEB_PROMPTS = ['Research current Florida real estate trends', 'Compare public homebuyer resources'] as const;
 
 const INLINE_SOURCE_LIMIT = 3;
@@ -50,11 +93,16 @@ const SOURCE_BATCH_SIZE = 12;
 const ATTENTION_BATCH_SIZE = 6;
 const RESULT_BATCH_SIZE = 6;
 
+const INTENT_LABELS: Record<string, string> = {
+  alerts: 'Who needs you', brief: 'Your day', 'web-research': 'Web research', segment: 'People', recap: 'Recap',
+  'contact-profile': 'Contact', 'client-status': 'Client status', 'find-contact': 'Search', 'draft-text': 'Draft texts',
+  'create-task': 'New follow-up', 'log-note': 'New note', 'choose-contact': 'Which person?', 'need-contact': 'Which person?',
+  tasks: 'Follow-ups', 'tasks-range': 'Follow-ups', dates: 'Dates', 'workspace-overview': 'Overview', organization: 'Organize',
+};
+
 function intentLabel(intent?: string): string {
-  if (intent === 'alerts') return 'Attention brief';
-  if (intent === 'brief') return 'Daily brief';
-  if (intent === 'web-research') return 'Web research';
-  return intent?.replaceAll('-', ' ') ?? '';
+  if (!intent) return '';
+  return INTENT_LABELS[intent] ?? `${intent.charAt(0).toUpperCase()}${intent.slice(1).replaceAll('-', ' ')}`;
 }
 
 interface TranscriptEntry {
@@ -97,7 +145,12 @@ function CitationLinks({
   );
 }
 
-function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
+function AssistantResult({ result, confirm, onChooseContact, feedback }: {
+  result: OmnixCopilotUiResult;
+  confirm: OmnixConfirmAction;
+  feedback: OmnixFeedbackAction;
+  onChooseContact: (contact: { id: string; name: string }) => void;
+}) {
   const responseId = useId();
   const [visibleSourceCount, setVisibleSourceCount] = useState(SOURCE_BATCH_SIZE);
   const [visibleAttentionCount, setVisibleAttentionCount] = useState(ATTENTION_BATCH_SIZE);
@@ -196,7 +249,8 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                       {item.detail ? (
                         <p className="mt-1 break-words text-xs leading-relaxed text-muted">{item.detail}</p>
                       ) : null}
-                      {item.href && isSafeInProductTarget(item.href) ? (
+                      {item.contact ? <OmnixPersonActions person={item.contact} /> : null}
+                      {!item.contact && item.href && isSafeInProductTarget(item.href) ? (
                         <Link
                           href={item.href}
                           className="sk-secondary-button mt-2 max-w-full text-xs"
@@ -273,7 +327,7 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
           ) : null}
 
           {visibleAlerts.length ? (
-            <section className="mt-4 border-t border-line pt-3" aria-label="Deterministic alerts">
+            <section className="mt-4 border-t border-line pt-3" aria-label="Alerts">
               <p className="text-xs font-medium text-muted">Alerts from stored CRM dates</p>
               <ul className="mt-2 grid gap-2">
                 {visibleAlerts.map((alert) => (
@@ -394,9 +448,9 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
                       <p className="mt-1 text-xs leading-relaxed text-muted">{suggestion.detail}</p>
                     ) : null}
                     {suggestion.commandPreview ? (
-                      <code className="mt-2 block overflow-x-auto rounded-lg bg-surface px-2.5 py-2 text-[11px] text-muted">
+                      <p className="mt-2 whitespace-pre-line rounded-lg border-l-2 border-accent bg-surface px-3 py-2 text-xs leading-relaxed text-muted">
                         {suggestion.commandPreview}
-                      </code>
+                      </p>
                     ) : null}
                     {suggestion.href && isSafeInProductTarget(suggestion.href) ? (
                       <Link href={suggestion.href} className="sk-secondary-button mt-2 text-xs">
@@ -416,24 +470,18 @@ function AssistantResult({ result }: { result: OmnixCopilotUiResult }) {
             </ul>
           ) : null}
 
-          {result.asOf ? (
+          {result.action ? (
+            <OmnixActionPreviewCard preview={result.action} confirm={confirm} onChooseContact={onChooseContact} />
+          ) : null}
+
+          {result.asOf && !result.action ? (
             <p className="mt-3 text-[11px] text-subtle">
-              {result.model?.researched ? 'Web researched' : 'CRM checked'} {new Date(result.asOf).toLocaleString()} · Read-only response
+              {result.model?.researched
+                ? `Answered from public web sources at ${new Date(result.asOf).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}. Web content never changes your CRM.`
+                : `${result.model?.narrated ? 'Summary written by Omnix AI from the records below. ' : ''}Checked your CRM at ${new Date(result.asOf).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.`}
             </p>
           ) : null}
-          {result.model?.researched ? (
-            <p className="mt-2 text-[11px] text-subtle" role="status">
-              Gemini researched public sources. Web content cannot change CRM records or authorize actions · {result.model.policyVersion}
-            </p>
-          ) : result.model?.narrated ? (
-            <p className="mt-2 text-[11px] text-subtle" role="status">
-              Gemini organized the answer from the cited CRM records · {result.model.policyVersion}
-            </p>
-          ) : result.model?.routed ? (
-            <p className="mt-2 text-[11px] text-subtle" role="status">
-              I understood the question and checked the matching CRM records.
-            </p>
-          ) : null}
+          {result.status !== 'error' ? <FeedbackButtons result={result} feedback={feedback} /> : null}
         </div>
       </div>
     </article>
@@ -455,15 +503,31 @@ export function OmnixCopilot({
   action,
   mode = 'page',
   greetingName,
+  confirm = NO_CONFIRM,
+  feedback = NO_FEEDBACK,
+  contextContact,
 }: {
   action: OmnixCopilotAction;
   mode?: 'page' | 'assistant';
   greetingName?: string;
+  confirm?: OmnixConfirmAction;
+  feedback?: OmnixFeedbackAction;
+  /** The contact open on screen; questions about "her"/"him" use it. */
+  contextContact?: { id: string; name: string };
 }) {
+  const memory = copilotMemory[mode];
   const [question, setQuestion] = useState('');
-  const [entries, setEntries] = useState<TranscriptEntry[]>([]);
-  const [source, setSource] = useState<'crm' | 'public-web'>('crm');
-  const [selectedContact, setSelectedContact] = useState<{ id: string; name: string } | undefined>();
+  const [entries, setEntries] = useState<TranscriptEntry[]>(() => memory.entries);
+  const [source, setSource] = useState<'crm' | 'public-web'>(() => memory.source);
+  const [selectedContact, setSelectedContact] = useState<{ id: string; name: string } | undefined>(() => contextContact ?? memory.selectedContact);
+  useEffect(() => {
+    copilotMemory[mode] = { entries: entries.slice(-MEMORY_LIMIT), source, ...(selectedContact ? { selectedContact } : {}) };
+  }, [entries, mode, selectedContact, source]);
+  const contextId = contextContact?.id;
+  const contextName = contextContact?.name;
+  useEffect(() => {
+    if (contextId && contextName) setSelectedContact({ id: contextId, name: contextName });
+  }, [contextId, contextName]);
   const [composerError, setComposerError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -486,7 +550,7 @@ export function OmnixCopilot({
     scrollToLatest();
   }, [entries.length, isPending, scrollToLatest]);
 
-  const sendQuestion = (rawQuestion: string) => {
+  const sendQuestion = (rawQuestion: string, contactOverride?: { id: string; name: string }) => {
     const nextQuestion = rawQuestion.trim();
     const validationError = validateCopilotQuestion(nextQuestion);
     if (validationError) {
@@ -506,12 +570,13 @@ export function OmnixCopilot({
 
     startTransition(async () => {
       try {
-        const result = await action(nextQuestion, { source, ...(source === 'crm' && selectedContact ? { contactId: selectedContact.id } : {}) });
+        const contact = contactOverride ?? selectedContact;
+        const result = await action(nextQuestion, { source, ...(source === 'crm' && contact ? { contactId: contact.id } : {}) });
         if (result.selectedContact) setSelectedContact(result.selectedContact);
         sequence.current += 1;
         setEntries((current) => [
           ...current,
-          { id: `assistant-${sequence.current}`, role: 'assistant', result },
+          { id: `assistant-${sequence.current}`, role: 'assistant', question: nextQuestion, result },
         ]);
       } catch {
         sequence.current += 1;
@@ -566,7 +631,7 @@ export function OmnixCopilot({
               {compact && greetingName ? `Hi ${greetingName}, I'm Omnix` : 'Ask Omnix'}
             </h2>
             <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-              Find client details, understand deal status, and prepare your next steps. Every answer links to its sources.
+              Find people, check a client, recap your week, and prepare texts and follow-ups. Every answer links to its sources.
             </p>
           </div>
         </div>
@@ -620,11 +685,13 @@ export function OmnixCopilot({
               </h3>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
                 {source === 'crm'
-                  ? 'Your clients, transactions, properties, and follow-up plans in one conversation. Choose a client from an answer to keep the next question in context.'
+                  ? selectedContact
+                    ? `Ask anything about ${selectedContact.name.split(' ')[0]} — or anyone else. I can also draft texts and set follow-ups for you to approve.`
+                    : 'Ask in your own words — about people, deals, your day or your week. I can also draft texts and set follow-ups for you to approve.'
                   : 'Ask a public research question. Client context stays in CRM mode.'}
               </p>
               <div className="mt-5 flex max-w-full flex-wrap justify-center gap-2" aria-label="Supported prompt examples">
-                {(source === 'crm' ? SUPPORTED_PROMPTS : WEB_PROMPTS).map((prompt) => (
+                {(source === 'crm' ? (selectedContact ? contactPrompts(selectedContact.name) : SUPPORTED_PROMPTS) : WEB_PROMPTS).map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
@@ -644,7 +711,12 @@ export function OmnixCopilot({
               </article>
             ) : entry.result ? (
               <div key={entry.id}>
-                <AssistantResult result={entry.result} />
+                <AssistantResult
+                  result={entry.result}
+                  confirm={confirm}
+                  feedback={feedback}
+                  onChooseContact={(contact) => { setSource('crm'); setSelectedContact(contact); sendQuestion(entry.question ?? entry.result!.question, contact); }}
+                />
                 {entry.result.citations.some((citation) => citation.entityType === 'contact') ? (
                   <div className="mt-3 flex flex-wrap gap-2 pl-1" aria-label="Choose a client for follow-up questions">
                     {entry.result.citations.filter((citation, index, all) => citation.entityType === 'contact'
@@ -697,11 +769,14 @@ export function OmnixCopilot({
               maxLength={200}
               disabled={isPending}
               autoComplete="off"
-              placeholder={source === 'crm' ? 'Ask about a client, a deal, or your next steps…' : 'Ask a public research question…'}
+              placeholder={source === 'crm' ? (selectedContact ? `Ask about ${selectedContact.name.split(' ')[0]}, or anything else…` : 'Ask about a client, your day, or who to call…') : 'Ask a public research question…'}
               className="min-h-11 min-w-0 flex-1 bg-transparent px-2 text-base text-ink outline-none placeholder:text-subtle disabled:cursor-wait"
               aria-invalid={composerError ? true : undefined}
               aria-describedby={composerError ? `${questionId}-error` : `${questionId}-help`}
             />
+            {source === 'crm' ? (
+              <VoiceDictation compact label="Ask by voice" onAppend={(spoken) => setQuestion((current) => appendDictation(current, spoken).slice(0, 200))} />
+            ) : null}
             <button
               type="submit"
               disabled={isPending || !question.trim()}

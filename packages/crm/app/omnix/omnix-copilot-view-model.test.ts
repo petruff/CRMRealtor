@@ -109,10 +109,11 @@ describe('mapOmnixCopilotEnvelope', () => {
     expect(result.answerBlocks[0]).toMatchObject({
       title: 'Try asking in one of these ways',
       items: [
-        { label: 'What are my priorities today?' },
-        { label: 'Who needs my attention?' },
-        { label: 'Which tasks are overdue?' },
-        { label: 'Show me my pipeline' },
+        { label: 'Who should I call first?' },
+        { label: 'Hot buyers I haven’t talked to in 2 weeks' },
+        { label: 'Tell me about Alicia' },
+        { label: 'Remind me to call Alicia tomorrow at 10' },
+        { label: 'What happened this week?' },
       ],
     });
   });

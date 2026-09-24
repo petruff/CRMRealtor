@@ -10,7 +10,7 @@ import { contextualOmnixQuestion, validateOmnixAssistantRequest } from '@/lib/ap
 import { routeOmnixQuestionWithGemini, type OmnixGeminiRouteResult } from '@/lib/application/omnix-gemini-router';
 import { routeOmnixQuestionWithClaude } from '@/lib/application/omnix-claude-router';
 import { createSupabaseOmnixAiBudgetAuthority } from '@/lib/application/omnix-ai-budget';
-import { OMNIX_AI_POLICY, OMNIX_AI_POLICY_VERSION } from '@/lib/application/omnix-ai-policy';
+import { estimateOmnixCostMicrousd, OMNIX_AI_POLICY, OMNIX_AI_POLICY_VERSION } from '@/lib/application/omnix-ai-policy';
 import {
   generateOmnixNarrative,
   type OmnixAiBudgetAuthority,
@@ -21,6 +21,15 @@ import { researchWithGemini, type OmnixResearchResult } from '@/lib/application/
 import { persistGeneratedOmnixProposals } from '@/lib/application/omnix-generated-proposal-persistence';
 import { loadWorkspaceAiRuntimeCredential, type WorkspaceAiCredential, type WorkspaceAiProvider } from '@/lib/application/workspace-ai-settings';
 import { getRepository } from '@/lib/data';
+import { understandOmnixQuestion } from '@/lib/domain/omnix-understanding';
+import {
+  confirmOmnixAssistantAction,
+  OmnixActionError,
+  parseOmnixActionConfirmation,
+  prepareOmnixAction,
+  type OmnixActionPreview,
+} from '@/lib/application/omnix-assistant-actions';
+import { revalidatePath } from 'next/cache';
 import {
   createOmnixCopilotCorrelationId,
   createOmnixCopilotErrorResponse,
@@ -194,6 +203,47 @@ function researchResultToUi(
   };
 }
 
+
+function omnixTimeZone(): string {
+  return process.env.OMNIX_TIME_ZONE?.trim() || 'America/New_York';
+}
+
+function localToday(now: Date): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: omnixTimeZone(), year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+}
+
+/** Answers that are already complete and plain; an AI summary would only add waiting time. */
+const SKIP_NARRATION = new Set(['segment', 'recap', 'find-contact', 'tasks', 'tasks-range', 'dates', 'pipeline', 'help', 'connections', 'mailers', 'campaigns', 'activity']);
+
+function actionMessage(preview: OmnixActionPreview): string {
+  if (preview.type === 'need-contact') return 'Who is this for? Include their name, or open their contact and ask again.';
+  if (preview.type === 'choose-contact') return 'I found more than one person with that name. Which one?';
+  if (preview.type === 'draft-text') return preview.person.phone
+    ? `Here are texts for ${preview.person.firstName}. Tap one to open it in Messages — you can edit before sending.`
+    : `${preview.person.name} has no phone number saved. Copy a message or add a number first.`;
+  if (preview.type === 'create-task') return 'Check the follow-up and tap Save. Nothing is saved until you do.';
+  return 'Check the note and tap Save. Nothing is saved until you do.';
+}
+
+function actionResultToUi(question: string, correlationId: string, asOf: string, dataMode: OmnixCopilotDataMode, preview: OmnixActionPreview): OmnixCopilotUiResult {
+  return {
+    status: preview.type === 'need-contact' ? 'unsupported' : 'success',
+    question,
+    correlationId,
+    intent: preview.type,
+    dataMode,
+    asOf,
+    answerBlocks: [],
+    citations: [],
+    suggestions: [],
+    alerts: [],
+    warnings: [],
+    message: actionMessage(preview),
+    action: preview,
+    ...('person' in preview ? { selectedContact: { id: preview.person.id, name: preview.person.name } } : {}),
+  };
+}
+
 export async function askOmnixCopilotAction(
   question: string,
   options?: OmnixCopilotRequestOptions,
@@ -243,7 +293,22 @@ export async function askOmnixCopilotAction(
       throw new OmnixCopilotError('not-found', 'That contact is no longer available in this workspace. Choose a contact again.');
     }
     const selectedContact = selected ? { id: selected.id, name: `${selected.firstName} ${selected.lastName}`.trim() } : undefined;
-    let routedQuestion = contextualOmnixQuestion(question, selectedContact?.id);
+    const understood = input.source === 'crm' ? understandOmnixQuestion(question, selectedContact?.id) : undefined;
+    if (understood?.kind === 'action') {
+      const preview = prepareOmnixAction({
+        action: understood.action,
+        question,
+        contacts: await context.repository.list(),
+        ...(selectedContact ? { selectedContactId: selectedContact.id } : {}),
+        today: localToday(now),
+      });
+      await emitOmnixCopilotTelemetry(defaultOmnixCopilotTelemetrySink, {
+        correlationId, workspaceId, membershipId, resolvedIntent: `action-${understood.action.type}`, mode: dataMode,
+        asOf: now.toISOString(), outcome: 'success', resultCount: 1, citationCount: 0, durationMs: Date.now() - startedAt,
+      });
+      return actionResultToUi(question, correlationId, now.toISOString(), dataMode, preview);
+    }
+    let routedQuestion = understood?.kind === 'query' ? understood.query : contextualOmnixQuestion(question, selectedContact?.id);
     try {
       if (input.source === 'public-web') throw new OmnixCopilotError('unsupported-intent', 'Public research requires a separate public question.');
       createOmnixCopilotRequest({ command: 'ask', question: routedQuestion, live: context.isLive, correlationId, now });
@@ -334,7 +399,20 @@ export async function askOmnixCopilotAction(
       credential = await loadOmnixCredential(context.workspaceScope);
     }
     modelProvider = credential?.provider ?? modelProvider;
-    if (!credential || credential.provider !== 'google-gemini' || !context.isLive) {
+    if (!credential || credential.provider !== 'google-gemini' || !context.isLive || SKIP_NARRATION.has(request.intent.kind)) {
+      if (budget && reservationId && !reservationDelegated) {
+        // Routing succeeded and the answer needs no summary: close the receipt with the measured routing usage.
+        reservationDelegated = true;
+        const inputTokens = modelRoute?.inputTokens ?? 0;
+        const outputTokens = Math.min(OMNIX_AI_POLICY.maxOutputTokens, modelRoute?.outputTokens ?? 0);
+        await budget.finalize({
+          reservationId,
+          state: 'succeeded',
+          inputTokens,
+          outputTokens,
+          actualCostMicrousd: Math.min(OMNIX_AI_POLICY.perRunBudgetMicrousd, estimateOmnixCostMicrousd(inputTokens, outputTokens)),
+        }).catch(() => undefined);
+      }
       return modelRoute ? {
         ...mapped,
         model: {
@@ -423,25 +501,73 @@ export async function askOmnixCopilotAction(
   }
 }
 
+
+export interface OmnixActionConfirmState {
+  readonly status: 'idle' | 'saved' | 'error';
+  readonly message?: string;
+  readonly href?: string;
+}
+
+/** Saves a reviewed follow-up or note. Called only from an explicit Save tap. */
+export async function confirmOmnixActionAction(payload: unknown): Promise<OmnixActionConfirmState> {
+  try {
+    const confirmation = parseOmnixActionConfirmation(payload);
+    const context = await getRepository();
+    if (!context.isLive) return { status: 'saved', message: 'Preview only — sample data is never changed.', href: `/contacts/${encodeURIComponent(confirmation.contactId)}` };
+    const result = await confirmOmnixAssistantAction({
+      repository: context.repository,
+      ...(context.activityRepository ? { activityRepository: context.activityRepository } : {}),
+      workspaceScope: context.workspaceScope,
+      timeZone: omnixTimeZone(),
+    }, confirmation);
+    revalidatePath(`/contacts/${confirmation.contactId}`);
+    revalidatePath('/');
+    return { status: 'saved', message: result.message, href: result.href };
+  } catch (error) {
+    if (error instanceof OmnixActionError) return { status: 'error', message: error.message };
+    console.error('[omnix:action]', error instanceof Error ? error.name : 'unknown');
+    return { status: 'error', message: 'That couldn’t be saved. Nothing was changed.' };
+  }
+}
+
+/**
+ * Records whether an answer helped. Only the answer type and a random answer id
+ * are logged — never the question, names or CRM content.
+ */
+export async function recordOmnixFeedbackAction(input: unknown): Promise<void> {
+  if (!input || typeof input !== 'object') return;
+  const value = input as Record<string, unknown>;
+  const helpful = value.helpful === true ? true : value.helpful === false ? false : undefined;
+  const intent = typeof value.intent === 'string' && /^[a-z][a-z-]{1,40}$/u.test(value.intent) ? value.intent : 'unknown';
+  const correlationId = typeof value.correlationId === 'string' && /^[A-Za-z0-9-]{8,80}$/u.test(value.correlationId) ? value.correlationId : undefined;
+  if (helpful === undefined) return;
+  console.info(JSON.stringify({ event: 'omnix.assistant.feedback', helpful, intent, ...(correlationId ? { correlationId } : {}) }));
+}
+
 export interface OmnixAssistantProfile {
   readonly available: boolean;
   readonly firstName?: string;
   readonly dataMode: OmnixCopilotDataMode;
+  /** The contact open on screen, when the assistant was opened from a contact record. */
+  readonly contact?: { readonly id: string; readonly name: string };
 }
 
 /**
  * Returns only the minimum identity needed for a friendly greeting. The email
  * address and provider metadata never cross into the assistant surface.
  */
-export async function getOmnixAssistantProfileAction(): Promise<OmnixAssistantProfile> {
+export async function getOmnixAssistantProfileAction(contactId?: unknown): Promise<OmnixAssistantProfile> {
   try {
     const context = await getRepository();
     const normalized = context.userDisplayName?.trim().replace(/\s+/gu, ' ');
     const firstName = normalized?.split(' ')[0]?.slice(0, 120);
+    const id = typeof contactId === 'string' && /^[A-Za-z0-9._:-]{1,128}$/u.test(contactId) ? contactId : undefined;
+    const contact = id ? await context.repository.get(id).catch(() => undefined) : undefined;
     return {
       available: true,
       ...(firstName ? { firstName } : {}),
       dataMode: context.isLive ? 'live' : 'sample',
+      ...(contact && !contact.archivedAt ? { contact: { id: contact.id, name: `${contact.preferredName ?? contact.firstName} ${contact.lastName}`.trim() } } : {}),
     };
   } catch {
     return {

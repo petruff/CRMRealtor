@@ -67,6 +67,7 @@ export function VoiceDictation({
   onAppend,
   lang = 'en-US',
   label = 'Dictate',
+  compact = false,
 }: {
   /** Id of an uncontrolled textarea/input to append into. */
   targetId?: string;
@@ -74,6 +75,8 @@ export function VoiceDictation({
   onAppend?: (spoken: string) => void;
   lang?: string;
   label?: string;
+  /** Icon-only button (label stays available to screen readers). */
+  compact?: boolean;
 }) {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
@@ -127,7 +130,7 @@ export function VoiceDictation({
   if (!supported) return null;
 
   return (
-    <div className="ox-dictation">
+    <div className={`ox-dictation${compact ? ' is-compact' : ''}`}>
       <button
         type="button"
         className={`ox-dictation-button ${listening ? 'is-listening' : ''}`}
@@ -136,7 +139,7 @@ export function VoiceDictation({
         aria-label={listening ? 'Stop dictation' : label}
       >
         {listening ? <Square className="size-3.5" aria-hidden /> : <Mic className="size-4" aria-hidden />}
-        <span>{listening ? 'Listening… tap to stop' : label}</span>
+        <span className={compact ? 'sr-only' : undefined}>{listening ? 'Listening… tap to stop' : label}</span>
       </button>
       <span className="ox-dictation-status" aria-live="polite">
         {error ? <span className="text-hot">{error}</span> : interim ? <span className="italic text-muted">{interim}</span> : null}

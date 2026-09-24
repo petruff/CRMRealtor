@@ -37,7 +37,7 @@ describe('bounded Omnix canonical module reads', () => {
   it('separates contact relationship status from transaction lifecycle without reading raw notes', async () => {
     const f = await fixture(); const noteRead = vi.spyOn(f.context.repository, 'notesFor');
     const response = await readOmnixModules(f.context, scope, { kind: 'client-status', query: f.contact.id }, asOf);
-    expect(response.answerBlocks.find((row) => row.id === 'module-contacts')?.items[0]?.detail).toContain(`Relationship stage: ${f.contact.pipelineStage}`);
+    expect(response.answerBlocks.find((row) => row.id === 'module-contacts')?.items[0]?.detail).toContain('Stage: ');
     expect(response.answerBlocks.find((row) => row.id === 'module-transactions')?.items[0]?.detail).toContain('Transaction: under-contract');
     expect(response.answerBlocks.flatMap((row) => row.citations).some((row) => row.entityType === 'transaction')).toBe(true);
     expect(response.warnings.map((row) => row.code)).toContain('tasks-unavailable');
