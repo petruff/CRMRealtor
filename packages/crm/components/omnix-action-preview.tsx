@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { ArrowUpRight, CalendarPlus, Check, Copy, MessageSquare, NotebookPen, Phone, UserRound } from 'lucide-react';
+import { ArrowUpRight, CalendarPlus, Check, Copy, MessageSquare, NotebookPen, Phone, Sparkles, UserRound } from 'lucide-react';
 import type { OmnixActionPreview } from '@/lib/application/omnix-assistant-actions';
 
 export interface OmnixActionConfirmResult {
@@ -135,6 +135,39 @@ function NoteForm({ preview, confirm }: { preview: Extract<OmnixActionPreview, {
   );
 }
 
+function VoiceUpdateForm({ preview, confirm }: { preview: Extract<OmnixActionPreview, { type: 'voice-update' }>; confirm: OmnixConfirmAction }) {
+  const [pending, startTransition] = useTransition();
+  const [keep, setKeep] = useState<Set<string>>(() => new Set(preview.changes.map((change) => change.field)));
+  const [saveNote, setSaveNote] = useState(true);
+  const [result, setResult] = useState<OmnixActionConfirmResult>({ status: 'idle' });
+  if (result.status === 'saved') return <Saved result={result} />;
+  return (
+    <form className="omnix-action-form" onSubmit={(event) => {
+      event.preventDefault();
+      startTransition(async () => { setResult(await confirm({ type: 'voice-update', contactId: preview.person.id, text: preview.note, keep: [...keep], saveNote })); });
+    }}>
+      <ul className="grid gap-2">
+        {preview.changes.map((change) => (
+          <li key={change.field}>
+            <label className="ox-voice-change">
+              <input type="checkbox" checked={keep.has(change.field)} onChange={(event) => setKeep((current) => { const next = new Set(current); if (event.target.checked) next.add(change.field); else next.delete(change.field); return next; })} />
+              <span className="min-w-0 flex-1"><span className="block text-sm font-medium text-ink">{change.label}: {change.before ? <><s className="text-subtle">{change.before}</s> → </> : null}{change.after}</span><span className="block text-xs text-subtle">From “{change.evidence}”</span></span>
+            </label>
+          </li>
+        ))}
+        <li>
+          <label className="ox-voice-change">
+            <input type="checkbox" checked={saveNote} onChange={(event) => setSaveNote(event.target.checked)} />
+            <span className="min-w-0 flex-1"><span className="block text-sm font-medium text-ink">Save as a note</span><span className="block text-xs text-subtle">{preview.note}</span></span>
+          </label>
+        </li>
+      </ul>
+      <div><SaveButton pending={pending} label="Save update" /></div>
+      {result.status === 'error' ? <p role="alert" className="text-sm text-hot">{result.message}</p> : null}
+    </form>
+  );
+}
+
 export function OmnixActionPreviewCard({ preview, confirm, onChooseContact }: {
   preview: OmnixActionPreview;
   confirm: OmnixConfirmAction;
@@ -152,9 +185,9 @@ export function OmnixActionPreviewCard({ preview, confirm, onChooseContact }: {
       </div>
     );
   }
-  const Icon = preview.type === 'draft-text' ? MessageSquare : preview.type === 'create-task' ? CalendarPlus : NotebookPen;
+  const Icon = preview.type === 'draft-text' ? MessageSquare : preview.type === 'create-task' ? CalendarPlus : preview.type === 'voice-update' ? Sparkles : NotebookPen;
   return (
-    <section className="omnix-action-card" aria-label={preview.type === 'draft-text' ? 'Draft texts' : preview.type === 'create-task' ? 'New follow-up' : 'New note'}>
+    <section className="omnix-action-card" aria-label={preview.type === 'draft-text' ? 'Draft texts' : preview.type === 'create-task' ? 'New follow-up' : preview.type === 'voice-update' ? 'Contact update' : 'New note'}>
       <header className="flex items-center gap-2">
         <span className="grid size-7 place-items-center rounded-full bg-accent-soft text-accent"><Icon className="size-3.5" aria-hidden /></span>
         <p className="text-sm font-semibold text-ink">{preview.person.name}</p>
@@ -162,6 +195,7 @@ export function OmnixActionPreviewCard({ preview, confirm, onChooseContact }: {
       {preview.type === 'draft-text' ? <DraftTexts preview={preview} /> : null}
       {preview.type === 'create-task' ? <TaskForm preview={preview} confirm={confirm} /> : null}
       {preview.type === 'log-note' ? <NoteForm preview={preview} confirm={confirm} /> : null}
+      {preview.type === 'voice-update' ? <VoiceUpdateForm preview={preview} confirm={confirm} /> : null}
     </section>
   );
 }

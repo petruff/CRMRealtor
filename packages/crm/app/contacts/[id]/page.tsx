@@ -73,6 +73,10 @@ import { RichContactWorkspace, type HouseholdView } from "@/components/rich-cont
 import { GoogleEmailComposer } from "@/components/google-email-composer";
 import { TextingComposer } from "@/components/texting-composer";
 import { QuickTexts } from "@/components/quick-texts";
+import { RelationshipMemoryCard } from "@/components/relationship-memory-card";
+import { VoiceUpdate } from "@/components/voice-update";
+import { applyVoiceUpdateAction, reviewVoiceUpdateAction } from "@/app/contacts/voice-update-actions";
+import { extractMemoryFacts } from "@/lib/domain/relationship-memory";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { supabaseGoogleOperationRepository } from "@/lib/data/supabase-google-operation-repository";
 import { googleEmailReadiness, type GoogleEmailReadiness } from "@/lib/application/google-email-readiness";
@@ -162,6 +166,7 @@ export default async function ContactDetailPage({
     repository.notesFor(id),
     repository.notesFor(id, { archivedOnly: true }),
   ]);
+  const memoryFacts = extractMemoryFacts(notes);
   const [events, tasks, allContacts, members, contactMilestones, propertyBehaviors] = await Promise.all([
     listActivityEventsCommand(activityRepository, workspaceScope, {
       contactId: id,
@@ -366,6 +371,7 @@ export default async function ContactDetailPage({
         <Link href={contactEditHref(id, recordNavigation.context)} className="sk-text-action">
           <Pencil className="size-4" /> Edit
         </Link>
+        <VoiceUpdate contactId={contact.id} firstName={contact.preferredName ?? contact.firstName} review={reviewVoiceUpdateAction} apply={applyVoiceUpdateAction} initiallyOpen={reply === 'voice'} />
       </div> : null}
 
       {!archived && !googleEmailPoint && !contact.email ? (
@@ -404,6 +410,8 @@ export default async function ContactDetailPage({
           Business texting is not ready yet. The workspace owner still needs to finish carrier registration and one final delivery test. Device Messages remains available separately.
         </p>
       ) : null}
+
+      <RelationshipMemoryCard facts={memoryFacts} firstName={contact.preferredName ?? contact.firstName} />
 
       {/* Cadence */}
       <GroupedSurface className="mt-10">

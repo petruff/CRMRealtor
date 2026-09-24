@@ -222,6 +222,7 @@ function actionMessage(preview: OmnixActionPreview): string {
     ? `Here are texts for ${preview.person.firstName}. Tap one to open it in Messages — you can edit before sending.`
     : `${preview.person.name} has no phone number saved. Copy a message or add a number first.`;
   if (preview.type === 'create-task') return 'Check the follow-up and tap Save. Nothing is saved until you do.';
+  if (preview.type === 'voice-update') return `Here’s what I’ll update for ${preview.person.firstName}. Uncheck anything that’s wrong, then tap Save.`;
   return 'Check the note and tap Save. Nothing is saved until you do.';
 }
 

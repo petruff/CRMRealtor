@@ -96,7 +96,7 @@ const RESULT_BATCH_SIZE = 6;
 const INTENT_LABELS: Record<string, string> = {
   alerts: 'Who needs you', brief: 'Your day', 'web-research': 'Web research', segment: 'People', recap: 'Recap',
   'contact-profile': 'Contact', 'client-status': 'Client status', 'find-contact': 'Search', 'draft-text': 'Draft texts',
-  'create-task': 'New follow-up', 'log-note': 'New note', 'choose-contact': 'Which person?', 'need-contact': 'Which person?',
+  'create-task': 'New follow-up', 'log-note': 'New note', 'voice-update': 'Contact update', 'choose-contact': 'Which person?', 'need-contact': 'Which person?',
   tasks: 'Follow-ups', 'tasks-range': 'Follow-ups', dates: 'Dates', 'workspace-overview': 'Overview', organization: 'Organize',
 };
 
