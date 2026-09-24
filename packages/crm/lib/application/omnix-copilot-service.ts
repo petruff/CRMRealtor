@@ -16,6 +16,7 @@ import {
 import {
   displayName,
   LEAD_TYPE_LABEL,
+  INTENT_LABEL,
   PIPELINE_LABEL,
   RELATIONSHIP_LABEL,
   SOURCE_LABEL,
@@ -63,6 +64,7 @@ import {
   type OmnixCopilotTelemetrySink,
 } from '../observability/omnix-copilot-telemetry.ts';
 import { activityEventLabel } from '../presentation/activity-feed.ts';
+import { applySegment, describeSegment, type OmnixSegmentFilter } from '../domain/omnix-segment.ts';
 import { readOmnixModules, OMNIX_MODULE_INTENTS, type OmnixModuleRepositories } from './omnix-copilot-module-reads.ts';
 
 export const OMNIX_COPILOT_RESULT_MAX = 500;
@@ -918,8 +920,8 @@ function findContactResult(contacts: readonly Contact[], query: string, asOf: st
       matches.length ? 'list' : 'empty',
       'Contact results',
       matches.length
-        ? `Applied deterministic contact query “${query}”.`
-        : `Applied deterministic contact query “${query}”; no authorized record matched.`,
+        ? `People matching “${query}”.`
+        : `No one matches “${query}”. Try a first or last name.`,
       items,
     )],
     warnings: boundedWarning(bounded),
@@ -936,7 +938,8 @@ async function contactProfileResult(
   asOf: string,
   bounded: boolean,
 ): Promise<ReadResult> {
-  const matches = queryContacts(contacts, { query, scope: 'all' }).slice(0, 6);
+  const exact = contacts.find((contact) => contact.id === query && !contact.archivedAt);
+  const matches = exact ? [exact] : queryContacts(contacts, { query, scope: 'all' }).slice(0, 6);
   if (matches.length !== 1) {
     const base = findContactResult(contacts, query, asOf, bounded);
     return {
@@ -956,14 +959,20 @@ async function contactProfileResult(
     'intent', 'source', 'pipelineStage', 'mailingAddress', 'state', 'birthdate',
     'homePurchaseDate', 'buyer', 'seller', 'nextTouchAt', 'lastContactedAt', 'emailSubscribed',
   ], asOf, 'contact-profile');
+  const today = asOf.slice(0, 10);
   const coreItems = [
-    ['Relationship', `${contact.relationship} · ${contact.leadType} · ${contact.intent}`],
-    ['Pipeline', `${contact.pipelineStage} · source ${contact.source}`],
-    ['Contact', [contact.email, contact.phone, contact.secondaryPhone].filter(Boolean).join(' · ') || 'No stored email or phone'],
-    ['Address', [contact.mailingAddress, contact.city, contact.state, contact.postalCode].filter(Boolean).join(', ') || 'No stored mailing address'],
-    ['Follow-up', `Last contact ${contact.lastContactedAt ?? 'not stored'} · next touch ${contact.nextTouchAt ?? 'not stored'}`],
-    ['Preferences', JSON.stringify({ buyer: contact.buyer ?? null, seller: contact.seller ?? null, tags: contact.tags })],
-  ].map(([label, detail], index) => ({ id: `profile-core-${index}`, label: label!, detail, href: identifierTarget('contact', contact.id), citations: [citation] }));
+    ['Relationship', `${LEAD_TYPE_LABEL[contact.leadType]} · ${RELATIONSHIP_LABEL[contact.relationship]} · ${INTENT_LABEL[contact.intent]}`],
+    ['Pipeline', `${PIPELINE_LABEL[contact.pipelineStage]} · from ${SOURCE_LABEL[contact.source]}`],
+    ['Phone & email', [contact.phone, contact.secondaryPhone, contact.email].filter(Boolean).join(' · ') || 'No phone or email saved'],
+    ['Address', [contact.mailingAddress, contact.city, contact.state, contact.postalCode].filter(Boolean).join(', ') || 'No address saved'],
+    ['Follow-up', `${contact.lastContactedAt ? `Last talked ${friendlyDay(contact.lastContactedAt, today)}` : 'Never contacted'} · ${contact.nextTouchAt ? `next follow-up ${friendlyDay(contact.nextTouchAt, today)}` : 'no follow-up set'}`],
+    ['Dates', [contact.birthdate ? `Birthday ${friendlyMonthDay(contact.birthdate)}` : undefined, contact.homePurchaseDate ? `Home anniversary ${friendlyMonthDay(contact.homePurchaseDate)}` : undefined].filter(Boolean).join(' · ') || 'No birthday or home anniversary saved'],
+    ['Looking for', criteriaSummary(contact) || 'No home criteria saved'],
+    ...(contact.tags.length ? [['Tags', contact.tags.join(', ')]] : []),
+  ].map(([label, detail], index) => ({
+    id: `profile-core-${index}`, label: label!, detail, href: identifierTarget('contact', contact.id), citations: [citation],
+    ...(index === 0 ? { contact: personOf(contact) } : {}),
+  }));
 
   const [notes, points, relationships, assignments, definitions, values, events, tasks] = await Promise.all([
     context.repository.notesFor(contact.id),
@@ -983,21 +992,21 @@ async function contactProfileResult(
     ...assignments.map((assignment) => ({ id: `assignment-${assignment.id}`, label: 'Assigned member', detail: assignment.assigneeMembershipId, citations: [relatedCitation] })),
     ...values.map((value) => ({ id: `custom-${value.id}`, label: valueNames.get(value.definitionId) ?? 'Custom field', detail: String(value.value), citations: [relatedCitation] })),
   ].slice(0, 40);
-  const noteItems = notes.slice(0, 20).map((note) => ({ id: note.id, label: note.body, detail: note.createdAt, citations: [relatedCitation] }));
+  const noteItems = notes.slice(0, 20).map((note) => ({ id: note.id, label: note.body, detail: friendlyDay(note.createdAt, today), citations: [relatedCitation] }));
   const activityItems = [
-    ...tasks.map((task) => ({ id: task.id, label: `Task · ${task.title}`, detail: `${task.status} · ${task.dueAt}`, href: identifierTarget('task', task.id), citations: [taskCitation(task, TASK_LIST_FACT_KEYS, asOf)] })),
-    ...events.map((event) => ({ id: event.id, label: `Activity · ${event.type}`, detail: event.occurredAt, href: identifierTarget('contact', contact.id), citations: [activityCitation(event, asOf)] })),
+    ...tasks.map((task) => ({ id: task.id, label: `Follow-up · ${task.title}`, detail: `${task.status === 'open' ? 'Open' : task.status === 'completed' ? 'Done' : task.status} · due ${friendlyDay(task.dueAt, today)}`, href: identifierTarget('task', task.id), citations: [taskCitation(task, TASK_LIST_FACT_KEYS, asOf)] })),
+    ...events.map((event) => ({ id: event.id, label: activityEventLabel(event.type), detail: friendlyDay(event.occurredAt, today), href: identifierTarget('contact', contact.id), citations: [activityCitation(event, asOf)] })),
   ].slice(0, 40);
 
   return {
     answerBlocks: [
-      block('contact-profile', 'list', displayName(contact), 'Authorized stored profile facts. Empty values are identified rather than inferred.', coreItems),
-      block(relatedItems.length ? 'contact-profile-related' : 'contact-profile-related-empty', relatedItems.length ? 'list' : 'empty', 'Contact points, relationships and custom fields', relatedItems.length ? 'Canonical rich-contact records.' : 'No additional rich-contact records are stored.', relatedItems),
-      block(noteItems.length ? 'contact-profile-notes' : 'contact-profile-notes-empty', noteItems.length ? 'list' : 'empty', 'Notes', noteItems.length ? 'Stored append-only notes.' : 'No notes are stored.', noteItems),
-      block(activityItems.length ? 'contact-profile-work' : 'contact-profile-work-empty', activityItems.length ? 'list' : 'empty', 'Tasks and activity', activityItems.length ? 'Latest authorized tasks and activity.' : 'No tasks or activity are stored.', activityItems),
+      block('contact-profile', 'list', displayName(contact), 'What’s saved in your CRM. Missing details are marked, never guessed.', coreItems),
+      ...(relatedItems.length ? [block('contact-profile-related', 'list', 'More contact details', 'Extra numbers, emails, relationships and custom fields.', relatedItems)] : []),
+      block(noteItems.length ? 'contact-profile-notes' : 'contact-profile-notes-empty', noteItems.length ? 'list' : 'empty', 'Notes', noteItems.length ? 'Latest notes first.' : 'No notes yet.', noteItems),
+      block(activityItems.length ? 'contact-profile-work' : 'contact-profile-work-empty', activityItems.length ? 'list' : 'empty', 'Follow-ups and activity', activityItems.length ? 'Latest follow-ups and activity.' : 'No follow-ups or activity yet.', activityItems),
     ],
     warnings: boundedWarning(bounded),
-    suggestions: [reviewSuggestion('review-contact-profile', 'Open full contact record', 'Review and edit through the governed contact screen.', identifierTarget('contact', contact.id), [citation])],
+    suggestions: [reviewSuggestion('review-contact-profile', 'Open full contact record', 'See everything and make changes.', identifierTarget('contact', contact.id), [citation])],
   };
 }
 
@@ -1303,6 +1312,8 @@ async function dispatch(
   if (intent.kind === 'contact-profile') return contactProfileResult(context, contacts, intent.query, request.asOf, bounded);
   if (intent.kind === 'pipeline') return pipelineResult(contacts, request.asOf, bounded);
   if (intent.kind === 'dates') return datesResult(contacts, intent.window, configuredToday, request.asOf);
+  if (intent.kind === 'segment') return segmentResult(contacts, intent.filter, configuredToday, request.asOf, bounded);
+  if (intent.kind === 'recap') return recapResult(context, scope, contacts, intent.window, configuredToday, request.asOf, timeZone);
   const tasks = context.activityRepository
     ? await openTasks(context.activityRepository, scope, asOfDate)
     : [];
@@ -1342,6 +1353,158 @@ async function dispatch(
     );
   }
   throw new OmnixCopilotError('unsupported-intent', 'The resolved copilot intent is unsupported.');
+}
+
+
+
+function friendlyDay(value: string, today: string): string {
+  const time = Date.parse(value.length === 10 ? `${value}T12:00:00Z` : value);
+  if (Number.isNaN(time)) return value;
+  const day = new Date(time).toISOString().slice(0, 10);
+  const diff = Math.round((Date.parse(`${day}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+  const label = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', ...(day.slice(0, 4) !== today.slice(0, 4) ? { year: 'numeric' } : {}), timeZone: 'UTC' }).format(new Date(`${day}T12:00:00Z`));
+  if (diff === 0) return `today (${label})`;
+  if (diff === -1) return `yesterday (${label})`;
+  if (diff === 1) return `tomorrow (${label})`;
+  return diff < 0 ? `${label} (${-diff} days ago)` : `${label} (in ${diff} days)`;
+}
+
+function friendlyMonthDay(value: string): string {
+  const date = new Date(`${value.slice(0, 10)}T12:00:00Z`);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }).format(date);
+}
+
+function money(value: number | undefined): string | undefined {
+  return value === undefined ? undefined : `$${Math.round(value).toLocaleString('en-US')}`;
+}
+
+function criteriaSummary(contact: Contact): string {
+  const buyer = contact.buyer;
+  const seller = contact.seller;
+  const parts = [
+    buyer ? [
+      buyer.priceMin || buyer.priceMax ? `Budget ${[money(buyer.priceMin), money(buyer.priceMax)].filter(Boolean).join('–')}` : undefined,
+      buyer.areas?.length ? `in ${buyer.areas.join(', ')}` : undefined,
+      buyer.beds ? `${buyer.beds}+ beds` : undefined,
+      buyer.baths ? `${buyer.baths}+ baths` : undefined,
+      buyer.desiredPropertyType,
+      buyer.preApproved ? 'pre-approved' : buyer.preApproved === false ? 'not pre-approved yet' : undefined,
+      buyer.timeline ? `timeline ${buyer.timeline}` : undefined,
+    ].filter(Boolean).join(', ') : undefined,
+    seller ? [
+      seller.propertyAddress ? `Selling ${seller.propertyAddress}` : 'Selling',
+      money(seller.targetPrice) ? `target ${money(seller.targetPrice)}` : undefined,
+      seller.timeline ? `timeline ${seller.timeline}` : undefined,
+      seller.motivation,
+    ].filter(Boolean).join(', ') : undefined,
+  ].filter((part): part is string => Boolean(part && part !== 'Selling'));
+  return parts.join(' · ');
+}
+
+const SEGMENT_RESULT_LIMIT = 50;
+
+function personOf(contact: Contact): NonNullable<OmnixCopilotAnswerItem['contact']> {
+  const firstName = (contact.preferredName ?? contact.firstName).trim() || displayName(contact);
+  return { id: contact.id, name: displayName(contact), firstName, ...(contact.phone ? { phone: contact.phone } : {}) };
+}
+
+function segmentResult(contacts: readonly Contact[], filter: OmnixSegmentFilter, today: string, asOf: string, bounded: boolean): ReadResult {
+  const matches = applySegment(contacts, filter, today);
+  const described = describeSegment(filter);
+  const shown = matches.slice(0, SEGMENT_RESULT_LIMIT);
+  const items = shown.map(({ contact, reasons }) => ({
+    id: `segment-${contact.id}`,
+    label: displayName(contact),
+    detail: [...reasons, LEAD_TYPE_LABEL[contact.leadType], contact.city].filter(Boolean).join(' · '),
+    href: identifierTarget('contact', contact.id),
+    contact: personOf(contact),
+    citations: [contactCitation(contact, ['leadType', 'relationship', 'intent', 'pipelineStage', 'source', 'city', 'lastContactedAt', 'birthdate', 'homePurchaseDate', 'nextTouchAt'], asOf, 'segment')],
+  }));
+  const count = matches.length;
+  const headline = count === 0
+    ? `No ${described} right now.`
+    : `You have ${count} ${count === 1 ? described.replace(/^(.*?)(leads|buyers|sellers|investors|renters|clients|contacts|people)\b/u, (_all, before: string, noun: string) => `${before}${({ leads: 'lead', buyers: 'buyer', sellers: 'seller', investors: 'investor', renters: 'renter', clients: 'client', contacts: 'contact', people: 'person' } as Record<string, string>)[noun] ?? noun}`) : described}${count > shown.length ? ` — here are the first ${shown.length}` : ''}.`;
+  return {
+    answerBlocks: [block(
+      count ? 'segment-results' : 'segment-results-empty',
+      count ? 'list' : 'empty',
+      count === 1 ? '1 match' : `${count} matches`,
+      headline,
+      items,
+    )],
+    warnings: boundedWarning(bounded),
+    suggestions: count ? [reviewSuggestion('review-people', 'Open People', 'Work through them in your People list.', '/contacts', items.slice(0, 12).flatMap((item) => item.citations))] : [],
+  };
+}
+
+const RECAP_DAYS: Record<'today' | 'yesterday' | 'week' | 'month', readonly [number, number]> = {
+  today: [0, 0], yesterday: [1, 1], week: [6, 0], month: [29, 0],
+};
+
+async function recapResult(
+  context: OmnixCopilotRepositoryContext,
+  scope: WorkspaceScope,
+  contacts: readonly Contact[],
+  window: 'today' | 'yesterday' | 'week' | 'month',
+  today: string,
+  asOf: string,
+  timeZone: string | undefined,
+): Promise<ReadResult> {
+  const [startBack, endBack] = RECAP_DAYS[window];
+  const shift = (days: number) => { const date = new Date(`${today}T12:00:00Z`); date.setUTCDate(date.getUTCDate() - days); return date.toISOString().slice(0, 10); };
+  const fromDay = shift(startBack); const toDay = shift(endBack);
+  const inWindow = (instant: string | undefined) => {
+    if (!instant) return false;
+    const day = calendarDateAt(new Date(instant), timeZone);
+    return day >= fromDay && day <= toDay;
+  };
+  const events = context.activityRepository
+    ? await listActivityEventsCommand(context.activityRepository, scope, {
+      from: new Date(Date.parse(`${fromDay}T00:00:00Z`) - 86_400_000).toISOString(),
+      to: new Date(Date.parse(`${toDay}T23:59:59Z`) + 86_400_000).toISOString(),
+      limit: OMNIX_COPILOT_RESULT_MAX,
+    }).then((list) => list.filter((event) => inWindow(event.occurredAt)))
+    : [];
+  const byId = new Map(contacts.map((contact) => [contact.id, contact]));
+  const added = contacts.filter((contact) => !contact.archivedAt && inWindow(contact.createdAt));
+  const talked = contacts.filter((contact) => inWindow(contact.lastContactedAt));
+  const count = (types: readonly string[]) => events.filter((event) => types.includes(event.type)).length;
+  const label = window === 'today' ? 'Today' : window === 'yesterday' ? 'Yesterday' : window === 'week' ? 'Last 7 days' : 'Last 30 days';
+  const metrics = [
+    { id: 'recap-new', label: 'New contacts', value: added.length },
+    { id: 'recap-conversations', label: 'Conversations', value: Math.max(talked.length, count(['touch-recorded'])) },
+    { id: 'recap-notes', label: 'Notes', value: count(['note-added']) },
+    { id: 'recap-done', label: 'Follow-ups done', value: count(['task-completed']) },
+    { id: 'recap-created', label: 'Follow-ups set', value: count(['task-created']) },
+    { id: 'recap-stage', label: 'Stage moves', value: count(['pipeline-stage-changed']) },
+  ].map((item) => ({ ...item, citations: [] as OmnixCopilotCitation[] }));
+  const people = [...new Map([...added, ...talked].map((contact) => [contact.id, contact])).values()].slice(0, 12).map((contact) => ({
+    id: `recap-person-${contact.id}`,
+    label: displayName(contact),
+    detail: [inWindow(contact.createdAt) ? 'New' : undefined, inWindow(contact.lastContactedAt) ? 'Talked' : undefined, LEAD_TYPE_LABEL[contact.leadType]].filter(Boolean).join(' · '),
+    href: identifierTarget('contact', contact.id),
+    contact: personOf(contact),
+    citations: [contactCitation(contact, ['createdAt', 'lastContactedAt'], asOf, 'recap')],
+  }));
+  const moved = events.filter((event) => event.type === 'pipeline-stage-changed' && event.contactId && byId.has(event.contactId)).slice(0, 8).map((event) => {
+    const contact = byId.get(event.contactId!)!;
+    return {
+      id: `recap-move-${event.id}`,
+      label: displayName(contact),
+      detail: `Moved to ${String(event.metadata?.pipelineStage ?? event.metadata?.toStage ?? 'a new stage').replaceAll('-', ' ')}`,
+      href: identifierTarget('contact', contact.id),
+      citations: [activityCitation(event, asOf)],
+    };
+  });
+  const total = metrics.reduce((sum, item) => sum + Number(item.value), 0);
+  return {
+    answerBlocks: [
+      block('recap-metrics', 'metric', label, total ? `Here’s what moved ${window === 'today' ? 'today' : window === 'yesterday' ? 'yesterday' : `in the ${label.toLowerCase()}`}.` : 'Quiet stretch — nothing was recorded in this window.', metrics),
+      ...(people.length ? [block('recap-people', 'list', 'People you worked with', 'New contacts and conversations in this window.', people)] : []),
+      ...(moved.length ? [block('recap-moves', 'list', 'Pipeline moves', 'Stage changes recorded in this window.', moved)] : []),
+    ],
+    suggestions: [reviewSuggestion('review-activity', 'Open activity', 'See every recorded step.', '/activities', people.flatMap((item) => item.citations))],
+  };
 }
 
 function responseCitations(result: ReadResult): OmnixCopilotCitation[] {

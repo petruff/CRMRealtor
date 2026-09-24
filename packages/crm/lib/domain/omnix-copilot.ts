@@ -1,3 +1,4 @@
+import { OmnixSegmentError, parseSegmentQuery, type OmnixSegmentFilter } from './omnix-segment.ts';
 export const OMNIX_COPILOT_SCHEMA_VERSION = 'omnix-copilot.v1' as const;
 export const OMNIX_CITATION_SCHEMA_VERSION = 'citation.v1' as const;
 export const OMNIX_COPILOT_QUESTION_MAX = 200;
@@ -34,6 +35,10 @@ export const OMNIX_COPILOT_SUPPORTED_EXAMPLES = [
   'activity contact-sample-1',
   'connections',
   'email campaigns',
+  'segment leadType=hot; relationship=lead',
+  'segment intent=buyer; noContactDays=14',
+  'segment birthdayWithinDays=7',
+  'recap week',
   'help',
 ] as const;
 
@@ -81,6 +86,8 @@ export type OmnixCopilotIntent =
   | Readonly<{ kind: 'activity'; contactId: string }>
   | Readonly<{ kind: 'connections' }>
   | Readonly<{ kind: 'campaigns' }>
+  | Readonly<{ kind: 'segment'; filter: OmnixSegmentFilter }>
+  | Readonly<{ kind: 'recap'; window: 'today' | 'yesterday' | 'week' | 'month' }>
   | Readonly<{ kind: 'help' }>;
 
 export interface OmnixCopilotRequest {
@@ -116,6 +123,8 @@ export interface OmnixCopilotAnswerItem {
   readonly detail?: string;
   readonly value?: string | number;
   readonly href?: string;
+  /** Present when the item is a person, so the assistant can offer Call/Text. */
+  readonly contact?: Readonly<{ id: string; name: string; firstName: string; phone?: string }>;
   readonly citations: readonly OmnixCopilotCitation[];
 }
 
@@ -411,6 +420,17 @@ export function parseOmnixCopilotQuestion(value: unknown): OmnixCopilotIntent {
   if (folded === 'connections') return { kind: 'connections' };
   if (folded === 'email campaigns' || folded === 'campaigns') return { kind: 'campaigns' };
   if (folded === 'help') return { kind: 'help' };
+  const recap = /^recap (today|yesterday|week|month)$/iu.exec(question);
+  if (recap?.[1]) return { kind: 'recap', window: recap[1].toLowerCase() as 'today' | 'yesterday' | 'week' | 'month' };
+  if (/^segment /iu.test(question)) {
+    try {
+      const filter = parseSegmentQuery(question);
+      if (filter) return { kind: 'segment', filter };
+    } catch (error) {
+      if (error instanceof OmnixSegmentError) throw new OmnixCopilotError('invalid-input', error.message);
+      throw error;
+    }
+  }
 
   throw new OmnixCopilotError(
     'unsupported-intent',

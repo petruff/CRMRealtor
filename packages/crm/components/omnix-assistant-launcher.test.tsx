@@ -8,11 +8,14 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { OmnixCopilotUiResult } from '@/components/omnix-copilot-view-model';
 import { OmnixAssistantLauncher } from '@/components/omnix-assistant-launcher';
+import { resetOmnixCopilotMemory } from '@/components/omnix-copilot';
 
 const navigation = vi.hoisted(() => ({ pathname: '/' }));
 vi.mock('next/navigation', () => ({ usePathname: () => navigation.pathname }));
 vi.mock('@/app/omnix/actions', () => ({
   askOmnixCopilotAction: vi.fn(),
+  confirmOmnixActionAction: vi.fn(),
+  recordOmnixFeedbackAction: vi.fn(async () => undefined),
   getOmnixAssistantProfileAction: vi.fn(),
 }));
 
@@ -69,6 +72,7 @@ describe('OmnixAssistantLauncher', () => {
     cleanup();
     document.body.style.overflow = '';
     navigation.pathname = '/';
+    resetOmnixCopilotMemory();
   });
 
   it('opens an accessible personalized dialog and returns focus on Escape', async () => {
@@ -193,7 +197,7 @@ describe('OmnixAssistantLauncher', () => {
     await user.click(screen.getByRole('button', { name: 'Open Omnix assistant' }));
     await user.click(await screen.findByRole('button', { name: 'Who needs attention?' }));
 
-    expect(await screen.findByText('Omnix · Attention brief')).toBeInTheDocument();
+    expect(await screen.findByText('Omnix · Who needs you')).toBeInTheDocument();
     expect(screen.getByText('8 people and 0 tasks need review. Start with Act now.')).toBeInTheDocument();
     expect(screen.getByText('Client 1 Morgan')).toBeInTheDocument();
     expect(screen.getByText('Client 6 Morgan')).toBeInTheDocument();

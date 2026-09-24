@@ -741,3 +741,37 @@
   .ox-quick-text-body { display: -webkit-box; margin-top: 0.125rem; overflow: hidden; color: var(--sk-muted-text-color); font-size: 0.8125rem; line-height: 1.4; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .ox-quick-texts-note { padding: 0.5rem 1rem 0.75rem; color: var(--sk-subtle-text-color); font-size: 0.75rem; }
 }
+
+/* ---------- Omnix assistant: actions, drafts, compact voice ---------- */
+@layer components {
+  .omnix-person-actions { display: flex; flex-wrap: wrap; gap: 0.375rem; margin-top: 0.5rem; }
+  .omnix-chip-action {
+    display: inline-flex; min-height: 2.25rem; align-items: center; gap: 0.375rem; border: 1px solid var(--ox-hairline); border-radius: 9999px;
+    background: var(--sk-card-background); padding-inline: 0.75rem; color: var(--sk-body-text-color); font-size: 0.75rem; font-weight: 600;
+    transition: border-color var(--ox-duration) var(--ox-ease), background-color var(--ox-duration) var(--ox-ease), transform var(--ox-duration) var(--ox-ease);
+  }
+  .omnix-chip-action:hover { border-color: var(--sk-accent-color); color: var(--sk-accent-color); }
+  .omnix-chip-action:active { transform: scale(0.97); }
+  .omnix-chip-action.is-primary { border-color: transparent; background: var(--sk-accent-color); color: #ffffff; }
+  .omnix-chip-action.is-primary:hover { color: #ffffff; filter: brightness(1.05); }
+  .omnix-action-card {
+    margin-top: 0.75rem; border: 1px solid var(--ox-hairline); border-radius: var(--ox-radius-lg); background: var(--sk-card-background); padding: 0.875rem;
+    animation: omnix-card-in var(--ox-duration) var(--ox-ease) both;
+  }
+  @keyframes omnix-card-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .omnix-action-card { animation: none; } }
+  .omnix-draft { border-radius: 0.875rem; background: var(--sk-fill-color); padding: 0.75rem; }
+  .omnix-draft.is-recommended { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sk-accent-color) 45%, transparent); background: var(--color-accent-soft); }
+  .omnix-action-form { display: grid; gap: 0.75rem; margin-top: 0.75rem; }
+  .ox-dictation.is-compact { flex-wrap: nowrap; gap: 0.25rem; }
+  .ox-dictation.is-compact .ox-dictation-button { width: 2.75rem; justify-content: center; padding-inline: 0; }
+  .ox-dictation.is-compact .ox-dictation-status:empty { display: none; }
+  .ox-dictation.is-compact .ox-dictation-status { max-width: 8rem; overflow: hidden; font-size: 0.75rem; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* A smaller floating assistant on desktop so it covers less of the page. */
+@media (min-width: 64rem) {
+  button.omnix-assistant-launcher { width: 4.25rem; height: 4.25rem; border-radius: 1.35rem; }
+  button.omnix-assistant-launcher .omnix-assistant-avatar { width: 3.75rem; height: 3.75rem; }
+  button.omnix-assistant-launcher .omnix-assistant-pulse { inset: 0.4rem; border-radius: 1rem; }
+}

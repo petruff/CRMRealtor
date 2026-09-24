@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { BellRing, CalendarRange, MessageSquareText, PhoneCall, QrCode, Undo2, X } from 'lucide-react';
+import { BellRing, Sparkles, CalendarRange, MessageSquareText, PhoneCall, QrCode, Undo2, X } from 'lucide-react';
 
-export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-quick-texts';
+export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-assistant';
 
 const ITEMS = [
+  { icon: Sparkles, title: 'A smarter Omnix assistant', body: 'Ask in your own words — “hot buyers I haven’t called in a week”, “remind me to call Ana tomorrow”. It drafts texts and follow-ups for you to approve.', href: '/omnix' },
   { icon: QrCode, title: 'Your lead page', body: 'One link and QR code for your bio, signs and cards. Every inquiry becomes a lead with an instant alert.', href: '/lead-page' },
   { icon: MessageSquareText, title: 'Quick texts', body: 'Tap Text on a contact for ready-made messages in English or Spanish — new lead, showing, feedback and check-in.', href: undefined },
   { icon: PhoneCall, title: 'Log a call in one tap', body: 'After you call someone from Omnix, it offers to save how it went — with voice notes. You can turn this off.', href: undefined },

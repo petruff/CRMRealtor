@@ -397,6 +397,8 @@ export async function generateOmnixNarrative(
             responseMimeType: 'application/json',
             temperature: 0.2,
             maxOutputTokens: remainingOutputTokens,
+            // Thinking tokens count toward maxOutputTokens; keep them for the answer.
+            thinkingConfig: { thinkingLevel: 'minimal' },
             responseSchema: factSelection ? {
               type: 'OBJECT', required: ['summaryFactId', 'highlightFactIds', 'proposals'],
               properties: {

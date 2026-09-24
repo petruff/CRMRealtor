@@ -14,7 +14,7 @@ import { loadWorkspaceAiRuntimeCredential } from '@/lib/application/workspace-ai
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseOmnixAiBudgetAuthority } from '@/lib/application/omnix-ai-budget';
 import { researchWithGemini } from '@/lib/application/omnix-gemini-research';
-import { askOmnixCopilotAction, getOmnixAssistantProfileAction } from './actions';
+import { askOmnixCopilotAction, confirmOmnixActionAction, getOmnixAssistantProfileAction } from './actions';
 import { createMemoryOmnixProposalRepository } from '@/lib/data/memory-omnix-proposal-repository';
 
 vi.mock('@/lib/application/omnix-copilot-service', () => ({
@@ -30,6 +30,7 @@ vi.mock('@/lib/application/workspace-ai-settings', () => ({
   loadWorkspaceAiRuntimeCredential: vi.fn(),
 }));
 vi.mock('@/lib/data', () => ({ getRepository: vi.fn() }));
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('@/lib/supabase/env', () => ({ isSupabaseConfigured: vi.fn() }));
 vi.mock('@/lib/supabase/server', () => ({ createSupabaseServerClient: vi.fn() }));
 vi.mock('@/lib/observability/omnix-copilot-telemetry', () => ({
@@ -132,10 +133,11 @@ describe('askOmnixCopilotAction', () => {
     expect(executeOmnixCopilot).not.toHaveBeenCalled();
     expect(result.status).toBe('unsupported');
     expect(result.answerBlocks[0]?.items.map((item) => item.label)).toEqual([
-      'What are my priorities today?',
-      'Who needs my attention?',
-      'Which tasks are overdue?',
-      'Show me my pipeline',
+      'Who should I call first?',
+      'Hot buyers I haven’t talked to in 2 weeks',
+      'Tell me about Alicia',
+      'Remind me to call Alicia tomorrow at 10',
+      'What happened this week?',
     ]);
     expect(emitOmnixCopilotTelemetry).toHaveBeenCalledWith(
       expect.any(Function),
@@ -154,13 +156,13 @@ describe('askOmnixCopilotAction', () => {
       apiKey: 'stored-server-key', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private',
     });
     vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({
-      state: 'available', model: 'gemini-3.5-flash-lite', query: 'pipeline', outputTokens: 140, usageEstimated: true,
+      state: 'available', model: 'gemini-3.5-flash-lite', query: 'workspace overview', outputTokens: 140, usageEstimated: true,
     });
     vi.mocked(executeOmnixCopilot).mockImplementation(async (request) => ({
       ok: true,
       schemaVersion: OMNIX_COPILOT_SCHEMA_VERSION,
       command: 'ask',
-      resolvedIntent: { kind: 'pipeline' },
+      resolvedIntent: { kind: 'workspace-overview' },
       correlationId: request.correlationId,
       dataMode: request.dataMode,
       asOf: request.asOf,
@@ -177,7 +179,7 @@ describe('askOmnixCopilotAction', () => {
     expect(routeOmnixQuestionWithGemini).toHaveBeenCalledWith('How healthy is my sales funnel?', {
       credential: { apiKey: 'stored-server-key', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private' },
     });
-    expect(vi.mocked(executeOmnixCopilot).mock.calls[0]?.[0].intent).toEqual({ kind: 'pipeline' });
+    expect(vi.mocked(executeOmnixCopilot).mock.calls[0]?.[0].intent).toEqual({ kind: 'workspace-overview' });
     const authority = vi.mocked(createSupabaseOmnixAiBudgetAuthority).mock.results[0]?.value;
     expect(authority?.reserve).toHaveBeenCalledBefore(vi.mocked(routeOmnixQuestionWithGemini));
     expect(generateOmnixNarrative).toHaveBeenCalledWith(
@@ -318,5 +320,86 @@ describe('askOmnixCopilotAction', () => {
       label: 'Choose a date and prepare this follow-up', href: '/contacts/contact-a/outcome', commandPreview: 'Call and confirm their current needs.',
     });
     expect(result.suggestions[0]?.detail).toContain('preview only');
+  });
+});
+
+describe('Omnix assistant understanding and actions', () => {
+  const alicia = {
+    id: 'c-alicia', firstName: 'Alicia', lastName: 'Monroe', phone: '(305) 555-0101', leadType: 'hot', relationship: 'lead',
+    intent: 'buyer', source: 'website', pipelineStage: 'new', tags: [], createdAt: '2026-09-01T12:00:00.000Z',
+  };
+  const liveContext = {
+    isLive: true,
+    workspaceScope: SAMPLE_WORKSPACE_SCOPE,
+    repository: { list: vi.fn(async () => [alicia]), get: vi.fn(async (id: string) => (id === alicia.id ? alicia : undefined)) },
+    omnixProposalRepository: createMemoryOmnixProposalRepository(),
+  } as unknown as Awaited<ReturnType<typeof getRepository>>;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(isSupabaseConfigured).mockReturnValue(true);
+    vi.mocked(getRepository).mockResolvedValue(liveContext);
+    vi.mocked(loadWorkspaceAiRuntimeCredential).mockResolvedValue(undefined);
+    vi.mocked(createSupabaseServerClient).mockResolvedValue({} as never);
+    vi.mocked(createSupabaseOmnixAiBudgetAuthority).mockReturnValue({
+      reserve: vi.fn(async () => ({ allowed: true, reservationId: '63000000-0000-4000-8000-000000000001' })),
+      finalize: vi.fn(async () => undefined),
+    });
+    vi.mocked(liveContext.repository.list).mockImplementation(async () => [alicia] as never);
+    vi.mocked(liveContext.repository.get).mockImplementation(async (id: string) => (id === alicia.id ? alicia : undefined) as never);
+  });
+
+  it('prepares a text preview without touching the CRM or any AI provider', async () => {
+    const result = await askOmnixCopilotAction('Draft a text to Alicia');
+    expect(result).toMatchObject({ status: 'success', intent: 'draft-text', selectedContact: { id: 'c-alicia' }, action: { type: 'draft-text', person: { id: 'c-alicia' } } });
+    expect(executeOmnixCopilot).not.toHaveBeenCalled();
+    expect(routeOmnixQuestionWithGemini).not.toHaveBeenCalled();
+    expect(loadWorkspaceAiRuntimeCredential).not.toHaveBeenCalled();
+  });
+
+  it('understands everyday wording before paying for AI routing', async () => {
+    vi.mocked(executeOmnixCopilot).mockImplementation(async (request) => ({
+      ok: true, schemaVersion: OMNIX_COPILOT_SCHEMA_VERSION, command: 'ask', resolvedIntent: request.intent,
+      correlationId: request.correlationId, dataMode: request.dataMode, asOf: request.asOf,
+      answerBlocks: [], citations: [], suggestions: [], warnings: [], alerts: [],
+    }));
+    await askOmnixCopilotAction('Hot buyers I have not talked to in 2 weeks');
+    expect(vi.mocked(executeOmnixCopilot).mock.calls[0]?.[0].intent).toEqual({ kind: 'segment', filter: { leadType: 'hot', intent: 'buyer', noContactDays: 14 } });
+    expect(routeOmnixQuestionWithGemini).not.toHaveBeenCalled();
+    expect(generateOmnixNarrative).not.toHaveBeenCalled();
+  });
+
+  it('closes an AI routing receipt as succeeded when the answer needs no summary', async () => {
+    vi.mocked(loadWorkspaceAiRuntimeCredential).mockResolvedValue({ apiKey: 'k', provider: 'google-gemini', model: 'gemini-3.5-flash-lite', dataPolicy: 'paid-private' });
+    vi.mocked(routeOmnixQuestionWithGemini).mockResolvedValue({ state: 'available', route: 'crm', model: 'gemini-3.5-flash-lite', query: 'pipeline', inputTokens: 400, outputTokens: 30 });
+    vi.mocked(executeOmnixCopilot).mockImplementation(async (request) => ({
+      ok: true, schemaVersion: OMNIX_COPILOT_SCHEMA_VERSION, command: 'ask', resolvedIntent: request.intent,
+      correlationId: request.correlationId, dataMode: request.dataMode, asOf: request.asOf,
+      answerBlocks: [], citations: [], suggestions: [], warnings: [], alerts: [],
+    }));
+    await askOmnixCopilotAction('How healthy is my sales funnel?');
+    const authority = vi.mocked(createSupabaseOmnixAiBudgetAuthority).mock.results[0]?.value;
+    expect(generateOmnixNarrative).not.toHaveBeenCalled();
+    expect(authority.finalize).toHaveBeenCalledWith(expect.objectContaining({ state: 'succeeded', inputTokens: 400, outputTokens: 30, actualCostMicrousd: 195 }));
+  });
+
+  it('saves a confirmed follow-up and never saves in sample mode', async () => {
+    const createTask = vi.fn(async () => ({ task: { id: 't-1' }, created: true }));
+    vi.mocked(getRepository).mockResolvedValue({ ...liveContext, activityRepository: { createTask } } as never);
+    const saved = await confirmOmnixActionAction({ type: 'create-task', contactId: 'c-alicia', title: 'Call Alicia', dueDate: '2026-09-25', dueTime: '10:00' });
+    expect(saved).toMatchObject({ status: 'saved', href: '/contacts/c-alicia' });
+    expect(createTask).toHaveBeenCalledTimes(1);
+
+    vi.mocked(getRepository).mockResolvedValue({ ...liveContext, isLive: false, activityRepository: { createTask } } as never);
+    await confirmOmnixActionAction({ type: 'create-task', contactId: 'c-alicia', title: 'Call Alicia', dueDate: '2026-09-25', dueTime: '10:00' });
+    expect(createTask).toHaveBeenCalledTimes(1);
+
+    expect(await confirmOmnixActionAction({ type: 'archive-everyone', contactId: 'c-alicia' })).toMatchObject({ status: 'error' });
+  });
+
+  it('shares the open contact with the assistant greeting only when it exists', async () => {
+    expect(await getOmnixAssistantProfileAction('c-alicia')).toMatchObject({ contact: { id: 'c-alicia', name: 'Alicia Monroe' } });
+    expect(await getOmnixAssistantProfileAction('missing')).not.toHaveProperty('contact');
+    expect(await getOmnixAssistantProfileAction('../etc')).not.toHaveProperty('contact');
   });
 });

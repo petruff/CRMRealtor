@@ -6,7 +6,7 @@ import type { PropertyRepository } from '../data/property-repository.ts';
 import type { NurturePlanRepository } from '../data/nurture-plan-repository.ts';
 import type { OmnixProposalRepository } from '../data/omnix-proposal-repository.ts';
 import type { CaptureOutcomeRepository } from '../data/capture-outcome-repository.ts';
-import { displayName, type Contact } from '../domain/contact.ts';
+import { displayName, PIPELINE_LABEL, type Contact } from '../domain/contact.ts';
 import { propertyFactCanDisplay } from '../domain/property.ts';
 import type { WorkspaceScope } from '../domain/workspace.ts';
 import { createOmnixCopilotCitation, type OmnixCopilotAnswerBlock, type OmnixCopilotAnswerItem, type OmnixCopilotCitation, type OmnixCopilotEntityType, type OmnixCopilotIntent, type OmnixCopilotSuggestion, type OmnixCopilotWarning } from '../domain/omnix-copilot.ts';
@@ -93,7 +93,7 @@ export async function readOmnixModules(context: OmnixModuleRepositories, scope: 
     try {
       const items = [...new Map((await fn()).map((item) => [item.id, item])).values()];
       if (items.length > limit) warnings.push({ code: `${area}-truncated`, message: `${titles[area]}: showing up to ${limit} records; more may exist.` });
-      answerBlocks.push(block(`module-${area}`, titles[area], `${items.length ? detail : `No ${titles[area].toLowerCase()} found in this read. ${detail}`} Read as of ${asOf}.`, items.slice(0, limit)));
+      answerBlocks.push(block(`module-${area}`, titles[area], `${items.length ? detail : `No ${titles[area].toLowerCase()} found in this read. ${detail}`}`, items.slice(0, limit)));
       suggestions.push({ id: `review-module-${area}`, kind: 'review-link', title: `Review ${titles[area].toLowerCase()}`, detail: 'Open the saved records to review or make changes.', href: contact && ['contacts', 'nurture', 'capture'].includes(area) ? `/contacts/${encodeURIComponent(contact.id)}` : route(area), readOnly: true, citations: [] });
     } catch {
       warnings.push({ code: `${area}-unavailable`, message: `${titles[area]} could not be loaded. Try again or open the records.` });
@@ -113,11 +113,11 @@ export async function readOmnixModules(context: OmnixModuleRepositories, scope: 
       } else if (!contact) contacts.push(...(await context.repository.list()).slice(0, 500));
       if (!contact && (total === undefined || total > contacts.length)) warnings.push({ code: 'contacts-bounded', message: 'Priorities cover up to 500 active clients; more may exist.' });
       const selected = contact ? contacts : contacts.filter((item) => !item.archivedAt && (!item.nextTouchAt || ['new', 'contacted'].includes(item.pipelineStage)));
-      return selected.map((item) => { const href = `/contacts/${encodeURIComponent(item.id)}`; return { id: item.id, label: displayName(item), detail: `Relationship stage: ${item.pipelineStage}; qualification: ${item.qualificationStatus ?? 'not recorded'}; next touch: ${item.nextTouchAt ?? 'not recorded'}.`, href, citations: [cite('contact', item.id, ['firstName', 'preferredName', 'lastName', 'pipelineStage', 'qualificationStatus', 'nextTouchAt'], asOf, href, item.updatedAt ?? item.createdAt)] }; });
+      return selected.map((item) => { const href = `/contacts/${encodeURIComponent(item.id)}`; return { id: item.id, label: displayName(item), detail: `Stage: ${PIPELINE_LABEL[item.pipelineStage]} · ${item.qualificationStatus === 'needs-qualification' ? 'needs review' : 'qualified'} · ${item.nextTouchAt ? `next follow-up ${item.nextTouchAt.slice(0, 10)}` : 'no follow-up set'}.`, contact: { id: item.id, name: displayName(item), firstName: (item.preferredName ?? item.firstName).trim() || displayName(item), ...(item.phone ? { phone: item.phone } : {}) }, href, citations: [cite('contact', item.id, ['firstName', 'preferredName', 'lastName', 'pipelineStage', 'qualificationStatus', 'nextTouchAt'], asOf, href, item.updatedAt ?? item.createdAt)] }; });
     }, contact ? 'Stored relationship, qualification and follow-up facts; these are separate from transaction status.' : 'Contacts needing a recorded next touch or early relationship review, in contact list order.');
     if (area === 'tasks') await read(area, Boolean(context.activityRepository), async () => {
       const tasks = scoped(await context.activityRepository!.listTasks(scope, { ...(contact ? { contactId: contact.id } : {}), status: 'open', limit: limit + 1 }), scope).filter((item) => matchesContact(item.contactId));
-      return tasks.map((item) => { const href = `/activities?taskId=${encodeURIComponent(item.id)}`; return { id: item.id, label: clean(item.title), detail: `Open; recorded due ${item.dueAt}${Date.parse(item.dueAt) < Date.parse(asOf) ? '; overdue as of this read' : ''}.`, href, citations: [cite('task', item.id, ['title', 'status', 'dueAt'], asOf, href, item.updatedAt)] }; });
+      return tasks.map((item) => { const href = `/activities?taskId=${encodeURIComponent(item.id)}`; return { id: item.id, label: clean(item.title), detail: `Due ${item.dueAt.slice(0, 10)}${Date.parse(item.dueAt) < Date.parse(asOf) ? ' — overdue' : ''}.`, href, citations: [cite('task', item.id, ['title', 'status', 'dueAt'], asOf, href, item.updatedAt)] }; });
     }, 'Open tasks with recorded due times; no deadline is invented.');
     if (area === 'transactions' || area === 'finances') await read(area, Boolean(context.transactionRepository), async () => {
       const repo = context.transactionRepository!;

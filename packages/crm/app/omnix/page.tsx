@@ -14,7 +14,7 @@ import { getRepository } from '@/lib/data';
 import { buildWorkspaceSnapshot } from '@/lib/domain/workspace-intelligence';
 import { readWorkspaceAiCapabilityStatus } from '@/lib/application/workspace-ai-settings';
 import { OmnixCopilot } from '@/components/omnix-copilot';
-import { askOmnixCopilotAction } from './actions';
+import { askOmnixCopilotAction, confirmOmnixActionAction, recordOmnixFeedbackAction } from './actions';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Omnix AI' };
@@ -42,10 +42,10 @@ export default async function OmnixPage() {
   const aiCapability = await readWorkspaceAiCapabilityStatus(workspaceScope)
     .catch(() => ({ state: 'failed' as const }));
   const aiCopy = aiCapability.state === 'available'
-    ? 'Ask about clients, transactions, properties, and next steps. Gemini helps make sense of your records and prepares actions for your review.'
+    ? 'Ask in your own words — about people, deals, your day or your week, in English, Spanish or Portuguese. Omnix can also prepare texts, follow-ups and notes for you to approve.'
     : aiCapability.state === 'failed'
-      ? 'Your deterministic CRM brief is available, but Omnix could not confirm the AI connection. Review AI setup before relying on generated summaries.'
-      : 'Your deterministic CRM brief is ready. The workspace owner can connect Gemini in Settings for grounded summaries and reviewable recommendations.';
+      ? 'Omnix answers from your CRM right now, but its AI connection needs a look. Review AI setup for summaries and harder questions.'
+      : 'Ask about people, deals, your day or your week. Connect AI in Settings for summaries and harder questions.';
 
   return (
     <div>
@@ -53,7 +53,7 @@ export default async function OmnixPage() {
         <div className="flex flex-wrap items-center gap-2">
           <p className="eyebrow">Omnix Intelligence</p>
           <span className="rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted">
-            {aiCapability.state === 'available' ? 'Gemini ready' : aiCapability.state === 'failed' ? 'AI needs attention' : 'AI setup available'}
+            {aiCapability.state === 'available' ? 'AI ready' : aiCapability.state === 'failed' ? 'AI needs attention' : 'AI not connected'}
           </span>
         </div>
         <h1 className="mt-2 max-w-4xl font-display text-[2.5rem] leading-[1.04] text-ink sm:text-5xl md:text-[3.5rem]">
@@ -67,7 +67,7 @@ export default async function OmnixPage() {
         ) : null}
       </header>
 
-      <OmnixCopilot action={askOmnixCopilotAction} />
+      <OmnixCopilot action={askOmnixCopilotAction} confirm={confirmOmnixActionAction} feedback={recordOmnixFeedbackAction} />
 
       <section className="mt-8" aria-labelledby="brief-title">
         <div className="mb-4 flex items-center gap-3">
