@@ -52,7 +52,7 @@ describe('weekly seller updates in ready to send', () => {
   it('picks active sellers with a phone, under-contract first', () => {
     const picked = sellerUpdateCandidates([
       maria,
-      contact('Closing', { intent: 'both', pipelineStage: 'under-contract' }),
+      contact('Closing', { intent: 'both', pipelineStage: 'under-contract', seller: { propertyAddress: '9 Bay Rd' } }),
       contact('Prospect', { intent: 'seller', pipelineStage: 'active' }),
       contact('Buyer', { intent: 'buyer', pipelineStage: 'active' }),
       contact('NoPhone', { intent: 'seller', pipelineStage: 'active', phone: undefined }),

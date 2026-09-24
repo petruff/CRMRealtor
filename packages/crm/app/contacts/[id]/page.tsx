@@ -75,6 +75,8 @@ import { TextingComposer } from "@/components/texting-composer";
 import { QuickTexts } from "@/components/quick-texts";
 import { RelationshipMemoryCard } from "@/components/relationship-memory-card";
 import { SellerUpdateCard } from "@/components/seller-update-card";
+import { ListingStatusControl } from "@/components/listing-status";
+import { setListingStatusAction } from "@/app/contacts/listing-status-actions";
 import { sellerUpdateItem } from "@/lib/application/ready-to-send";
 import { summarizeSellerWeek } from "@/lib/domain/seller-update";
 import { markReadyTextSentAction } from "@/app/ready-to-send-actions";
@@ -515,11 +517,11 @@ export default async function ContactDetailPage({
       )}
 
       {/* Criteria */}
-      {(contact.buyer || contact.seller) && (
+      {(contact.buyer || contact.seller || (!archived && (contact.intent === "seller" || contact.intent === "both"))) && (
         <GroupedSurface className="mt-4">
           <section className="bg-surface p-5 sm:p-6">
             <h2 className="font-display text-2xl text-ink">
-              {contact.seller && !contact.buyer ? "Selling" : "What they want"}
+              {(contact.seller || contact.intent === "seller") && !contact.buyer ? "Selling" : "What they want"}
             </h2>
             <dl className="mt-2 grid gap-x-6 sm:grid-cols-3">
               {contact.buyer?.priceMax && (
@@ -579,6 +581,11 @@ export default async function ContactDetailPage({
               {contact.seller?.condition && <Fact label="Condition" value={contact.seller.condition} />}
               {contact.seller?.listingStatus && <Fact label="Listing status" value={contact.seller.listingStatus} />}
             </dl>
+            {!archived && (contact.intent === "seller" || contact.intent === "both") ? (
+              <ListingStatusControl contactId={contact.id} stage={contact.pipelineStage} save={setListingStatusAction}
+                {...(contact.seller?.listingStatus ? { currentStatus: contact.seller.listingStatus } : {})}
+                {...(contact.seller?.propertyAddress ? { currentAddress: contact.seller.propertyAddress } : {})} />
+            ) : null}
           </section>
         </GroupedSurface>
       )}

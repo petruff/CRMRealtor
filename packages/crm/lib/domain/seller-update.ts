@@ -19,6 +19,7 @@ export interface SellerWeek {
 
 const DAY = 86_400_000;
 const LISTED = /\b(?:listed|active|coming soon|pending|on (?:the )?market|for sale)\b/iu;
+const ENDED = /\b(?:sold|closed|withdrawn|expired|cancell?ed|off[- ]market)\b/iu;
 const WEEKLY_MARKER = /\b(?:weekly update|actualizaci[oó]n semanal)\b/iu;
 
 /**
@@ -30,6 +31,9 @@ export function isActiveSeller(contact: Contact): boolean {
   if (contact.archivedAt) return false;
   if (contact.intent !== 'seller' && contact.intent !== 'both') return false;
   if (contact.pipelineStage === 'closed' || contact.pipelineStage === 'lost') return false;
+  if (ENDED.test(contact.seller?.listingStatus ?? '')) return false;
+  // A buyer-and-seller's contract may be their purchase; only count it when there's a home being sold.
+  if (contact.intent === 'both' && !contact.seller?.propertyAddress?.trim()) return false;
   if (contact.pipelineStage === 'under-contract' || contact.relationship === 'active-client') return true;
   // "Active" alone often means an active prospect; only a real listing gets weekly updates.
   return contact.pipelineStage === 'active' && Boolean(contact.seller?.propertyAddress?.trim()) && LISTED.test(contact.seller?.listingStatus ?? '');
