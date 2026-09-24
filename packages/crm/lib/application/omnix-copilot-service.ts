@@ -65,6 +65,7 @@ import {
 } from '../observability/omnix-copilot-telemetry.ts';
 import { activityEventLabel } from '../presentation/activity-feed.ts';
 import { applySegment, describeSegment, type OmnixSegmentFilter } from '../domain/omnix-segment.ts';
+import { extractMemoryFacts, MEMORY_KIND_LABEL } from '../domain/relationship-memory.ts';
 import { readOmnixModules, OMNIX_MODULE_INTENTS, type OmnixModuleRepositories } from './omnix-copilot-module-reads.ts';
 
 export const OMNIX_COPILOT_RESULT_MAX = 500;
@@ -992,6 +993,7 @@ async function contactProfileResult(
     ...assignments.map((assignment) => ({ id: `assignment-${assignment.id}`, label: 'Assigned member', detail: assignment.assigneeMembershipId, citations: [relatedCitation] })),
     ...values.map((value) => ({ id: `custom-${value.id}`, label: valueNames.get(value.definitionId) ?? 'Custom field', detail: String(value.value), citations: [relatedCitation] })),
   ].slice(0, 40);
+  const memoryItems = extractMemoryFacts(notes).map((fact, index) => ({ id: `memory-${index}`, label: fact.text, detail: `${MEMORY_KIND_LABEL[fact.kind]} · noted ${friendlyDay(fact.noteDate, today)}`, citations: [relatedCitation] }));
   const noteItems = notes.slice(0, 20).map((note) => ({ id: note.id, label: note.body, detail: friendlyDay(note.createdAt, today), citations: [relatedCitation] }));
   const activityItems = [
     ...tasks.map((task) => ({ id: task.id, label: `Follow-up · ${task.title}`, detail: `${task.status === 'open' ? 'Open' : task.status === 'completed' ? 'Done' : task.status} · due ${friendlyDay(task.dueAt, today)}`, href: identifierTarget('task', task.id), citations: [taskCitation(task, TASK_LIST_FACT_KEYS, asOf)] })),
@@ -1001,6 +1003,7 @@ async function contactProfileResult(
   return {
     answerBlocks: [
       block('contact-profile', 'list', displayName(contact), 'What’s saved in your CRM. Missing details are marked, never guessed.', coreItems),
+      ...(memoryItems.length ? [block('contact-profile-memory', 'list', `What matters to ${contact.preferredName ?? contact.firstName}`, 'Personal details from your notes.', memoryItems)] : []),
       ...(relatedItems.length ? [block('contact-profile-related', 'list', 'More contact details', 'Extra numbers, emails, relationships and custom fields.', relatedItems)] : []),
       block(noteItems.length ? 'contact-profile-notes' : 'contact-profile-notes-empty', noteItems.length ? 'list' : 'empty', 'Notes', noteItems.length ? 'Latest notes first.' : 'No notes yet.', noteItems),
       block(activityItems.length ? 'contact-profile-work' : 'contact-profile-work-empty', activityItems.length ? 'list' : 'empty', 'Follow-ups and activity', activityItems.length ? 'Latest follow-ups and activity.' : 'No follow-ups or activity yet.', activityItems),

@@ -13,6 +13,8 @@ import { QUICK_TEXT_KINDS, quickText, quickTextHref } from '../domain/quick-text
 import type { WorkspaceScope } from '../domain/workspace.ts';
 import { createTaskCommand } from './activity-commands.ts';
 import { addContactNoteCommand } from './contact-commands.ts';
+import { extractVoiceUpdate, type VoiceChange } from '../domain/voice-update.ts';
+import { applyVoiceUpdate } from './voice-update-commands.ts';
 
 /**
  * Action previews for the Omnix assistant. Previews never change anything:
@@ -35,6 +37,7 @@ export type OmnixActionPreview =
   }>
   | Readonly<{ type: 'create-task'; person: OmnixActionPerson; title: string; dueDate: string; dueTime: string; dueLabel: string }>
   | Readonly<{ type: 'log-note'; person: OmnixActionPerson; body: string }>
+  | Readonly<{ type: 'voice-update'; person: OmnixActionPerson; note: string; changes: readonly VoiceChange[] }>
   | Readonly<{ type: 'choose-contact'; candidates: readonly (OmnixActionPerson & { readonly detail: string })[] }>
   | Readonly<{ type: 'need-contact' }>;
 
@@ -102,6 +105,8 @@ export function prepareOmnixAction(input: {
     const time = `${String(action.due.hour ?? 9).padStart(2, '0')}:${String(action.due.minute ?? 0).padStart(2, '0')}`;
     return { type: 'create-task', person: who, title: taskTitle(action, who.name, input.question), dueDate: date, dueTime: time, dueLabel: friendlyDueLabel(date, time, input.today) };
   }
+  const update = extractVoiceUpdate(action.body, target, input.today);
+  if (update.changes.length) return { type: 'voice-update', person: who, note: update.note, changes: update.changes };
   return { type: 'log-note', person: who, body: action.body };
 }
 
@@ -111,7 +116,8 @@ export function prepareOmnixAction(input: {
 
 export type OmnixActionConfirmation =
   | Readonly<{ type: 'create-task'; contactId: string; title: string; dueDate: string; dueTime: string }>
-  | Readonly<{ type: 'log-note'; contactId: string; body: string }>;
+  | Readonly<{ type: 'log-note'; contactId: string; body: string }>
+  | Readonly<{ type: 'voice-update'; contactId: string; text: string; keep: readonly string[]; saveNote: boolean }>;
 
 export class OmnixActionError extends Error {}
 
@@ -132,6 +138,12 @@ export function parseOmnixActionConfirmation(value: unknown): OmnixActionConfirm
     const body = typeof input.body === 'string' ? input.body.trim() : '';
     if (!body || body.length > 5000) throw new OmnixActionError('Write the note before saving.');
     return { type: 'log-note', contactId, body };
+  }
+  if (input.type === 'voice-update') {
+    const text = typeof input.text === 'string' ? input.text.trim() : '';
+    if (!text || text.length > 2000) throw new OmnixActionError('Say what happened before saving.');
+    const keep = Array.isArray(input.keep) ? input.keep.filter((field): field is string => typeof field === 'string' && /^[a-zA-Z]{2,30}$/u.test(field)).slice(0, 20) : [];
+    return { type: 'voice-update', contactId, text, keep, saveNote: input.saveNote === true };
   }
   throw new OmnixActionError('That action is not available.');
 }
@@ -161,6 +173,15 @@ export async function confirmOmnixAssistantAction(
       idempotencyKey: `omnix-assistant-task:${randomUUID()}`,
     }, now);
     return { message: `Follow-up saved for ${displayName(contact)}.`, href };
+  }
+  if (confirmation.type === 'voice-update') {
+    const result = await applyVoiceUpdate({
+      repository: context.repository,
+      ...(context.activityRepository ? { activity: { repository: context.activityRepository, scope: context.workspaceScope } } : {}),
+      contactId: contact.id, text: confirmation.text, keep: confirmation.keep, saveNote: confirmation.saveNote,
+      today: new Intl.DateTimeFormat('en-CA', { timeZone: context.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now), now,
+    });
+    return { message: result.message, href };
   }
   const form = new FormData();
   form.set('body', confirmation.body);

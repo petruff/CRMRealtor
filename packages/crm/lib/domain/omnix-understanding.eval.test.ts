@@ -63,6 +63,8 @@ const ACTIONS: readonly [string, string][] = [
   ['Me lembre de ligar para Alicia amanhã', 'create-task'],
   ['Recuérdame llamar a Alicia mañana', 'create-task'],
   ['Add a note for Alicia: prefers texts after 6pm', 'log-note'],
+  ['Update Alicia: pre-approved for 450k, wants 3 beds', 'log-note'],
+  ['Atualize a Ana: orçamento até 500 mil', 'log-note'],
 ];
 
 const NOT_UNDERSTOOD = ['Hi', 'What is the weather in Miami', 'Research my client Alicia', 'Write a poem'];

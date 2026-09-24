@@ -94,4 +94,19 @@ describe('Omnix assistant actions', () => {
     expect(friendlyDueLabel('2026-09-24', '09:00', '2026-09-24')).toBe('Today at 9 AM');
     expect(friendlyDueLabel('2026-09-28', '14:30', '2026-09-24')).toBe('Monday, Sep 28 at 2:30 PM');
   });
+
+  it('turns an update with home details into a reviewable contact update', async () => {
+    const preview = prepare('Update Alicia: pre-approved for 450k, wants 3 beds in Doral. Call her Friday.');
+    expect(preview.type).toBe('voice-update');
+    if (preview.type !== 'voice-update') return;
+    expect(preview.person.id).toBe('c-alicia');
+    expect(preview.changes.map((change) => change.field)).toEqual(['priceMax', 'beds', 'areas', 'preApproved', 'nextTouchAt']);
+
+    const repository = memoryRepository();
+    const saved = await repository.create({ firstName: 'Alicia', lastName: `Upd-${Math.random().toString(36).slice(2, 7)}`, leadType: 'warm', relationship: 'lead', intent: 'buyer', source: 'website', pipelineStage: 'contacted', tags: [] });
+    const confirmation = parseOmnixActionConfirmation({ type: 'voice-update', contactId: saved.id, text: preview.note, keep: ['priceMax', 'beds'], saveNote: false });
+    await confirmOmnixAssistantAction({ repository, workspaceScope: SAMPLE_WORKSPACE_SCOPE, timeZone: 'America/New_York' }, confirmation);
+    expect((await repository.get(saved.id))?.buyer).toEqual({ priceMax: 450_000, beds: 3 });
+    expect(await repository.notesFor(saved.id)).toHaveLength(0);
+  });
 });

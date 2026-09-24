@@ -2,18 +2,17 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { BellRing, Sparkles, CalendarRange, MessageSquareText, PhoneCall, QrCode, Undo2, X } from 'lucide-react';
+import { Heart, MessageSquareText, Mic, QrCode, Send, Sparkles, X } from 'lucide-react';
 
-export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-assistant';
+export const WHATS_NEW_KEY = 'omnix-whats-new-2026-09-daily-agent';
 
 const ITEMS = [
-  { icon: Sparkles, title: 'A smarter Omnix assistant', body: 'Ask in your own words — “hot buyers I haven’t called in a week”, “remind me to call Ana tomorrow”. It drafts texts and follow-ups for you to approve.', href: '/omnix' },
+  { icon: Send, title: 'Ready to send', body: 'Each morning Omnix prepares today’s texts — new leads, follow-ups, birthdays. Review, send from your phone, tap Mark sent.', href: undefined },
+  { icon: Mic, title: 'Voice update', body: 'On a contact, tap Voice update and say what happened. Budget, beds, areas and the next follow-up update in one step.', href: undefined },
+  { icon: Heart, title: 'What matters to them', body: 'Pets, work, moves and how they like to be reached — pulled from your notes onto each contact.', href: undefined },
+  { icon: Sparkles, title: 'A smarter Omnix assistant', body: 'Ask in your own words — “hot buyers I haven’t called in a week”, “remind me to call Ana tomorrow”.', href: '/omnix' },
   { icon: QrCode, title: 'Your lead page', body: 'One link and QR code for your bio, signs and cards. Every inquiry becomes a lead with an instant alert.', href: '/lead-page' },
-  { icon: MessageSquareText, title: 'Quick texts', body: 'Tap Text on a contact for ready-made messages in English or Spanish — new lead, showing, feedback and check-in.', href: undefined },
-  { icon: PhoneCall, title: 'Log a call in one tap', body: 'After you call someone from Omnix, it offers to save how it went — with voice notes. You can turn this off.', href: undefined },
-  { icon: Undo2, title: 'Undo after archiving', body: 'Archived someone by mistake? Tap Undo and you are right back where you were.', href: undefined },
-  { icon: BellRing, title: 'Alerts you choose', body: 'New leads right away, deal dates 48 hours ahead, and quiet hours at night.', href: '/settings#morning-brief' },
-  { icon: CalendarRange, title: 'Contract timeline', body: 'Enter the Effective Date once and every Florida contract deadline is added for you.', href: '/transactions' },
+  { icon: MessageSquareText, title: 'Quick texts', body: 'Tap Text on a contact for ready-made messages in English or Spanish.', href: undefined },
 ] as const;
 
 /**

@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import type { AlertCenterProps } from '@/components/alert-center';
 import { TodayQueueDisclosure } from '@/components/today-queue-disclosure';
+import { ReadyToSend } from '@/components/ready-to-send';
+import type { ComponentProps } from 'react';
 import { WhatsNew } from '@/components/whats-new';
 import { Avatar, LeadBadge } from '@/components/ui';
 import { buildFocusMoments, buildFocusQueue, type FocusItem } from '@/lib/application/focus-queue';
@@ -110,6 +112,7 @@ export function TodayCommandCenter({
   timeZone = 'America/New_York',
   historicalImportContactIds = new Set<string>(),
   operatingProjection,
+  ready,
 }: {
   alerts: AlertCenterProps;
   contacts: readonly Contact[];
@@ -117,6 +120,7 @@ export function TodayCommandCenter({
   timeZone?: string;
   historicalImportContactIds?: ReadonlySet<string>;
   operatingProjection?: TodayOperatingProjection;
+  ready?: ComponentProps<typeof ReadyToSend>;
 }) {
   const now = new Date(alerts.asOf);
   const { greeting, dateLabel } = todayDateContext(now, timeZone);
@@ -165,6 +169,8 @@ export function TodayCommandCenter({
       {alerts.dataMode === 'live' && alerts.availability !== 'available' ? (
         <p role="status" className="ox-inline-notice">Some details could not be loaded. Everything shown is from your saved records.</p>
       ) : null}
+
+      {contacts.length && ready ? <ReadyToSend {...ready} /> : null}
 
       {contacts.length === 0 ? (
         <section className="ox-card ox-first-run" aria-labelledby="today-zero-title">

@@ -2,6 +2,8 @@ import { TodayCommandCenter } from '@/components/today-command-center';
 import { loadOmnixAlerts } from '@/lib/application/omnix-alert-loader';
 import { buildTodayOperatingProjection, type TodaySourceResult } from '@/lib/application/today-operating-projection';
 import { getRepository } from '@/lib/data';
+import { buildReadyToSend, withNoteHints } from '@/lib/application/ready-to-send';
+import { markReadyTextSentAction } from './ready-to-send-actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,6 +34,11 @@ export default async function TodayPage() {
   const historicalImportContactIds = new Set(
     importedEventsResult.events.flatMap((event) => event.contactId ? [event.contactId] : []),
   );
+  const timeZone = process.env.OMNIX_TIME_ZONE ?? 'America/New_York';
+  const ready = buildReadyToSend({ contacts, now, historicalImportContactIds, ...(userDisplayName ? { agentName: userDisplayName } : {}) });
+  const readyNotes = new Map(await Promise.all(ready.map(async (item) => [item.contactId, await repository.notesFor(item.contactId).catch(() => [])] as const)));
+  const readyItems = withNoteHints(ready, readyNotes);
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
   const operatingProjection = buildTodayOperatingProjection({
     attention, proposals, inbound, milestones, connections, nurture, transactions,
   }, now);
@@ -39,7 +46,8 @@ export default async function TodayPage() {
     alerts={alerts}
     contacts={contacts}
     userDisplayName={userDisplayName}
-    timeZone={process.env.OMNIX_TIME_ZONE ?? 'America/New_York'}
+    timeZone={timeZone}
+    ready={{ items: readyItems, day, markSent: markReadyTextSentAction }}
     historicalImportContactIds={historicalImportContactIds}
     operatingProjection={operatingProjection}
   />;

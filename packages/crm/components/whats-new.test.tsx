@@ -17,7 +17,7 @@ describe('WhatsNew', () => {
   it('shows once and stays dismissed in this browser', async () => {
     const { unmount } = render(<WhatsNew />);
     expect(await screen.findByRole('heading', { name: 'A few time-savers were just added' })).toBeInTheDocument();
-    expect(screen.getByText(/You can turn this off/)).toBeInTheDocument();
+    expect(screen.getByText(/tap Mark sent/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Got it' }));
     expect(screen.queryByRole('heading', { name: 'A few time-savers were just added' })).not.toBeInTheDocument();
     expect(localStorage.getItem(WHATS_NEW_KEY)).toBe('seen');
@@ -28,7 +28,7 @@ describe('WhatsNew', () => {
 
   it('links to the new tools and dismisses from the close button', async () => {
     render(<WhatsNew />);
-    expect(await screen.findByRole('link', { name: 'Alerts you choose' })).toHaveAttribute('href', '/settings#morning-brief');
+    expect(await screen.findByRole('link', { name: 'Your lead page' })).toHaveAttribute('href', '/lead-page');
     await userEvent.click(screen.getByRole('button', { name: 'Dismiss what’s new' }));
     expect(localStorage.getItem(WHATS_NEW_KEY)).toBe('seen');
   });

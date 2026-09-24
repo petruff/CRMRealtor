@@ -196,7 +196,7 @@ function taskAction(folded: string): OmnixActionRequest | undefined {
 }
 
 function noteAction(question: string, folded: string): OmnixActionRequest | undefined {
-  if (!/^(?:(?:add|log|save|write|record|make)(?: a)? note|note (?:for|to|on)|(?:adicione|anote|registre|salve)(?: uma)? (?:nota|anotacao)|anota(?: para| pra)?|(?:agrega|anota|registra|guarda)(?: una)? nota|nota para)\b/u.test(folded)) return undefined;
+  if (!/^(?:(?:update|atualize|atualizar|actualiza|actualizar)\b[^:]{0,60}:|(?:(?:add|log|save|write|record|make)(?: a)? note|note (?:for|to|on)|(?:adicione|anote|registre|salve)(?: uma)? (?:nota|anotacao)|anota(?: para| pra)?|(?:agrega|anota|registra|guarda)(?: una)? nota|nota para)\b)/u.test(folded)) return undefined;
   const colon = question.indexOf(':');
   const body = colon >= 0 ? question.slice(colon + 1).trim()
     : /\b(?:that|saying|que|dizendo|diciendo)\s+(.+)$/iu.exec(question)?.[1]?.trim();
