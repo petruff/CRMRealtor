@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Contact } from '@/lib/domain/contact';
-import { buildReadyToSend, followUpDraft, withNoteHints } from './ready-to-send';
+import { buildReadyToSend, followUpDraft, mergeSellerUpdates, sellerUpdateCandidates, sellerUpdateItem, withNoteHints } from './ready-to-send';
 
 const now = new Date('2026-09-24T13:00:00.000Z');
 
@@ -42,5 +42,39 @@ describe('ready to send', () => {
   it('writes follow-ups grounded only in saved details', () => {
     expect(followUpDraft(contact('Sam', { intent: 'seller', seller: { propertyAddress: '12 Palm Ave' } }))).toBe('Hi Sam, are you still thinking about selling 12 Palm Ave? I’d be happy to put together an updated value for you — no pressure.');
     expect(followUpDraft(contact('Pat', { relationship: 'past-client' }), 'Judith')).toContain('how’s everything with the house');
+  });
+});
+
+describe('weekly seller updates in ready to send', () => {
+  const friday = new Date('2026-09-25T15:00:00.000Z');
+  const maria = contact('Maria', { intent: 'seller', relationship: 'active-client', pipelineStage: 'active', seller: { propertyAddress: '123 Palm Ave' } });
+
+  it('picks active sellers with a phone, under-contract first', () => {
+    const picked = sellerUpdateCandidates([
+      maria,
+      contact('Closing', { intent: 'both', pipelineStage: 'under-contract' }),
+      contact('Prospect', { intent: 'seller', pipelineStage: 'active' }),
+      contact('Buyer', { intent: 'buyer', pipelineStage: 'active' }),
+      contact('NoPhone', { intent: 'seller', pipelineStage: 'active', phone: undefined }),
+    ]);
+    expect(picked.map((item) => item.id)).toEqual(['Closing', 'Maria']);
+  });
+
+  it('builds an item with evidence and skips it once this week’s update was sent', () => {
+    const item = sellerUpdateItem(maria, [{ id: 'n1', contactId: 'Maria', body: 'Showing today', createdAt: '2026-09-24T12:00:00.000Z' }], friday, 'Judith');
+    expect(item).toMatchObject({ kind: 'seller-update', hint: 'From your notes: 1 showing in your notes this week' });
+    expect(item?.href).toMatch(/^sms:/u);
+    const sent = [{ id: 'n2', contactId: 'Maria', body: 'Texted: Hi Maria, your weekly update on 123 Palm Ave', createdAt: '2026-09-24T12:00:00.000Z' }];
+    expect(sellerUpdateItem(maria, sent, friday)).toBeUndefined();
+    expect(sellerUpdateItem(maria, sent, friday, undefined, true)).toBeDefined();
+  });
+
+  it('places seller updates after new leads and replaces the same person’s follow-up', () => {
+    const lead = { id: 'new-lead:L', contactId: 'L', kind: 'new-lead' } as never;
+    const follow = { id: 'follow-up:Maria', contactId: 'Maria', kind: 'follow-up' } as never;
+    const other = { id: 'follow-up:O', contactId: 'O', kind: 'follow-up' } as never;
+    const update = sellerUpdateItem(maria, [], friday)!;
+    expect(mergeSellerUpdates([lead, follow, other], [update]).map((item) => item.id)).toEqual(['new-lead:L', 'seller-update:Maria', 'follow-up:O']);
+    expect(mergeSellerUpdates([lead], [])).toEqual([lead]);
   });
 });

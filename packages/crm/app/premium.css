@@ -809,3 +809,16 @@
   .ox-ready-draft { margin-top: 0.75rem; border-left: 2px solid var(--sk-accent-color); border-radius: 0 0.75rem 0.75rem 0; background: var(--sk-fill-color); padding: 0.625rem 0.875rem; color: var(--sk-body-text-color); font-size: 0.875rem; line-height: 1.5; }
   @media (prefers-reduced-motion: reduce) { .ox-ready-row { animation: none; } }
 }
+
+/* ---------- Listing writer ---------- */
+@layer components {
+  .ox-listing-format {
+    min-height: 2.5rem; border: 1px solid var(--ox-hairline); border-radius: 9999px; background: var(--sk-card-background);
+    padding-inline: 0.875rem; color: var(--sk-body-text-color); font-size: 0.8125rem; font-weight: 600;
+    transition: border-color var(--ox-duration) var(--ox-ease), background-color var(--ox-duration) var(--ox-ease);
+  }
+  .ox-listing-format:hover { border-color: var(--sk-accent-color); }
+  .ox-listing-format.is-active { border-color: var(--sk-accent-color); background: var(--color-accent-soft); color: var(--sk-accent-color); }
+  .ox-listing-format:disabled { cursor: wait; opacity: 0.75; }
+  .ox-listing-alert { border: 1px solid var(--omnix-warm-border); border-radius: 0.875rem; background: var(--omnix-warm-soft); padding: 0.75rem 0.875rem; color: var(--omnix-warm); font-size: 0.875rem; }
+}

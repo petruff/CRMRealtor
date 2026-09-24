@@ -4,6 +4,7 @@ import { anniversaryOrdinal } from '../domain/dates.ts';
 import { quickText, quickTextHref } from '../domain/quick-texts.ts';
 import { contactHint, extractMemoryFacts } from '../domain/relationship-memory.ts';
 import { buildTriage } from '../domain/triage.ts';
+import { isActiveSeller, sellerUpdateDraft, sellerUpdateDue, summarizeSellerWeek } from '../domain/seller-update.ts';
 import type { Note } from '../domain/contact.ts';
 import { buildFocusMoments, buildFocusQueue } from './focus-queue.ts';
 import { draftMessage } from './referral-engine.ts';
@@ -14,7 +15,7 @@ import { draftMessage } from './referral-engine.ts';
  * from what is saved about each person. Nothing is sent: the realtor opens each
  * one in her own Messages app, and marks it sent when she's done.
  */
-export type ReadyKind = 'new-lead' | 'follow-up' | 'birthday' | 'homeaversary';
+export type ReadyKind = 'new-lead' | 'follow-up' | 'birthday' | 'homeaversary' | 'seller-update';
 
 export interface ReadyItem {
   readonly id: string;
@@ -123,4 +124,41 @@ export function withNoteHints(items: readonly ReadyItem[], notesByContact: Reado
     const hint = contactHint(extractMemoryFacts(notesByContact.get(item.contactId) ?? []));
     return hint ? { ...item, hint } : item;
   });
+}
+
+export const SELLER_UPDATE_LIMIT = 6;
+
+/** Active sellers with a phone, the ones whose notes are worth loading on Fridays. */
+export function sellerUpdateCandidates(contacts: readonly Contact[], limit = SELLER_UPDATE_LIMIT): Contact[] {
+  return contacts.filter((contact) => isActiveSeller(contact) && contact.phone && quickTextHref(contact.phone, 'x'))
+    .sort((a, b) => (a.pipelineStage === 'under-contract' ? 0 : 1) - (b.pipelineStage === 'under-contract' ? 0 : 1) || a.id.localeCompare(b.id))
+    .slice(0, limit);
+}
+
+/** One ready-to-send item for a seller, or undefined when this week's update was already sent. */
+export function sellerUpdateItem(contact: Contact, notes: readonly Note[], now: Date, agentName?: string, force = false): ReadyItem | undefined {
+  if (!contact.phone || !isActiveSeller(contact)) return undefined;
+  const week = summarizeSellerWeek(notes, now);
+  if (!force && !sellerUpdateDue(week, now)) return undefined;
+  const body = sellerUpdateDraft(contact, week, agentName);
+  const href = quickTextHref(contact.phone, body);
+  if (!href) return undefined;
+  const reason = contact.pipelineStage === 'under-contract' ? 'Under contract — a Friday update keeps your seller calm' : 'Friday seller update — keep your seller in the loop';
+  return {
+    id: `seller-update:${contact.id}`, contactId: contact.id, name: displayName(contact), firstName: firstNameOf(contact), initials: initials(contact),
+    leadType: contact.leadType, relationship: contact.relationship, kind: 'seller-update', reason,
+    ...(week.evidence.length ? { hint: `From your notes: ${week.evidence.join(' · ')}` } : { hint: 'No showings logged this week — edit if that’s not right' }),
+    phone: contact.phone, body, href,
+  };
+}
+
+/** Seller updates go right after new leads; a seller's update replaces their generic follow-up. */
+export function mergeSellerUpdates(items: readonly ReadyItem[], sellerItems: readonly ReadyItem[], limit = READY_LIMIT): ReadyItem[] {
+  if (!sellerItems.length) return [...items];
+  const sellerIds = new Set(sellerItems.map((item) => item.contactId));
+  const rest = items.filter((item) => !sellerIds.has(item.contactId) || item.kind === 'new-lead');
+  const leads = rest.filter((item) => item.kind === 'new-lead');
+  const others = rest.filter((item) => item.kind !== 'new-lead');
+  const sellers = sellerItems.filter((item) => !leads.some((lead) => lead.contactId === item.contactId));
+  return [...leads, ...sellers, ...others].slice(0, limit + sellers.length);
 }
